@@ -7,9 +7,16 @@ let width, height;
 const mouse = { x: -1000, y: -1000, targetX: window.innerWidth/2, targetY: window.innerHeight/2 };
 let time = 0;
 
+let lastWidth = 0;
+
 function resize() {
+  // Prevent mobile scroll from triggering a canvas reset when only height changes (URL bar hiding)
+  if (window.innerWidth === lastWidth && width !== undefined) return;
+  lastWidth = window.innerWidth;
+  
   width = canvas.width = window.innerWidth;
-  height = canvas.height = window.innerHeight;
+  // Make height slightly larger on mobile to cover the bottom when URL bar hides
+  height = canvas.height = window.innerHeight + 100;
 }
 window.addEventListener('resize', resize);
 resize();
