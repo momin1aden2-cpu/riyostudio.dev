@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Riyo Studio — SaaS Developer Studio from Western Australia</title>
+  <meta name="description" content="Riyo Studio is a registered Australian business building its own SaaS products. Home of RenterIQ and ShiftCore — apps designed, built, and shipped by a solo developer in Western Australia.">
+  <meta name="keywords" content="riyo studio, saas developer, renteriq, shiftcore, australian software, western australia developer, solo developer, self-taught developer, web apps, mobile apps">
+  <meta name="author" content="Riyo Studio">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://riyostudio.dev/">
+
+  <!-- Geo targeting -->
+  <meta name="geo.region" content="AU-WA">
+  <meta name="geo.placename" content="Western Australia">
+
+  <!-- Theme -->
+  <meta name="theme-color" content="#060B14">
+  <meta name="color-scheme" content="dark">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Riyo Studio">
+  <meta property="og:locale" content="en_AU">
+  <meta property="og:url" content="https://riyostudio.dev/">
+  <meta property="og:title" content="Riyo Studio — SaaS Developer Studio from Western Australia">
+  <meta property="og:description" content="Registered Australian business building its own SaaS products. Home of RenterIQ and ShiftCore.">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Riyo Studio — SaaS Developer Studio">
+  <meta name="twitter:description" content="Registered Australian business building its own SaaS products. Home of RenterIQ and ShiftCore.">
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://riyostudio.dev/#organization",
+        "name": "Riyo Studio",
+        "url": "https://riyostudio.dev/",
+        "description": "A registered Australian business that designs, builds, and ships its own SaaS products.",
+        "areaServed": { "@type": "Country", "name": "Australia" },
+        "address": {
+          "@type": "PostalAddress",
+          "addressRegion": "WA",
+          "addressCountry": "AU"
+        },
+        "knowsAbout": ["SaaS", "Web Development", "Mobile Apps", "Progressive Web Apps", "Product Design"]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://riyostudio.dev/#website",
+        "url": "https://riyostudio.dev/",
+        "name": "Riyo Studio",
+        "publisher": { "@id": "https://riyostudio.dev/#organization" },
+        "inLanguage": "en-AU"
+      }
+    ]
+  }
+  </script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+
+  <!-- Styles -->
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav" id="main-nav">
+    <div class="nav-inner">
+      <a href="#" class="nav-brand" aria-label="Riyo Studio home">
+        <img src="assets/icon.png" alt="Riyo Studio" class="nav-brand-icon-img">
+        <div class="nav-brand-text">
+          <span class="nav-brand-name">Riyo Studio</span>
+          <span class="nav-brand-tag">SaaS Developer Studio</span>
+        </div>
+      </a>
+
+      <div class="nav-links">
+        <a href="#products" class="nav-link">Products</a>
+        <a href="#about" class="nav-link">About</a>
+        <a href="#process" class="nav-link">Process</a>
+        <a href="#contact" class="nav-cta-btn desktop">Get in Touch</a>
+      </div>
+
+      <button class="nav-mobile-btn" id="nav-mobile-open" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile nav overlay -->
+  <div class="nav-mobile-overlay" id="nav-mobile-overlay">
+    <div class="nav-mobile-panel">
+      <button class="nav-mobile-close" id="nav-mobile-close" aria-label="Close menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="nav-mobile-links">
+        <a href="#products">Products</a>
+        <a href="#about">About</a>
+        <a href="#process">Process</a>
+        <a href="#contact" class="nav-cta-btn">Get in Touch</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero" id="hero">
+    <div class="container">
+      <div class="hero-eyebrow reveal">
+        <span class="hero-eyebrow-dot"></span>
+        Registered Australian Business · Western Australia
+      </div>
+
+      <h1 class="reveal reveal-delay-1">
+        I build software that<br>solves <span class="accent">real problems.</span>
+      </h1>
+
+      <p class="hero-sub reveal reveal-delay-2">
+        Solo developer. Self-taught. Two live SaaS products serving real users across Australia — and more on the way.
+      </p>
+
+      <div class="hero-stats reveal reveal-delay-3">
+        <div class="hero-stat">
+          <span class="hero-stat-num">2</span>
+          <span class="hero-stat-label">Live Products</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-num">6+</span>
+          <span class="hero-stat-label">Years Building</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-num">1</span>
+          <span class="hero-stat-label">Developer</span>
+        </div>
+      </div>
+
+      <div class="hero-scroll reveal reveal-delay-4">
+        <span>Scroll</span>
+        <div class="hero-scroll-line"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Products -->
+  <section class="products" id="products">
+    <div class="container">
+      <div class="products-header">
+        <div class="eyebrow reveal">Our Products</div>
+        <h2 class="reveal reveal-delay-1">Built from scratch. Shipped to real users.</h2>
+        <p class="reveal reveal-delay-2">
+          Every product under Riyo Studio is designed, developed, and maintained end-to-end — from the first line of code to the live deployment.
+        </p>
+      </div>
+
+      <div class="products-grid">
+        <!-- RenterIQ -->
+        <div class="product-card renteriq reveal">
+          <div class="product-card-header">
+            <img src="assets/renteriq-logo.png" alt="RenterIQ Logo" class="product-logo-img">
+            <h3>RenterIQ</h3>
+            <span class="product-badge">Live</span>
+          </div>
+          <p class="product-desc">
+            The free app for Australian renters. Instant tenancy rights answers, condition reports with photos, four-way bond comparison, plain-English lease review, and an encrypted document vault. Covers all states and territories.
+          </p>
+          <div class="product-features">
+            <span class="product-feature-pill">Condition Reports</span>
+            <span class="product-feature-pill">Bond Compare</span>
+            <span class="product-feature-pill">Rights Hub</span>
+            <span class="product-feature-pill">Lease Review</span>
+            <span class="product-feature-pill">Document Vault</span>
+            <span class="product-feature-pill">AI Helpers</span>
+          </div>
+          <a href="https://renteriq.com.au" target="_blank" rel="noopener" class="product-link">
+            Visit renteriq.com.au <span class="arrow">→</span>
+          </a>
+        </div>
+
+        <!-- ShiftCore -->
+        <div class="product-card shiftcore reveal reveal-delay-1">
+          <div class="product-card-header">
+            <img src="assets/shiftcore-logo.png" alt="ShiftCore Logo" class="product-logo-img">
+            <h3>ShiftCore</h3>
+            <span class="product-badge">Live</span>
+          </div>
+          <p class="product-desc">
+            The personal organisation app for FIFO workers. Manage your roster, track ticket expiries, store documents securely, and never forget your isolation lock with Isotrac — the personal lock reminder built right in.
+          </p>
+          <div class="product-features">
+            <span class="product-feature-pill">Roster Manager</span>
+            <span class="product-feature-pill">Ticket Tracker</span>
+            <span class="product-feature-pill">Secure Vault</span>
+            <span class="product-feature-pill">Voice Handover</span>
+            <span class="product-feature-pill">Isotrac</span>
+            <span class="product-feature-pill">Google Play</span>
+          </div>
+          <a href="https://shiftcore.com.au" target="_blank" rel="noopener" class="product-link">
+            Visit shiftcore.com.au <span class="arrow">→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About -->
+  <section class="about" id="about">
+    <div class="container">
+      <div class="about-grid">
+        <div class="about-text">
+          <div class="eyebrow reveal">About Riyo Studio</div>
+          <h2 class="reveal reveal-delay-1">
+            A solo developer turning real-world problems into real products.
+          </h2>
+          <p class="reveal reveal-delay-2">
+            Riyo Studio is a <strong>registered Australian business</strong> based in Western Australia. What started as a coding hobby six years ago turned into a serious pursuit — and eventually a business that builds, ships, and maintains its own software products.
+          </p>
+          <p class="reveal reveal-delay-3">
+            Both <strong>RenterIQ</strong> and <strong>ShiftCore</strong> are trading names under Riyo Studio. Every product is conceived, designed, built, and deployed by one developer — end to end. No clients, no outsourcing. Just real problems solved with code.
+          </p>
+          <p class="reveal reveal-delay-4">
+            Self-taught from day one. The focus has always been on building things that actually help people — apps that are polished, performant, and genuinely useful.
+          </p>
+        </div>
+
+        <div class="about-cards">
+          <div class="about-card reveal">
+            <h4>What I Build With</h4>
+            <div class="tech-pills">
+              <span class="tech-pill">HTML / CSS / JS</span>
+              <span class="tech-pill">Firebase</span>
+              <span class="tech-pill">PWA</span>
+              <span class="tech-pill">Android</span>
+              <span class="tech-pill">Node.js</span>
+              <span class="tech-pill">AI / LLM</span>
+            </div>
+          </div>
+
+          <div class="about-card reveal reveal-delay-1">
+            <h4>How I Work</h4>
+            <div class="about-card-content">
+              <div class="about-card-item">
+                <span class="tick">✓</span>
+                <span>Full-stack — from UI design to backend APIs</span>
+              </div>
+              <div class="about-card-item">
+                <span class="tick">✓</span>
+                <span>Product-minded — build what users actually need</span>
+              </div>
+              <div class="about-card-item">
+                <span class="tick">✓</span>
+                <span>Ship fast — iterate based on real feedback</span>
+              </div>
+              <div class="about-card-item">
+                <span class="tick">✓</span>
+                <span>Self-sufficient — design, code, deploy, maintain</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="about-card reveal reveal-delay-2">
+            <h4>The Business</h4>
+            <div class="about-card-content">
+              <div class="about-card-item">
+                <span class="tick">📍</span>
+                <span>Registered in Western Australia</span>
+              </div>
+              <div class="about-card-item">
+                <span class="tick">🏢</span>
+                <span>RenterIQ — trading name of Riyo Studio</span>
+              </div>
+              <div class="about-card-item">
+                <span class="tick">🏢</span>
+                <span>ShiftCore — trading name of Riyo Studio</span>
+              </div>
+              <div class="about-card-item">
+                <span class="tick">🚀</span>
+                <span>More products in development</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Process -->
+  <section class="process" id="process">
+    <div class="container">
+      <div class="process-header">
+        <div class="eyebrow reveal">How It Works</div>
+        <h2 class="reveal reveal-delay-1">From idea to live product.</h2>
+        <p class="reveal reveal-delay-2">
+          Every Riyo Studio product follows the same disciplined approach — find a real problem, build the solution, ship it, and keep improving.
+        </p>
+      </div>
+
+      <div class="process-steps">
+        <div class="process-step reveal">
+          <div class="step-num">1</div>
+          <div class="step-icon">🔍</div>
+          <h3>Identify a Problem</h3>
+          <p>Real-world pain points that software can genuinely fix. No vanity projects — every product starts with a problem worth solving.</p>
+        </div>
+
+        <div class="process-step reveal reveal-delay-1">
+          <div class="step-num">2</div>
+          <div class="step-icon">🛠️</div>
+          <h3>Design & Build</h3>
+          <p>Full-stack development from scratch. UI design, frontend, backend, database, authentication, deployment — all handled end to end.</p>
+        </div>
+
+        <div class="process-step reveal reveal-delay-2">
+          <div class="step-num">3</div>
+          <div class="step-icon">🚀</div>
+          <h3>Ship & Iterate</h3>
+          <p>Launch to real users, gather feedback, and continuously improve. Every product gets better with each release cycle.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section class="contact" id="contact">
+    <div class="container">
+      <div class="contact-grid">
+        <div class="contact-text">
+          <div class="eyebrow reveal">Get in Touch</div>
+          <h2 class="reveal reveal-delay-1">Have a question or want to connect?</h2>
+          <p class="reveal reveal-delay-2">
+            Whether it's about one of the products, a potential collaboration, or just to say hello — I'd love to hear from you. Drop a message and I'll get back to you.
+          </p>
+
+          <div class="contact-info reveal reveal-delay-3">
+            <div class="contact-info-item">
+              <div class="contact-info-icon">📍</div>
+              <span>Western Australia, Australia</span>
+            </div>
+            <div class="contact-info-item">
+              <div class="contact-info-icon">🏢</div>
+              <span>Riyo Studio — Registered Australian Business</span>
+            </div>
+            <div class="contact-info-item">
+              <div class="contact-info-icon">🌐</div>
+              <div>
+                <a href="https://renteriq.com.au" target="_blank" rel="noopener" style="color: var(--accent); font-weight: 600;">renteriq.com.au</a> ·
+                <a href="https://shiftcore.com.au" target="_blank" rel="noopener" style="color: var(--accent); font-weight: 600;">shiftcore.com.au</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="contact-form-wrap reveal reveal-delay-2">
+          <form id="contact-form" action="#" method="POST">
+            <div class="form-group">
+              <label for="contact-name">Your Name</label>
+              <input type="text" id="contact-name" name="name" class="form-input" placeholder="Name" required>
+            </div>
+            <div class="form-group">
+              <label for="contact-email">Email Address</label>
+              <input type="email" id="contact-email" name="email" class="form-input" placeholder="Email" required>
+            </div>
+            <div class="form-group">
+              <label for="contact-message">Message</label>
+              <textarea id="contact-message" name="message" class="form-input" placeholder="Message" required></textarea>
+            </div>
+            <button type="submit" class="form-submit" id="form-submit-btn">Send Message</button>
+          </form>
+          <div class="form-success" id="form-success">
+            ✓ &nbsp;Message sent! I'll get back to you soon.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer" id="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="#" class="nav-brand" aria-label="Riyo Studio home">
+            <img src="assets/icon.png" alt="Riyo Studio" class="nav-brand-icon-img">
+            <div class="nav-brand-text">
+              <span class="nav-brand-name">Riyo Studio</span>
+              <span class="nav-brand-tag">SaaS Developer Studio</span>
+            </div>
+          </a>
+          <p>
+            A registered Australian business based in Western Australia. Building, shipping, and maintaining SaaS products end-to-end.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Products</h4>
+          <a href="https://renteriq.com.au" target="_blank" rel="noopener">RenterIQ</a>
+          <a href="https://shiftcore.com.au" target="_blank" rel="noopener">ShiftCore</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Navigation</h4>
+          <a href="#products">Products</a>
+          <a href="#about">About</a>
+          <a href="#process">Process</a>
+          <a href="#contact">Contact</a>
+        </div>
+      </div>
+
+      <div class="footer-divider"></div>
+
+      <div class="footer-bottom">
+        <span class="footer-copy">© 2026 Riyo Studio. All rights reserved.</span>
+        <div class="footer-legal">
+          <span style="font-size: 12px; color: rgba(255,255,255,0.3);">Registered Business · Western Australia, Australia</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="script.js"></script>
+</body>
+</html>
