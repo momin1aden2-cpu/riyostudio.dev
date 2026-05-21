@@ -22,10 +22,10 @@ html {
   --bg-card: rgba(255, 255, 255, 0.03);
 
   /* Accent */
-  --accent: #8B5CF6;
-  --accent-dim: #7C3AED;
-  --accent-glow: rgba(139, 92, 246, 0.30);
-  --accent-soft: rgba(139, 92, 246, 0.12);
+  --accent: #3B82F6;
+  --accent-dim: #2563EB;
+  --accent-glow: rgba(59, 130, 246, 0.30);
+  --accent-soft: rgba(59, 130, 246, 0.12);
 
   /* Text */
   --text: #FFFFFF;
@@ -36,7 +36,7 @@ html {
   /* Borders */
   --border: rgba(255, 255, 255, 0.08);
   --border-hover: rgba(255, 255, 255, 0.16);
-  --border-accent: rgba(139, 92, 246, 0.35);
+  --border-accent: rgba(59, 130, 246, 0.35);
 
   /* Brand colors */
   --renteriq: #1B50C8;
@@ -78,10 +78,10 @@ body::before {
   position: fixed;
   inset: -15%;
   background:
-    radial-gradient(800px circle at 15% 10%, rgba(139, 92, 246, 0.08) 0%, transparent 55%),
+    radial-gradient(800px circle at 15% 10%, rgba(59, 130, 246, 0.08) 0%, transparent 55%),
     radial-gradient(600px circle at 85% 30%, rgba(27, 80, 200, 0.05) 0%, transparent 50%),
     radial-gradient(700px circle at 50% 80%, rgba(34, 197, 94, 0.03) 0%, transparent 55%),
-    radial-gradient(500px circle at 90% 85%, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
+    radial-gradient(500px circle at 90% 85%, rgba(59, 130, 246, 0.04) 0%, transparent 50%);
   pointer-events: none;
   z-index: -1;
   animation: ambient-drift 30s ease-in-out infinite alternate;
@@ -93,8 +93,9 @@ body::before {
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 0;
+  z-index: -10;
   pointer-events: none;
+  opacity: 0.6; /* Dim the whole canvas so text pops */
 }
 
 @keyframes ambient-drift {
@@ -230,11 +231,11 @@ section {
   object-fit: contain;
   border-radius: 8px;
   transition: filter 0.35s var(--ease), transform 0.35s var(--ease);
-  filter: drop-shadow(0 2px 8px rgba(139, 92, 246, 0.25));
+  filter: drop-shadow(0 2px 8px rgba(59, 130, 246, 0.25));
 }
 
 .nav-brand:hover .nav-brand-icon-img {
-  filter: drop-shadow(0 4px 16px rgba(139, 92, 246, 0.4)) brightness(1.1);
+  filter: drop-shadow(0 4px 16px rgba(59, 130, 246, 0.4)) brightness(1.1);
   transform: scale(1.06);
 }
 
@@ -320,7 +321,7 @@ section {
   border-radius: var(--radius-pill);
   transition: transform 0.2s, box-shadow 0.25s;
   box-shadow: 0 4px 16px var(--accent-glow);
-  border: 1px solid rgba(139, 92, 246, 0.5);
+  border: 1px solid rgba(59, 130, 246, 0.5);
   flex-shrink: 0;
 }
 
@@ -739,7 +740,7 @@ section {
 
 .about {
   padding: 100px 0;
-  background: linear-gradient(180deg, transparent 0%, rgba(139, 92, 246, 0.03) 50%, transparent 100%);
+  background: linear-gradient(180deg, transparent 0%, rgba(59, 130, 246, 0.03) 50%, transparent 100%);
 }
 
 .about-grid {
@@ -905,7 +906,7 @@ section {
 .process-step:hover {
   transform: translateY(-6px);
   border-color: var(--border-accent);
-  box-shadow: 0 20px 50px rgba(139, 92, 246, 0.12);
+  box-shadow: 0 20px 50px rgba(59, 130, 246, 0.12);
 }
 
 .step-num {
@@ -944,7 +945,7 @@ section {
 
 .contact {
   padding: 100px 0;
-  background: linear-gradient(180deg, transparent 0%, rgba(139, 92, 246, 0.03) 100%);
+  background: linear-gradient(180deg, transparent 0%, rgba(59, 130, 246, 0.03) 100%);
 }
 
 .contact-grid {
@@ -1058,7 +1059,7 @@ textarea.form-input {
   color: #fff;
   font-size: 15px;
   font-weight: 700;
-  border: 1px solid rgba(139, 92, 246, 0.5);
+  border: 1px solid rgba(59, 130, 246, 0.5);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.25s;

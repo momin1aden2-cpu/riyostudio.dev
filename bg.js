@@ -127,8 +127,8 @@ function animate() {
   // Interaction shade
   if (mouse.x !== -1000) {
     const gradient = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 350);
-    gradient.addColorStop(0, 'rgba(139, 92, 246, 0.12)'); 
-    gradient.addColorStop(1, 'rgba(139, 92, 246, 0)');
+    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.12)'); 
+    gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
     
     ctx.globalCompositeOperation = 'lighter';
     ctx.fillStyle = gradient;
@@ -163,8 +163,8 @@ function animate() {
 
     glowMultiplier = Math.min(glowMultiplier, 1);
 
-    const r = Math.floor(90 + (167 - 90) * glowMultiplier);
-    const g = Math.floor(100 + (139 - 100) * glowMultiplier);
+    const r = Math.floor(90 + (96 - 90) * glowMultiplier);
+    const g = Math.floor(100 + (165 - 100) * glowMultiplier);
     const b = Math.floor(120 + (250 - 120) * glowMultiplier);
     const nodeAlpha = 0.25 + (glowMultiplier * 0.75); 
 
@@ -198,8 +198,8 @@ function animate() {
 
           const maxGlow = Math.max(glowMultiplier, p2Glow);
           
-          const lr = Math.floor(90 + (167 - 90) * maxGlow);
-          const lg = Math.floor(100 + (139 - 100) * maxGlow);
+          const lr = Math.floor(90 + (96 - 90) * maxGlow);
+          const lg = Math.floor(100 + (165 - 100) * maxGlow);
           const lb = Math.floor(120 + (250 - 120) * maxGlow);
           
           const lineAlpha = 0.12 + (maxGlow * 0.68);
