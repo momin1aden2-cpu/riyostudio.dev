@@ -72,19 +72,29 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Ambient background orbs */
+/* Ambient background orbs - dimmed for canvas */
 body::before {
   content: '';
   position: fixed;
   inset: -15%;
   background:
-    radial-gradient(800px circle at 15% 10%, rgba(139, 92, 246, 0.15) 0%, transparent 55%),
-    radial-gradient(600px circle at 85% 30%, rgba(27, 80, 200, 0.10) 0%, transparent 50%),
-    radial-gradient(700px circle at 50% 80%, rgba(34, 197, 94, 0.06) 0%, transparent 55%),
-    radial-gradient(500px circle at 90% 85%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+    radial-gradient(800px circle at 15% 10%, rgba(139, 92, 246, 0.08) 0%, transparent 55%),
+    radial-gradient(600px circle at 85% 30%, rgba(27, 80, 200, 0.05) 0%, transparent 50%),
+    radial-gradient(700px circle at 50% 80%, rgba(34, 197, 94, 0.03) 0%, transparent 55%),
+    radial-gradient(500px circle at 90% 85%, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
   animation: ambient-drift 30s ease-in-out infinite alternate;
+}
+
+#quantum-field {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
 }
 
 @keyframes ambient-drift {
