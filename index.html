@@ -72,6 +72,14 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- Terminal Boot Sequence Preloader -->
+  <div id="boot-sequence">
+    <div class="boot-content">
+      <span style="color: var(--text-muted)">> initializing subsystems...</span><br>
+      <span style="color: var(--text-dim)">> mounting quantum_canvas.js [OK]</span><br>
+      <span style="color: var(--accent)">> SYSTEM_READY</span><span class="cursor">_</span>
+    </div>
+  </div>
   <!-- Interactive Background Canvas -->
   <canvas id="quantum-field"></canvas>
 
@@ -93,11 +101,14 @@
         <a href="#contact" class="nav-cta-btn desktop">Get in Touch</a>
       </div>
 
-      <button class="nav-mobile-btn" id="nav-mobile-open" aria-label="Open menu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
+      <div class="nav-mobile-actions">
+        <button class="nav-mobile-cmd-btn" id="nav-mobile-cmd" aria-label="Open Command Palette">>_</button>
+        <button class="nav-mobile-btn" id="nav-mobile-open" aria-label="Open menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
     </div>
   </nav>
 

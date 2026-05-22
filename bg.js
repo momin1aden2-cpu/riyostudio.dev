@@ -238,8 +238,14 @@ function initNodes() {
 
 resize();
 
+let isCanvasPaused = false;
+document.addEventListener('visibilitychange', () => {
+  isCanvasPaused = document.hidden;
+});
+
 function animate() {
   requestAnimationFrame(animate);
+  if (isCanvasPaused) return;
   time += 0.008;
 
   // Decay mouse speed

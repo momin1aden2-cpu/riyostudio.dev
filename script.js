@@ -6,6 +6,17 @@
 (function () {
   'use strict';
 
+  // Terminal Preloader
+  const bootSequence = document.getElementById('boot-sequence');
+  if (bootSequence) {
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        bootSequence.classList.add('done');
+        setTimeout(() => bootSequence.remove(), 500);
+      }, 600); // 600ms boot sequence
+    });
+  }
+
   // Nav scroll state
   const nav = document.getElementById('main-nav');
 
@@ -337,6 +348,11 @@
         if (e.key === 'Enter') executeCmd();
       }
     });
+
+    const mobileCmdBtn = document.getElementById('nav-mobile-cmd');
+    if (mobileCmdBtn) {
+      mobileCmdBtn.addEventListener('click', openCmdPalette);
+    }
 
     function openCmdPalette() {
       cmdPalette.classList.add('active');
