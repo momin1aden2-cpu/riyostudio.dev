@@ -465,6 +465,9 @@
   let lastScrollY = window.scrollY;
   let scrollVelocity = 0;
   
+  // Cache cards to prevent massive DOM thrashing inside the scroll loop
+  const scrollCards = document.querySelectorAll('.product-card, .about-card');
+  
   window.addEventListener('scroll', () => {
     if (window.innerWidth <= 768) return; // Disable on mobile to fix touch-inertia bugs
 
@@ -478,9 +481,8 @@
     let skewValue = scrollVelocity * 0.05;
     skewValue = Math.max(-maxSkew, Math.min(maxSkew, skewValue));
     
-    // Apply skew to cards
-    const allCards = document.querySelectorAll('.product-card, .about-card');
-    allCards.forEach(card => {
+    // Apply skew to cached cards
+    scrollCards.forEach(card => {
       // Preserve hover scale/transform by adding it to the skew
       if (!card.matches(':hover')) {
         card.style.transform = `skewY(${skewValue}deg)`;

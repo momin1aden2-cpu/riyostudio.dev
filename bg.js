@@ -1,6 +1,10 @@
 // bg.js - Logic Grid Background
-const canvas = document.getElementById('quantum-field');
-const ctx = canvas.getContext('2d', { alpha: false });
+(function () {
+  'use strict';
+
+  const canvas = document.getElementById('quantum-field');
+  if (!canvas) return; // Null check for safety
+  const ctx = canvas.getContext('2d', { alpha: false });
 
 // -- Phantom Code Layer --------------------------------------------------
 // Code fragment pool: real-looking JS / CSS / HTML / terminal snippets
@@ -372,3 +376,5 @@ function animate() {
 }
 
 animate();
+
+})();
