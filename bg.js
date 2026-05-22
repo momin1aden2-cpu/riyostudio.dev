@@ -2,6 +2,145 @@
 const canvas = document.getElementById('quantum-field');
 const ctx = canvas.getContext('2d', { alpha: false });
 
+// -- Phantom Code Layer --------------------------------------------------
+// Code fragment pool: real-looking JS / CSS / HTML / terminal snippets
+const CODE_FRAGMENTS = [
+  // JavaScript
+  `async function resolve(ctx) {\n  await auth.validate(ctx.token);\n  return db.query(ctx.id);\n}`,
+  `const [data, setData] = useState(null);\nuseEffect(() => {\n  fetch('/api/status').then(r => r.json())\n  .then(setData);\n}, []);`,
+  `export const middleware = async (req, res, next) => {\n  const token = req.headers['x-api-key'];\n  if (!token) return res.status(401).end();\n  next();\n};`,
+  `class EventEmitter {\n  emit(event, ...args) {\n    (this._listeners[event] || [])\n      .forEach(fn => fn(...args));\n  }\n}`,
+  `const debounce = (fn, ms) => {\n  let timer;\n  return (...args) => {\n    clearTimeout(timer);\n    timer = setTimeout(() => fn(...args), ms);\n  };\n};`,
+  `router.get('/health', (req, res) => {\n  res.json({ status: 'ok',\n    uptime: process.uptime() });\n});`,
+  `const schema = z.object({\n  email: z.string().email(),\n  role:  z.enum(['admin','user']),\n  id:    z.string().uuid(),\n});`,
+  `await Promise.allSettled([\n  syncUserData(uid),\n  rebuildIndex(uid),\n  logEvent('session.start'),\n]);`,
+  `if (import.meta.env.PROD) {\n  Sentry.init({ dsn: SENTRY_DSN,\n    tracesSampleRate: 0.2 });\n}`,
+  `const pipeline = compose(\n  withAuth,\n  withRateLimit(100),\n  withCache(300),\n  handler\n);`,
+
+  // CSS
+  `.card {\n  backdrop-filter: blur(12px);\n  background: rgba(6,11,20,0.7);\n  border: 1px solid rgba(96,165,250,0.15);\n  border-radius: 12px;\n}`,
+  `@keyframes fadeUp {\n  from { opacity: 0;\n         transform: translateY(16px); }\n  to   { opacity: 1;\n         transform: translateY(0); }\n}`,
+  `:root {\n  --accent:  #3B82F6;\n  --surface: rgba(6,11,20,0.8);\n  --border:  rgba(96,165,250,0.12);\n  --radius:  10px;\n}`,
+  `.grid {\n  display: grid;\n  grid-template-columns:\n    repeat(auto-fill, minmax(280px, 1fr));\n  gap: 1.5rem;\n}`,
+  `@media (prefers-reduced-motion: no-preference) {\n  .reveal {\n    animation: fadeUp 0.6s ease\n               both;\n  }\n}`,
+  `.btn:hover {\n  transform: translateY(-2px);\n  box-shadow: 0 8px 32px\n    rgba(59,130,246,0.25);\n  transition: all 0.2s ease;\n}`,
+
+  // HTML
+  `<section aria-labelledby="hero-title"\n  data-scroll-section>\n  <h1 id="hero-title" class="display">\n    Ship faster.\n  </h1>\n</section>`,
+  `<meta name="viewport"\n  content="width=device-width,\n  initial-scale=1.0">\n<meta name="theme-color"\n  content="#060B14">`,
+  `<link rel="preload" as="font"\n  href="/fonts/Inter.woff2"\n  crossorigin="anonymous">`,
+
+  // Terminal / build output
+  `>  build complete    847ms\n   ✓ 14 modules bundled\n   ✓ tree-shaken  -38kb\n   ✓ gzip  62kb -> 18kb`,
+  `$ git push origin main\n  Enumerating objects: 9, done.\n  Writing objects: 100%\n  Branch main -> HEAD`,
+  `[INFO]  server listening :8080\n[AUDIT] rate-limit active\n[DB]    pool  size=10  idle=8\n[CACHE] redis connected  0ms`,
+  `PASS  auth.test.ts    (1.2s)\nPASS  api.test.ts     (0.8s)\nPASS  schema.test.ts  (0.4s)\nTest Suites: 3 passed`,
+  `Lighthouse\n  Performance   98\n  Accessibility 100\n  Best Practice 100\n  SEO           100`,
+  `✓ SSL/TLS grade     A+\n✓ HSTS preloaded\n✓ CSP configured\n✓ Headers score   A+`,
+];
+
+const phantomFragments = [];
+const MAX_PHANTOM = 6; // max simultaneously visible
+let phantomSpawnTimer = 0;
+const PHANTOM_SPAWN_INTERVAL = 40; // frames between spawns (faster)
+
+class PhantomFragment {
+  constructor() {
+    this.reset();
+  }
+
+  reset() {
+    // Pick a random snippet
+    const raw = CODE_FRAGMENTS[Math.floor(Math.random() * CODE_FRAGMENTS.length)];
+    this.lines = raw.split('\n');
+
+    // Random position — keep away from edges
+    const margin = 60;
+    this.x = margin + Math.random() * (width  - margin * 2 - 220);
+    this.y = margin + Math.random() * (height - margin * 2 - this.lines.length * 16);
+
+    // Lifecycle: fade-in -> hold -> fade-out
+    this.fadeInDuration  = 30 + Math.random() * 30; // Faster fade in
+    this.holdDuration    = 180 + Math.random() * 220;
+    this.fadeOutDuration = 60 + Math.random() * 40;
+    this.totalLife = this.fadeInDuration + this.holdDuration + this.fadeOutDuration;
+    this.age = 0;
+
+    // Visual properties
+    this.fontSize   = 10 + Math.floor(Math.random() * 4); // 10–13px
+    this.maxAlpha   = 0.35 + Math.random() * 0.25;       // 0.35–0.60 (much more visible)
+    this.colorTint  = Math.random() > 0.35 ? 'azure' : 'mint'; // azure or mint
+    this.alive = true;
+  }
+
+  getAlpha() {
+    if (this.age < this.fadeInDuration) {
+      return (this.age / this.fadeInDuration) * this.maxAlpha;
+    }
+    const holdEnd = this.fadeInDuration + this.holdDuration;
+    if (this.age < holdEnd) {
+      return this.maxAlpha;
+    }
+    const fadeProgress = (this.age - holdEnd) / this.fadeOutDuration;
+    return (1 - fadeProgress) * this.maxAlpha;
+  }
+
+  update() {
+    this.age++;
+    if (this.age >= this.totalLife) this.alive = false;
+  }
+
+  draw(ctx) {
+    const alpha = this.getAlpha();
+    if (alpha <= 0) return;
+
+    // Colour: Electric Azure or pale Mint to match palette
+    const colour = this.colorTint === 'azure'
+      ? `rgba(96, 165, 250, ${alpha})`
+      : `rgba(52, 211, 153, ${alpha})`;
+
+    ctx.save();
+    ctx.font = `${this.fontSize}px 'Courier New', monospace`;
+    ctx.fillStyle = colour;
+    ctx.textBaseline = 'top';
+
+    // Draw each line
+    const lineHeight = this.fontSize * 1.65;
+    for (let i = 0; i < this.lines.length; i++) {
+      ctx.fillText(this.lines[i], this.x, this.y + i * lineHeight);
+    }
+    ctx.restore();
+  }
+}
+
+function updatePhantoms() {
+  // Tick existing fragments
+  for (let i = phantomFragments.length - 1; i >= 0; i--) {
+    phantomFragments[i].update();
+    if (!phantomFragments[i].alive) {
+      phantomFragments.splice(i, 1);
+    }
+  }
+
+  // Spawn new fragments
+  phantomSpawnTimer++;
+  if (phantomSpawnTimer >= PHANTOM_SPAWN_INTERVAL &&
+      phantomFragments.length < MAX_PHANTOM) {
+    phantomSpawnTimer = 0;
+    // Stagger spawning — only add one at a time
+    if (Math.random() < 0.7) {
+      phantomFragments.push(new PhantomFragment());
+    }
+  }
+}
+
+function drawPhantoms() {
+  for (const frag of phantomFragments) {
+    frag.draw(ctx);
+  }
+}
+// -- End Phantom Code Layer ----------------------------------------------
+
 let width, height;
 const mouse = { x: -1000, y: -1000, targetX: -1000, targetY: -1000 };
 let lastWidth = 0;
@@ -135,6 +274,10 @@ function animate() {
     ctx.fillRect(0, 0, width, height);
     ctx.globalCompositeOperation = 'source-over';
   }
+
+  // Phantom code fragments — drawn under the node/trace layer
+  updatePhantoms();
+  drawPhantoms();
 
   // Scanner effect
   const scanWidth = 350;

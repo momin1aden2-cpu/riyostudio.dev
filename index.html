@@ -65,7 +65,7 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap">
 
   <!-- Styles -->
   <link rel="icon" type="image/png" href="assets/icon.png">
@@ -126,8 +126,8 @@
         Registered Australian Business · Western Australia
       </div>
 
-      <h1 class="reveal reveal-delay-1">
-        I build software that<br>solves <span class="accent">real problems.</span>
+      <h1 class="reveal reveal-delay-1" id="hero-title">
+        <span data-decode="I build software that">I build software that</span><br><span data-decode="solves real problems.">solves <span class="accent">real problems.</span></span><span class="cursor">_</span>
       </h1>
 
       <p class="hero-sub reveal reveal-delay-2">
@@ -161,7 +161,7 @@
     <div class="container">
       <div class="products-header">
         <div class="eyebrow reveal">Our Products</div>
-        <h2 class="reveal reveal-delay-1">Built from scratch. Shipped to real users.</h2>
+        <h2 class="reveal reveal-delay-1" data-decode-scroll="Built from scratch. Shipped to real users.">Built from scratch. Shipped to real users.</h2>
         <p class="reveal reveal-delay-2">
           Every product under Riyo Studio is designed, developed, and maintained end-to-end — from the first line of code to the live deployment.
         </p>
@@ -223,7 +223,7 @@
       <div class="about-grid">
         <div class="about-text">
           <div class="eyebrow reveal">About Riyo Studio</div>
-          <h2 class="reveal reveal-delay-1">
+          <h2 class="reveal reveal-delay-1" data-decode-scroll="A solo developer turning real-world problems into real products.">
             A solo developer turning real-world problems into real products.
           </h2>
           <p class="reveal reveal-delay-2">
@@ -303,7 +303,7 @@
     <div class="container">
       <div class="process-header">
         <div class="eyebrow reveal">How It Works</div>
-        <h2 class="reveal reveal-delay-1">From idea to live product.</h2>
+        <h2 class="reveal reveal-delay-1" data-decode-scroll="From idea to live product.">From idea to live product.</h2>
         <p class="reveal reveal-delay-2">
           Every Riyo Studio product follows the same disciplined approach — find a real problem, build the solution, ship it, and keep improving.
         </p>
@@ -430,6 +430,30 @@
       </div>
     </div>
   </footer>
+
+  <!-- Custom Cursor -->
+  <div class="custom-cursor-dot" id="cursor-dot"></div>
+  <div class="custom-cursor-ring" id="cursor-ring"></div>
+
+  <!-- Command Palette -->
+  <div class="cmd-palette-overlay" id="cmd-palette">
+    <div class="cmd-palette-modal">
+      <div class="cmd-palette-header">
+        <span class="cmd-prompt">></span>
+        <input type="text" id="cmd-input" placeholder="Type a command or search..." autocomplete="off">
+        <span class="cmd-shortcut">ESC</span>
+      </div>
+      <div class="cmd-palette-body">
+        <div class="cmd-group">Navigation</div>
+        <button class="cmd-option" data-action="scroll" data-target="#products">View Products</button>
+        <button class="cmd-option" data-action="scroll" data-target="#about">About Riyo Studio</button>
+        <button class="cmd-option" data-action="scroll" data-target="#contact">Get in Touch</button>
+        <div class="cmd-group">System</div>
+        <button class="cmd-option" data-action="diagnostics">Run Diagnostics</button>
+        <button class="cmd-option" data-action="matrix">Enter Matrix</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Scripts -->
   <script src="bg.js"></script>
