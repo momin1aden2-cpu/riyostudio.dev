@@ -129,7 +129,7 @@
       e.preventDefault();
 
       const formData = new FormData(contactForm);
-      submitBtn.textContent = 'Sending…';
+      submitBtn.textContent = '[ SENDING... ]';
       submitBtn.disabled = true;
       submitBtn.style.opacity = '0.6';
 
@@ -160,7 +160,7 @@
             'mailto:info@riyostudio.dev?subject=' + subject + '&body=' + body;
         })
         .finally(function () {
-          submitBtn.textContent = 'Send Message';
+          submitBtn.textContent = '[ SEND MESSAGE ]';
           submitBtn.disabled = false;
           submitBtn.style.opacity = '1';
         });

@@ -377,23 +377,45 @@
         </div>
 
         <div class="contact-form-wrap reveal reveal-delay-2">
-          <form id="contact-form" action="#" method="POST">
-            <div class="form-group">
-              <label for="contact-name">Your Name</label>
-              <input type="text" id="contact-name" name="name" class="form-input" placeholder="Name" required>
+          <form id="contact-form" action="https://api.web3forms.com/submit" method="POST" class="cyber-form">
+            <input type="hidden" name="access_key" value="YOUR_ACCESS_KEY_HERE">
+            <input type="hidden" name="subject" value="New Contact from RiyoStudio.dev">
+            <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
+
+            <div class="cyber-group">
+              <label class="cyber-label"><span class="accent">></span> Name</label>
+              <div class="cyber-input-wrap">
+                <input type="text" name="name" class="cyber-input" placeholder="_ type your name" required autocomplete="off">
+                <div class="cyber-border"></div>
+              </div>
             </div>
-            <div class="form-group">
-              <label for="contact-email">Email Address</label>
-              <input type="email" id="contact-email" name="email" class="form-input" placeholder="Email" required>
+
+            <div class="cyber-group">
+              <label class="cyber-label"><span class="accent">></span> Email Address</label>
+              <div class="cyber-input-wrap">
+                <input type="email" name="email" class="cyber-input" placeholder="_ type your email" required autocomplete="off">
+                <div class="cyber-border"></div>
+              </div>
             </div>
-            <div class="form-group">
-              <label for="contact-message">Message</label>
-              <textarea id="contact-message" name="message" class="form-input" placeholder="Message" required></textarea>
+
+            <div class="cyber-group">
+              <label class="cyber-label"><span class="accent">></span> Message</label>
+              <div class="cyber-input-wrap">
+                <textarea name="message" class="cyber-input" placeholder="_ type your message" required autocomplete="off"></textarea>
+                <div class="cyber-border"></div>
+              </div>
             </div>
-            <button type="submit" class="form-submit" id="form-submit-btn">Send Message</button>
+
+            <button type="submit" class="cyber-submit-btn" id="form-submit-btn">
+              [ SEND MESSAGE ]
+            </button>
           </form>
+
           <div class="form-success" id="form-success">
-            ✓ &nbsp;Message sent! I'll get back to you soon.
+            <div class="terminal-success">
+              <span class="status-code">[200 OK]</span> Payload delivered successfully.<br>
+              <span class="status-msg">> System will respond shortly.</span><span class="cursor">_</span>
+            </div>
           </div>
         </div>
       </div>
