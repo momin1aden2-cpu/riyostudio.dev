@@ -450,7 +450,7 @@
         if (h1) h1.innerHTML = `<span style="color:var(--shiftcore)">> SYS_CHECK OK. SECURITY A+.</span><span class="cursor">_</span>`;
         setTimeout(() => location.reload(), 2000);
       } else if (action === 'matrix') {
-        document.body.style.filter = 'hue-rotate(90deg) contrast(1.2)';
+        document.body.classList.toggle('matrix-mode');
       }
     }
     

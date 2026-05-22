@@ -1560,3 +1560,16 @@ a, button, input, textarea, .nav-brand {
     100% { background-position: 100% 100%; }
   }
 }
+
+/* Performant Matrix Easter Egg */
+body.matrix-mode {
+  --accent: #10B981;
+  --accent-glow: rgba(16, 185, 129, 0.3);
+  --accent-soft: rgba(16, 185, 129, 0.1);
+  --border: rgba(16, 185, 129, 0.2);
+  --border-hover: rgba(16, 185, 129, 0.5);
+}
+
+body.matrix-mode #quantum-field {
+  filter: hue-rotate(270deg) contrast(1.2) brightness(1.2);
+}
