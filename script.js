@@ -9,11 +9,14 @@
   // Terminal Preloader
   const bootSequence = document.getElementById('boot-sequence');
   if (bootSequence) {
-    window.addEventListener('load', () => {
+    const start = Date.now();
+    document.fonts.ready.then(() => {
+      const elapsed = Date.now() - start;
+      const remaining = Math.max(0, 600 - elapsed); // Ensure at least 600ms boot sequence
       setTimeout(() => {
         bootSequence.classList.add('done');
         setTimeout(() => bootSequence.remove(), 500);
-      }, 600); // 600ms boot sequence
+      }, remaining);
     });
   }
 
@@ -357,7 +360,9 @@
     function openCmdPalette() {
       cmdPalette.classList.add('active');
       cmdInput.value = '';
-      cmdInput.focus();
+      if (window.innerWidth > 768) {
+        cmdInput.focus();
+      }
       filterOptions('');
       document.body.style.overflow = 'hidden';
       // Reset cursor so they can see where they are clicking if needed
@@ -461,6 +466,8 @@
   let scrollVelocity = 0;
   
   window.addEventListener('scroll', () => {
+    if (window.innerWidth <= 768) return; // Disable on mobile to fix touch-inertia bugs
+
     // Calculate velocity
     const currentScrollY = window.scrollY;
     scrollVelocity = currentScrollY - lastScrollY;
