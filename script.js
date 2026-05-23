@@ -457,13 +457,6 @@
 
         // Deeper Health Checks
         const lastMod = new Date(document.lastModified);
-        const now = new Date();
-        const diffMs = Math.abs(now - lastMod);
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        const diffHrs = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        let uptimeStr = diffDays > 0 ? `${diffDays} Days, ${diffHrs} Hrs` : `${diffHrs} Hrs`;
-        if (diffDays === 0 && diffHrs === 0) uptimeStr = "< 1 Hour (JUST REBOOTED)";
-
         const memStr = (window.performance && window.performance.memory) ? Math.round(window.performance.memory.usedJSHeapSize / 1048576) + ' MB' : 'SECURE_RESTRICTED';
         const connStr = navigator.connection ? navigator.connection.effectiveType.toUpperCase() : 'SECURE_TUNNEL';
 
@@ -476,7 +469,7 @@
           ` `,
           `[ SERVER HEALTH (riyostudio.dev) ]`,
           `> Last Deployment Build: ${document.lastModified}`,
-          `> Continuous Uptime: ${uptimeStr}`,
+          `> Continuous Uptime: [ AWAITING EXTERNAL MONITOR API ]`,
           `> Active Connection: ${connStr}`,
           `> Memory Heap Usage: ${memStr}`,
           ` `,
