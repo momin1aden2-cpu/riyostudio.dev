@@ -78,14 +78,6 @@
         if (entry.isIntersecting) {
           entry.target.classList.add('visible');
           revealObserver.unobserve(entry.target);
-          
-          // Trigger decode if element has the attribute
-          if (entry.target.hasAttribute('data-decode-scroll')) {
-            // Add a small delay so the text has time to fade in before we scramble it
-            setTimeout(() => {
-              decodeText(entry.target);
-            }, 150);
-          }
         }
       });
     },
@@ -197,53 +189,6 @@
   });
 
   // -- Logic extensions --
-
-  // Text decode
-  const decodeElements = document.querySelectorAll('[data-decode]');
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
-  
-  function decodeText(element) {
-    const originalText = element.getAttribute('data-decode') || element.getAttribute('data-decode-scroll');
-    if (!originalText) return;
-    let iterations = 0;
-    const maxIterations = 15;
-    
-    const interval = setInterval(() => {
-      element.innerText = originalText.split('').map((letter, index) => {
-        if (index < iterations) {
-          return originalText[index];
-        }
-        if (letter === ' ') return ' ';
-        return chars[Math.floor(Math.random() * chars.length)];
-      }).join('');
-      
-      if (iterations >= originalText.length) {
-        clearInterval(interval);
-        // Ensure nested tags like <span class="accent"> aren't destroyed
-        // If the original had HTML, we'll restore it directly
-        if (element.innerHTML !== element.textContent) {
-          // This allows innerHTML restoration if needed, but our setup uses raw text in data-decode
-        }
-      }
-      iterations += 1;
-    }, 30);
-  }
-
-  // Trigger decode on load
-  setTimeout(() => {
-    decodeElements.forEach(el => decodeText(el));
-    
-    // Specifically handle the accent tag on the second span
-    const h1 = document.getElementById('hero-title');
-    if (h1) {
-      setTimeout(() => {
-        h1.innerHTML = `<span data-decode="I build software that">I build software that</span><br><span data-decode="solves real problems.">solves <span class="accent">real problems.</span></span><span class="cursor">_</span>`;
-      }, 1000); // Restore full HTML after decode finishes
-    }
-  }, 150);
-
-
-
   // Spotlight tracking
   const cards = document.querySelectorAll('.product-card, .about-card');
   cards.forEach(card => {
