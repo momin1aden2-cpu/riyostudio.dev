@@ -407,10 +407,77 @@
         `;
         setTimeout(() => location.reload(), 3000);
       } else if (action === 'diagnostics') {
-        // System diagnostic routine
-        const h1 = document.getElementById('hero-title');
-        if (h1) h1.innerHTML = `<span style="color:var(--shiftcore)">> SYS_CHECK OK. SECURITY A+.</span><span class="cursor">_</span>`;
-        setTimeout(() => location.reload(), 2000);
+        // Real System Diagnostic Routine
+        document.body.innerHTML = `
+          <div id="diag-overlay" style="height: 100vh; width: 100vw; display: flex; flex-direction: column; background: #000; color: #10B981; font-family: 'JetBrains Mono', monospace; font-size: clamp(14px, 3vw, 18px); padding: 40px; z-index: 999999; position: fixed; top: 0; left: 0; overflow-y: auto; text-align: left; box-sizing: border-box;">
+            <div id="diag-content"></div>
+            <div id="diag-cursor" style="margin-top: 10px;">> <span class="cursor">_</span></div>
+          </div>
+        `;
+        
+        const content = document.getElementById('diag-content');
+        
+        // Gather real stats
+        const domNodes = document.querySelectorAll('*').length;
+        let loadTimeStr = 'OPTIMIZED';
+        if (window.performance && window.performance.timing) {
+          const t = window.performance.timing;
+          const loadMs = t.domContentLoadedEventEnd - t.navigationStart;
+          if (loadMs > 0) loadTimeStr = loadMs + 'ms';
+        }
+        
+        const isSecure = window.isSecureContext ? 'VERIFIED' : 'UNVERIFIED';
+        const proto = location.protocol.toUpperCase().replace(':', '');
+        
+        // Bot Check Heuristics
+        const isBot = navigator.webdriver || /bot|googlebot|crawler|spider|robot|crawling/i.test(navigator.userAgent);
+        const botStatus = isBot ? '<span style="color:#ef4444">[WARNING] BOT_ACTIVITY_DETECTED</span>' : 'NEGATIVE (HUMAN_VERIFIED)';
+        
+        // Security Grade
+        const isHTTPS = location.protocol === 'https:' || location.hostname === 'localhost';
+        const securityGrade = (window.isSecureContext && isHTTPS) ? '<span style="color:#10B981">A+</span>' : '<span style="color:#f59e0b">B</span>';
+
+        const lines = [
+          `INITIATING LIVE SYSTEM DIAGNOSTIC...`,
+          `> Analyzing local execution environment...`,
+          `> User Agent: ${navigator.userAgent}`,
+          `> Screen Resolution: ${window.screen.width}x${window.screen.height}`,
+          ` `,
+          `[PERFORMANCE METRICS]`,
+          `> DOM Nodes Rendered: ${domNodes}`,
+          `> Scripts Active: ${document.scripts.length}`,
+          `> DOM Build Time: ${loadTimeStr}`,
+          `> Framerate Target: 60 FPS`,
+          ` `,
+          `[SECURITY AUDIT]`,
+          `> Protocol: ${proto}`,
+          `> Secure Context: ${isSecure}`,
+          `> Bot/Scraper Signature: ${botStatus}`,
+          ` `,
+          `> CALCULATING FINAL GRADE...`,
+          `> SYS_CHECK COMPLETE. SECURITY RATING: ${securityGrade}.`,
+          ` `,
+          `REBOOTING SYSTEM...`
+        ];
+
+        let lineIdx = 0;
+        const interval = setInterval(() => {
+          if (lineIdx < lines.length) {
+            const div = document.createElement('div');
+            div.innerHTML = lines[lineIdx];
+            div.style.marginBottom = "4px";
+            content.appendChild(div);
+            
+            // Auto scroll to bottom
+            const overlay = document.getElementById('diag-overlay');
+            overlay.scrollTop = overlay.scrollHeight;
+            
+            lineIdx++;
+          } else {
+            clearInterval(interval);
+            setTimeout(() => location.reload(), 2000);
+          }
+        }, 200);
       } else if (action === 'matrix') {
         const isMatrix = document.body.classList.toggle('matrix-mode');
         
