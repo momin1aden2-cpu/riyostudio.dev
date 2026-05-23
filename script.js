@@ -483,15 +483,27 @@
             if (cursorEl) cursorEl.style.display = 'none';
             
             const exitBtn = document.createElement('div');
-            exitBtn.innerHTML = '<br><span style="color:#ef4444; cursor:pointer; font-weight:bold;" id="diag-exit-btn">[ CLICK HERE TO CLOSE DIAGNOSTICS ]</span>';
+            exitBtn.innerHTML = '<br><span style="color:#ef4444; cursor:pointer; font-weight:bold;" id="diag-exit-btn">[ CLICK OR PRESS ENTER TO CLOSE DIAGNOSTICS ]</span>';
             content.appendChild(exitBtn);
             
             const overlay = document.getElementById('diag-overlay');
             overlay.scrollTop = overlay.scrollHeight;
             
-            document.getElementById('diag-exit-btn').addEventListener('click', () => {
-              overlay.remove();
-            });
+            const closeDiag = () => {
+              if (document.getElementById('diag-overlay')) {
+                overlay.remove();
+              }
+              document.removeEventListener('keydown', keyHandler);
+            };
+
+            const keyHandler = (e) => {
+              if (e.key === 'Enter' || e.key === 'Escape') {
+                closeDiag();
+              }
+            };
+            
+            document.getElementById('diag-exit-btn').addEventListener('click', closeDiag);
+            document.addEventListener('keydown', keyHandler);
           }
         }, 200);
       } else if (action === 'matrix') {
