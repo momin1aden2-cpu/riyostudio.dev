@@ -416,6 +416,9 @@
         
         // Matrix scramble effect
         if (isMatrix) {
+          // Disable text scrambling on mobile to prevent layout thrashing
+          if (window.innerWidth <= 768) return;
+
           const scrambleTargets = document.querySelectorAll('h2, p, .cyber-label, .btn-text, .product-card h3');
           const mChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
           
