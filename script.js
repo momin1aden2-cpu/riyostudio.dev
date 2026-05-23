@@ -8,7 +8,7 @@
 
   // 1. The F12 Console Greeting (Dev Flex)
   console.log(
-    "%c RIYO STUDIO \n%c System Architecture Online. \n\n Looking under the hood? I respect that. \n Try pressing Ctrl+K and typing 'matrix'.",
+    "%c RIYO STUDIO \n%c System Architecture Online. \n\n Looking under the hood? I respect that. \n Try pressing Ctrl+K and typing 'sudo'.",
     "font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 800; color: #10B981; text-shadow: 0 0 10px rgba(16,185,129,0.5);",
     "font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #A1A1AA;"
   );
