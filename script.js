@@ -399,6 +399,7 @@
           window.scrollTo({ top: targetPos, behavior: 'smooth' });
         }
       } else if (action === 'sudo') {
+        closeCmd();
         const h1 = document.getElementById('hero-title');
         if (h1) h1.innerHTML = `<span style="color:#ef4444">> PERMISSION DENIED.</span><br><span style="font-size:0.6em; color:var(--text-dim)">This incident will be reported.</span><span class="cursor">_</span>`;
         setTimeout(() => location.reload(), 3000);
