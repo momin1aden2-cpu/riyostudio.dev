@@ -261,9 +261,23 @@ document.addEventListener('visibilitychange', () => {
   isCanvasPaused = document.hidden;
 });
 
+// FPS Tracking
+let lastTime = performance.now();
+let frames = 0;
+const fpsCounter = document.getElementById('fps-counter');
+
 function animate() {
   requestAnimationFrame(animate);
   if (isCanvasPaused) return;
+
+  // Calculate live FPS
+  const now = performance.now();
+  frames++;
+  if (now >= lastTime + 1000) {
+    if (fpsCounter) fpsCounter.innerText = `${frames} FPS`;
+    frames = 0;
+    lastTime = now;
+  }
 
   // Render Digital Rain if Matrix Mode is active
   if (document.body.classList.contains('matrix-mode')) {

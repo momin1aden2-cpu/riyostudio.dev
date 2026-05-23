@@ -6,6 +6,15 @@
 (function () {
   'use strict';
 
+  // 1. The F12 Console Greeting (Dev Flex)
+  console.log(
+    "%c RIYO STUDIO \n%c System Architecture Online. \n\n Looking under the hood? I respect that. \n Try pressing Ctrl+K and typing 'matrix'.",
+    "font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 800; color: #10B981; text-shadow: 0 0 10px rgba(16,185,129,0.5);",
+    "font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #A1A1AA;"
+  );
+
+
+
   // Terminal Preloader
   const bootSequence = document.getElementById('boot-sequence');
   if (bootSequence) {
@@ -389,6 +398,10 @@
           const targetPos = targetEl.getBoundingClientRect().top + window.scrollY - navHeight;
           window.scrollTo({ top: targetPos, behavior: 'smooth' });
         }
+      } else if (action === 'sudo') {
+        const h1 = document.getElementById('hero-title');
+        if (h1) h1.innerHTML = `<span style="color:#ef4444">> PERMISSION DENIED.</span><br><span style="font-size:0.6em; color:var(--text-dim)">This incident will be reported.</span><span class="cursor">_</span>`;
+        setTimeout(() => location.reload(), 3000);
       } else if (action === 'diagnostics') {
         // System diagnostic routine
         const h1 = document.getElementById('hero-title');

@@ -1,4 +1,20 @@
 <!DOCTYPE html>
+<!-- 
+=============================================================================
+  ██████╗ ██╗██╗   ██╗ ██████╗     ███████╗████████╗██╗   ██╗██████╗ ██╗ ██████╗ 
+  ██╔══██╗██║╚██╗ ██╔╝██╔═══██╗    ██╔════╝╚══██╔══╝██║   ██║██╔══██╗██║██╔═══██╗
+  ██████╔╝██║ ╚████╔╝ ██║   ██║    ███████╗   ██║   ██║   ██║██║  ██║██║██║   ██║
+  ██╔══██╗██║  ╚██╔╝  ██║   ██║    ╚════██║   ██║   ██║   ██║██║  ██║██║██║   ██║
+  ██║  ██║██║   ██║   ╚██████╔╝    ███████║   ██║   ╚██████╔╝██████╔╝██║╚██████╔╝
+  ╚═╝  ╚═╝╚═╝   ╚═╝    ╚═════╝     ╚══════╝   ╚═╝    ╚═════╝ ╚═════╝ ╚═╝ ╚═════╝ 
+
+  SYSTEM ARCHITECTURE: ONLINE
+  "I see you looking under the hood. Respect."
+
+  Looking for more? 
+  Try pressing Ctrl+K on the live site.
+=============================================================================
+-->
 <html lang="en-AU">
 <head>
   <meta charset="UTF-8">
@@ -465,6 +481,12 @@
     </div>
   </footer>
 
+  <!-- Dev's Dev: Live Performance HUD -->
+  <div id="perf-hud" aria-hidden="true">
+    <span class="perf-label">SYS_PERF:</span>
+    <span id="fps-counter">60 FPS</span>
+  </div>
+
   <!-- Custom Cursor -->
   <div class="custom-cursor-dot" id="cursor-dot"></div>
   <div class="custom-cursor-ring" id="cursor-ring"></div>
@@ -482,9 +504,12 @@
         <button class="cmd-option" data-action="scroll" data-target="#products">View Products</button>
         <button class="cmd-option" data-action="scroll" data-target="#about">About Riyo Studio</button>
         <button class="cmd-option" data-action="scroll" data-target="#contact">Get in Touch</button>
-        <div class="cmd-group">System</div>
+      </div>
+      <div class="cmd-group">
+        <div class="cmd-group-label">System Admin</div>
         <button class="cmd-option" data-action="diagnostics">Run Diagnostics</button>
         <button class="cmd-option" data-action="matrix">Enter Matrix</button>
+        <button class="cmd-option" data-action="sudo">Execute Sudo</button>
       </div>
     </div>
   </div>

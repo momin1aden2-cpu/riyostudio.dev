@@ -1605,6 +1605,86 @@ a, button, input, textarea, .nav-brand {
 }
 
 /* =====================================================================
+   System HUD & Easter Eggs
+   ===================================================================== */
+#perf-hud {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  z-index: 9999;
+  pointer-events: none;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  transition: opacity 0.3s var(--ease);
+}
+
+#perf-hud .perf-label {
+  color: var(--text-muted);
+}
+
+#fps-counter {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* =====================================================================
+   DEV'S DEV: HTML SOURCE GLITCH HOVER
+   ===================================================================== */
+.glitch-hover {
+  transition: all 0.2s ease;
+}
+
+.glitch-hover:hover {
+  animation: cyber-glitch-skew 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  text-shadow: 
+    -2px 0 #ff00c1, 
+    2px 2px #00fff9;
+}
+
+@keyframes cyber-glitch-skew {
+  0% { transform: skew(0deg); }
+  20% { transform: skew(-10deg); }
+  40% { transform: skew(10deg); }
+  60% { transform: skew(-5deg); }
+  80% { transform: skew(5deg); }
+  100% { transform: skew(0deg); }
+}
+
+/* =====================================================================
+   KONAMI CODE SUPERNOVA EASTER EGG
+   ===================================================================== */
+html.supernova {
+  animation: supernova-hue 5s linear infinite;
+  filter: invert(1) contrast(1.5) saturate(2);
+}
+
+html.supernova body {
+  animation: supernova-spin 10s linear infinite;
+}
+
+@keyframes supernova-spin {
+  0% { transform: perspective(1000px) rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+  50% { transform: perspective(1000px) rotateX(180deg) rotateY(90deg) rotateZ(180deg) scale(0.8); }
+  100% { transform: perspective(1000px) rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
+}
+
+@keyframes supernova-hue {
+  0% { filter: invert(1) hue-rotate(0deg); }
+  100% { filter: invert(1) hue-rotate(360deg); }
+}
+
+/* =====================================================================
    Matrix Theme
    ===================================================================== */
 body.matrix-mode {
