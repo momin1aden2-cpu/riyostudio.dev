@@ -455,6 +455,28 @@
             if (hitEl) hitEl.innerText = hitCountStr;
           });
 
+        let uptimeDataStr = 'FETCHING...';
+        fetch('/api/uptime')
+          .then(res => res.json())
+          .then(data => {
+            if (data.status) {
+              const ratio = data.uptimeRatio !== "N/A" ? ` (${data.uptimeRatio}% 30-Day)` : '';
+              uptimeDataStr = `${data.status}${ratio}`;
+            } else if (data.error && data.error.includes("SERVER_UNCONFIGURED")) {
+              uptimeDataStr = '[ AWAITING API KEY IN CLOUDFLARE ]';
+            } else {
+              uptimeDataStr = '[ UPTIME FETCH FAILED ]';
+            }
+            
+            const upEl = document.getElementById('diag-uptime-val');
+            if (upEl) upEl.innerText = uptimeDataStr;
+          })
+          .catch(() => {
+            uptimeDataStr = '[ LOCAL DEV / PROXY OFFLINE ]';
+            const upEl = document.getElementById('diag-uptime-val');
+            if (upEl) upEl.innerText = uptimeDataStr;
+          });
+
         // Deeper Health Checks
         const lastMod = new Date(document.lastModified);
         const memStr = (window.performance && window.performance.memory) ? Math.round(window.performance.memory.usedJSHeapSize / 1048576) + ' MB' : 'SECURE_RESTRICTED';
@@ -469,7 +491,7 @@
           ` `,
           `[ SERVER HEALTH (riyostudio.dev) ]`,
           `> Last Deployment Build: ${document.lastModified}`,
-          `> Continuous Uptime: [ AWAITING EXTERNAL MONITOR API ]`,
+          `> Server Status: <span id="diag-uptime-val">${uptimeDataStr}</span>`,
           `> Active Connection: ${connStr}`,
           `> Memory Heap Usage: ${memStr}`,
           ` `,
