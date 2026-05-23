@@ -446,13 +446,17 @@
             if (data && data.count) hitCountStr = data.count.toLocaleString();
             else hitCountStr = 'UNAVAILABLE';
             
-            const hitEl = document.getElementById('diag-hit-count');
-            if (hitEl) hitEl.innerText = hitCountStr;
+            const updateUI = setInterval(() => {
+              const el = document.getElementById('diag-hit-count');
+              if (el) { el.innerText = hitCountStr; clearInterval(updateUI); }
+            }, 50);
           })
           .catch(() => {
             hitCountStr = 'OFFLINE';
-            const hitEl = document.getElementById('diag-hit-count');
-            if (hitEl) hitEl.innerText = hitCountStr;
+            const updateUI = setInterval(() => {
+              const el = document.getElementById('diag-hit-count');
+              if (el) { el.innerText = hitCountStr; clearInterval(updateUI); }
+            }, 50);
           });
 
         let uptimeDataStr = 'FETCHING...';
@@ -468,13 +472,17 @@
               uptimeDataStr = '[ UPTIME FETCH FAILED ]';
             }
             
-            const upEl = document.getElementById('diag-uptime-val');
-            if (upEl) upEl.innerText = uptimeDataStr;
+            const updateUI = setInterval(() => {
+              const el = document.getElementById('diag-uptime-val');
+              if (el) { el.innerText = uptimeDataStr; clearInterval(updateUI); }
+            }, 50);
           })
           .catch(() => {
             uptimeDataStr = '[ LOCAL DEV / PROXY OFFLINE ]';
-            const upEl = document.getElementById('diag-uptime-val');
-            if (upEl) upEl.innerText = uptimeDataStr;
+            const updateUI = setInterval(() => {
+              const el = document.getElementById('diag-uptime-val');
+              if (el) { el.innerText = uptimeDataStr; clearInterval(updateUI); }
+            }, 50);
           });
 
         // Deeper Health Checks
