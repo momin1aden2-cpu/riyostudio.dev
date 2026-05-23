@@ -399,8 +399,12 @@
           window.scrollTo({ top: targetPos, behavior: 'smooth' });
         }
       } else if (action === 'sudo') {
-        const h1 = document.getElementById('hero-title');
-        if (h1) h1.innerHTML = `<span style="color:#ef4444">> PERMISSION DENIED.</span><br><span style="font-size:0.6em; color:var(--text-dim)">This incident will be reported.</span><span class="cursor">_</span>`;
+        document.body.innerHTML = `
+          <div style="height: 100vh; width: 100vw; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; color: #ef4444; font-family: 'JetBrains Mono', monospace; font-size: clamp(24px, 5vw, 48px); font-weight: bold; text-align: center; padding: 20px; z-index: 999999; position: fixed; top: 0; left: 0;">
+            <div>> PERMISSION DENIED.</div>
+            <div style="font-size: 0.5em; color: #52525B; margin-top: 10px;">This incident will be reported. <span class="cursor">_</span></div>
+          </div>
+        `;
         setTimeout(() => location.reload(), 3000);
       } else if (action === 'diagnostics') {
         // System diagnostic routine
