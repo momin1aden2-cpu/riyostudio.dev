@@ -293,7 +293,7 @@
   if (cmdPalette) {
     // Open on Ctrl+K or Cmd+K
     document.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         openCmdPalette();
       }
