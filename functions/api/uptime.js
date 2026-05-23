@@ -12,7 +12,9 @@ export async function onRequestGet(context) {
   const payload = {
     api_key: apiKey,
     format: "json",
-    custom_uptime_ratios: "30" // Get 30-day uptime ratio
+    custom_uptime_ratios: "30", // Get 30-day uptime ratio
+    response_times: 1,
+    logs: 1
   };
 
   try {
@@ -38,7 +40,10 @@ export async function onRequestGet(context) {
 
       const safeData = {
         status: statusStr,
-        uptimeRatio: monitor.custom_uptime_ratio || "N/A"
+        uptimeRatio: monitor.custom_uptime_ratio || "N/A",
+        averagePing: monitor.average_response_time ? Math.round(parseFloat(monitor.average_response_time)) + 'ms' : 'UNKNOWN',
+        latestPing: (monitor.response_times && monitor.response_times.length > 0) ? monitor.response_times[0].value + 'ms' : 'UNKNOWN',
+        logsCount: (monitor.logs) ? monitor.logs.length : 0
       };
       
       return new Response(JSON.stringify(safeData), {
