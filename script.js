@@ -408,12 +408,14 @@
         setTimeout(() => location.reload(), 3000);
       } else if (action === 'diagnostics') {
         // Real System Diagnostic Routine
-        document.body.innerHTML = `
-          <div id="diag-overlay" style="height: 100vh; width: 100vw; display: flex; flex-direction: column; background: #000; color: #10B981; font-family: 'JetBrains Mono', monospace; font-size: clamp(14px, 3vw, 18px); padding: 40px; z-index: 999999; position: fixed; top: 0; left: 0; overflow-y: auto; text-align: left; box-sizing: border-box;">
-            <div id="diag-content"></div>
-            <div id="diag-cursor" style="margin-top: 10px;">> <span class="cursor">_</span></div>
-          </div>
+        const diagContainer = document.createElement('div');
+        diagContainer.id = 'diag-overlay';
+        diagContainer.style.cssText = "height: 100dvh; width: 100vw; display: flex; flex-direction: column; background: #000; color: #10B981; font-family: 'JetBrains Mono', monospace; font-size: clamp(12px, 3vw, 18px); padding: clamp(20px, 5vw, 40px); z-index: 999999; position: fixed; top: 0; left: 0; overflow-y: auto; overflow-x: hidden; text-align: left; box-sizing: border-box; cursor: crosshair;";
+        diagContainer.innerHTML = `
+          <div id="diag-content"></div>
+          <div id="diag-cursor" style="margin-top: 10px;">> <span class="cursor">_</span></div>
         `;
+        document.body.appendChild(diagContainer);
         
         const content = document.getElementById('diag-content');
         
@@ -475,7 +477,21 @@
             lineIdx++;
           } else {
             clearInterval(interval);
-            setTimeout(() => location.reload(), 2000);
+            
+            // Stop blinking cursor, add exit button
+            const cursorEl = document.getElementById('diag-cursor');
+            if (cursorEl) cursorEl.style.display = 'none';
+            
+            const exitBtn = document.createElement('div');
+            exitBtn.innerHTML = '<br><span style="color:#ef4444; cursor:pointer; font-weight:bold;" id="diag-exit-btn">[ CLICK HERE TO CLOSE DIAGNOSTICS ]</span>';
+            content.appendChild(exitBtn);
+            
+            const overlay = document.getElementById('diag-overlay');
+            overlay.scrollTop = overlay.scrollHeight;
+            
+            document.getElementById('diag-exit-btn').addEventListener('click', () => {
+              overlay.remove();
+            });
           }
         }, 200);
       } else if (action === 'matrix') {
