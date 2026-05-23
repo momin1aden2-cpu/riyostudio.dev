@@ -439,6 +439,22 @@
         const isHTTPS = location.protocol === 'https:' || location.hostname === 'localhost';
         const securityGrade = (window.isSecureContext && isHTTPS) ? '<span style="color:#10B981">A+</span>' : '<span style="color:#f59e0b">B</span>';
 
+        let hitCountStr = 'FETCHING...';
+        fetch('https://api.counterapi.dev/v1/riyostudio/hits/up')
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.count) hitCountStr = data.count.toLocaleString();
+            else hitCountStr = 'UNAVAILABLE';
+            
+            const hitEl = document.getElementById('diag-hit-count');
+            if (hitEl) hitEl.innerText = hitCountStr;
+          })
+          .catch(() => {
+            hitCountStr = 'OFFLINE';
+            const hitEl = document.getElementById('diag-hit-count');
+            if (hitEl) hitEl.innerText = hitCountStr;
+          });
+
         const lines = [
           `INITIATING LIVE SYSTEM DIAGNOSTIC...`,
           `> Analyzing local execution environment...`,
@@ -456,10 +472,13 @@
           `> Secure Context: ${isSecure}`,
           `> Bot/Scraper Signature: ${botStatus}`,
           ` `,
+          `[GLOBAL TRAFFIC]`,
+          `> TOTAL SYSTEM QUERIES: <span id="diag-hit-count">${hitCountStr}</span>`,
+          ` `,
           `> CALCULATING FINAL GRADE...`,
           `> SYS_CHECK COMPLETE. SECURITY RATING: ${securityGrade}.`,
           ` `,
-          `REBOOTING SYSTEM...`
+          `DIAGNOSTIC FINISHED.`
         ];
 
         let lineIdx = 0;
