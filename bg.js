@@ -6,7 +6,14 @@
   if (!canvas) return; // Null check for safety
   const ctx = canvas.getContext('2d', { alpha: false });
 
-// -- Phantom Code Layer --------------------------------------------------
+  // Matrix Digital Rain properties
+  const matrixChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ'.split('');
+  const fontSize = 16;
+  let columns = 0;
+  let drops = [];
+  let dropSpeeds = [];
+
+  // -- Phantom Code Layer --------------------------------------------------
 // Code fragment pool: real-looking JS / CSS / HTML / terminal snippets
 const CODE_FRAGMENTS = [
   // JavaScript
@@ -155,11 +162,18 @@ const nodes = [];
 const nodeCount = 150; 
 
 function resize() {
-  if (window.innerWidth === lastWidth && width !== undefined) return;
-  lastWidth = window.innerWidth;
   width = canvas.width = window.innerWidth;
-  height = canvas.height = window.innerHeight + 100;
+  height = canvas.height = window.innerHeight;
   initNodes();
+  
+  // Recalculate Matrix columns
+  columns = Math.floor(width / fontSize) + 1;
+  drops = [];
+  dropSpeeds = [];
+  for (let x = 0; x < columns; x++) {
+    drops[x] = Math.random() * -100; // Start off-screen
+    dropSpeeds[x] = Math.random() * 0.5 + 0.5; // Random speed between 0.5 and 1.0
+  }
 }
 window.addEventListener('resize', resize);
 
@@ -250,6 +264,37 @@ document.addEventListener('visibilitychange', () => {
 function animate() {
   requestAnimationFrame(animate);
   if (isCanvasPaused) return;
+
+  // Render Digital Rain if Matrix Mode is active
+  if (document.body.classList.contains('matrix-mode')) {
+    ctx.fillStyle = 'rgba(6, 11, 20, 0.15)';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.font = fontSize + 'px "JetBrains Mono", monospace';
+    
+    for (let i = 0; i < drops.length; i++) {
+      const text = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+      
+      const isHead = Math.random() > 0.95;
+      
+      ctx.shadowBlur = isHead ? 15 : 0;
+      ctx.shadowColor = '#10B981';
+      ctx.fillStyle = isHead ? '#FFF' : '#10B981';
+      
+      ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+      ctx.shadowBlur = 0;
+
+      if (drops[i] * fontSize > height && Math.random() > 0.975) {
+        drops[i] = 0;
+        dropSpeeds[i] = Math.random() * 0.5 + 0.5;
+      }
+      
+      drops[i] += dropSpeeds[i];
+    }
+    return;
+  }
+
+  // Standard Logic Grid rendering
   time += 0.008;
 
   // Decay mouse speed

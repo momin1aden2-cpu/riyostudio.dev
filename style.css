@@ -1602,15 +1602,72 @@ a, button, input, textarea, .nav-brand {
   }
 }
 
-/* Performant Matrix Easter Egg */
+/* =====================================================================
+   Matrix Theme
+   ===================================================================== */
 body.matrix-mode {
   --accent: #10B981;
-  --accent-glow: rgba(16, 185, 129, 0.3);
-  --accent-soft: rgba(16, 185, 129, 0.1);
-  --border: rgba(16, 185, 129, 0.2);
-  --border-hover: rgba(16, 185, 129, 0.5);
+  --accent-glow: rgba(16, 185, 129, 0.4);
+  --accent-soft: rgba(16, 185, 129, 0.15);
+  --border: rgba(16, 185, 129, 0.3);
+  --border-hover: rgba(16, 185, 129, 0.6);
+  --text: #D1FAE5; /* Mint green text */
+  --text-dim: #6EE7B7;
+  --bg-main: #000000;
+  --bg-card: rgba(0, 5, 0, 0.9);
 }
 
-body.matrix-mode #quantum-field {
-  filter: hue-rotate(270deg) contrast(1.2) brightness(1.2);
+/* Typography */
+body.matrix-mode, 
+body.matrix-mode h1, 
+body.matrix-mode h2, 
+body.matrix-mode h3, 
+body.matrix-mode p, 
+body.matrix-mode a, 
+body.matrix-mode button, 
+body.matrix-mode input, 
+body.matrix-mode textarea {
+  font-family: 'JetBrains Mono', monospace !important;
+  text-transform: uppercase;
+}
+
+/* CRT Overlay */
+body.matrix-mode::before {
+  content: " ";
+  display: block;
+  position: fixed;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: radial-gradient(circle at center, transparent 50%, rgba(0,2,0,0.85) 100%);
+  z-index: 9997;
+  pointer-events: none;
+}
+
+body.matrix-mode::after {
+  content: " ";
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  z-index: 9998;
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+  animation: flicker 0.15s infinite;
+}
+
+@keyframes flicker {
+  0% { opacity: 0.95; }
+  50% { opacity: 0.85; }
+  100% { opacity: 0.95; }
+}
+
+/* Force elements under the overlay */
+body.matrix-mode .nav, 
+body.matrix-mode .container, 
+body.matrix-mode #boot-sequence,
+body.matrix-mode .cmd-palette-wrap {
+  position: relative;
+  z-index: 9999;
 }

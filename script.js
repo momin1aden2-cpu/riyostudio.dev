@@ -450,7 +450,60 @@
         if (h1) h1.innerHTML = `<span style="color:var(--shiftcore)">> SYS_CHECK OK. SECURITY A+.</span><span class="cursor">_</span>`;
         setTimeout(() => location.reload(), 2000);
       } else if (action === 'matrix') {
-        document.body.classList.toggle('matrix-mode');
+        const isMatrix = document.body.classList.toggle('matrix-mode');
+        
+        // Matrix scramble effect
+        if (isMatrix) {
+          const scrambleTargets = document.querySelectorAll('h2, p, .cyber-label, .btn-text, .product-card h3');
+          const mChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
+          
+          window.matrixObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+              if (entry.isIntersecting && document.body.classList.contains('matrix-mode')) {
+                const el = entry.target;
+                
+                if (el.children.length > 0 && !el.classList.contains('cyber-label')) return;
+                if (el.dataset.matrixScrambling === "true") return;
+                
+                el.dataset.matrixScrambling = "true";
+                
+                if (!el.dataset.matrixOriginal) {
+                  el.dataset.matrixOriginal = el.innerText;
+                }
+                const originalText = el.dataset.matrixOriginal;
+                if (!originalText || originalText.trim() === '') return;
+                
+                let iterations = 0;
+                const maxIterations = originalText.length;
+                
+                const interval = setInterval(() => {
+                  el.innerText = originalText.split('').map((char, index) => {
+                    if (index < iterations) return originalText[index];
+                    if (char === ' ' || char === '\n') return char;
+                    return mChars[Math.floor(Math.random() * mChars.length)];
+                  }).join('');
+                  
+                  if (iterations >= maxIterations) {
+                    clearInterval(interval);
+                    el.dataset.matrixScrambling = "false";
+                  }
+                  iterations += 1;
+                }, 15);
+              }
+            });
+          }, { threshold: 0.1 });
+
+          scrambleTargets.forEach(el => window.matrixObserver.observe(el));
+        } else {
+          // Disable Matrix Mode safely
+          if (window.matrixObserver) {
+            window.matrixObserver.disconnect();
+            document.querySelectorAll('[data-matrix-original]').forEach(el => {
+              el.innerText = el.dataset.matrixOriginal;
+              delete el.dataset.matrixScrambling;
+            });
+          }
+        }
       }
     }
     
