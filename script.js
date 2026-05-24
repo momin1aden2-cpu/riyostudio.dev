@@ -451,45 +451,58 @@
 
         let uptimeDataStr = 'FETCHING...';
         let pingStr = 'FETCHING...';
-        
-        fetch('/api/uptime')
-          .then(res => res.json())
-          .then(data => {
-            if (data.status) {
-              const ratio = data.uptimeRatio !== "N/A" ? ` (${data.uptimeRatio}% 30-Day)` : '';
-              uptimeDataStr = `${data.status}${ratio}`;
-              pingStr = `${data.latestPing} (Avg: ${data.averagePing})`;
-            } else if (data.error && data.error.includes("SERVER_UNCONFIGURED")) {
-              uptimeDataStr = '[ AWAITING API KEY IN CLOUDFLARE ]';
-              pingStr = '[ AWAITING API KEY IN CLOUDFLARE ]';
-            } else {
-              uptimeDataStr = '[ UPTIME FETCH FAILED ]';
-              pingStr = 'UNAVAILABLE';
+        if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+          uptimeDataStr = '[ LOCAL DEV / PROXY OFFLINE ]';
+          pingStr = 'UNAVAILABLE';
+          const updateUI = setInterval(() => {
+            const el = document.getElementById('diag-uptime-val');
+            const pel = document.getElementById('diag-ping-val');
+            if (el && pel) { 
+              el.innerText = uptimeDataStr; 
+              pel.innerText = pingStr;
+              clearInterval(updateUI); 
             }
-            
-            const updateUI = setInterval(() => {
-              const el = document.getElementById('diag-uptime-val');
-              const pel = document.getElementById('diag-ping-val');
-              if (el && pel) { 
-                el.innerText = uptimeDataStr; 
-                pel.innerText = pingStr;
-                clearInterval(updateUI); 
+          }, 50);
+        } else {
+          fetch('/api/uptime')
+            .then(res => res.json())
+            .then(data => {
+              if (data.status) {
+                const ratio = data.uptimeRatio !== "N/A" ? ` (${data.uptimeRatio}% 30-Day)` : '';
+                uptimeDataStr = `${data.status}${ratio}`;
+                pingStr = `${data.latestPing} (Avg: ${data.averagePing})`;
+              } else if (data.error && data.error.includes("SERVER_UNCONFIGURED")) {
+                uptimeDataStr = '[ AWAITING API KEY IN CLOUDFLARE ]';
+                pingStr = '[ AWAITING API KEY IN CLOUDFLARE ]';
+              } else {
+                uptimeDataStr = '[ UPTIME FETCH FAILED ]';
+                pingStr = 'UNAVAILABLE';
               }
-            }, 50);
-          })
-          .catch(() => {
-            uptimeDataStr = '[ LOCAL DEV / PROXY OFFLINE ]';
-            pingStr = 'UNAVAILABLE';
-            const updateUI = setInterval(() => {
-              const el = document.getElementById('diag-uptime-val');
-              const pel = document.getElementById('diag-ping-val');
-              if (el && pel) { 
-                el.innerText = uptimeDataStr; 
-                pel.innerText = pingStr;
-                clearInterval(updateUI); 
-              }
-            }, 50);
-          });
+              
+              const updateUI = setInterval(() => {
+                const el = document.getElementById('diag-uptime-val');
+                const pel = document.getElementById('diag-ping-val');
+                if (el && pel) { 
+                  el.innerText = uptimeDataStr; 
+                  pel.innerText = pingStr;
+                  clearInterval(updateUI); 
+                }
+              }, 50);
+            })
+            .catch(() => {
+              uptimeDataStr = '[ LOCAL DEV / PROXY OFFLINE ]';
+              pingStr = 'UNAVAILABLE';
+              const updateUI = setInterval(() => {
+                const el = document.getElementById('diag-uptime-val');
+                const pel = document.getElementById('diag-ping-val');
+                if (el && pel) { 
+                  el.innerText = uptimeDataStr; 
+                  pel.innerText = pingStr;
+                  clearInterval(updateUI); 
+                }
+              }, 50);
+            });
+        }
 
         const memStr = (window.performance && window.performance.memory) ? Math.round(window.performance.memory.usedJSHeapSize / 1048576) + ' MB' : 'SECURE_RESTRICTED';
         const connStr = navigator.connection ? navigator.connection.effectiveType.toUpperCase() : 'SECURE_TUNNEL';
