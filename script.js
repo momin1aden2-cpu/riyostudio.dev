@@ -401,6 +401,286 @@
         selectedIndex = index;
       }
     }
+    window.runSystemDiagnostics = function() {
+        const diagContainer = document.createElement('div');
+        diagContainer.id = 'diag-overlay';
+        diagContainer.style.cssText = "height: 100dvh; width: 100vw; display: flex; flex-direction: column; background: #000; color: #10B981; font-family: 'JetBrains Mono', monospace; font-size: clamp(12px, 3vw, 18px); padding: clamp(20px, 5vw, 40px); z-index: 999999; position: fixed; top: 0; left: 0; overflow-y: auto; overflow-x: hidden; text-align: left; box-sizing: border-box; cursor: crosshair;";
+        diagContainer.innerHTML = `
+          <div id="diag-content"></div>
+          <div id="diag-cursor" style="margin-top: 10px;">> <span class="cursor">_</span></div>
+        `;
+        document.body.appendChild(diagContainer);
+        
+        const content = document.getElementById('diag-content');
+        
+        const domNodes = document.querySelectorAll('*').length;
+        let loadTimeStr = 'OPTIMIZED';
+        if (window.performance && window.performance.timing) {
+          const t = window.performance.timing;
+          const loadMs = t.domContentLoadedEventEnd - t.navigationStart;
+          if (loadMs > 0) loadTimeStr = loadMs + 'ms';
+        }
+        
+        const isSecure = window.isSecureContext ? 'VERIFIED' : 'UNVERIFIED';
+        const proto = location.protocol.toUpperCase().replace(':', '');
+        
+        const isBot = navigator.webdriver || /bot|googlebot|crawler|spider|robot|crawling/i.test(navigator.userAgent);
+        const botStatus = isBot ? '<span style="color:#ef4444">[WARNING] BOT_ACTIVITY_DETECTED</span>' : 'NEGATIVE (HUMAN_VERIFIED)';
+        
+        const isHTTPS = location.protocol === 'https:' || location.hostname === 'localhost';
+
+        let hitCountStr = 'FETCHING...';
+        fetch('https://api.counterapi.dev/v1/riyostudio/hits/up')
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.count) hitCountStr = data.count.toLocaleString();
+            else hitCountStr = 'UNAVAILABLE';
+            
+            const updateUI = setInterval(() => {
+              const el = document.getElementById('diag-hit-count');
+              if (el) { el.innerText = hitCountStr; clearInterval(updateUI); }
+            }, 50);
+          })
+          .catch(() => {
+            hitCountStr = 'OFFLINE';
+            const updateUI = setInterval(() => {
+              const el = document.getElementById('diag-hit-count');
+              if (el) { el.innerText = hitCountStr; clearInterval(updateUI); }
+            }, 50);
+          });
+
+        let uptimeDataStr = 'FETCHING...';
+        let pingStr = 'FETCHING...';
+        
+        fetch('/api/uptime')
+          .then(res => res.json())
+          .then(data => {
+            if (data.status) {
+              const ratio = data.uptimeRatio !== "N/A" ? ` (${data.uptimeRatio}% 30-Day)` : '';
+              uptimeDataStr = `${data.status}${ratio}`;
+              pingStr = `${data.latestPing} (Avg: ${data.averagePing})`;
+            } else if (data.error && data.error.includes("SERVER_UNCONFIGURED")) {
+              uptimeDataStr = '[ AWAITING API KEY IN CLOUDFLARE ]';
+              pingStr = '[ AWAITING API KEY IN CLOUDFLARE ]';
+            } else {
+              uptimeDataStr = '[ UPTIME FETCH FAILED ]';
+              pingStr = 'UNAVAILABLE';
+            }
+            
+            const updateUI = setInterval(() => {
+              const el = document.getElementById('diag-uptime-val');
+              const pel = document.getElementById('diag-ping-val');
+              if (el && pel) { 
+                el.innerText = uptimeDataStr; 
+                pel.innerText = pingStr;
+                clearInterval(updateUI); 
+              }
+            }, 50);
+          })
+          .catch(() => {
+            uptimeDataStr = '[ LOCAL DEV / PROXY OFFLINE ]';
+            pingStr = 'UNAVAILABLE';
+            const updateUI = setInterval(() => {
+              const el = document.getElementById('diag-uptime-val');
+              const pel = document.getElementById('diag-ping-val');
+              if (el && pel) { 
+                el.innerText = uptimeDataStr; 
+                pel.innerText = pingStr;
+                clearInterval(updateUI); 
+              }
+            }, 50);
+          });
+
+        const memStr = (window.performance && window.performance.memory) ? Math.round(window.performance.memory.usedJSHeapSize / 1048576) + ' MB' : 'SECURE_RESTRICTED';
+        const connStr = navigator.connection ? navigator.connection.effectiveType.toUpperCase() : 'SECURE_TUNNEL';
+
+        const isClickjacking = (window.self !== window.top);
+        const frameStatus = isClickjacking ? '<span style="color:#ef4444">[CRITICAL] IFRAME HIJACK DETECTED</span>' : 'SECURE (TOP LEVEL)';
+
+        const pageScripts = document.querySelectorAll('script');
+        let rogueCount = 0;
+        pageScripts.forEach(script => {
+          if (script.src) {
+            try {
+              const url = new URL(script.src, window.location.origin);
+              if (url.origin !== window.location.origin) {
+                rogueCount++;
+              }
+            } catch (e) {}
+          }
+        });
+        const xssStatus = rogueCount > 0 ? `<span style="color:#f59e0b">[WARNING] ${rogueCount} EXTERNAL SCRIPT(S) DETECTED</span>` : 'CLEAN (NO ROGUE SCRIPTS)';
+
+        let devToolsStatus = 'INACTIVE';
+        const widthDiff = window.outerWidth - window.innerWidth;
+        const heightDiff = window.outerHeight - window.innerHeight;
+        if (widthDiff > 160 || heightDiff > 160) {
+            devToolsStatus = '<span style="color:#f59e0b">[WARNING] DEVTOOLS INSPECTOR ACTIVE</span>';
+        }
+
+        const errorCount = window._sysErrors ? window._sysErrors.length : 0;
+        let errorStatus = errorCount === 0 ? 'CLEAN (NO ERRORS DETECTED)' : `<span style="color:#ef4444">[CRITICAL] ${errorCount} SILENT ERROR(S) LOGGED</span>`;
+        if (errorCount > 0) {
+            const lastErr = window._sysErrors[errorCount - 1].toString();
+            errorStatus += `<br><span style="color:#ef4444; margin-left: 20px;">> Last: ${lastErr.substring(0, 60)}...</span>`;
+        }
+
+        let deadAssets = 0;
+        document.querySelectorAll('img').forEach(img => {
+            if (!img.complete || img.naturalWidth === 0) deadAssets++;
+        });
+        const assetStatus = deadAssets > 0 ? `<span style="color:#f59e0b">[WARNING] ${deadAssets} BROKEN RESOURCE(S)</span>` : 'ALL SYSTEMS GREEN (ASSETS LOADED)';
+
+        let storageSize = 0;
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                storageSize += (localStorage.getItem(localStorage.key(i)) || '').length * 2;
+            }
+            for (let i = 0; i < sessionStorage.length; i++) {
+                storageSize += (sessionStorage.getItem(sessionStorage.key(i)) || '').length * 2;
+            }
+        } catch(e) {}
+        const storageKB = (storageSize / 1024).toFixed(2);
+        const storageStatus = `${storageKB} KB IN USE (LOCAL/SESSION)`;
+
+        const adTest = document.createElement('div');
+        adTest.className = 'ad-banner ad-container ad-slot textads';
+        adTest.style.display = 'block';
+        adTest.style.position = 'absolute';
+        adTest.style.top = '-9999px';
+        document.body.appendChild(adTest);
+        
+        const isBlocked = adTest.offsetHeight === 0 || window.getComputedStyle(adTest).display === 'none';
+        const adBlockerStatus = isBlocked ? '<span style="color:#f59e0b">[WARNING] AD-BLOCKER / SHIELD ACTIVE</span>' : 'CLEAN (NO INTERFERENCE)';
+        document.body.removeChild(adTest);
+
+        let ttfbStr = 'UNAVAILABLE';
+        let dnsStr = 'UNAVAILABLE';
+        if (window.performance && window.performance.getEntriesByType) {
+            const navEntries = window.performance.getEntriesByType('navigation');
+            if (navEntries.length > 0) {
+                const nav = navEntries[0];
+                const ttfb = Math.round(nav.responseStart - nav.startTime);
+                const dns = Math.round(nav.domainLookupEnd - nav.domainLookupStart);
+                ttfbStr = ttfb > 600 ? `<span style="color:#ef4444">${ttfb}ms (SLOW)</span>` : `${ttfb}ms`;
+                dnsStr = `${dns}ms`;
+            }
+        }
+
+        let issuesCount = 0;
+        if (isClickjacking) issuesCount++;
+        if (rogueCount > 0) issuesCount++;
+        if (widthDiff > 160 || heightDiff > 160) issuesCount++;
+        if (errorCount > 0) issuesCount++;
+        if (deadAssets > 0) issuesCount++;
+        if (isBlocked) issuesCount++;
+        
+        let healthGrade = 'A+';
+        let healthColor = '#10B981';
+        let healthStatus = 'OPTIMAL';
+        if (issuesCount === 1) { healthGrade = 'A-'; healthStatus = 'NOMINAL'; }
+        else if (issuesCount === 2) { healthGrade = 'B+'; healthColor = '#f59e0b'; healthStatus = 'MINOR ANOMALIES'; }
+        else if (issuesCount === 3) { healthGrade = 'B'; healthColor = '#f59e0b'; healthStatus = 'WARNINGS DETECTED'; }
+        else if (issuesCount === 4) { healthGrade = 'C'; healthColor = '#f97316'; healthStatus = 'SYSTEM DEGRADED'; }
+        else if (issuesCount >= 5) { healthGrade = 'F'; healthColor = '#ef4444'; healthStatus = 'CRITICAL FAILURES'; }
+        
+        const finalGradeStr = `<span style="color:${healthColor}">${healthGrade}</span>`;
+
+        const lines = [
+          `INITIATING LIVE SYSTEM DIAGNOSTIC...`,
+          `> Target: riyostudio.dev`,
+          `> Analyzing local execution environment...`,
+          `> User Agent: ${navigator.userAgent}`,
+          `> Screen Resolution: ${window.screen.width}x${window.screen.height}`,
+          ` `,
+          `[ INTRUSION & SECURITY AUDIT ]`,
+          `> IFrame Hijack Shield: ${frameStatus}`,
+          `> XSS/Rogue Script Audit: ${xssStatus}`,
+          `> DevTools Probe Sensor: ${devToolsStatus}`,
+          ` `,
+          `[ CRITICAL HEALTH & ERRORS ]`,
+          `> Silent Error Hook: ${errorStatus}`,
+          `> Dead Asset Scan: ${assetStatus}`,
+          ` `,
+          `[ ENVIRONMENT & PERFORMANCE DEEP-DIVE ]`,
+          `> Time-to-First-Byte (TTFB): ${ttfbStr}`,
+          `> DNS Resolution Time: ${dnsStr}`,
+          `> Client Storage Utilization: ${storageStatus}`,
+          `> Extension/Shield Interference: ${adBlockerStatus}`,
+          ` `,
+          `[ SERVER HEALTH (riyostudio.dev) ]`,
+          `> Last Deployment Build: ${document.lastModified}`,
+          `> Server Status: <span id="diag-uptime-val">${uptimeDataStr}</span>`,
+          `> Server Latency (Ping): <span id="diag-ping-val">${pingStr}</span>`,
+          `> Active Connection: ${connStr}`,
+          `> Memory Heap Usage: ${memStr}`,
+          ` `,
+          `[PERFORMANCE METRICS]`,
+          `> DOM Nodes Rendered: ${domNodes}`,
+          `> Scripts Active: ${document.scripts.length}`,
+          `> DOM Build Time: ${loadTimeStr}`,
+          `> Framerate Target: 60 FPS`,
+          ` `,
+          `[SECURITY AUDIT]`,
+          `> Protocol: ${proto}`,
+          `> Secure Context: ${isSecure}`,
+          `> Bot/Scraper Signature: ${botStatus}`,
+          ` `,
+          `[GLOBAL TRAFFIC]`,
+          `> TOTAL SYSTEM QUERIES: <span id="diag-hit-count">${hitCountStr}</span>`,
+          ` `,
+          `> CALCULATING FINAL GRADE...`,
+          `> SYS_CHECK COMPLETE. STATUS: ${healthStatus}`,
+          `> TOTAL DETECTED FLAGS: ${issuesCount}`,
+          `> OVERALL HEALTH RATING: ${finalGradeStr}`,
+          ` `,
+          `DIAGNOSTIC FINISHED.`
+        ];
+
+        let lineIdx = 0;
+        const interval = setInterval(() => {
+          if (lineIdx < lines.length) {
+            const div = document.createElement('div');
+            div.innerHTML = lines[lineIdx];
+            div.style.marginBottom = "4px";
+            content.appendChild(div);
+            
+            const overlay = document.getElementById('diag-overlay');
+            overlay.scrollTop = overlay.scrollHeight;
+            
+            lineIdx++;
+          } else {
+            clearInterval(interval);
+            
+            const cursorEl = document.getElementById('diag-cursor');
+            if (cursorEl) cursorEl.style.display = 'none';
+            
+            const exitBtn = document.createElement('div');
+            exitBtn.innerHTML = '<br><span style="color:#ef4444; cursor:pointer; font-weight:bold;" id="diag-exit-btn">[ CLICK OR PRESS ENTER TO CLOSE DIAGNOSTICS ]</span>';
+            content.appendChild(exitBtn);
+            
+            const overlay = document.getElementById('diag-overlay');
+            overlay.scrollTop = overlay.scrollHeight;
+            
+            const closeDiag = () => {
+              if (document.getElementById('diag-overlay')) {
+                overlay.remove();
+              }
+              document.removeEventListener('keydown', keyHandler);
+            };
+
+            const keyHandler = (e) => {
+              if (e.key === 'Enter' || e.key === 'Escape') {
+                closeDiag();
+              }
+            };
+            
+            document.getElementById('diag-exit-btn').addEventListener('click', closeDiag);
+            document.addEventListener('keydown', keyHandler);
+          }
+        }, 200);
+    };
+
 
     function executeCmd() {
       const selectedOpt = cmdOptions[selectedIndex];
