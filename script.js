@@ -695,6 +695,67 @@
     };
 
 
+    window.toggleMatrixMode = function() {
+      const isMatrix = document.body.classList.toggle('matrix-mode');
+      
+      // Matrix scramble effect
+      if (isMatrix) {
+        // Disable text scrambling on mobile to prevent layout thrashing
+        if (window.innerWidth <= 768) return;
+
+        const scrambleTargets = document.querySelectorAll('h2, p, .cyber-label, .btn-text, .product-card h3');
+        const mChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
+        
+        window.matrixObserver = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting && document.body.classList.contains('matrix-mode')) {
+              const el = entry.target;
+              
+              if (el.children.length > 0 && !el.classList.contains('cyber-label')) return;
+              if (el.dataset.matrixScrambling === "true") return;
+              
+              el.dataset.matrixScrambling = "true";
+              
+              if (!el.dataset.matrixOriginal) {
+                el.dataset.matrixOriginal = el.innerText;
+              }
+              const originalText = el.dataset.matrixOriginal;
+              if (!originalText || originalText.trim() === '') return;
+              
+              let iterations = 0;
+              const maxIterations = originalText.length;
+              
+              const interval = setInterval(() => {
+                el.innerText = originalText.split('').map((char, index) => {
+                  if (index < iterations) return originalText[index];
+                  if (char === ' ' || char === '\n') return char;
+                  return mChars[Math.floor(Math.random() * mChars.length)];
+                }).join('');
+                
+                if (iterations >= maxIterations) {
+                  clearInterval(interval);
+                  el.dataset.matrixScrambling = "false";
+                }
+                iterations += 1;
+              }, 15);
+            }
+          });
+        }, { threshold: 0.1 });
+
+        scrambleTargets.forEach(el => window.matrixObserver.observe(el));
+      } else {
+        // Disable Matrix Mode safely
+        if (window.matrixObserver) {
+          window.matrixObserver.disconnect();
+          document.querySelectorAll('[data-matrix-original]').forEach(el => {
+            el.innerText = el.dataset.matrixOriginal;
+            delete el.dataset.matrixScrambling;
+          });
+        }
+      }
+      return isMatrix;
+    };
+
     function executeCmd() {
       const selectedOpt = cmdOptions[selectedIndex];
       if (!selectedOpt || selectedOpt.style.display === 'none') return;
@@ -724,63 +785,7 @@
           window.runSystemDiagnostics();
         }
       } else if (action === 'matrix') {
-        const isMatrix = document.body.classList.toggle('matrix-mode');
-        
-        // Matrix scramble effect
-        if (isMatrix) {
-          // Disable text scrambling on mobile to prevent layout thrashing
-          if (window.innerWidth <= 768) return;
-
-          const scrambleTargets = document.querySelectorAll('h2, p, .cyber-label, .btn-text, .product-card h3');
-          const mChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
-          
-          window.matrixObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-              if (entry.isIntersecting && document.body.classList.contains('matrix-mode')) {
-                const el = entry.target;
-                
-                if (el.children.length > 0 && !el.classList.contains('cyber-label')) return;
-                if (el.dataset.matrixScrambling === "true") return;
-                
-                el.dataset.matrixScrambling = "true";
-                
-                if (!el.dataset.matrixOriginal) {
-                  el.dataset.matrixOriginal = el.innerText;
-                }
-                const originalText = el.dataset.matrixOriginal;
-                if (!originalText || originalText.trim() === '') return;
-                
-                let iterations = 0;
-                const maxIterations = originalText.length;
-                
-                const interval = setInterval(() => {
-                  el.innerText = originalText.split('').map((char, index) => {
-                    if (index < iterations) return originalText[index];
-                    if (char === ' ' || char === '\n') return char;
-                    return mChars[Math.floor(Math.random() * mChars.length)];
-                  }).join('');
-                  
-                  if (iterations >= maxIterations) {
-                    clearInterval(interval);
-                    el.dataset.matrixScrambling = "false";
-                  }
-                  iterations += 1;
-                }, 15);
-              }
-            });
-          }, { threshold: 0.1 });
-
-          scrambleTargets.forEach(el => window.matrixObserver.observe(el));
-        } else {
-          // Disable Matrix Mode safely
-          if (window.matrixObserver) {
-            window.matrixObserver.disconnect();
-            document.querySelectorAll('[data-matrix-original]').forEach(el => {
-              el.innerText = el.dataset.matrixOriginal;
-              delete el.dataset.matrixScrambling;
-            });
-          }
-        }
+        window.toggleMatrixMode();
       }
     }
     
@@ -999,6 +1004,8 @@
           printLine('  projects    - List active projects');
           printLine('  diagnostics - Run system health diagnostics');
           printLine('  cat         - Read file contents (e.g., cat index.html)');
+          printLine('  ping        - Send ICMP ECHO_REQUEST to network hosts');
+          printLine('  matrix      - Toggle the Matrix scramble effect');
           printLine('  exit        - Close the terminal');
           printLine('  sudo        - Attempt root access');
           break;
@@ -1070,6 +1077,63 @@
           break;
         case 'exit':
           overlay.classList.remove('active');
+          break;
+        case 'ping':
+          if (args.length < 2) {
+            printLine('Usage: ping [hostname]');
+          } else {
+            const hostname = args[1];
+            printLine(`Pinging ${hostname} with 32 bytes of data:`);
+            
+            fetch(`https://cloudflare-dns.com/dns-query?name=${hostname}&type=A`, {
+              headers: { 'Accept': 'application/dns-json' }
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.Status !== 0 || !data.Answer || data.Answer.length === 0) {
+                printLine(`Ping request could not find host ${hostname}. Please check the name and try again.`, 'error');
+                return;
+              }
+              const ip = data.Answer[0].data;
+              let pings = 0;
+              const maxPings = 4;
+              let times = [];
+              
+              function doPing() {
+                if (pings >= maxPings) {
+                  printLine('');
+                  printLine(`Ping statistics for ${ip}:`);
+                  printLine(`    Packets: Sent = ${maxPings}, Received = ${maxPings}, Lost = 0 (0% loss),`);
+                  const min = Math.min(...times);
+                  const max = Math.max(...times);
+                  const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+                  printLine('Approximate round trip times in milli-seconds:');
+                  printLine(`    Minimum = ${min}ms, Maximum = ${max}ms, Average = ${avg}ms`);
+                  return;
+                }
+                const time = Math.floor(Math.random() * 30) + 14;
+                times.push(time);
+                printLine(`Reply from ${ip}: bytes=32 time=${time}ms TTL=117`);
+                pings++;
+                setTimeout(doPing, 1000);
+              }
+              setTimeout(doPing, 500);
+            })
+            .catch(err => {
+              printLine(`Ping request failed: ${err.message}`, 'error');
+            });
+          }
+          break;
+        case 'matrix':
+          if (window.toggleMatrixMode) {
+            const isMatrix = window.toggleMatrixMode();
+            if (isMatrix) {
+              printLine('Matrix mode engaged.', 'success');
+              printLine('Warning: UI stability may be compromised.', 'warning');
+            } else {
+              printLine('Matrix mode disengaged. Normalizing UI...', 'success');
+            }
+          }
           break;
         case 'sudo':
           printLine('nice try. this incident will be reported.', 'error');
