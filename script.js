@@ -941,12 +941,12 @@
   // Interactive Terminal
   function initInteractiveTerminal() {
     const overlay = document.getElementById('interactive-terminal');
-    const openBtn = document.getElementById('open-terminal-btn');
+    const openBtns = document.querySelectorAll('.terminal-trigger');
     const closeBtn = document.getElementById('terminal-close-btn');
     const input = document.getElementById('terminal-input');
     const output = document.getElementById('terminal-output');
 
-    if (!overlay || !openBtn || !closeBtn || !input || !output) return;
+    if (!overlay || !closeBtn || !input || !output) return;
 
     function printLine(text, className = '') {
       const line = document.createElement('div');
@@ -956,9 +956,12 @@
       output.scrollTop = output.scrollHeight;
     }
 
-    openBtn.addEventListener('click', () => {
-      overlay.classList.add('active');
-      setTimeout(() => input.focus(), 100);
+    openBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        overlay.classList.add('active');
+        setTimeout(() => input.focus(), 100);
+      });
     });
 
     closeBtn.addEventListener('click', () => {

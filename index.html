@@ -115,11 +115,13 @@
         <a href="#products" class="nav-link">Products</a>
         <a href="#about" class="nav-link">About</a>
         <a href="#process" class="nav-link">Process</a>
+        <a href="#" class="nav-link terminal-trigger" style="color: #10B981; font-family: 'JetBrains Mono', monospace;">>_ Terminal</a>
         <a href="#contact" class="nav-cta-btn desktop">Get in Touch</a>
       </div>
 
       <div class="nav-mobile-actions">
-        <button class="nav-mobile-cmd-btn" id="nav-mobile-cmd" aria-label="Open Command Palette">>_</button>
+        <!-- Re-purpose the mobile CMD button to open terminal instead of command palette if desired, or keep both. Let's make it the terminal trigger -->
+        <button class="nav-mobile-cmd-btn terminal-trigger" aria-label="Open Terminal" style="color: #10B981;">>_</button>
         <button class="nav-mobile-btn" id="nav-mobile-open" aria-label="Open menu">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -141,6 +143,7 @@
         <a href="#products">Products</a>
         <a href="#about">About</a>
         <a href="#process">Process</a>
+        <a href="#" class="terminal-trigger" style="color: #10B981; font-family: 'JetBrains Mono', monospace;">>_ Terminal</a>
         <a href="#contact" class="nav-cta-btn">Get in Touch</a>
       </div>
     </div>
@@ -175,12 +178,6 @@
           <span class="hero-stat-num">1</span>
           <span class="hero-stat-label">Developer</span>
         </div>
-      </div>
-
-      <div class="hero-terminal-action reveal reveal-delay-4" style="margin-top: 32px; display: flex; justify-content: center;">
-        <button class="cyber-submit-btn" id="open-terminal-btn" style="max-width: 300px; padding: 12px 24px;">
-          [>_ ACCESS TERMINAL]
-        </button>
       </div>
 
       <div class="hero-scroll reveal reveal-delay-4">
