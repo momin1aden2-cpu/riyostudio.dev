@@ -1102,18 +1102,28 @@
               function doPing() {
                 if (pings >= maxPings) {
                   printLine('');
-                  printLine(`Ping statistics for ${ip}:`);
-                  printLine(`    Packets: Sent = ${maxPings}, Received = ${maxPings}, Lost = 0 (0% loss),`);
+                  printLine(`<br><span style="color:#10b981; font-weight:bold;">[ SECURE UPLINK SUMMARY ]</span>`);
+                  printLine(`&nbsp;&nbsp;> Target Node: <span style="color:#f59e0b;">${ip}</span>`);
+                  printLine(`&nbsp;&nbsp;> Payloads: Dispatched = ${maxPings} | Injected = ${maxPings} | Intercepted = 0 (0% packet loss)`);
                   const min = Math.min(...times);
                   const max = Math.max(...times);
                   const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
-                  printLine('Approximate round trip times in milli-seconds:');
-                  printLine(`    Minimum = ${min}ms, Maximum = ${max}ms, Average = ${avg}ms`);
+                  printLine(`&nbsp;&nbsp;> Quantum Latency Analysis:`);
+                  printLine(`&nbsp;&nbsp;&nbsp;&nbsp;Peak Efficiency: ${min}ms | Max Delay: ${max}ms | Average Flow: ${avg}ms`);
                   return;
                 }
                 const time = Math.floor(Math.random() * 30) + 14;
                 times.push(time);
-                printLine(`Reply from ${ip}: bytes=32 time=${time}ms TTL=117`);
+                const hackerPhrases = [
+                  "Bypassing mainframe firewall...",
+                  "Establishing quantum handshake...",
+                  "Decrypting remote node...",
+                  "Syncing with orbital satellite...",
+                  "Injecting root payload...",
+                  "Routing through secure proxy..."
+                ];
+                const phrase = hackerPhrases[Math.floor(Math.random() * hackerPhrases.length)];
+                printLine(`<span style="color:#0ea5e9;">[+] ${phrase}</span><br>&nbsp;&nbsp;&nbsp;> Secure link to <span style="color:#f59e0b;">${ip}</span> | Time: ${time}ms | Payload: 32 bytes | TTL: 117`);
                 pings++;
                 setTimeout(doPing, 1000);
               }
