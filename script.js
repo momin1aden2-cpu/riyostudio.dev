@@ -998,8 +998,38 @@
           printLine('  github      - Run GitHub live telemetry fetch');
           printLine('  projects    - List active projects');
           printLine('  diagnostics - Run system health diagnostics');
+          printLine('  cat         - Read file contents (e.g., cat index.html)');
           printLine('  exit        - Close the terminal');
           printLine('  sudo        - Attempt root access');
+          break;
+        case 'cat':
+          if (args.length < 2) {
+            printLine('Usage: cat [filename]');
+            printLine('Available files: index.html, script.js, style.css');
+          } else {
+            const filename = args[1];
+            if (['index.html', 'script.js', 'style.css'].includes(filename)) {
+              printLine(`Reading ${filename}...`);
+              fetch(filename)
+                .then(res => {
+                  if (!res.ok) throw new Error('File not found');
+                  return res.text();
+                })
+                .then(text => {
+                  const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                  const pre = document.createElement('pre');
+                  pre.style.cssText = "color: var(--text-dim); margin: 10px 0; max-height: 400px; overflow-y: auto; background: rgba(0,0,0,0.5); padding: 10px; border-left: 2px solid var(--accent); font-size: 0.85em; white-space: pre-wrap; word-wrap: break-word;";
+                  pre.innerHTML = escaped;
+                  document.getElementById('terminal-output').appendChild(pre);
+                  document.getElementById('terminal-output').scrollTop = document.getElementById('terminal-output').scrollHeight;
+                })
+                .catch(err => {
+                  printLine(`[ERROR] Could not read ${filename}: ${err.message}`, 'error');
+                });
+            } else {
+              printLine(`cat: ${filename}: Permission denied or file not found`, 'error');
+            }
+          }
           break;
         case 'whoami':
           printLine('guest (unprivileged access)', 'warning');
