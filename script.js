@@ -6,6 +6,26 @@
 (function () {
   'use strict';
 
+  // Global Error Tracker for Diagnostics
+  window._sysErrors = [];
+  window.addEventListener('error', (e) => { window._sysErrors.push(e.message || 'Unknown Error'); });
+  window.addEventListener('unhandledrejection', (e) => { window._sysErrors.push(e.reason || 'Unhandled Promise'); });
+  
+  // Wrap fetch to catch 404s and 500s silently for diagnostics
+  const originalFetch = window.fetch;
+  window.fetch = async function(...args) {
+    try {
+      const response = await originalFetch.apply(this, args);
+      if (!response.ok) {
+        window._sysErrors.push(`HTTP ${response.status} on ${args[0]}`);
+      }
+      return response;
+    } catch (err) {
+      window._sysErrors.push(`Network Error on ${args[0]}`);
+      throw err;
+    }
+  };
+
   // Console Greeting
   console.log(
     "%c RIYO STUDIO \n%c System Architecture Online. \n\n Looking under the hood? I respect that. \n Try pressing Ctrl+K and typing 'sudo'.",
@@ -506,12 +526,65 @@
         const memStr = (window.performance && window.performance.memory) ? Math.round(window.performance.memory.usedJSHeapSize / 1048576) + ' MB' : 'SECURE_RESTRICTED';
         const connStr = navigator.connection ? navigator.connection.effectiveType.toUpperCase() : 'SECURE_TUNNEL';
 
+        // Security Check: Clickjacking
+        const isClickjacking = (window.self !== window.top);
+        const frameStatus = isClickjacking ? '<span style="color:#ef4444">[CRITICAL] IFRAME HIJACK DETECTED</span>' : 'SECURE (TOP LEVEL)';
+
+        // Security Check: Rogue Script Audit (XSS)
+        const pageScripts = document.querySelectorAll('script');
+        let rogueCount = 0;
+        pageScripts.forEach(script => {
+          if (script.src) {
+            try {
+              const url = new URL(script.src, window.location.origin);
+              // Allowed origins can be adjusted, defaulting to same-origin
+              if (url.origin !== window.location.origin) {
+                rogueCount++;
+              }
+            } catch (e) {}
+          }
+        });
+        const xssStatus = rogueCount > 0 ? `<span style="color:#f59e0b">[WARNING] ${rogueCount} EXTERNAL SCRIPT(S) DETECTED</span>` : 'CLEAN (NO ROGUE SCRIPTS)';
+
+        // Security Check: DevTools Intrusion
+        let devToolsStatus = 'INACTIVE';
+        const widthDiff = window.outerWidth - window.innerWidth;
+        const heightDiff = window.outerHeight - window.innerHeight;
+        if (widthDiff > 160 || heightDiff > 160) {
+            devToolsStatus = '<span style="color:#f59e0b">[WARNING] DEVTOOLS INSPECTOR ACTIVE</span>';
+        }
+
+        // Health Check: Silent Errors
+        const errorCount = window._sysErrors ? window._sysErrors.length : 0;
+        let errorStatus = errorCount === 0 ? 'CLEAN (NO ERRORS DETECTED)' : `<span style="color:#ef4444">[CRITICAL] ${errorCount} SILENT ERROR(S) LOGGED</span>`;
+        if (errorCount > 0) {
+            // Append the last error message as a hint
+            const lastErr = window._sysErrors[errorCount - 1].toString();
+            errorStatus += `<br><span style="color:#ef4444; margin-left: 20px;">> Last: ${lastErr.substring(0, 60)}...</span>`;
+        }
+
+        // Health Check: Dead Asset / Broken Images
+        let deadAssets = 0;
+        document.querySelectorAll('img').forEach(img => {
+            if (!img.complete || img.naturalWidth === 0) deadAssets++;
+        });
+        const assetStatus = deadAssets > 0 ? `<span style="color:#f59e0b">[WARNING] ${deadAssets} BROKEN RESOURCE(S)</span>` : 'ALL SYSTEMS GREEN (ASSETS LOADED)';
+
         const lines = [
           `INITIATING LIVE SYSTEM DIAGNOSTIC...`,
           `> Target: riyostudio.dev`,
           `> Analyzing local execution environment...`,
           `> User Agent: ${navigator.userAgent}`,
           `> Screen Resolution: ${window.screen.width}x${window.screen.height}`,
+          ` `,
+          `[ INTRUSION & SECURITY AUDIT ]`,
+          `> IFrame Hijack Shield: ${frameStatus}`,
+          `> XSS/Rogue Script Audit: ${xssStatus}`,
+          `> DevTools Probe Sensor: ${devToolsStatus}`,
+          ` `,
+          `[ CRITICAL HEALTH & ERRORS ]`,
+          `> Silent Error Hook: ${errorStatus}`,
+          `> Dead Asset Scan: ${assetStatus}`,
           ` `,
           `[ SERVER HEALTH (riyostudio.dev) ]`,
           `> Last Deployment Build: ${document.lastModified}`,
@@ -694,5 +767,71 @@
       });
     }, 50);
   }, { passive: true });
+
+  // Pinging Lights (Ethernet life effect)
+  function initPingingLights() {
+    const numLights = 25; // Increased number of pinging nodes
+    // Network activity colors (Vibrant Red and Bright Blue)
+    const colors = ['#FF3366', '#00AAFF', '#FF0033', '#3B82F6']; 
+    
+    const container = document.createElement('div');
+    container.id = 'pinging-lights-container';
+    document.body.appendChild(container);
+
+    const updateMaxDimensions = () => {
+      return {
+        w: document.documentElement.scrollWidth || document.body.scrollWidth,
+        h: document.documentElement.scrollHeight || document.body.scrollHeight
+      };
+    };
+
+    for (let i = 0; i < numLights; i++) {
+      const light = document.createElement('div');
+      light.className = 'ping-light';
+      container.appendChild(light);
+      
+      const updatePosition = () => {
+        const dims = updateMaxDimensions();
+        const x = Math.random() * (dims.w - 20);
+        const y = Math.random() * (dims.h - 20);
+        light.style.left = `${x}px`;
+        light.style.top = `${y}px`;
+        light.style.color = colors[Math.floor(Math.random() * colors.length)];
+        light.style.backgroundColor = 'currentColor';
+      };
+      
+      updatePosition();
+      
+      // Erratic Ethernet-like blink pattern
+      const blink = () => {
+        light.style.animation = 'none';
+        void light.offsetWidth; // Force DOM reflow to restart animation
+        
+        // Fast packet transfer simulation
+        const duration = 20 + Math.random() * 120;
+        light.style.animation = `ping-flash ${duration}ms ease-out`;
+        
+        // Determine time until next blink
+        // 30% chance for a 'burst' of packets (very short delay)
+        const isBurst = Math.random() > 0.7;
+        const nextBlink = isBurst ? (20 + Math.random() * 80) : (500 + Math.random() * 4000);
+        
+        setTimeout(blink, nextBlink);
+      };
+      
+      // Move lights occasionally (every 15s to 45s)
+      setInterval(updatePosition, 15000 + Math.random() * 30000);
+      
+      // Initial startup stagger
+      setTimeout(blink, Math.random() * 3000);
+    }
+  }
+
+  // Initialize once fully loaded to ensure dimensions are correct
+  if (document.readyState === 'complete') {
+    initPingingLights();
+  } else {
+    window.addEventListener('load', initPingingLights);
+  }
 
 })();
