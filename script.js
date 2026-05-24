@@ -872,11 +872,153 @@
     }
   }
 
+  // Live GitHub Telemetry
+  async function initGitHubTelemetry() {
+    const ghUser = 'momin1aden2-cpu';
+    const reposEl = document.getElementById('gh-repos');
+    const followersEl = document.getElementById('gh-followers');
+    const latestPushEl = document.getElementById('gh-latest-push');
+
+    try {
+      const userRes = await fetch(`https://api.github.com/users/${ghUser}`);
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        if (reposEl) reposEl.textContent = userData.public_repos;
+        if (followersEl) followersEl.textContent = userData.followers;
+      } else {
+        if (reposEl) reposEl.textContent = 'ERR';
+        if (followersEl) followersEl.textContent = 'ERR';
+      }
+
+      const eventsRes = await fetch(`https://api.github.com/users/${ghUser}/events/public`);
+      if (eventsRes.ok) {
+        const events = await eventsRes.json();
+        const pushEvent = events.find(e => e.type === 'PushEvent');
+        if (pushEvent && pushEvent.payload) {
+          let msg = 'Code update';
+          if (pushEvent.payload.commits && pushEvent.payload.commits.length > 0) {
+            msg = pushEvent.payload.commits[0].message;
+          } else if (pushEvent.payload.ref) {
+            msg = `Updated branch ${pushEvent.payload.ref.split('/').pop()}`;
+          }
+          let repo = pushEvent.repo.name;
+          if (repo.includes('/')) repo = repo.split('/')[1];
+          if (latestPushEl) latestPushEl.textContent = `Pushed to ${repo}: "${msg.substring(0, 30)}${msg.length > 30 ? '...' : ''}"`;
+        } else {
+          if (latestPushEl) latestPushEl.textContent = 'No recent pushes found.';
+        }
+      } else {
+        if (latestPushEl) latestPushEl.textContent = 'ERR: API LIMIT';
+      }
+    } catch (err) {
+      if (reposEl) reposEl.textContent = 'ERR';
+      if (followersEl) followersEl.textContent = 'ERR';
+      if (latestPushEl) latestPushEl.textContent = 'Connection Error: ' + err.message;
+    }
+  }
+
+  // Interactive Terminal
+  function initInteractiveTerminal() {
+    const overlay = document.getElementById('interactive-terminal');
+    const openBtn = document.getElementById('open-terminal-btn');
+    const closeBtn = document.getElementById('terminal-close-btn');
+    const input = document.getElementById('terminal-input');
+    const output = document.getElementById('terminal-output');
+
+    if (!overlay || !openBtn || !closeBtn || !input || !output) return;
+
+    function printLine(text, className = '') {
+      const line = document.createElement('div');
+      line.className = `terminal-line ${className}`;
+      line.innerHTML = text;
+      output.appendChild(line);
+      output.scrollTop = output.scrollHeight;
+    }
+
+    openBtn.addEventListener('click', () => {
+      overlay.classList.add('active');
+      setTimeout(() => input.focus(), 100);
+    });
+
+    closeBtn.addEventListener('click', () => {
+      overlay.classList.remove('active');
+    });
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.classList.remove('active');
+      }
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const cmd = input.value.trim();
+        if (cmd) {
+          printLine(`<span style="color:var(--accent);">guest@riyostudio:~$</span> ${cmd}`);
+          processCommand(cmd);
+        }
+        input.value = '';
+      }
+    });
+
+    function processCommand(cmd) {
+      const args = cmd.toLowerCase().split(' ');
+      const main = args[0];
+
+      switch(main) {
+        case 'help':
+          printLine('Available commands:');
+          printLine('  help      - Show this message');
+          printLine('  whoami    - Display current user context');
+          printLine('  clear     - Clear terminal output');
+          printLine('  github    - Run GitHub live telemetry fetch');
+          printLine('  projects  - List active projects');
+          printLine('  sudo      - Attempt root access');
+          break;
+        case 'whoami':
+          printLine('guest (unprivileged access)', 'warning');
+          break;
+        case 'clear':
+          output.innerHTML = '';
+          break;
+        case 'github':
+          printLine('Fetching GitHub telemetry...');
+          initGitHubTelemetry().then(() => {
+            const repos = document.getElementById('gh-repos').textContent;
+            const push = document.getElementById('gh-latest-push').textContent;
+            if (repos === 'ERR' || repos === 'N/A' || repos === '--') {
+              printLine(`[ERROR] Fetch Failed: ${push}`, 'error');
+            } else {
+              printLine(`[SUCCESS] Repos: ${repos}`, 'success');
+              printLine(`[SUCCESS] Latest Activity: ${push}`, 'success');
+            }
+          });
+          break;
+        case 'projects':
+          printLine('ACTIVE DEPLOYMENTS:');
+          printLine(' - RenterIQ: Live app for Australian renters');
+          printLine(' - ShiftCore: FIFO worker management app');
+          break;
+        case 'sudo':
+          printLine('nice try. this incident will be reported.', 'error');
+          break;
+        default:
+          printLine(`Command not found: ${main}. Type 'help' for a list of commands.`, 'error');
+      }
+    }
+  }
+
   // Initialize once fully loaded to ensure dimensions are correct
   if (document.readyState === 'complete') {
     initPingingLights();
+    initGitHubTelemetry();
+    initInteractiveTerminal();
   } else {
-    window.addEventListener('load', initPingingLights);
+    window.addEventListener('load', () => {
+      initPingingLights();
+      initGitHubTelemetry();
+      initInteractiveTerminal();
+    });
   }
 
 })();

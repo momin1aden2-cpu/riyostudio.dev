@@ -177,9 +177,43 @@
         </div>
       </div>
 
+      <div class="hero-terminal-action reveal reveal-delay-4" style="margin-top: 32px; display: flex; justify-content: center;">
+        <button class="cyber-submit-btn" id="open-terminal-btn" style="max-width: 300px; padding: 12px 24px;">
+          [>_ ACCESS TERMINAL]
+        </button>
+      </div>
+
       <div class="hero-scroll reveal reveal-delay-4">
         <span>Scroll</span>
         <div class="hero-scroll-line"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Telemetry (GitHub Stats) -->
+  <section class="telemetry" id="telemetry">
+    <div class="container">
+      <div class="products-header">
+        <div class="eyebrow reveal">Live Telemetry</div>
+        <h2 class="reveal reveal-delay-1">System Architecture Activity</h2>
+        <p class="reveal reveal-delay-2">
+          Real-time development metrics pulled securely from the GitHub API.
+        </p>
+      </div>
+
+      <div class="telemetry-grid">
+        <div class="telemetry-card reveal">
+          <div class="telemetry-label">Public Repositories</div>
+          <div class="telemetry-value" id="gh-repos">--</div>
+        </div>
+        <div class="telemetry-card reveal reveal-delay-1">
+          <div class="telemetry-label">Followers</div>
+          <div class="telemetry-value" id="gh-followers">--</div>
+        </div>
+        <div class="telemetry-card reveal reveal-delay-2">
+          <div class="telemetry-label">Latest Activity</div>
+          <div class="telemetry-value text-sm" id="gh-latest-push" style="font-size: 16px;">Fetching...</div>
+        </div>
       </div>
     </div>
   </section>
@@ -490,6 +524,24 @@
   <!-- Custom Cursor -->
   <div class="custom-cursor-dot" id="cursor-dot"></div>
   <div class="custom-cursor-ring" id="cursor-ring"></div>
+
+  <!-- Interactive Terminal -->
+  <div class="terminal-overlay" id="interactive-terminal">
+    <div class="terminal-window">
+      <div class="terminal-header">
+        <span class="terminal-title">guest@riyostudio: ~</span>
+        <button class="terminal-close" id="terminal-close-btn">[X]</button>
+      </div>
+      <div class="terminal-body" id="terminal-output">
+        <div class="terminal-line" style="color: var(--accent);">RIYO OS v2.0.1 initialized.</div>
+        <div class="terminal-line">Type 'help' for a list of available commands.</div>
+      </div>
+      <div class="terminal-input-line">
+        <span class="terminal-prompt">guest@riyostudio:~$</span>
+        <input type="text" id="terminal-input" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+  </div>
 
   <!-- Command Palette -->
   <div class="cmd-palette-overlay" id="cmd-palette">

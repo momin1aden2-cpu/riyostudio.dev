@@ -1785,3 +1785,205 @@ body.matrix-mode .cmd-palette-wrap {
   30% { opacity: 0.9; box-shadow: 0 0 12px 3px currentColor; transform: scale(1); }
   100% { opacity: 0; }
 }
+
+/* =====================================================================
+   Live Telemetry (GitHub Stats)
+   ===================================================================== */
+.telemetry {
+  padding: 80px 0 20px;
+  position: relative;
+  z-index: 2;
+}
+
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 48px;
+}
+
+.telemetry-card {
+  background: rgba(6, 11, 20, 0.7);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 32px 24px;
+  text-align: center;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform 0.3s var(--ease), border-color 0.3s;
+}
+
+.telemetry-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+}
+
+.telemetry-label {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+
+.telemetry-value {
+  font-size: 42px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text);
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+.telemetry-value.text-sm {
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--accent);
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+
+@media (max-width: 768px) {
+  .telemetry-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* =====================================================================
+   Interactive Terminal Overlay
+   ===================================================================== */
+.terminal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 5, 10, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 20000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.terminal-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.terminal-window {
+  width: 100%;
+  max-width: 800px;
+  height: 60vh;
+  min-height: 400px;
+  background: #050505;
+  border: 1px solid #333;
+  border-radius: 8px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(20px) scale(0.98);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.terminal-overlay.active .terminal-window {
+  transform: translateY(0) scale(1);
+}
+
+.terminal-header {
+  background: #111;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #333;
+}
+
+.terminal-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #888;
+}
+
+.terminal-close {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.terminal-close:hover {
+  color: #fca5a5;
+}
+
+.terminal-body {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #d1d5db;
+  scroll-behavior: smooth;
+}
+
+.terminal-line {
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+.terminal-line.success { color: var(--accent); }
+.terminal-line.error { color: #ef4444; }
+.terminal-line.warning { color: #f59e0b; }
+
+.terminal-input-line {
+  display: flex;
+  padding: 0 20px 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: #d1d5db;
+  align-items: center;
+}
+
+.terminal-prompt {
+  color: var(--accent);
+  margin-right: 12px;
+  white-space: nowrap;
+}
+
+#terminal-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  outline: none;
+}
+
+/* Custom Scrollbar for Terminal */
+.terminal-body::-webkit-scrollbar {
+  width: 8px;
+}
+.terminal-body::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+.terminal-body::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+.terminal-body::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+@media (max-width: 768px) {
+  .terminal-window {
+    height: 80vh;
+  }
+}
