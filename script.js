@@ -1047,6 +1047,10 @@
             } else {
               printLine(`[SUCCESS] Repos: ${repos}`, 'success');
               printLine(`[SUCCESS] Latest Activity: ${push}`, 'success');
+              printLine('&nbsp;');
+              printLine('--- CURRENT PROJECT: riyostudio.dev ---', 'warning');
+              printLine('Hint: You can view the source code for this site.');
+              printLine('Try running: <span style="color:var(--accent);">cat index.html</span> or <span style="color:var(--accent);">cat script.js</span>');
             }
           });
           break;
