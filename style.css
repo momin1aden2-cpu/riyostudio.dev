@@ -1377,7 +1377,7 @@ a, button, input, textarea, .nav-brand {
   background: var(--accent);
   border-radius: 50%;
   pointer-events: none;
-  z-index: 9999;
+  z-index: 99999;
   transform: translate(-50%, -50%);
   transition: width 0.2s, height 0.2s, background-color 0.2s;
 }
@@ -1391,7 +1391,7 @@ a, button, input, textarea, .nav-brand {
   border: 1px solid var(--accent-glow);
   border-radius: 50%;
   pointer-events: none;
-  z-index: 9998;
+  z-index: 99998;
   transform: translate(-50%, -50%);
   transition: width 0.2s, height 0.2s, border-color 0.2s;
   /* Smooth trailing effect handled in JS */
