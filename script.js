@@ -570,6 +570,45 @@
         });
         const assetStatus = deadAssets > 0 ? `<span style="color:#f59e0b">[WARNING] ${deadAssets} BROKEN RESOURCE(S)</span>` : 'ALL SYSTEMS GREEN (ASSETS LOADED)';
 
+        // Environment: Storage Audit
+        let storageSize = 0;
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                storageSize += (localStorage.getItem(localStorage.key(i)) || '').length * 2;
+            }
+            for (let i = 0; i < sessionStorage.length; i++) {
+                storageSize += (sessionStorage.getItem(sessionStorage.key(i)) || '').length * 2;
+            }
+        } catch(e) {}
+        const storageKB = (storageSize / 1024).toFixed(2);
+        const storageStatus = `${storageKB} KB IN USE (LOCAL/SESSION)`;
+
+        // Environment: Ad-Blocker/Shield check
+        const adTest = document.createElement('div');
+        adTest.className = 'ad-banner ad-container ad-slot textads';
+        adTest.style.display = 'block';
+        adTest.style.position = 'absolute';
+        adTest.style.top = '-9999px';
+        document.body.appendChild(adTest);
+        
+        const isBlocked = adTest.offsetHeight === 0 || window.getComputedStyle(adTest).display === 'none';
+        const adBlockerStatus = isBlocked ? '<span style="color:#f59e0b">[WARNING] AD-BLOCKER / SHIELD ACTIVE</span>' : 'CLEAN (NO INTERFERENCE)';
+        document.body.removeChild(adTest);
+
+        // Environment: Network TTFB & DNS
+        let ttfbStr = 'UNAVAILABLE';
+        let dnsStr = 'UNAVAILABLE';
+        if (window.performance && window.performance.getEntriesByType) {
+            const navEntries = window.performance.getEntriesByType('navigation');
+            if (navEntries.length > 0) {
+                const nav = navEntries[0];
+                const ttfb = Math.round(nav.responseStart - nav.startTime);
+                const dns = Math.round(nav.domainLookupEnd - nav.domainLookupStart);
+                ttfbStr = ttfb > 600 ? `<span style="color:#ef4444">${ttfb}ms (SLOW)</span>` : `${ttfb}ms`;
+                dnsStr = `${dns}ms`;
+            }
+        }
+
         const lines = [
           `INITIATING LIVE SYSTEM DIAGNOSTIC...`,
           `> Target: riyostudio.dev`,
@@ -585,6 +624,12 @@
           `[ CRITICAL HEALTH & ERRORS ]`,
           `> Silent Error Hook: ${errorStatus}`,
           `> Dead Asset Scan: ${assetStatus}`,
+          ` `,
+          `[ ENVIRONMENT & PERFORMANCE DEEP-DIVE ]`,
+          `> Time-to-First-Byte (TTFB): ${ttfbStr}`,
+          `> DNS Resolution Time: ${dnsStr}`,
+          `> Client Storage Utilization: ${storageStatus}`,
+          `> Extension/Shield Interference: ${adBlockerStatus}`,
           ` `,
           `[ SERVER HEALTH (riyostudio.dev) ]`,
           `> Last Deployment Build: ${document.lastModified}`,
