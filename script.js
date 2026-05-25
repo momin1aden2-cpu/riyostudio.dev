@@ -331,6 +331,11 @@
       mobileCmdBtn.addEventListener('click', openCmdPalette);
     }
 
+    const mobileCmdFab = document.getElementById('mobile-cmd-fab');
+    if (mobileCmdFab) {
+      mobileCmdFab.addEventListener('click', openCmdPalette);
+    }
+
     function openCmdPalette() {
       cmdPalette.classList.add('active');
       cmdInput.value = '';

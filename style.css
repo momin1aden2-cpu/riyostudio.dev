@@ -1582,9 +1582,97 @@ a, button, input, textarea, .nav-brand {
   cursor: pointer;
 }
 
+/* Mobile Floating Command Button */
+.mobile-cmd-fab {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 15, 26, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-accent);
+  color: var(--text);
+  padding: 12px 24px;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  z-index: 9000;
+  align-items: center;
+  gap: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s;
+  cursor: pointer;
+}
+
+.mobile-cmd-fab:active {
+  transform: translateX(-50%) scale(0.96);
+}
+
+.mobile-cmd-fab svg {
+  color: var(--accent);
+}
+
 @media (max-width: 768px) {
   .nav-mobile-cmd-btn {
     display: block;
+  }
+  
+  .mobile-cmd-fab {
+    display: flex;
+  }
+
+  /* Command Palette Mobile Premium Adjustments */
+  .cmd-palette-overlay {
+    padding-top: 0;
+    align-items: flex-end;
+  }
+  
+  .cmd-palette-modal {
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    margin: 0;
+    border-bottom: none;
+    transform: translateY(100%);
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .cmd-palette-overlay.active .cmd-palette-modal {
+    transform: translateY(0);
+  }
+  
+  .cmd-palette-header {
+    padding: 20px 24px;
+  }
+  
+  #cmd-input {
+    font-size: 18px;
+  }
+  
+  .cmd-palette-body {
+    padding: 16px 0;
+    max-height: none;
+    flex: 1;
+    overflow-y: auto;
+  }
+  
+  .cmd-option {
+    padding: 16px 24px;
+    font-size: 16px;
+  }
+  
+  .cmd-option:hover, .cmd-option.selected {
+    padding-left: 24px;
+    background: var(--bg-surface);
+    border-left: none;
+  }
+  
+  .cmd-group {
+    padding: 12px 24px 8px;
+    font-size: 11px;
   }
   
   /* Mobile Spotlight Fallback */
