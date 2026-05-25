@@ -917,8 +917,8 @@
         if (reposEl) reposEl.textContent = userData.public_repos;
         if (followersEl) followersEl.textContent = userData.followers;
       } else {
-        if (reposEl) reposEl.textContent = 'ERR';
-        if (followersEl) followersEl.textContent = 'ERR';
+        if (reposEl) reposEl.textContent = '--';
+        if (followersEl) followersEl.textContent = '--';
       }
 
       const eventsRes = await fetch(`https://api.github.com/users/${ghUser}/events/public`);
@@ -939,12 +939,12 @@
           if (latestPushEl) latestPushEl.textContent = 'No recent pushes found.';
         }
       } else {
-        if (latestPushEl) latestPushEl.textContent = 'ERR: API LIMIT';
+        if (latestPushEl) latestPushEl.textContent = 'Telemetry API limit reached.';
       }
     } catch (err) {
-      if (reposEl) reposEl.textContent = 'ERR';
-      if (followersEl) followersEl.textContent = 'ERR';
-      if (latestPushEl) latestPushEl.textContent = 'Connection Error: ' + err.message;
+      if (reposEl) reposEl.textContent = '--';
+      if (followersEl) followersEl.textContent = '--';
+      if (latestPushEl) latestPushEl.textContent = 'Telemetry offline (Network blocked)';
     }
   }
 
