@@ -903,51 +903,6 @@
     }
   }
 
-  // Live GitHub Telemetry
-  async function initGitHubTelemetry() {
-    const ghUser = 'momin1aden2-cpu';
-    const reposEl = document.getElementById('gh-repos');
-    const followersEl = document.getElementById('gh-followers');
-    const latestPushEl = document.getElementById('gh-latest-push');
-
-    try {
-      const userRes = await fetch(`https://api.github.com/users/${ghUser}`);
-      if (userRes.ok) {
-        const userData = await userRes.json();
-        if (reposEl) reposEl.textContent = userData.public_repos;
-        if (followersEl) followersEl.textContent = userData.followers;
-      } else {
-        if (reposEl) reposEl.textContent = '--';
-        if (followersEl) followersEl.textContent = '--';
-      }
-
-      const eventsRes = await fetch(`https://api.github.com/users/${ghUser}/events/public`);
-      if (eventsRes.ok) {
-        const events = await eventsRes.json();
-        const pushEvent = events.find(e => e.type === 'PushEvent');
-        if (pushEvent && pushEvent.payload) {
-          let msg = 'Code update';
-          if (pushEvent.payload.commits && pushEvent.payload.commits.length > 0) {
-            msg = pushEvent.payload.commits[0].message;
-          } else if (pushEvent.payload.ref) {
-            msg = `Updated branch ${pushEvent.payload.ref.split('/').pop()}`;
-          }
-          let repo = pushEvent.repo.name;
-          if (repo.includes('/')) repo = repo.split('/')[1];
-          if (latestPushEl) latestPushEl.textContent = `Pushed to ${repo}: "${msg.substring(0, 30)}${msg.length > 30 ? '...' : ''}"`;
-        } else {
-          if (latestPushEl) latestPushEl.textContent = 'No recent pushes found.';
-        }
-      } else {
-        if (latestPushEl) latestPushEl.textContent = 'Telemetry API limit reached.';
-      }
-    } catch (err) {
-      if (reposEl) reposEl.textContent = '--';
-      if (followersEl) followersEl.textContent = '--';
-      if (latestPushEl) latestPushEl.textContent = 'Telemetry offline (Network blocked)';
-    }
-  }
-
   // Interactive Terminal
   function initInteractiveTerminal() {
     const overlay = document.getElementById('interactive-terminal');
@@ -1050,21 +1005,8 @@
           output.innerHTML = '';
           break;
         case 'github':
-          printLine('Fetching GitHub telemetry...');
-          initGitHubTelemetry().then(() => {
-            const repos = document.getElementById('gh-repos').textContent;
-            const push = document.getElementById('gh-latest-push').textContent;
-            if (repos === 'ERR' || repos === 'N/A' || repos === '--') {
-              printLine(`[ERROR] Fetch Failed: ${push}`, 'error');
-            } else {
-              printLine(`[SUCCESS] Repos: ${repos}`, 'success');
-              printLine(`[SUCCESS] Latest Activity: ${push}`, 'success');
-              printLine('&nbsp;');
-              printLine('--- CURRENT PROJECT: riyostudio.dev ---', 'warning');
-              printLine('Hint: You can view the source code for this site.');
-              printLine('Try running: <span style="color:var(--accent);">cat index.html</span> or <span style="color:var(--accent);">cat script.js</span>');
-            }
-          });
+          printLine('GitHub telemetry is currently disabled.');
+          printLine('You can view the source code for this site here: <a href="https://github.com/momin1aden2-cpu/riyostudio.dev" target="_blank" style="color:var(--accent);">riyostudio.dev</a>');
           break;
         case 'projects':
           printLine('ACTIVE DEPLOYMENTS:');
@@ -1162,12 +1104,10 @@
   // Initialize once fully loaded to ensure dimensions are correct
   if (document.readyState === 'complete') {
     initPingingLights();
-    initGitHubTelemetry();
     initInteractiveTerminal();
   } else {
     window.addEventListener('load', () => {
       initPingingLights();
-      initGitHubTelemetry();
       initInteractiveTerminal();
     });
   }
