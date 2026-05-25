@@ -1616,8 +1616,8 @@ a, button, input, textarea, .nav-brand {
 }
 
 @media (max-width: 768px) {
-  .nav-mobile-cmd-btn {
-    display: block;
+  .terminal-trigger, .nav-mobile-cmd-btn {
+    display: none !important;
   }
   
   .mobile-cmd-fab {
