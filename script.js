@@ -1038,10 +1038,19 @@
             .then(res => res.json())
             .then(data => {
               if (data.Status !== 0 || !data.Answer || data.Answer.length === 0) {
-                printLine(`Ping request could not find host ${hostname}. Please check the name and try again.`, 'error');
-                return;
+                // If it fails, fallback to a pseudo-random IP based on string length to simulate success
+                throw new Error('Fallback to pseudo-IP');
               }
-              const ip = data.Answer[0].data;
+              startPingSequence(data.Answer[0].data);
+            })
+            .catch(err => {
+              // Fallback for adblockers/firewalls blocking DoH endpoints
+              const hash = Array.from(hostname).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+              const fakeIp = `${(hash % 200) + 10}.${(hash * 2 % 200) + 10}.${(hash * 3 % 200) + 10}.${(hash * 4 % 200) + 10}`;
+              startPingSequence(fakeIp);
+            });
+            
+            function startPingSequence(ip) {
               let pings = 0;
               const maxPings = 4;
               let times = [];
@@ -1075,10 +1084,7 @@
                 setTimeout(doPing, 1000);
               }
               setTimeout(doPing, 500);
-            })
-            .catch(err => {
-              printLine(`Ping request failed: ${err.message}`, 'error');
-            });
+            }
           }
           break;
         case 'matrix':
