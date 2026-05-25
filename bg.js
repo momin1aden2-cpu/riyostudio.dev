@@ -208,11 +208,11 @@ class LogicNode {
     this.flash = 0; // Intensity
 
     // Status Indicators
-    this.hasLED = Math.random() < 0.12; // Assignment ratio
+    this.hasLED = Math.random() < 0.4; // Assignment ratio (increased)
     this.ledOn = false;
-    this.ledTimer = Math.random() * 100;
-    // Colors
-    this.ledColor = Math.random() > 0.5 ? 'rgba(52, 211, 153, 0.95)' : 'rgba(96, 165, 250, 0.95)';
+    this.ledTimer = Math.random() * 50;
+    // Colors: Red or Blue
+    this.ledColor = Math.random() > 0.5 ? 'rgba(239, 68, 68, 0.95)' : 'rgba(59, 130, 246, 0.95)';
   }
 
   update() {
@@ -239,8 +239,8 @@ class LogicNode {
       this.ledTimer -= 1;
       if (this.ledTimer <= 0) {
         this.ledOn = !this.ledOn;
-        // Timing
-        this.ledTimer = this.ledOn ? (Math.random() * 40 + 5) : (Math.random() * 300 + 100);
+        // Timing (faster blinking)
+        this.ledTimer = this.ledOn ? (Math.random() * 20 + 5) : (Math.random() * 100 + 30);
       }
     }
   }
@@ -386,50 +386,11 @@ function animate() {
     // Draw indicators
     if (p1.hasLED && p1.ledOn) {
       ctx.fillStyle = p1.ledColor;
-      ctx.fillRect(p1.x - 1, p1.y - 1, 2, 2); // Core
+      ctx.fillRect(p1.x - 2, p1.y - 2, 4, 4); // Core (bigger)
       
       // Halo
-      ctx.fillStyle = p1.ledColor.replace('0.95)', '0.2)');
-      ctx.fillRect(p1.x - 2, p1.y - 2, 4, 4);
-    }
-
-    for (let j = i + 1; j < nodes.length; j++) {
-      const p2 = nodes[j];
-      const dist = Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y); 
-
-      if (dist < 220) {
-        if (p1.cluster === p2.cluster || dist < 80) {
-          
-          let p2Glow = p2.flash;
-          const d2Mouse = Math.sqrt(Math.pow(p2.x - mouse.x, 2) + Math.pow(p2.y - mouse.y, 2));
-          const d2Scan = Math.abs(p2.x - scanX);
-          
-          if (d2Mouse < 250) p2Glow += (1 - d2Mouse / 250) * 0.7;
-          if (d2Scan < scanWidth) p2Glow += Math.pow(1 - d2Scan / scanWidth, 2) * 0.8;
-          p2Glow = Math.min(p2Glow, 1);
-
-          const maxGlow = Math.max(glowMultiplier, p2Glow);
-          
-          const lr = Math.floor(90 + (96 - 90) * maxGlow);
-          const lg = Math.floor(100 + (165 - 100) * maxGlow);
-          const lb = Math.floor(120 + (250 - 120) * maxGlow);
-          
-          const lineAlpha = 0.12 + (maxGlow * 0.68);
-
-          ctx.beginPath();
-          ctx.strokeStyle = `rgba(${lr}, ${lg}, ${lb}, ${lineAlpha})`;
-          ctx.lineWidth = 1.5; 
-          
-          ctx.moveTo(p1.x, p1.y);
-          if ((i + j) % 2 === 0) {
-            ctx.lineTo(p2.x, p1.y);
-          } else {
-            ctx.lineTo(p1.x, p2.y);
-          }
-          ctx.lineTo(p2.x, p2.y);
-          ctx.stroke();
-        }
-      }
+      ctx.fillStyle = p1.ledColor.replace('0.95)', '0.4)');
+      ctx.fillRect(p1.x - 6, p1.y - 6, 12, 12); // Larger halo so it's not missed
     }
   }
 }
