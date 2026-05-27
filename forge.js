@@ -40,8 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Determine type
     if (file.type.startsWith('image/')) {
-      isMedia = false;
-      setupOptions(['webp', 'png', 'jpeg']);
+      isMedia = false; // Default to canvas for simple formats
+      setupOptions(['webp', 'png', 'jpeg', 'bmp', 'gif', 'tiff', 'ico', 'avif']);
+      loadFFmpeg(); // Pre-load FFmpeg in background just in case they choose an advanced format
     } else if (file.type.startsWith('video/') || file.type.startsWith('audio/')) {
       isMedia = true;
       setupOptions(['mp4', 'webm', 'gif', 'mp3', 'wav']);
@@ -182,6 +183,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (targetFormat === 'mp3' || targetFormat === 'wav') mimeType = `audio/${targetFormat}`;
       if (targetFormat === 'gif') mimeType = 'image/gif';
       if (targetFormat === 'webm') mimeType = 'video/webm';
+      if (targetFormat === 'bmp') mimeType = 'image/bmp';
+      if (targetFormat === 'tiff') mimeType = 'image/tiff';
+      if (targetFormat === 'ico') mimeType = 'image/x-icon';
+      if (targetFormat === 'avif') mimeType = 'image/avif';
 
       const blob = new Blob([data.buffer], { type: mimeType });
       triggerDownload(blob, `forged_${currentFile.name.split('.')[0]}.${targetFormat}`);
@@ -226,10 +231,12 @@ document.addEventListener('DOMContentLoaded', () => {
     forgeBtn.disabled = true;
     forgeBtn.textContent = '[ FORGING... DO NOT CLOSE ]';
     
-    if (isMedia) {
-      convertMedia();
-    } else {
+    // The native browser Canvas can handle these 3 instantly
+    if (['webp', 'png', 'jpeg'].includes(targetFormat)) {
       convertImage();
+    } else {
+      // Send everything else (videos, audio, and advanced images like TIFF/ICO) to FFmpeg
+      convertMedia();
     }
   });
 
