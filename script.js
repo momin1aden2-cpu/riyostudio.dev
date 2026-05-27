@@ -78,18 +78,20 @@
     document.body.style.overflow = '';
   }
 
-  mobileOpenBtn.addEventListener('click', openMobile);
-  mobileCloseBtn.addEventListener('click', closeMobile);
+  if (mobileOpenBtn) {
+    mobileOpenBtn.addEventListener('click', openMobile);
+    mobileCloseBtn.addEventListener('click', closeMobile);
 
-  // Close on overlay background click
-  mobileOverlay.addEventListener('click', function (e) {
-    if (e.target === mobileOverlay) closeMobile();
-  });
+    // Close on overlay background click
+    mobileOverlay.addEventListener('click', function (e) {
+      if (e.target === mobileOverlay) closeMobile();
+    });
 
-  // Close on link click
-  mobileOverlay.querySelectorAll('a').forEach(function (link) {
-    link.addEventListener('click', closeMobile);
-  });
+    // Close on link click
+    mobileOverlay.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', closeMobile);
+    });
+  }
 
   // Close on Escape key
   document.addEventListener('keydown', function (e) {
