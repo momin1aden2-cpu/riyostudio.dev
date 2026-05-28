@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initExpenseFlattener();
   initScreenRecorder();
   initTextExtractor();
+  initGhostMaker();
 });
 
 function triggerDownload(blob, filename) {
@@ -946,5 +947,193 @@ function initTextExtractor() {
         copyBtn.style.color = 'var(--text-main)';
       }, 2000);
     });
+  });
+}
+
+// Dashboard Tab Switching Logic
+document.addEventListener('DOMContentLoaded', () => {
+  const tabBtns = document.querySelectorAll('.forge-tab-btn');
+  const toolViews = document.querySelectorAll('.tool-view');
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Remove active from all
+      tabBtns.forEach(b => b.classList.remove('active'));
+      toolViews.forEach(v => v.classList.remove('active'));
+
+      // Add active to clicked
+      btn.classList.add('active');
+      const targetId = btn.getAttribute('data-target');
+      const targetView = document.getElementById(targetId);
+      if (targetView) {
+        targetView.classList.add('active');
+      }
+    });
+  });
+});
+
+// ==========================================
+// 8. THE GHOST MAKER (EXIF SCRUBBER)
+// ==========================================
+function initGhostMaker() {
+  const dropzone = document.getElementById('ghost-dropzone');
+  const input = document.getElementById('ghost-input');
+  const resultsArea = document.getElementById('ghost-results');
+  const metaList = document.getElementById('ghost-metadata-list');
+  const stripBtn = document.getElementById('ghost-strip-btn');
+  let currentFile = null;
+  let leafletMap = null;
+  let mapMarker = null;
+
+  dropzone.addEventListener('click', () => input.click());
+
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = '#10B981';
+    dropzone.style.background = 'rgba(16, 185, 129, 0.1)';
+  });
+
+  dropzone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+    dropzone.style.background = 'rgba(16, 185, 129, 0.02)';
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+    dropzone.style.background = 'rgba(16, 185, 129, 0.02)';
+    
+    if (e.dataTransfer.files.length > 0) {
+      processGhostFile(e.dataTransfer.files[0]);
+    }
+  });
+
+  input.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      processGhostFile(e.target.files[0]);
+    }
+  });
+
+  async function processGhostFile(file) {
+    if (!file.type.match('image.*')) return;
+    currentFile = file;
+    dropzone.style.display = 'none';
+    resultsArea.style.display = 'block';
+    
+    metaList.innerHTML = '<div style="color: #10B981;">Analyzing raw image data...</div>';
+
+    try {
+      // Parse EXIF Data
+      let output = await exifr.parse(file);
+      if (!output) output = {};
+      
+      // Aggressively hunt for GPS data
+      try {
+        const gps = await exifr.gps(file);
+        if (gps) {
+          output.latitude = gps.latitude;
+          output.longitude = gps.longitude;
+        }
+      } catch(e) {}
+      
+      metaList.innerHTML = '';
+      if (Object.keys(output).length === 0) {
+         metaList.innerHTML = '<div style="color: #10B981;">[✓] Image is clean. No tracking metadata found.</div>';
+         document.getElementById('ghost-map').style.display = 'none';
+      } else {
+         let html = '<ul>';
+         let hasGPS = false;
+         for (const [key, value] of Object.entries(output)) {
+           // Skip massive raw array data buffers
+           if (typeof value === 'object' && value !== null && !Array.isArray(value)) continue;
+           
+           if (key === 'latitude' || key === 'longitude') hasGPS = true;
+           
+           let displayVal = value;
+           if (displayVal instanceof Date) displayVal = displayVal.toLocaleString();
+           
+           html += `<li style="margin-bottom: 4px;"><strong>${key}:</strong> ${displayVal}</li>`;
+         }
+         html += '</ul>';
+         metaList.innerHTML = html;
+
+         document.getElementById('ghost-map').style.display = 'block';
+
+         // Init Map if GPS exists
+         if (hasGPS && output.latitude && output.longitude) {
+           if (!leafletMap) {
+             leafletMap = L.map('ghost-map').setView([output.latitude, output.longitude], 15);
+             // Use ultra-reliable OpenStreetMap tiles
+             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19,
+                className: 'dark-map-tiles',
+                crossOrigin: true
+             }).addTo(leafletMap);
+           } else {
+             leafletMap.setView([output.latitude, output.longitude], 15);
+           }
+           
+           if (mapMarker) leafletMap.removeLayer(mapMarker);
+           
+           // Custom red dot marker
+           const redIcon = L.divIcon({
+              className: 'custom-div-icon',
+              html: "<div style='background-color:#EF4444;width:15px;height:15px;border-radius:50%;border:2px solid white;box-shadow: 0 0 10px rgba(239,68,68,0.8);'></div>",
+              iconSize: [15, 15],
+              iconAnchor: [7.5, 7.5]
+           });
+           
+           mapMarker = L.marker([output.latitude, output.longitude], {icon: redIcon}).addTo(leafletMap);
+           
+           // Force map refresh to fix container sizing bugs
+           setTimeout(() => { leafletMap.invalidateSize(); }, 300);
+         } else {
+           document.getElementById('ghost-map').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-dim);">No GPS Coordinates Found</div>';
+         }
+      }
+    } catch (err) {
+      metaList.innerHTML = '<div style="color: #EF4444;">Error parsing metadata: ' + err.message + '</div>';
+    }
+  }
+
+  // The Canvas Wash (Wipe Metadata)
+  stripBtn.addEventListener('click', () => {
+    if (!currentFile) return;
+    stripBtn.innerText = '[ SCRUBBING DATA... ]';
+    
+    const img = new Image();
+    const url = URL.createObjectURL(currentFile);
+    
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      // Physically redraw the pixels, dropping all EXIF in the process
+      ctx.drawImage(img, 0, 0);
+      
+      // Export as a pristine blob
+      canvas.toBlob((blob) => {
+        const cleanUrl = URL.createObjectURL(blob);
+        triggerDownload(blob, 'ghost_' + currentFile.name);
+        
+        stripBtn.style.background = 'rgba(16, 185, 129, 0.2)';
+        stripBtn.style.color = '#10B981';
+        stripBtn.innerText = '[ DATA DESTROYED - FILE DOWNLOADED ]';
+        
+        URL.revokeObjectURL(url);
+        
+        setTimeout(() => {
+          stripBtn.style.background = 'rgba(16, 185, 129, 0.1)';
+          stripBtn.innerText = '[ STRIP ALL TRACKING DATA ]';
+          dropzone.style.display = 'flex';
+          resultsArea.style.display = 'none';
+          currentFile = null;
+        }, 3000);
+      }, currentFile.type, 1.0);
+    };
+    img.src = url;
   });
 }

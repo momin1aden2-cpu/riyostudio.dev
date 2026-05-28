@@ -1831,3 +1831,86 @@ html.supernova body {
   box-shadow: 0 0 10px rgba(167, 139, 250, 0.5);
 }
 
+.dark-map-tiles {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
+
+#ghost-map {
+  width: 100%;
+  min-height: 250px;
+}
+/* Forge Dashboard Layout */
+.forge-dashboard {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+  margin-top: 1rem;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .forge-dashboard {
+    grid-template-columns: 1fr;
+  }
+}
+
+.forge-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: rgba(10, 15, 25, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1rem;
+  position: sticky;
+  top: 100px;
+}
+
+.forge-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text-dim);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.forge-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-main);
+}
+
+.forge-tab-btn.active {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.2);
+  color: #10B981;
+}
+
+.forge-stage {
+  min-height: 500px;
+}
+
+.tool-view {
+  display: none;
+  animation: fadeStage 0.3s ease forwards;
+}
+
+.tool-view.active {
+  display: block;
+}
+
+@keyframes fadeStage {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

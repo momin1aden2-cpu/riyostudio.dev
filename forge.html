@@ -36,6 +36,11 @@
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  
+  <!-- Ghost Maker Dependencies -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
 </head>
 <body>
 
@@ -99,8 +104,30 @@
         </p>
       </div>
 
-      <div class="bento-grid" style="margin-top: 3rem; max-width: 1200px; margin-left: auto; margin-right: auto;">
+            <div class="forge-dashboard">
+        <div class="forge-sidebar">
+          <button class="forge-tab-btn active" data-target="view-converter">🔄 Media Converter</button>
+          <button class="forge-tab-btn" data-target="view-heic">🍎 HEIC Decoder</button>
+          <button class="forge-tab-btn" data-target="view-compressor">🗜️ Target Compressor</button>
+          <button class="forge-tab-btn" data-target="view-pdf">✍️ PDF Signer</button>
+          <button class="forge-tab-btn" data-target="view-expense">📑 Expense Flattener</button>
+          <button class="forge-tab-btn" data-target="view-recorder">🎥 Screen Recorder</button>
+          <button class="forge-tab-btn" data-target="view-ghost">👻 The Ghost Maker</button>
+          <button class="forge-tab-btn" data-target="view-ocr">📝 Text Extractor</button>
+          
+          <div class="forge-sponsor-banner" style="margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center;">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: #10B981; letter-spacing: 1px; text-transform: uppercase;">100% Free Tools Powered By Riyo Studio</span>
+            <div style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.4;">
+              Check out our flagship Aussie apps:<br>
+              <a href="https://renteriq.com.au" target="_blank" rel="noopener" style="color: #10B981; font-weight: bold; text-decoration: none;">RenterIQ</a> &amp; 
+              <a href="https://shiftcore.com.au" target="_blank" rel="noopener" style="color: #10B981; font-weight: bold; text-decoration: none;">ShiftCore</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="forge-stage">
         
+        <div class="tool-view active" id="view-converter">
         <!-- Tool 1: Universal Converter -->
         <div class="bento-card reveal">
           <div class="bento-card-header">
@@ -129,6 +156,8 @@
           </div>
         </div>
 
+        </div>
+        <div class="tool-view" id="view-heic">
         <!-- Tool 2: HEIC Decoder -->
         <div class="bento-card reveal reveal-delay-1">
           <div class="bento-card-header">
@@ -154,6 +183,8 @@
           </div>
         </div>
 
+        </div>
+        <div class="tool-view" id="view-compressor">
         <!-- Tool 3: Target Compressor -->
         <div class="bento-card reveal reveal-delay-2">
           <div class="bento-card-header">
@@ -178,6 +209,8 @@
           </div>
         </div>
 
+        </div>
+        <div class="tool-view" id="view-pdf">
         <!-- Tool 4: PDF Signer -->
         <div class="bento-card bento-wide reveal reveal-delay-1">
           <div class="bento-card-header">
@@ -221,6 +254,8 @@
           </div>
         </div>
 
+        </div>
+        <div class="tool-view" id="view-expense">
         <!-- Tool 5: Expense Flattener -->
         <div class="bento-card reveal reveal-delay-2">
           <div class="bento-card-header">
@@ -245,6 +280,8 @@
           </div>
         </div>
 
+        </div>
+        <div class="tool-view" id="view-recorder">
         <!-- Tool 6: Screen Recorder -->
         <div class="bento-card reveal reveal-delay-3">
           <div class="bento-card-header">
@@ -267,6 +304,8 @@
           </div>
         </div>
 
+        </div>
+        <div class="tool-view" id="view-ocr">
         <!-- Tool 7: Instant Text Extractor (OCR) -->
         <div class="bento-card bento-wide reveal reveal-delay-4">
           <div class="bento-card-header">
@@ -305,6 +344,48 @@
           </div>
         </div>
 
+      </div>
+
+        <div class="tool-view" id="view-ghost">
+          <!-- Tool 8: The Ghost Maker -->
+          <div class="bento-card reveal">
+            <div class="bento-card-header">
+              <h3>👻 The Ghost Maker (EXIF Scrubber)</h3>
+              <p>Instantly map and completely strip all hidden tracking metadata (GPS, Date, Camera) from your photos.</p>
+            </div>
+            <div class="bento-card-body">
+              <div id="ghost-dropzone" class="scanner-dropzone" style="border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.02);">
+                <input type="file" id="ghost-input" accept="image/jpeg, image/png, image/webp" style="display: none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="dropzone-icon" style="color: #10B981; width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.8;">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="12" cy="9" r="2.5" />
+                </svg>
+                <p>Drop a photo to reveal hidden tracking data</p>
+                <span style="font-size: 0.8rem; color: var(--text-dim);">Supported: JPG, PNG, WEBP</span>
+              </div>
+              
+              <div id="ghost-results" style="display: none; margin-top: 1.5rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                  <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #EF4444; text-transform: uppercase;">Tracking Data Found:</div>
+                    <div id="ghost-metadata-list" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-dim); max-height: 250px; overflow-y: auto;">
+                      <!-- EXIF data goes here -->
+                    </div>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #EF4444; text-transform: uppercase;">GPS Location Coordinates:</div>
+                    <div id="ghost-map" style="height: 250px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.4);"></div>
+                  </div>
+                </div>
+                
+                <button id="ghost-strip-btn" class="cyber-submit-btn scanner-btn" style="background: rgba(16, 185, 129, 0.1); border-color: #10B981; color: #10B981; margin-top: 2rem; width: 100%;">
+                  [ STRIP ALL TRACKING DATA ]
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
       </div>
 
       <!-- Signature Pad Modal -->
