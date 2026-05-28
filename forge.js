@@ -1039,8 +1039,21 @@ function initGhostMaker() {
       
       metaList.innerHTML = '';
       if (Object.keys(output).length === 0) {
-         metaList.innerHTML = '<div style="color: #10B981;">[✓] Image is clean. No tracking metadata found.</div>';
+         metaList.innerHTML = `
+           <div style="color: #10B981; margin-bottom: 1rem;">[✓] Image is pristine. Zero tracking metadata found.</div>
+           <button id="ghost-reset-btn" class="nav-link" style="border: 1px solid #10B981; background: transparent; color: #10B981; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+             Check Another Photo
+           </button>
+         `;
          document.getElementById('ghost-map').style.display = 'none';
+         document.getElementById('ghost-strip-btn').style.display = 'none';
+         
+         document.getElementById('ghost-reset-btn').addEventListener('click', () => {
+           dropzone.style.display = 'flex';
+           resultsArea.style.display = 'none';
+           currentFile = null;
+           document.getElementById('ghost-strip-btn').style.display = 'block'; // reset strip btn
+         });
       } else {
          let html = '<ul>';
          let hasGPS = false;
