@@ -35,6 +35,7 @@
   <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
 
@@ -207,9 +208,9 @@
               </div>
 
               <!-- Canvas wrapper for relative positioning of the draggable signature -->
-              <div id="pdf-render-container" style="position: relative; border: 1px solid var(--border); overflow: hidden; background: #fff; width: 100%; max-height: 700px; display: flex; justify-content: center; align-items: flex-start; overflow-y: auto;">
+              <div id="pdf-render-container" style="position: relative; border: 1px solid var(--border); background: #fff; width: 100%; display: flex; justify-content: center; align-items: flex-start;">
                 <canvas id="pdf-render-canvas" style="display: block; max-width: 100%;"></canvas>
-                <img id="pdf-signature-overlay" style="display: none; position: absolute; top: 50px; left: 50px; cursor: move; border: 1px dashed rgba(0,0,0,0.5); z-index: 20;" alt="Signature">
+                <img id="pdf-signature-overlay" title="Scroll mouse wheel to resize!" style="display: none; position: absolute; top: 50px; left: 50px; cursor: move; border: 1px dashed rgba(0,0,0,0.5); z-index: 20;" alt="Signature">
               </div>
 
               <div style="display: flex; gap: 10px; margin-top: 1rem; width: 100%;">
@@ -250,16 +251,56 @@
             <h3>🎥 No-Login Screen Recorder</h3>
             <p>Record your screen directly to WebM. Zero tracking.</p>
           </div>
-          <div class="bento-card-body" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
-            <div style="flex: 1; display: flex; justify-content: center; align-items: center; min-height: 150px; background: rgba(0,0,0,0.2); border: 1px dashed var(--border); border-radius: 8px; margin-bottom: 1rem; position: relative;">
+          <div class="bento-card-body" style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+            <div id="recorder-container" style="width: 100%; height: 200px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; overflow: hidden; position: relative;">
               <video id="recorder-preview" autoplay muted style="width: 100%; height: 100%; object-fit: contain; display: none; border-radius: 8px;"></video>
               <div id="recorder-placeholder" style="color: var(--text-muted); font-family: 'JetBrains Mono'; font-size: 0.9rem;">Camera OFF</div>
-              <div id="recorder-indicator" style="display: none; position: absolute; top: 10px; right: 10px; width: 12px; height: 12px; border-radius: 50%; background: #EF4444; box-shadow: 0 0 10px #EF4444; animation: pulse-red 1.5s infinite;"></div>
+              
+              <div id="recorder-indicator" style="display: none; position: absolute; top: 10px; right: 10px; display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.7); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(239,68,68,0.3);">
+                <div class="recording-dot"></div>
+                <span id="recorder-time" style="color: #EF4444; font-family: 'JetBrains Mono'; font-size: 0.8rem; font-weight: bold;">00:00</span>
+              </div>
             </div>
             
-            <div style="display: flex; gap: 10px;">
-              <button id="recorder-start-btn" class="cyber-submit-btn scanner-btn" style="flex: 1;">[ START ]</button>
-              <button id="recorder-stop-btn" class="cyber-submit-btn scanner-btn" style="flex: 1; background: #EF4444; border-color: #EF4444; color: white; display: none;">[ STOP & SAVE ]</button>
+            <button id="recorder-start-btn" class="cyber-submit-btn scanner-btn" style="width: 100%;">[ START ]</button>
+            <button id="recorder-stop-btn" class="cyber-submit-btn scanner-btn" style="width: 100%; display: none; background: rgba(239,68,68,0.1); border-color: #EF4444; color: #EF4444;">[ STOP & SAVE ]</button>
+          </div>
+        </div>
+
+        <!-- Tool 7: Instant Text Extractor (OCR) -->
+        <div class="bento-card bento-wide reveal reveal-delay-4">
+          <div class="bento-card-header">
+            <h3>📝 Instant Text Extractor</h3>
+            <p>Extract text from images using an embedded OCR engine. Runs 100% locally in a background thread.</p>
+          </div>
+          <div class="bento-card-body">
+            <div id="ocr-dropzone" class="scanner-dropzone">
+              <input type="file" id="ocr-input" accept="image/jpeg, image/png, image/webp" style="display: none;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="dropzone-icon" style="color: #A78BFA; width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.8;">
+                <path d="M4 7V4h16v3M9 20h6M12 4v16"/>
+              </svg>
+              <p>Drag & Drop an image (Receipt, Document, Screenshot)</p>
+            </div>
+            
+            <!-- Sleek Progress UI -->
+            <div id="ocr-progress-container" style="display: none; margin-top: 1rem;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-family: 'JetBrains Mono'; font-size: 0.8rem;">
+                <span id="ocr-status-text" style="color: #A78BFA;">Initializing Engine...</span>
+                <span id="ocr-percentage" style="color: var(--text-main);">0%</span>
+              </div>
+              <div class="ocr-progress-track">
+                <div id="ocr-progress-bar" class="ocr-progress-fill"></div>
+              </div>
+            </div>
+
+            <!-- Extracted Text Area -->
+            <div id="ocr-workspace" style="display: none; margin-top: 1rem; position: relative;">
+              <textarea id="ocr-textarea" class="cyber-input" style="width: 100%; height: 200px; resize: vertical; padding: 1rem; font-family: 'Inter', sans-serif; font-size: 0.9rem; line-height: 1.5;" placeholder="Extracted text will appear here..."></textarea>
+              
+              <button id="ocr-copy-btn" class="nav-link" style="position: absolute; bottom: 10px; right: 10px; border: 1px solid var(--border); background: rgba(0,0,0,0.8); color: var(--text-main); padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                Copy Text
+              </button>
             </div>
           </div>
         </div>
@@ -267,7 +308,7 @@
       </div>
 
       <!-- Signature Pad Modal -->
-      <div id="signature-modal" class="terminal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 1000;">
+      <div id="signature-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); align-items: center; justify-content: center; z-index: 99999;">
         <div class="bento-card" style="background: var(--bg-surface); padding: 24px; border-radius: 12px; width: 90%; max-width: 500px; border: 1px solid var(--border);">
           <h3 style="margin-bottom: 16px; color: var(--text-main);">Draw Your Signature</h3>
           <canvas id="signature-pad" width="450" height="200" style="background: #fff; border-radius: 8px; border: 2px dashed #ccc; cursor: crosshair; touch-action: none; width: 100%; height: auto;"></canvas>

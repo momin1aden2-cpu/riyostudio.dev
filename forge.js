@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initPdfSigner();
   initExpenseFlattener();
   initScreenRecorder();
+  initTextExtractor();
 });
 
 function triggerDownload(blob, filename) {
@@ -478,9 +479,9 @@ function initPdfSigner() {
     
     currentFileBytes = await file.arrayBuffer();
     
-    // Load with pdf.js
+    // Load with pdf.js using a copy of the buffer to prevent detachment
     const pdfjsLib = window['pdfjs-dist/build/pdf'];
-    pdfDoc = await pdfjsLib.getDocument(currentFileBytes).promise;
+    pdfDoc = await pdfjsLib.getDocument(currentFileBytes.slice(0)).promise;
     pageCountSpan.textContent = pdfDoc.numPages;
     pageNum = 1;
     renderPage(pageNum);
@@ -559,18 +560,35 @@ function initPdfSigner() {
   // Dragging overlay
   overlay.addEventListener('mousedown', (e) => {
     isDragging = true;
-    dragOffset.x = e.clientX - overlay.offsetLeft;
-    dragOffset.y = e.clientY - overlay.offsetTop;
+    const overlayRect = overlay.getBoundingClientRect();
+    // Offset of mouse from top-left of overlay
+    dragOffset.x = e.clientX - overlayRect.left;
+    dragOffset.y = e.clientY - overlayRect.top;
   });
   window.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
-    const container = document.getElementById('pdf-render-container').getBoundingClientRect();
-    let newX = e.clientX - dragOffset.x;
-    let newY = e.clientY - dragOffset.y;
-    overlay.style.left = `${newX}px`;
-    overlay.style.top = `${newY}px`;
+    const containerRect = document.getElementById('pdf-render-container').getBoundingClientRect();
+    
+    // Calculate new top-left of overlay in viewport coordinates
+    const newViewportX = e.clientX - dragOffset.x;
+    const newViewportY = e.clientY - dragOffset.y;
+    
+    // Convert viewport coordinates to container-relative coordinates
+    let newLeft = newViewportX - containerRect.left;
+    let newTop = newViewportY - containerRect.top;
+    
+    overlay.style.left = `${newLeft}px`;
+    overlay.style.top = `${newTop}px`;
   });
   window.addEventListener('mouseup', () => isDragging = false);
+
+  // Resize overlay with wheel
+  overlay.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const currentWidth = parseFloat(getComputedStyle(overlay).width);
+    const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1; // scroll down = shrink, scroll up = enlarge
+    overlay.style.width = `${currentWidth * scaleFactor}px`;
+  });
 
   // Flatten and Save
   saveBtn.addEventListener('click', async () => {
@@ -579,7 +597,8 @@ function initPdfSigner() {
 
     try {
       const { PDFDocument } = PDFLib;
-      const doc = await PDFDocument.load(currentFileBytes);
+      // Pass a clone of the buffer as a Uint8Array to prevent buffer exhaustion issues
+      const doc = await PDFDocument.load(new Uint8Array(currentFileBytes.slice(0)), { ignoreEncryption: true });
       const pages = doc.getPages();
       const page = pages[pageNum - 1]; // 0-indexed
 
@@ -610,10 +629,14 @@ function initPdfSigner() {
         height: pdfH,
       });
 
-      const pdfBytes = await doc.save();
+      const pdfBytes = await doc.save({ updateFieldAppearances: false });
       triggerDownload(new Blob([pdfBytes], { type: 'application/pdf' }), 'signed_document.pdf');
     } catch (err) {
-      alert(`Error flattening PDF: ${err.message}`);
+      if (err.message.includes('Expected instance of') || err.message.includes('encrypted')) {
+        alert(`LOCKED DOCUMENT ERROR:\n\nThis PDF has strict editing restrictions or encryption applied by its creator, preventing the engine from stamping the signature.\n\nQUICK FIX:\n1. Open the original PDF in your browser.\n2. Click "Print" and choose "Save as PDF".\n3. Upload that new copy here, and it will sign perfectly!`);
+      } else {
+        alert(`Error flattening PDF: ${err.message}`);
+      }
     } finally {
       saveBtn.disabled = false;
       saveBtn.textContent = '[ FLATTEN & DOWNLOAD ]';
@@ -819,4 +842,109 @@ function initScreenRecorder() {
     stopBtn.style.display = 'none';
     preview.srcObject = null;
   }
+}
+
+// ---------------------------------------------------------
+// 7. INSTANT TEXT EXTRACTOR (OCR)
+// ---------------------------------------------------------
+function initTextExtractor() {
+  const dropzone = document.getElementById('ocr-dropzone');
+  const fileInput = document.getElementById('ocr-input');
+  const progressContainer = document.getElementById('ocr-progress-container');
+  const progressBar = document.getElementById('ocr-progress-bar');
+  const statusText = document.getElementById('ocr-status-text');
+  const percentage = document.getElementById('ocr-percentage');
+  const workspace = document.getElementById('ocr-workspace');
+  const textarea = document.getElementById('ocr-textarea');
+  const copyBtn = document.getElementById('ocr-copy-btn');
+  
+  if (!window.Tesseract) return;
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = '#A78BFA';
+  });
+  
+  dropzone.addEventListener('dragleave', () => {
+    dropzone.style.borderColor = 'rgba(167,139,250,0.3)';
+  });
+  
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = 'rgba(167,139,250,0.3)';
+    if (e.dataTransfer.files.length > 0) {
+      handleOcrFile(e.dataTransfer.files[0]);
+    }
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      handleOcrFile(e.target.files[0]);
+    }
+  });
+
+  async function handleOcrFile(file) {
+    if (!file.type.startsWith('image/')) {
+      alert("Please upload a valid image file (PNG, JPG).");
+      return;
+    }
+
+    // Reset UI
+    workspace.style.display = 'none';
+    textarea.value = '';
+    progressContainer.style.display = 'block';
+    progressBar.style.width = '0%';
+    statusText.textContent = 'Initializing Engine...';
+    percentage.textContent = '0%';
+    
+    try {
+      const worker = await Tesseract.createWorker('eng', 1, {
+        workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
+        corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.0/tesseract-core.wasm.js',
+        logger: m => {
+          console.log("Tesseract Status:", m);
+          if (m.status) {
+            // Capitalize first letter for premium look
+            const statusStr = m.status.charAt(0).toUpperCase() + m.status.slice(1);
+            statusText.textContent = statusStr;
+          }
+          const pct = Math.floor((m.progress || 0) * 100);
+          percentage.textContent = `${pct}%`;
+          progressBar.style.width = `${pct}%`;
+        }
+      });
+      
+      statusText.textContent = 'Processing Image...';
+      const { data: { text } } = await worker.recognize(file);
+      
+      await worker.terminate();
+      
+      // Show Results
+      progressContainer.style.display = 'none';
+      workspace.style.display = 'block';
+      textarea.value = text;
+      
+    } catch (err) {
+      statusText.textContent = 'Error: ' + err.message;
+      statusText.style.color = '#EF4444';
+      percentage.textContent = '';
+    }
+  }
+  
+  copyBtn.addEventListener('click', () => {
+    if (textarea.value.trim() === '') return;
+    navigator.clipboard.writeText(textarea.value).then(() => {
+      const originalText = copyBtn.innerHTML;
+      copyBtn.innerHTML = 'Copied!';
+      copyBtn.style.background = '#10B981';
+      copyBtn.style.color = '#000';
+      setTimeout(() => {
+        copyBtn.innerHTML = originalText;
+        copyBtn.style.background = 'rgba(0,0,0,0.8)';
+        copyBtn.style.color = 'var(--text-main)';
+      }, 2000);
+    });
+  });
 }
