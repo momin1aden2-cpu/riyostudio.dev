@@ -35,14 +35,7 @@
   <link rel="stylesheet" href="scanner.css">
 </head>
 <body>
-  <!-- Terminal Boot Sequence Preloader -->
-  <div id="boot-sequence">
-    <div class="boot-content">
-      <span style="color: var(--text-muted)">> initializing subsystems...</span><br>
-      <span style="color: var(--text-dim)">> mounting quantum_canvas.js [OK]</span><br>
-      <span style="color: var(--accent)">> SYSTEM_READY</span><span class="cursor">_</span>
-    </div>
-  </div>
+
   <!-- Interactive Background Canvas -->
   <canvas id="quantum-field"></canvas>
 
@@ -61,9 +54,9 @@
         <a href="index.html#products" class="nav-link">Products</a>
         <a href="index.html#about" class="nav-link">About</a>
         <a href="index.html#process" class="nav-link">Process</a>
-        <a href="scanner.html" class="nav-link" style="color: var(--accent);">AI Scanner</a>
+        <a href="scanner.html" class="nav-link">AI Scanner</a>
+        <a href="forge.html" class="nav-link">File Forge</a>
         <a href="index.html#contact" class="nav-cta-btn desktop">Get in Touch</a>
-        <a href="#" class="nav-link terminal-trigger" style="color: #10B981; font-family: 'JetBrains Mono', monospace; border: 1px solid #10B981; border-radius: 4px; padding: 4px 10px; margin-left: 10px;">>_</a>
       </div>
 
       <div class="nav-mobile-actions">
@@ -88,7 +81,8 @@
         <a href="index.html#products">Products</a>
         <a href="index.html#about">About</a>
         <a href="index.html#process">Process</a>
-        <a href="scanner.html" style="color: var(--accent);">AI Scanner</a>
+        <a href="scanner.html">AI Scanner</a>
+        <a href="forge.html">File Forge</a>
         <a href="index.html#contact" class="nav-cta-btn">Get in Touch</a>
       </div>
     </div>
@@ -223,23 +217,7 @@
   <div class="custom-cursor-dot" id="cursor-dot"></div>
   <div class="custom-cursor-ring" id="cursor-ring"></div>
 
-  <!-- Interactive Terminal -->
-  <div class="terminal-overlay" id="interactive-terminal">
-    <div class="terminal-window">
-      <div class="terminal-header">
-        <span class="terminal-title">guest@riyostudio: ~</span>
-        <button class="terminal-close" id="terminal-close-btn">[X]</button>
-      </div>
-      <div class="terminal-body" id="terminal-output">
-        <div class="terminal-line" style="color: var(--accent);">RIYO OS v2.0.1 initialized.</div>
-        <div class="terminal-line">Type 'help' for a list of available commands.</div>
-      </div>
-      <div class="terminal-input-line">
-        <span class="terminal-prompt">guest@riyostudio:~$</span>
-        <input type="text" id="terminal-input" autocomplete="off" spellcheck="false">
-      </div>
-    </div>
-  </div>
+
 
   <!-- Command Palette -->
   <div class="cmd-palette-overlay" id="cmd-palette">
@@ -254,11 +232,7 @@
         <button class="cmd-option" data-action="scroll" data-target="#products">View Products</button>
         <button class="cmd-option" data-action="scroll" data-target="#about">About Riyo Studio</button>
         <button class="cmd-option" data-action="scroll" data-target="#contact">Get in Touch</button>
-        
-        <div class="cmd-group">System Admin</div>
-        <button class="cmd-option" data-action="diagnostics">Run Diagnostics</button>
-        <button class="cmd-option" data-action="matrix">Enter Matrix</button>
-        <button class="cmd-option" data-action="sudo">Execute Sudo</button>
+
       </div>
     </div>
   </div>

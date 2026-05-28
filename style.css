@@ -25,39 +25,39 @@ html {
   border-radius: 2px;
 }
 
-/* Design Tokens */
+/* Design Tokens - Enterprise Bento */
 :root {
   /* Backgrounds */
-  --bg-deep: #060B14;
-  --bg-surface: rgba(255, 255, 255, 0.04);
-  --bg-surface-hover: rgba(255, 255, 255, 0.07);
-  --bg-card: rgba(255, 255, 255, 0.03);
+  --bg-deep: #0a0a0a;
+  --bg-surface: rgba(255, 255, 255, 0.03);
+  --bg-surface-hover: rgba(255, 255, 255, 0.06);
+  --bg-card: rgba(255, 255, 255, 0.02);
 
   /* Accent */
-  --accent: #3B82F6;
-  --accent-dim: #2563EB;
-  --accent-glow: rgba(59, 130, 246, 0.30);
-  --accent-soft: rgba(59, 130, 246, 0.12);
+  --accent: #e5e5e5;
+  --accent-dim: #a3a3a3;
+  --accent-glow: rgba(255, 255, 255, 0.05);
+  --accent-soft: rgba(255, 255, 255, 0.03);
 
   /* Text */
   --text: #FFFFFF;
-  --text-dim: rgba(255, 255, 255, 0.72);
-  --text-faint: rgba(255, 255, 255, 0.45);
-  --text-muted: rgba(255, 255, 255, 0.30);
+  --text-dim: rgba(255, 255, 255, 0.70);
+  --text-faint: rgba(255, 255, 255, 0.40);
+  --text-muted: rgba(255, 255, 255, 0.25);
 
   /* Borders */
-  --border: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(255, 255, 255, 0.16);
-  --border-accent: rgba(59, 130, 246, 0.35);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+  --border-accent: rgba(255, 255, 255, 0.2);
 
   /* Brand colors */
   --renteriq: #1B50C8;
-  --renteriq-glow: rgba(27, 80, 200, 0.30);
+  --renteriq-glow: rgba(27, 80, 200, 0.15);
   --shiftcore: #22C55E;
-  --shiftcore-glow: rgba(34, 197, 94, 0.30);
+  --shiftcore-glow: rgba(34, 197, 94, 0.15);
 
   /* Shadows */
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.4);
 
   /* Radii */
@@ -209,13 +209,13 @@ section {
   z-index: 100;
   backdrop-filter: blur(20px) saturate(140%);
   -webkit-backdrop-filter: blur(20px) saturate(140%);
-  background: rgba(6, 11, 20, 0.5);
+  background: rgba(10, 10, 10, 0.5);
   border-bottom: 1px solid transparent;
   transition: background 0.35s, border-color 0.35s;
 }
 
 .nav.scrolled {
-  background: rgba(6, 11, 20, 0.88);
+  background: rgba(10, 10, 10, 0.88);
   border-bottom-color: var(--border);
 }
 
@@ -297,6 +297,8 @@ section {
   display: flex;
   align-items: center;
   gap: 32px;
+  margin-right: auto;
+  margin-left: 20px;
 }
 
 .nav-link {
@@ -341,8 +343,9 @@ section {
 
 .nav-cta-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 28px var(--accent-glow);
+  box-shadow: 0 8px 28px rgba(255,255,255,0.1);
 }
+
 
 /* Mobile hamburger */
 .nav-mobile-btn {
@@ -1537,31 +1540,6 @@ a, button, input, textarea, .nav-brand {
   border-radius: 4px;
 }
 
-/* Terminal Boot Preloader */
-#boot-sequence {
-  position: fixed;
-  inset: 0;
-  background: var(--bg-main);
-  z-index: 999999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 0.4s ease, visibility 0.4s;
-  pointer-events: none;
-}
-
-#boot-sequence.done {
-  opacity: 0;
-  visibility: hidden;
-}
-
-.boot-content {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
-  line-height: 2;
-  text-align: left;
-}
-
 /* Mobile Nav Actions */
 .nav-mobile-actions {
   display: flex;
@@ -1772,244 +1750,63 @@ html.supernova body {
   100% { filter: invert(1) hue-rotate(360deg); }
 }
 
-/* =====================================================================
-   Matrix Theme
-   ===================================================================== */
-body.matrix-mode {
-  --accent: #10B981;
-  --accent-glow: rgba(16, 185, 129, 0.4);
-  --accent-soft: rgba(16, 185, 129, 0.15);
-  --border: rgba(16, 185, 129, 0.3);
-  --border-hover: rgba(16, 185, 129, 0.6);
-  --text: #D1FAE5; /* Mint green text */
-  --text-dim: #6EE7B7;
-  --bg-main: #000000;
-  --bg-card: rgba(0, 5, 0, 0.9);
+/* Forge Bento Grid Layout */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+@media (min-width: 768px) {
+  .bento-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .bento-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .bento-wide {
+    grid-column: span 2;
+  }
 }
 
-/* Typography */
-body.matrix-mode, 
-body.matrix-mode h1, 
-body.matrix-mode h2, 
-body.matrix-mode h3, 
-body.matrix-mode p, 
-body.matrix-mode a, 
-body.matrix-mode button, 
-body.matrix-mode input, 
-body.matrix-mode textarea {
-  font-family: 'JetBrains Mono', monospace !important;
-  text-transform: uppercase;
-}
-
-/* CRT Overlay */
-body.matrix-mode::before {
-  content: " ";
-  display: block;
-  position: fixed;
-  top: 0; left: 0; bottom: 0; right: 0;
-  background: radial-gradient(circle at center, transparent 50%, rgba(0,2,0,0.85) 100%);
-  z-index: 9997;
-  pointer-events: none;
-}
-
-body.matrix-mode::after {
-  content: " ";
-  display: block;
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-  z-index: 9998;
-  background-size: 100% 2px, 3px 100%;
-  pointer-events: none;
-  animation: flicker 0.15s infinite;
-}
-
-@keyframes flicker {
-  0% { opacity: 0.95; }
-  50% { opacity: 0.85; }
-  100% { opacity: 0.95; }
-}
-
-/* Force elements under the overlay */
-body.matrix-mode .nav, 
-body.matrix-mode .container, 
-body.matrix-mode #boot-sequence,
-body.matrix-mode .cmd-palette-wrap {
-  position: relative;
-  z-index: 9999;
-}
-
-/* =====================================================================
-   Pinging Lights (Ethernet Life Effect)
-   ===================================================================== */
-#pinging-lights-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 5; /* Increased z-index to stay above background canvas */
-}
-
-.ping-light {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  background-color: currentColor;
-  border-radius: 50%;
-  pointer-events: none;
-  box-shadow: 0 0 15px 3px currentColor;
-  opacity: 0;
-}
-
-@keyframes ping-flash {
-  0% { opacity: 0; }
-  10% { opacity: 1; box-shadow: 0 0 20px 6px currentColor; transform: scale(1.3); }
-  20% { opacity: 0; }
-  30% { opacity: 0.9; box-shadow: 0 0 12px 3px currentColor; transform: scale(1); }
-  100% { opacity: 0; }
-}
-
-
-/* =====================================================================
-   Interactive Terminal Overlay
-   ===================================================================== */
-.terminal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 5, 10, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  z-index: 20000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.bento-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
   padding: 24px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-.terminal-overlay.active {
-  opacity: 1;
-  pointer-events: all;
-}
-
-.terminal-window {
-  width: 100%;
-  max-width: 800px;
-  height: 60vh;
-  min-height: 400px;
-  background: #050505;
-  border: 1px solid #333;
-  border-radius: 8px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
   display: flex;
   flex-direction: column;
+  transition: all 0.3s ease;
+  position: relative;
   overflow: hidden;
-  transform: translateY(20px) scale(0.98);
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.bento-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
-.terminal-overlay.active .terminal-window {
-  transform: translateY(0) scale(1);
-}
-
-.terminal-header {
-  background: #111;
-  padding: 12px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #333;
-}
-
-.terminal-title {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  color: #888;
-}
-
-.terminal-close {
-  background: transparent;
-  border: none;
-  color: #ef4444;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
+.bento-card-header h3 {
+  font-size: 1.25rem;
   font-weight: 700;
-  cursor: pointer;
+  margin-bottom: 8px;
+  color: var(--text-main);
+}
+.bento-card-header p {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+  line-height: 1.5;
 }
 
-.terminal-close:hover {
-  color: #fca5a5;
-}
-
-.terminal-body {
+.bento-card-body {
   flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #d1d5db;
-  scroll-behavior: smooth;
-}
-
-.terminal-line {
-  margin-bottom: 4px;
-  word-break: break-word;
-}
-
-.terminal-line.success { color: var(--accent); }
-.terminal-line.error { color: #ef4444; }
-.terminal-line.warning { color: #f59e0b; }
-
-.terminal-input-line {
   display: flex;
-  padding: 0 20px 20px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
-  color: #d1d5db;
-  align-items: center;
+  flex-direction: column;
 }
 
-.terminal-prompt {
-  color: var(--accent);
-  margin-right: 12px;
-  white-space: nowrap;
-}
-
-#terminal-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: #fff;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
-  outline: none;
-}
-
-/* Custom Scrollbar for Terminal */
-.terminal-body::-webkit-scrollbar {
-  width: 8px;
-}
-.terminal-body::-webkit-scrollbar-track {
-  background: #0a0a0a;
-}
-.terminal-body::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 4px;
-}
-.terminal-body::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-@media (max-width: 768px) {
-  .terminal-window {
-    height: 80vh;
-  }
+@keyframes pulse-red {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }

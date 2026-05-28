@@ -1,6 +1,32 @@
 // forge.js
 
 document.addEventListener('DOMContentLoaded', () => {
+  initUniversalConverter();
+  initHeicDecoder();
+  initTargetCompressor();
+  initPdfSigner();
+  initExpenseFlattener();
+  initScreenRecorder();
+});
+
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
+}
+
+// ---------------------------------------------------------
+// 1. UNIVERSAL MEDIA CONVERTER
+// ---------------------------------------------------------
+function initUniversalConverter() {
   const dropzone = document.getElementById('dropzone');
   const fileInput = document.getElementById('file-input');
   const controls = document.getElementById('forge-controls');
@@ -13,14 +39,12 @@ document.addEventListener('DOMContentLoaded', () => {
   let isMedia = false;
   let ffmpegInstance = null;
 
-  // --- UI & DRAG/DROP ---
-
   dropzone.addEventListener('click', () => fileInput.click());
-  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
-  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#F59E0B'; });
+  dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(245,158,11,0.3)');
   dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropzone.classList.remove('dragover');
+    dropzone.style.borderColor = 'rgba(245,158,11,0.3)';
     if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
   });
   fileInput.addEventListener('change', (e) => {
@@ -31,27 +55,24 @@ document.addEventListener('DOMContentLoaded', () => {
     currentFile = file;
     dropzone.querySelector('p').innerHTML = `Loaded: <span style="color: #F59E0B;">${file.name}</span> (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
     
-    // Reset state
     formatOptions.innerHTML = '';
     forgeBtn.textContent = '[ SELECT A FORMAT ]';
     forgeBtn.disabled = true;
     targetFormat = null;
     terminal.style.display = 'none';
 
-    // Determine type
     if (file.type.startsWith('image/')) {
       isMedia = false; 
       setupOptions(['webp', 'png', 'jpeg', 'ico', 'bmp']);
     } else if (file.type.startsWith('video/') || file.type.startsWith('audio/')) {
       isMedia = true;
       setupOptions(['mp4', 'webm', 'gif', 'mp3', 'wav']);
-      loadFFmpeg(); // Pre-load it quietly in the background
+      loadFFmpeg();
     } else {
-      alert("Unsupported file type. Please upload an image, video, or audio file.");
+      alert("Unsupported file type.");
       controls.style.display = 'none';
       return;
     }
-
     controls.style.display = 'block';
   }
 
@@ -68,7 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.style.cursor = 'pointer';
       
       btn.onclick = () => {
-        // visually select
         Array.from(formatOptions.children).forEach(c => {
           c.style.borderColor = 'rgba(255,255,255,0.2)';
           c.style.color = 'var(--text-main)';
@@ -80,7 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
         forgeBtn.textContent = `[ CONVERT TO ${fmt.toUpperCase()} ]`;
         forgeBtn.disabled = false;
       };
-      
       formatOptions.appendChild(btn);
     });
   }
@@ -92,12 +111,10 @@ document.addEventListener('DOMContentLoaded', () => {
     terminal.scrollTop = terminal.scrollHeight;
   }
 
-  // --- IMAGE FORGE (CANVAS) ---
-
   async function convertImage() {
     terminal.style.display = 'block';
     terminal.innerHTML = '';
-    logTerminal(`Initializing HTML5 Canvas Engine...`);
+    logTerminal(`Initializing Canvas Engine...`);
     
     try {
       const bmp = await createImageBitmap(currentFile);
@@ -115,129 +132,83 @@ document.addEventListener('DOMContentLoaded', () => {
 
         logTerminal(`Encoding as ${mimeType}...`);
         
-        canvas.toBlob((blob) => {
-          if (!blob) throw new Error("Canvas encoding failed");
-          triggerDownload(blob, `forged_${currentFile.name.split('.')[0]}.${targetFormat}`);
-          logTerminal(`[200 OK] Forging Complete! File downloaded.`);
-          forgeBtn.textContent = `[ FORGE ANOTHER ]`;
-          forgeBtn.disabled = false;
-        }, mimeType, quality);
+        await new Promise((resolve, reject) => {
+          canvas.toBlob((blob) => {
+            if (!blob) { reject(new Error("Canvas encoding failed")); return; }
+            triggerDownload(blob, `forged_${currentFile.name.split('.')[0]}.${targetFormat}`);
+            logTerminal(`[200 OK] Forging Complete!`);
+            resolve();
+          }, mimeType, quality);
+        });
       } else if (targetFormat === 'ico') {
         const blob = await encodeICO(canvas);
         triggerDownload(blob, `forged_${currentFile.name.split('.')[0]}.ico`);
-        logTerminal(`[200 OK] Binary ICO Forging Complete!`);
-        forgeBtn.textContent = `[ FORGE ANOTHER ]`;
-        forgeBtn.disabled = false;
+        logTerminal(`[200 OK] ICO Forging Complete!`);
       } else if (targetFormat === 'bmp') {
         const blob = encodeBMP(canvas);
         triggerDownload(blob, `forged_${currentFile.name.split('.')[0]}.bmp`);
-        logTerminal(`[200 OK] Binary BMP Forging Complete!`);
-        forgeBtn.textContent = `[ FORGE ANOTHER ]`;
-        forgeBtn.disabled = false;
+        logTerminal(`[200 OK] BMP Forging Complete!`);
       }
-
+      forgeBtn.textContent = `[ FORGE ANOTHER ]`;
+      forgeBtn.disabled = false;
     } catch (err) {
       logTerminal(`[ERROR] ${err.message}`);
       forgeBtn.disabled = false;
     }
   }
 
-  // --- CUSTOM BINARY ENCODERS ---
-
   async function encodeICO(canvas) {
-    logTerminal(`Executing custom binary ICO forge...`);
     return new Promise((resolve) => {
       canvas.toBlob(async (blob) => {
-        const pngBuffer = await blob.arrayBuffer();
-        const pngBytes = new Uint8Array(pngBuffer);
-        
+        const pngBytes = new Uint8Array(await blob.arrayBuffer());
         const buffer = new ArrayBuffer(22 + pngBytes.length);
         const view = new DataView(buffer);
-        
-        view.setUint16(0, 0, true); 
-        view.setUint16(2, 1, true); 
-        view.setUint16(4, 1, true); 
-        
-        let w = canvas.width;
-        let h = canvas.height;
-        if (w > 256) w = 0; 
-        if (h > 256) h = 0;
-        
-        view.setUint8(6, w); 
-        view.setUint8(7, h); 
-        view.setUint8(8, 0); 
-        view.setUint8(9, 0); 
-        view.setUint16(10, 1, true); 
-        view.setUint16(12, 32, true); 
-        view.setUint32(14, pngBytes.length, true); 
-        view.setUint32(18, 22, true); 
-        
-        const outArray = new Uint8Array(buffer);
-        outArray.set(pngBytes, 22); 
-        
+        view.setUint16(0, 0, true); view.setUint16(2, 1, true); view.setUint16(4, 1, true); 
+        let w = canvas.width, h = canvas.height;
+        if (w > 256) w = 0; if (h > 256) h = 0;
+        view.setUint8(6, w); view.setUint8(7, h); 
+        view.setUint8(8, 0); view.setUint8(9, 0); 
+        view.setUint16(10, 1, true); view.setUint16(12, 32, true); 
+        view.setUint32(14, pngBytes.length, true); view.setUint32(18, 22, true); 
+        new Uint8Array(buffer).set(pngBytes, 22); 
         resolve(new Blob([buffer], { type: 'image/x-icon' }));
       }, 'image/png');
     });
   }
 
   function encodeBMP(canvas) {
-    logTerminal(`Executing custom binary BMP forge...`);
     const ctx = canvas.getContext('2d');
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
-    const width = canvas.width;
-    const height = canvas.height;
-    
+    const width = canvas.width, height = canvas.height;
     const rowSize = Math.floor((width * 32 + 31) / 32) * 4;
-    const pixelArraySize = rowSize * Math.abs(height);
+    const pixelArraySize = rowSize * height;
     const fileSize = 54 + pixelArraySize;
-    
     const buffer = new ArrayBuffer(fileSize);
     const view = new DataView(buffer);
     
-    // BITMAPFILEHEADER
-    view.setUint8(0, 0x42); // 'B'
-    view.setUint8(1, 0x4D); // 'M'
-    view.setUint32(2, fileSize, true); 
-    view.setUint32(6, 0, true); 
-    view.setUint32(10, 54, true); 
-    
-    // BITMAPINFOHEADER
-    view.setUint32(14, 40, true); 
-    view.setInt32(18, width, true); 
-    view.setInt32(22, height, true); // Positive height = Bottom-Up BMP (Max compatibility)
-    view.setUint16(26, 1, true); 
-    view.setUint16(28, 32, true); 
-    view.setUint32(30, 0, true); 
-    view.setUint32(34, pixelArraySize, true); 
-    view.setInt32(38, 2835, true); 
-    view.setInt32(42, 2835, true); 
-    view.setUint32(46, 0, true); 
-    view.setUint32(50, 0, true); 
+    view.setUint8(0, 0x42); view.setUint8(1, 0x4D); view.setUint32(2, fileSize, true); 
+    view.setUint32(6, 0, true); view.setUint32(10, 54, true); 
+    view.setUint32(14, 40, true); view.setInt32(18, width, true); view.setInt32(22, height, true); 
+    view.setUint16(26, 1, true); view.setUint16(28, 32, true); 
+    view.setUint32(30, 0, true); view.setUint32(34, pixelArraySize, true); 
+    view.setInt32(38, 2835, true); view.setInt32(42, 2835, true); 
+    view.setUint32(46, 0, true); view.setUint32(50, 0, true); 
     
     const outArray = new Uint8Array(buffer);
     let offset = 54;
-    
-    // Write bottom-up pixel data (BGRA format)
     for (let y = height - 1; y >= 0; y--) {
       for (let x = 0; x < width; x++) {
         const i = (y * width + x) * 4;
-        outArray[offset++] = data[i + 2]; // B
-        outArray[offset++] = data[i + 1]; // G
-        outArray[offset++] = data[i + 0]; // R
-        outArray[offset++] = data[i + 3]; // A
+        outArray[offset++] = data[i + 2]; outArray[offset++] = data[i + 1]; 
+        outArray[offset++] = data[i + 0]; outArray[offset++] = data[i + 3]; 
       }
     }
-    
     return new Blob([buffer], { type: 'image/bmp' });
   }
 
-  // --- MEDIA FORGE (FFMPEG.WASM) ---
-
   async function loadFFmpeg() {
     if (ffmpegInstance || document.getElementById('ffmpeg-script')) return;
-    
-    // Inject FFmpeg script
     const script = document.createElement('script');
     script.id = 'ffmpeg-script';
     script.src = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js';
@@ -247,97 +218,605 @@ document.addEventListener('DOMContentLoaded', () => {
   async function convertMedia() {
     terminal.style.display = 'block';
     terminal.innerHTML = '';
-    logTerminal(`Waking up WebAssembly FFmpeg Engine...`);
+    logTerminal(`Waking up FFmpeg...`);
     
     if (!window.FFmpeg) {
-      logTerminal(`[ERROR] FFmpeg library not loaded yet. Retrying in 2 seconds...`);
       setTimeout(convertMedia, 2000);
       return;
     }
 
     try {
       if (!ffmpegInstance) {
-        logTerminal(`Allocating SharedArrayBuffer... (This may take a moment on first run)`);
+        logTerminal(`Allocating buffer...`);
         const { createFFmpeg } = FFmpeg;
-        ffmpegInstance = createFFmpeg({
-          log: true,
-          logger: ({ message }) => logTerminal(message)
-        });
+        ffmpegInstance = createFFmpeg({ log: false, logger: ({ message }) => logTerminal(message) });
         await ffmpegInstance.load();
-        logTerminal(`FFmpeg WASM Core Mounted Successfully.`);
       }
 
       const { fetchFile } = FFmpeg;
       const inputName = `input_${Date.now()}.${currentFile.name.split('.').pop()}`;
       const outputName = `output_${Date.now()}.${targetFormat}`;
 
-      logTerminal(`Writing file to virtual WASM filesystem...`);
       ffmpegInstance.FS('writeFile', inputName, await fetchFile(currentFile));
-
-      logTerminal(`Executing: ffmpeg -i ${inputName} ${outputName}`);
-      
-      // Run conversion
       const exitCode = await ffmpegInstance.run('-i', inputName, outputName);
-      if (exitCode !== 0) {
-        throw new Error(`FFmpeg engine failed to encode ${targetFormat.toUpperCase()}. The codec might not be supported in this browser build.`);
-      }
+      if (exitCode !== 0) throw new Error(`FFmpeg failed`);
 
-      logTerminal(`Extracting payload from virtual filesystem...`);
       const data = ffmpegInstance.FS('readFile', outputName);
-      
       let mimeType = 'video/mp4';
-      if (targetFormat === 'mp3' || targetFormat === 'wav') mimeType = `audio/${targetFormat}`;
+      if (['mp3', 'wav'].includes(targetFormat)) mimeType = `audio/${targetFormat}`;
       if (targetFormat === 'gif') mimeType = 'image/gif';
       if (targetFormat === 'webm') mimeType = 'video/webm';
 
       const blob = new Blob([data.buffer], { type: mimeType });
       triggerDownload(blob, `forged_${currentFile.name.split('.')[0]}.${targetFormat}`);
       
-      logTerminal(`[200 OK] Media Forging Complete! File downloaded.`);
-      
-      // Cleanup virtual FS
+      logTerminal(`[200 OK] Media Forging Complete!`);
       ffmpegInstance.FS('unlink', inputName);
       ffmpegInstance.FS('unlink', outputName);
 
       forgeBtn.textContent = `[ FORGE ANOTHER ]`;
       forgeBtn.disabled = false;
-
     } catch (err) {
-      logTerminal(`[CRITICAL ERROR] ${err.message}`);
-      logTerminal(`If SharedArrayBuffer failed, ensure coi-serviceworker is active.`);
+      logTerminal(`[ERROR] ${err.message}`);
       forgeBtn.disabled = false;
     }
   }
 
-  // --- UTILS ---
-
-  function triggerDownload(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 100);
-  }
-
-  // --- ACTION ---
-
   forgeBtn.addEventListener('click', () => {
     if (!currentFile || !targetFormat) return;
-    
     forgeBtn.disabled = true;
-    forgeBtn.textContent = '[ FORGING... DO NOT CLOSE ]';
+    forgeBtn.textContent = '[ FORGING... ]';
+    if (isMedia) convertMedia(); else convertImage();
+  });
+}
+
+// ---------------------------------------------------------
+// 2. HEIC DECODER
+// ---------------------------------------------------------
+function initHeicDecoder() {
+  const dropzone = document.getElementById('heic-dropzone');
+  const fileInput = document.getElementById('heic-input');
+  const controls = document.getElementById('heic-controls');
+  const formatSelect = document.getElementById('heic-format');
+  const btn = document.getElementById('heic-btn');
+  const status = document.getElementById('heic-status');
+  let currentFile = null;
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#4ADE80'; });
+  dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(74,222,128,0.3)');
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = 'rgba(74,222,128,0.3)';
+    if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) handleFile(e.target.files[0]);
+  });
+
+  function handleFile(file) {
+    if (!file.name.toLowerCase().endsWith('.heic')) {
+      alert('Please upload a .heic file.');
+      return;
+    }
+    currentFile = file;
+    dropzone.querySelector('p').innerHTML = `Loaded: <span style="color: #4ADE80;">${file.name}</span>`;
+    controls.style.display = 'block';
+    status.textContent = '';
+  }
+
+  btn.addEventListener('click', async () => {
+    if (!currentFile || !window.heic2any) return;
+    btn.disabled = true;
+    btn.textContent = '[ DECODING... ]';
+    status.textContent = 'Processing HEIC via WASM...';
     
-    if (isMedia) {
-      convertMedia();
-    } else {
-      convertImage();
+    try {
+      const format = formatSelect.value;
+      const ext = format === 'image/jpeg' ? 'jpg' : 'png';
+      
+      const blob = await heic2any({
+        blob: currentFile,
+        toType: format,
+        quality: 0.92
+      });
+      
+      // If multiple images are returned (e.g. animation sequence), take the first
+      const outBlob = Array.isArray(blob) ? blob[0] : blob;
+      triggerDownload(outBlob, `decoded_${currentFile.name.split('.')[0]}.${ext}`);
+      
+      status.textContent = 'Done! File downloaded.';
+    } catch (err) {
+      status.textContent = `Error: ${err.message}`;
+      status.style.color = '#EF4444';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '[ CONVERT ]';
+    }
+  });
+}
+
+// ---------------------------------------------------------
+// 3. TARGET COMPRESSOR
+// ---------------------------------------------------------
+function initTargetCompressor() {
+  const dropzone = document.getElementById('compress-dropzone');
+  const fileInput = document.getElementById('compress-input');
+  const controls = document.getElementById('compress-controls');
+  const targetInput = document.getElementById('compress-target');
+  const btn = document.getElementById('compress-btn');
+  const status = document.getElementById('compress-status');
+  const fileInfo = document.getElementById('compress-file-info');
+  let currentFile = null;
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#5B8DEF'; });
+  dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(91,141,239,0.3)');
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = 'rgba(91,141,239,0.3)';
+    if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) handleFile(e.target.files[0]);
+  });
+
+  function handleFile(file) {
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image.');
+      return;
+    }
+    currentFile = file;
+    const mbSize = (file.size / 1024 / 1024).toFixed(2);
+    dropzone.querySelector('p').innerHTML = `Loaded: <span style="color: #5B8DEF;">${file.name}</span>`;
+    fileInfo.textContent = `Current Size: ${mbSize} MB`;
+    targetInput.value = (Math.max(0.1, mbSize * 0.5)).toFixed(2); // Default to half size
+    controls.style.display = 'block';
+    status.textContent = '';
+  }
+
+  btn.addEventListener('click', async () => {
+    if (!currentFile || !window.imageCompression) return;
+    const targetMB = parseFloat(targetInput.value);
+    if (isNaN(targetMB) || targetMB <= 0) return;
+
+    const currentMB = currentFile.size / 1024 / 1024;
+    if (targetMB >= currentMB) {
+      status.textContent = `Error: The image is already smaller than ${targetMB} MB!`;
+      status.style.color = '#F59E0B';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '[ COMPRESSING... ]';
+    status.textContent = 'Compressing via Web Worker...';
+    status.style.color = '#5B8DEF';
+    
+    try {
+      const options = {
+        maxSizeMB: targetMB,
+        useWebWorker: true,
+        alwaysKeepResolution: true
+      };
+      
+      const compressedFile = await imageCompression(currentFile, options);
+      const newMbSize = (compressedFile.size / 1024 / 1024).toFixed(2);
+      
+      triggerDownload(compressedFile, `compressed_${currentFile.name}`);
+      status.textContent = `Done! Compressed down to: ${newMbSize} MB`;
+    } catch (err) {
+      status.textContent = `Error: ${err.message}`;
+      status.style.color = '#EF4444';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '[ COMPRESS ]';
+    }
+  });
+}
+
+// ---------------------------------------------------------
+// 4. PDF SIGNER
+// ---------------------------------------------------------
+function initPdfSigner() {
+  const dropzone = document.getElementById('pdf-dropzone');
+  const fileInput = document.getElementById('pdf-input');
+  const workspace = document.getElementById('pdf-workspace');
+  const renderCanvas = document.getElementById('pdf-render-canvas');
+  const overlay = document.getElementById('pdf-signature-overlay');
+  
+  const prevBtn = document.getElementById('pdf-prev');
+  const nextBtn = document.getElementById('pdf-next');
+  const closeBtn = document.getElementById('pdf-close');
+  const drawBtn = document.getElementById('pdf-draw-btn');
+  const saveBtn = document.getElementById('pdf-save-btn');
+  const pageNumSpan = document.getElementById('pdf-page-num');
+  const pageCountSpan = document.getElementById('pdf-page-count');
+  
+  const sigModal = document.getElementById('signature-modal');
+  const sigPad = document.getElementById('signature-pad');
+  const sigClearBtn = document.getElementById('sig-clear-btn');
+  const sigCancelBtn = document.getElementById('sig-cancel-btn');
+  const sigApplyBtn = document.getElementById('sig-apply-btn');
+
+  let currentFileBytes = null;
+  let pdfDoc = null; // pdf.js document
+  let pageNum = 1;
+  let pdfRenderScale = 1.5;
+  let pdfPageViewport = null;
+  
+  let signatureBlob = null;
+  let isDragging = false;
+  let dragOffset = { x: 0, y: 0 };
+  let sigPadCtx = sigPad.getContext('2d');
+  let isDrawing = false;
+
+  // Setup pdf.js worker
+  if (window['pdfjs-dist/build/pdf']) {
+    const pdfjsLib = window['pdfjs-dist/build/pdf'];
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#10B981'; });
+  dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(16,185,129,0.3)');
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = 'rgba(16,185,129,0.3)';
+    if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) handleFile(e.target.files[0]);
+  });
+
+  async function handleFile(file) {
+    if (file.type !== 'application/pdf') {
+      alert('Please upload a PDF file.');
+      return;
+    }
+    dropzone.style.display = 'none';
+    workspace.style.display = 'block';
+    
+    currentFileBytes = await file.arrayBuffer();
+    
+    // Load with pdf.js
+    const pdfjsLib = window['pdfjs-dist/build/pdf'];
+    pdfDoc = await pdfjsLib.getDocument(currentFileBytes).promise;
+    pageCountSpan.textContent = pdfDoc.numPages;
+    pageNum = 1;
+    renderPage(pageNum);
+  }
+
+  async function renderPage(num) {
+    const page = await pdfDoc.getPage(num);
+    // Use container width to calculate scale
+    const containerWidth = document.getElementById('pdf-render-container').clientWidth;
+    const unscaledViewport = page.getViewport({ scale: 1.0 });
+    pdfRenderScale = containerWidth / unscaledViewport.width;
+    pdfPageViewport = page.getViewport({ scale: pdfRenderScale });
+    
+    renderCanvas.width = pdfPageViewport.width;
+    renderCanvas.height = pdfPageViewport.height;
+    
+    const ctx = renderCanvas.getContext('2d');
+    const renderContext = { canvasContext: ctx, viewport: pdfPageViewport };
+    await page.render(renderContext).promise;
+    pageNumSpan.textContent = num;
+  }
+
+  prevBtn.addEventListener('click', () => { if (pageNum <= 1) return; pageNum--; renderPage(pageNum); });
+  nextBtn.addEventListener('click', () => { if (pageNum >= pdfDoc.numPages) return; pageNum++; renderPage(pageNum); });
+  
+  closeBtn.addEventListener('click', () => {
+    workspace.style.display = 'none';
+    dropzone.style.display = 'block';
+    overlay.style.display = 'none';
+    saveBtn.style.display = 'none';
+    drawBtn.textContent = '[ DRAW SIGNATURE ]';
+    currentFileBytes = null;
+    pdfDoc = null;
+  });
+
+  // Signature Pad Logic
+  drawBtn.addEventListener('click', () => {
+    sigModal.style.display = 'flex';
+    sigPadCtx.clearRect(0, 0, sigPad.width, sigPad.height);
+  });
+  sigCancelBtn.addEventListener('click', () => sigModal.style.display = 'none');
+  sigClearBtn.addEventListener('click', () => sigPadCtx.clearRect(0, 0, sigPad.width, sigPad.height));
+
+  const getPos = (e) => {
+    const rect = sigPad.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  };
+
+  const startDraw = (e) => { isDrawing = true; const pos = getPos(e); sigPadCtx.beginPath(); sigPadCtx.moveTo(pos.x, pos.y); };
+  const draw = (e) => { if(!isDrawing) return; e.preventDefault(); const pos = getPos(e); sigPadCtx.lineTo(pos.x, pos.y); sigPadCtx.strokeStyle = '#000'; sigPadCtx.lineWidth = 4; sigPadCtx.lineCap = 'round'; sigPadCtx.stroke(); };
+  const stopDraw = () => { isDrawing = false; sigPadCtx.closePath(); };
+
+  sigPad.addEventListener('mousedown', startDraw);
+  sigPad.addEventListener('mousemove', draw);
+  sigPad.addEventListener('mouseup', stopDraw);
+  sigPad.addEventListener('mouseout', stopDraw);
+  sigPad.addEventListener('touchstart', startDraw, { passive: false });
+  sigPad.addEventListener('touchmove', draw, { passive: false });
+  sigPad.addEventListener('touchend', stopDraw);
+
+  sigApplyBtn.addEventListener('click', () => {
+    // Trim canvas (simplification: just use entire canvas data)
+    sigPad.toBlob((blob) => {
+      signatureBlob = blob;
+      overlay.src = URL.createObjectURL(blob);
+      overlay.style.display = 'block';
+      overlay.style.width = '200px'; // Initial scale
+      saveBtn.style.display = 'block';
+      drawBtn.textContent = '[ REDRAW SIGNATURE ]';
+      sigModal.style.display = 'none';
+    }, 'image/png');
+  });
+
+  // Dragging overlay
+  overlay.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    dragOffset.x = e.clientX - overlay.offsetLeft;
+    dragOffset.y = e.clientY - overlay.offsetTop;
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const container = document.getElementById('pdf-render-container').getBoundingClientRect();
+    let newX = e.clientX - dragOffset.x;
+    let newY = e.clientY - dragOffset.y;
+    overlay.style.left = `${newX}px`;
+    overlay.style.top = `${newY}px`;
+  });
+  window.addEventListener('mouseup', () => isDragging = false);
+
+  // Flatten and Save
+  saveBtn.addEventListener('click', async () => {
+    saveBtn.disabled = true;
+    saveBtn.textContent = '[ FLATTENING... ]';
+
+    try {
+      const { PDFDocument } = PDFLib;
+      const doc = await PDFDocument.load(currentFileBytes);
+      const pages = doc.getPages();
+      const page = pages[pageNum - 1]; // 0-indexed
+
+      const sigImage = await doc.embedPng(await signatureBlob.arrayBuffer());
+      
+      // Calculate coordinates relative to unscaled PDF
+      const overlayRect = overlay.getBoundingClientRect();
+      const canvasRect = renderCanvas.getBoundingClientRect();
+      
+      // Top left offset in HTML pixels
+      const htmlX = overlayRect.left - canvasRect.left;
+      const htmlY = overlayRect.top - canvasRect.top;
+      
+      // Convert HTML pixels to PDF points using the scale
+      const pdfX = htmlX / pdfRenderScale;
+      const htmlH = overlayRect.height;
+      const pdfW = overlayRect.width / pdfRenderScale;
+      const pdfH = htmlH / pdfRenderScale;
+      
+      // pdf-lib y-axis starts from BOTTOM left
+      const pageHeight = page.getHeight();
+      const pdfY = pageHeight - (htmlY / pdfRenderScale) - pdfH;
+
+      page.drawImage(sigImage, {
+        x: pdfX,
+        y: pdfY,
+        width: pdfW,
+        height: pdfH,
+      });
+
+      const pdfBytes = await doc.save();
+      triggerDownload(new Blob([pdfBytes], { type: 'application/pdf' }), 'signed_document.pdf');
+    } catch (err) {
+      alert(`Error flattening PDF: ${err.message}`);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '[ FLATTEN & DOWNLOAD ]';
+    }
+  });
+}
+
+// ---------------------------------------------------------
+// 5. EXPENSE FLATTENER
+// ---------------------------------------------------------
+function initExpenseFlattener() {
+  const dropzone = document.getElementById('expense-dropzone');
+  const fileInput = document.getElementById('expense-input');
+  const list = document.getElementById('expense-list');
+  const btn = document.getElementById('expense-btn');
+  const status = document.getElementById('expense-status');
+  
+  let files = [];
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#F87171'; });
+  dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(248,113,113,0.3)');
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = 'rgba(248,113,113,0.3)';
+    handleFiles(e.dataTransfer.files);
+  });
+  fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+  function handleFiles(newFiles) {
+    for (let f of newFiles) {
+      if (f.type.startsWith('image/')) files.push(f);
+    }
+    renderList();
+  }
+
+  function renderList() {
+    list.innerHTML = '';
+    if (files.length > 0) btn.style.display = 'block';
+    
+    files.forEach((f, i) => {
+      const item = document.createElement('div');
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'space-between';
+      item.style.padding = '8px 12px';
+      item.style.background = 'rgba(255,255,255,0.05)';
+      item.style.borderRadius = '6px';
+      item.style.border = '1px solid rgba(255,255,255,0.1)';
+      
+      const title = document.createElement('span');
+      title.textContent = `${i + 1}. ${f.name}`;
+      title.style.fontSize = '0.9rem';
+      title.style.color = 'var(--text-main)';
+      
+      const controls = document.createElement('div');
+      
+      const upBtn = document.createElement('button');
+      upBtn.textContent = '↑';
+      upBtn.className = 'nav-link';
+      upBtn.style.padding = '2px 8px';
+      upBtn.onclick = () => { if (i > 0) { const t = files[i]; files[i] = files[i-1]; files[i-1] = t; renderList(); } };
+      
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'X';
+      delBtn.className = 'nav-link';
+      delBtn.style.padding = '2px 8px';
+      delBtn.style.color = '#F87171';
+      delBtn.onclick = () => { files.splice(i, 1); renderList(); };
+      
+      controls.appendChild(upBtn);
+      controls.appendChild(delBtn);
+      item.appendChild(title);
+      item.appendChild(controls);
+      list.appendChild(item);
+    });
+  }
+
+  btn.addEventListener('click', async () => {
+    if (files.length === 0 || !window.PDFLib) return;
+    btn.disabled = true;
+    btn.textContent = '[ MERGING... ]';
+    status.textContent = 'Generating PDF...';
+    
+    try {
+      const { PDFDocument } = PDFLib;
+      const pdfDoc = await PDFDocument.create();
+      
+      // A4 size: 595.28 x 841.89
+      const page = pdfDoc.addPage([595.28, 841.89]);
+      const margin = 20;
+      const usableWidth = 595.28 - (margin * 2);
+      const usableHeight = 841.89 - (margin * 2);
+      const rowHeight = usableHeight / files.length;
+      let currentY = 841.89 - margin; // pdf-lib y-axis starts from bottom
+      
+      for (const f of files) {
+        const bytes = await f.arrayBuffer();
+        let img;
+        if (f.type === 'image/jpeg') img = await pdfDoc.embedJpg(bytes);
+        else if (f.type === 'image/png') img = await pdfDoc.embedPng(bytes);
+        else {
+          // Convert WebP/etc to PNG via Canvas first
+          const bmp = await createImageBitmap(f);
+          const canvas = document.createElement('canvas');
+          canvas.width = bmp.width; canvas.height = bmp.height;
+          canvas.getContext('2d').drawImage(bmp, 0, 0);
+          const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+          img = await pdfDoc.embedPng(await blob.arrayBuffer());
+        }
+        
+        // Scale to fit within its allocated row height (minus some padding)
+        const { width, height } = img.scaleToFit(usableWidth, rowHeight - 20);
+        
+        // Center vertically within the row block
+        const centerY = currentY - (rowHeight / 2);
+        const imageBottomY = centerY - (height / 2);
+        
+        page.drawImage(img, {
+          x: margin + (usableWidth / 2 - width / 2), // Center horizontally
+          y: imageBottomY,
+          width,
+          height,
+        });
+        
+        currentY -= rowHeight;
+      }
+      
+      const pdfBytes = await pdfDoc.save();
+      triggerDownload(new Blob([pdfBytes], { type: 'application/pdf' }), 'expenses.pdf');
+      status.textContent = 'Done!';
+    } catch(err) {
+      status.textContent = `Error: ${err.message}`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '[ MERGE TO PDF ]';
+    }
+  });
+}
+
+// ---------------------------------------------------------
+// 6. SCREEN RECORDER
+// ---------------------------------------------------------
+function initScreenRecorder() {
+  const startBtn = document.getElementById('recorder-start-btn');
+  const stopBtn = document.getElementById('recorder-stop-btn');
+  const preview = document.getElementById('recorder-preview');
+  const placeholder = document.getElementById('recorder-placeholder');
+  const indicator = document.getElementById('recorder-indicator');
+  
+  let mediaRecorder = null;
+  let recordedChunks = [];
+  let stream = null;
+
+  startBtn.addEventListener('click', async () => {
+    try {
+      stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      
+      preview.srcObject = stream;
+      preview.style.display = 'block';
+      placeholder.style.display = 'none';
+      indicator.style.display = 'block';
+      
+      startBtn.style.display = 'none';
+      stopBtn.style.display = 'block';
+      
+      recordedChunks = [];
+      mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+      
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunks.push(e.data);
+      };
+      
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        triggerDownload(blob, `recording_${Date.now()}.webm`);
+        resetRecorder();
+      };
+      
+      // Listen for browser native stop button (e.g. Chrome's "Stop sharing" banner)
+      stream.getVideoTracks()[0].onended = () => {
+        if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+      };
+      
+      mediaRecorder.start(1000); // 1-second chunks to prevent memory bloat
+    } catch (err) {
+      alert("Screen recording cancelled or failed: " + err.message);
     }
   });
 
-});
+  stopBtn.addEventListener('click', () => {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+      stream.getTracks().forEach(track => track.stop());
+    }
+  });
+
+  function resetRecorder() {
+    preview.style.display = 'none';
+    placeholder.style.display = 'block';
+    indicator.style.display = 'none';
+    startBtn.style.display = 'block';
+    stopBtn.style.display = 'none';
+    preview.srcObject = null;
+  }
+}
