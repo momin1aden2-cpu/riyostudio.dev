@@ -1111,6 +1111,16 @@ function initGhostMaker() {
     }
   }
 
+  // Reset the UI to check another photo when metadata was found
+  const resetMainBtn = document.getElementById('ghost-reset-main-btn');
+  if (resetMainBtn) {
+    resetMainBtn.addEventListener('click', () => {
+      dropzone.style.display = 'flex';
+      resultsArea.style.display = 'none';
+      currentFile = null;
+    });
+  }
+
   // The Canvas Wash (Wipe Metadata)
   stripBtn.addEventListener('click', () => {
     if (!currentFile) return;
