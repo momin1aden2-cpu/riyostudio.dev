@@ -231,7 +231,11 @@ function initUniversalConverter() {
       if (!ffmpegInstance) {
         logTerminal(`Allocating buffer...`);
         const { createFFmpeg } = FFmpeg;
-        ffmpegInstance = createFFmpeg({ log: false, logger: ({ message }) => logTerminal(message) });
+        ffmpegInstance = createFFmpeg({ 
+          log: false, 
+          logger: ({ message }) => logTerminal(message),
+          corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
+        });
         await ffmpegInstance.load();
       }
 
