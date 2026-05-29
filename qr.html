@@ -14,10 +14,10 @@
 
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="apple-touch-icon" href="assets/icon.png">
-  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="stylesheet" href="style.css?v=9">
 
-  <!-- QR Code Styling Library -->
-  <script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+  <!-- QRCodeStyling Library -->
+  <script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js" crossorigin="anonymous"></script>
 
   <style>
     /* Custom Styling for the QR Hub Layout */
@@ -254,8 +254,12 @@
       <p class="qr-header-subtitle">Generate premium, styling-capable QR codes directly in your browser memory. 100% offline, zero servers, zero subscriptions, zero watermarks.</p>
 
       <div class="mode-tabs">
-        <button class="mode-tab active" id="tab-url">🔗 Website URL</button>
-        <button class="mode-tab" id="tab-vcard">📇 Business vCard</button>
+        <button class="mode-tab active" id="tab-url">🔗 URL</button>
+        <button class="mode-tab" id="tab-vcard">📇 vCard</button>
+        <button class="mode-tab" id="tab-wifi">📶 WiFi</button>
+        <button class="mode-tab" id="tab-email">✉️ Email</button>
+        <button class="mode-tab" id="tab-sms">💬 SMS</button>
+        <button class="mode-tab" id="tab-crypto">₿ Crypto</button>
       </div>
 
       <!-- URL INPUT -->
@@ -265,7 +269,7 @@
       </div>
 
       <!-- VCARD INPUT -->
-      <div id="vcard-fields" class="input-group">
+      <div id="vcard-fields" class="input-group" style="display: none;">
         <div>
           <label class="input-label">First Name</label>
           <input type="text" id="vc-fname" class="cyber-input" style="width: 100%" placeholder="John">
@@ -285,6 +289,75 @@
         <div>
           <label class="input-label">Email</label>
           <input type="email" id="vc-email" class="cyber-input" style="width: 100%" placeholder="hello@riyostudio.dev">
+        </div>
+      </div>
+
+      <!-- WIFI INPUT -->
+      <div id="wifi-fields" class="input-group" style="display: none;">
+        <div style="grid-column: span 2;">
+          <label class="input-label">Network Name (SSID)</label>
+          <input type="text" id="wifi-ssid" class="cyber-input" style="width: 100%" placeholder="My WiFi Network">
+        </div>
+        <div>
+          <label class="input-label">Password</label>
+          <input type="password" id="wifi-pass" class="cyber-input" style="width: 100%" placeholder="SecretPassword123">
+        </div>
+        <div>
+          <label class="input-label">Security</label>
+          <select id="wifi-sec" class="cyber-input" style="width: 100%">
+            <option value="WPA">WPA/WPA2</option>
+            <option value="WEP">WEP</option>
+            <option value="nopass">None</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- EMAIL INPUT -->
+      <div id="email-fields" class="input-group" style="display: none;">
+        <div style="grid-column: span 2;">
+          <label class="input-label">Email Address</label>
+          <input type="email" id="em-to" class="cyber-input" style="width: 100%" placeholder="hello@riyostudio.dev">
+        </div>
+        <div style="grid-column: span 2;">
+          <label class="input-label">Subject</label>
+          <input type="text" id="em-sub" class="cyber-input" style="width: 100%" placeholder="Project Inquiry">
+        </div>
+        <div style="grid-column: span 2;">
+          <label class="input-label">Body Text</label>
+          <textarea id="em-body" class="cyber-input" style="width: 100%; height: 80px;" placeholder="Hi there, I would like to..."></textarea>
+        </div>
+      </div>
+
+      <!-- SMS INPUT -->
+      <div id="sms-fields" class="input-group" style="display: none;">
+        <div style="grid-column: span 2;">
+          <label class="input-label">Phone Number</label>
+          <input type="tel" id="sms-to" class="cyber-input" style="width: 100%" placeholder="+61400000000">
+        </div>
+        <div style="grid-column: span 2;">
+          <label class="input-label">Message</label>
+          <textarea id="sms-body" class="cyber-input" style="width: 100%; height: 80px;" placeholder="I am here!"></textarea>
+        </div>
+      </div>
+
+      <!-- CRYPTO INPUT -->
+      <div id="crypto-fields" class="input-group" style="display: none;">
+        <div>
+          <label class="input-label">Currency</label>
+          <select id="crypto-type" class="cyber-input" style="width: 100%">
+            <option value="bitcoin">Bitcoin (BTC)</option>
+            <option value="ethereum">Ethereum (ETH)</option>
+            <option value="litecoin">Litecoin (LTC)</option>
+            <option value="bitcoincash">Bitcoin Cash (BCH)</option>
+          </select>
+        </div>
+        <div style="grid-column: span 2;">
+          <label class="input-label">Wallet Address</label>
+          <input type="text" id="crypto-addr" class="cyber-input" style="width: 100%" placeholder="0x...">
+        </div>
+        <div>
+          <label class="input-label">Amount (Optional)</label>
+          <input type="number" id="crypto-amount" class="cyber-input" style="width: 100%" placeholder="0.5">
         </div>
       </div>
 
