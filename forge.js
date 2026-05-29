@@ -758,19 +758,26 @@ function initExpenseFlattener() {
       const { PDFDocument } = PDFLib;
       const pdfDoc = await PDFDocument.create();
       
-      for (const f of files) {
-        // Create a dedicated A4 page for each image
-        const page = pdfDoc.addPage([595.28, 841.89]);
-        const margin = 20;
-        const usableWidth = 595.28 - (margin * 2);
-        const usableHeight = 841.89 - (margin * 2);
+      // A4 size: 595.28 x 841.89
+      const page = pdfDoc.addPage([595.28, 841.89]);
+      const margin = 20;
+      const usableWidth = 595.28 - (margin * 2);
+      const usableHeight = 841.89 - (margin * 2);
 
+      // Smart Grid Calculation to fit all on one page
+      const cols = Math.ceil(Math.sqrt(files.length));
+      const rows = Math.ceil(files.length / cols);
+      
+      const cellWidth = usableWidth / cols;
+      const cellHeight = usableHeight / rows;
+      
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
         const bytes = await f.arrayBuffer();
         let img;
         if (f.type === 'image/jpeg') img = await pdfDoc.embedJpg(bytes);
         else if (f.type === 'image/png') img = await pdfDoc.embedPng(bytes);
         else {
-          // Convert WebP/etc to PNG via Canvas first
           const bmp = await createImageBitmap(f);
           const canvas = document.createElement('canvas');
           canvas.width = bmp.width; canvas.height = bmp.height;
@@ -779,13 +786,21 @@ function initExpenseFlattener() {
           img = await pdfDoc.embedPng(await blob.arrayBuffer());
         }
         
-        // Scale the image to fit perfectly inside the full page margins
-        const { width, height } = img.scaleToFit(usableWidth, usableHeight);
+        // Calculate grid position
+        const colIndex = i % cols;
+        const rowIndex = Math.floor(i / cols);
         
-        // Draw perfectly centered on the page
+        // Scale to fit inside the grid cell perfectly without distortion
+        const { width, height } = img.scaleToFit(cellWidth - 10, cellHeight - 10);
+        
+        // Calculate X and Y to center the image within its specific cell
+        // pdf-lib Y axis starts from the bottom!
+        const cellX = margin + (colIndex * cellWidth);
+        const cellY = 841.89 - margin - (rowIndex * cellHeight) - cellHeight; // Bottom of the cell
+        
         page.drawImage(img, {
-          x: margin + (usableWidth / 2 - width / 2),
-          y: margin + (usableHeight / 2 - height / 2),
+          x: cellX + (cellWidth / 2 - width / 2),
+          y: cellY + (cellHeight / 2 - height / 2),
           width,
           height,
         });
