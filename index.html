@@ -107,29 +107,24 @@
         <a href="qr.html" class="nav-link">QR Hub</a>
         <a href="scanner.html" class="nav-link">AI Scanner</a>
         <a href="forge.html" class="nav-link">File Forge</a>
-        <button class="nav-menu-btn" id="nav-menu-open" aria-label="Open menu">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M4 6h16M4 12h16M4 18h16"></path>
-          </svg>
-        </button>
+        <div class="nav-dropdown-wrapper">
+          <button class="nav-menu-btn" id="nav-menu-open" aria-label="Open menu" style="padding: 6px 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); color: var(--text-dim); transition: all 0.2s; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-left: 8px;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <circle cx="5" cy="12" r="2"></circle>
+              <circle cx="12" cy="12" r="2"></circle>
+              <circle cx="19" cy="12" r="2"></circle>
+            </svg>
+          </button>
+          
+          <!-- Context Dropdown -->
+          <div class="nav-dropdown" id="nav-dropdown">
+            <a href="index.html#about">About Us</a>
+            <a href="index.html#contact" class="nav-cta-btn">Get in Touch</a>
+          </div>
+        </div>
       </div>
     </div>
   </nav>
-
-  <!-- Hamburger Menu Overlay -->
-  <div class="nav-menu-overlay" id="nav-menu-overlay">
-    <div class="nav-menu-panel">
-      <button class="nav-menu-close" id="nav-menu-close" aria-label="Close menu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 6L6 18M6 6l12 12"></path>
-        </svg>
-      </button>
-      <div class="nav-menu-links">
-        <a href="index.html#about">About Us</a>
-        <a href="index.html#contact" class="nav-cta-btn">Get in Touch</a>
-      </div>
-    </div>
-  </div>
 
   <!-- Hero -->
   <section class="hero" id="hero">

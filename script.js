@@ -47,34 +47,28 @@
     }
   }
 
-  // Hamburger Menu
+  // Context Dropdown Menu
   const navMenuBtn = document.getElementById('nav-menu-open');
-  const navMenuOverlay = document.getElementById('nav-menu-overlay');
-  const navMenuClose = document.getElementById('nav-menu-close');
+  const navDropdown = document.getElementById('nav-dropdown');
 
-  if (navMenuBtn && navMenuOverlay && navMenuClose) {
-    navMenuBtn.addEventListener('click', () => {
-      navMenuOverlay.classList.add('open');
-      document.body.style.overflow = 'hidden';
+  if (navMenuBtn && navDropdown) {
+    navMenuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      navDropdown.classList.toggle('open');
     });
 
-    navMenuClose.addEventListener('click', () => {
-      navMenuOverlay.classList.remove('open');
-      document.body.style.overflow = '';
-    });
-
-    navMenuOverlay.addEventListener('click', (e) => {
-      if (e.target === navMenuOverlay) {
-        navMenuOverlay.classList.remove('open');
-        document.body.style.overflow = '';
+    // Close when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!navDropdown.contains(e.target) && !navMenuBtn.contains(e.target)) {
+        navDropdown.classList.remove('open');
       }
     });
 
-    const menuLinks = navMenuOverlay.querySelectorAll('.nav-menu-links a');
+    // Close when a link is clicked
+    const menuLinks = navDropdown.querySelectorAll('a');
     menuLinks.forEach(link => {
       link.addEventListener('click', () => {
-        navMenuOverlay.classList.remove('open');
-        document.body.style.overflow = '';
+        navDropdown.classList.remove('open');
       });
     });
   }
