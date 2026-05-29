@@ -1,4 +1,4 @@
-const CACHE_NAME = 'riyo-studio-v1';
+const CACHE_NAME = 'riyo-studio-v2';
 
 const PRECACHE_ASSETS = [
   '/',
@@ -16,7 +16,6 @@ const PRECACHE_ASSETS = [
   '/forge.js?v=7',
   '/invoice.js',
   '/qr.js',
-  '/assets/icon.png',
   '/manifest.json'
 ];
 
@@ -51,21 +50,14 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
+      // 1. If we have it in cache, return it immediately (no background fetching to avoid navigate bugs)
       if (cachedResponse) {
-        // Return from cache immediately
-        // Update cache in the background
-        event.waitUntil(
-          fetch(event.request).then((networkResponse) => {
-            if (networkResponse && (networkResponse.status === 200 || networkResponse.status === 0)) {
-              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse.clone()));
-            }
-          }).catch(() => {})
-        );
         return cachedResponse;
       }
       
-      // Not in cache, fetch from network
+      // 2. Not in cache, fetch from network safely
       return fetch(event.request).then((networkResponse) => {
+        // Only cache valid responses
         if (networkResponse && (networkResponse.status === 200 || networkResponse.status === 0)) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
@@ -73,10 +65,8 @@ self.addEventListener('fetch', (event) => {
         return networkResponse;
       }).catch((err) => {
         console.warn('[ServiceWorker] Network error on fetch', err);
-        // Prevent browser throwing a blank page
-        return new Response('<h1 style="color:white;font-family:sans-serif;text-align:center;margin-top:20%">Network Error. Try refreshing.</h1>', {
+        return new Response('<h1 style="color:white;font-family:sans-serif;text-align:center;margin-top:20%">Offline. Please connect to internet.</h1>', {
           status: 503,
-          statusText: 'Service Unavailable',
           headers: { 'Content-Type': 'text/html' }
         });
       });
