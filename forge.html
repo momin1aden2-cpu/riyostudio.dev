@@ -369,7 +369,15 @@
             </div>
             
             <button id="recorder-start-btn" class="cyber-submit-btn scanner-btn" style="width: 100%;">[ START ]</button>
-            <button id="recorder-stop-btn" class="cyber-submit-btn scanner-btn" style="width: 100%; display: none; background: rgba(239,68,68,0.1); border-color: #EF4444; color: #EF4444;">[ STOP & SAVE ]</button>
+            <button id="recorder-stop-btn" class="cyber-submit-btn scanner-btn" style="width: 100%; display: none; background: rgba(239,68,68,0.1); border-color: #EF4444; color: #EF4444;">[ STOP RECORDING ]</button>
+            
+            <div id="recorder-actions" style="display: none; width: 100%; gap: 10px; flex-direction: column; margin-top: 10px;">
+              <div style="display: flex; gap: 10px;">
+                <button id="recorder-save-btn" class="cyber-submit-btn scanner-btn" style="flex: 1;">[ SAVE ]</button>
+                <button id="recorder-share-btn" class="cyber-submit-btn scanner-btn" style="flex: 1; background: rgba(16,185,129,0.1); border-color: #10B981; color: #10B981;">[ SHARE ]</button>
+              </div>
+              <button id="recorder-reset-btn" class="cyber-submit-btn scanner-btn" style="width: 100%; background: transparent; border-color: var(--border); color: var(--text-dim);">[ TRASH ]</button>
+            </div>
           </div>
         </div>
 

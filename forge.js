@@ -816,13 +816,28 @@ function initExpenseFlattener() {
 function initScreenRecorder() {
   const startBtn = document.getElementById('recorder-start-btn');
   const stopBtn = document.getElementById('recorder-stop-btn');
+  const actionsDiv = document.getElementById('recorder-actions');
+  const saveBtn = document.getElementById('recorder-save-btn');
+  const shareBtn = document.getElementById('recorder-share-btn');
+  const resetBtn = document.getElementById('recorder-reset-btn');
   const preview = document.getElementById('recorder-preview');
   const placeholder = document.getElementById('recorder-placeholder');
   const indicator = document.getElementById('recorder-indicator');
+  const timeDisplay = document.getElementById('recorder-time');
   
   let mediaRecorder = null;
   let recordedChunks = [];
   let stream = null;
+  let finalBlob = null;
+  let timerInterval = null;
+  let startTime = 0;
+
+  function updateTimer() {
+    const diff = Math.floor((Date.now() - startTime) / 1000);
+    const mins = String(Math.floor(diff / 60)).padStart(2, '0');
+    const secs = String(diff % 60).padStart(2, '0');
+    timeDisplay.textContent = `${mins}:${secs}`;
+  }
 
   startBtn.addEventListener('click', async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
@@ -836,10 +851,11 @@ function initScreenRecorder() {
       preview.srcObject = stream;
       preview.style.display = 'block';
       placeholder.style.display = 'none';
-      indicator.style.display = 'block';
+      indicator.style.display = 'flex';
       
       startBtn.style.display = 'none';
       stopBtn.style.display = 'block';
+      actionsDiv.style.display = 'none';
       
       recordedChunks = [];
       mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
@@ -849,9 +865,18 @@ function initScreenRecorder() {
       };
       
       mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        triggerDownload(blob, `recording_${Date.now()}.webm`);
-        resetRecorder();
+        clearInterval(timerInterval);
+        finalBlob = new Blob(recordedChunks, { type: 'video/webm' });
+        
+        // Change UI to post-recording state
+        stopBtn.style.display = 'none';
+        actionsDiv.style.display = 'flex';
+        indicator.style.display = 'none';
+        
+        // Unbind live stream from preview and bind recorded blob to allow playback
+        preview.srcObject = null;
+        preview.src = URL.createObjectURL(finalBlob);
+        preview.controls = true; // allow them to play it back
       };
       
       // Listen for browser native stop button (e.g. Chrome's "Stop sharing" banner)
@@ -859,6 +884,8 @@ function initScreenRecorder() {
         if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
       };
       
+      startTime = Date.now();
+      timerInterval = setInterval(updateTimer, 1000);
       mediaRecorder.start(1000); // 1-second chunks to prevent memory bloat
     } catch (err) {
       showToast("Screen recording went belly up: " + err.message, "error");
@@ -871,13 +898,58 @@ function initScreenRecorder() {
       stream.getTracks().forEach(track => track.stop());
     }
   });
+  
+  saveBtn.addEventListener('click', () => {
+    if (finalBlob) {
+      triggerDownload(finalBlob, `recording_${Date.now()}.webm`);
+      showToast("Video saved to your downloads mate!", "success");
+    }
+  });
+
+  shareBtn.addEventListener('click', async () => {
+    if (!finalBlob) return;
+    
+    if (navigator.share && navigator.canShare) {
+      const file = new File([finalBlob], `recording_${Date.now()}.webm`, { type: 'video/webm' });
+      if (navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            title: 'Screen Recording',
+            text: 'Check out this screen recording from Riyo Studio.',
+            files: [file]
+          });
+          showToast("Shared successfully!", "success");
+        } catch (error) {
+          if (error.name !== 'AbortError') {
+             showToast("Failed to share: " + error.message, "error");
+          }
+        }
+      } else {
+        showToast("Your browser doesn't support sharing files directly. Just save it instead.", "error");
+      }
+    } else {
+      showToast("Your browser doesn't support the Share API. Just hit save instead.", "error");
+    }
+  });
+  
+  resetBtn.addEventListener('click', () => {
+    resetRecorder();
+  });
 
   function resetRecorder() {
     preview.style.display = 'none';
+    preview.src = '';
+    preview.controls = false;
     placeholder.style.display = 'block';
     indicator.style.display = 'none';
     startBtn.style.display = 'block';
     stopBtn.style.display = 'none';
+    actionsDiv.style.display = 'none';
+    timeDisplay.textContent = '00:00';
+    clearInterval(timerInterval);
+    finalBlob = null;
+    recordedChunks = [];
+
     preview.srcObject = null;
   }
 }
