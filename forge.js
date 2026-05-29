@@ -2,6 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   initUniversalConverter();
+  initDataConverter();
   initHeicDecoder();
   initTargetCompressor();
   initPdfSigner();
@@ -1217,5 +1218,142 @@ function initGhostMaker() {
       }, currentFile.type, 1.0);
     };
     img.src = url;
+  });
+}
+
+// ---------------------------------------------------------
+// 9. DATA UN-BREAKER (JSON / CSV / EXCEL)
+// ---------------------------------------------------------
+function initDataConverter() {
+  const dropzone = document.getElementById('data-dropzone');
+  const fileInput = document.getElementById('data-input');
+  const textarea = document.getElementById('data-textarea');
+  const parseBtn = document.getElementById('data-parse-btn');
+  const controls = document.getElementById('data-controls');
+  const statusEl = document.getElementById('data-status');
+  const resetBtn = document.getElementById('data-reset-btn');
+  
+  const exportJsonBtn = document.getElementById('data-export-json');
+  const exportCsvBtn = document.getElementById('data-export-csv');
+  const exportXlsxBtn = document.getElementById('data-export-xlsx');
+
+  let parsedData = null; // Will hold Array of Objects
+
+  function reset() {
+    parsedData = null;
+    dropzone.style.display = 'flex';
+    textarea.style.display = 'block';
+    parseBtn.style.display = 'block';
+    textarea.value = '';
+    controls.style.display = 'none';
+    statusEl.textContent = '';
+  }
+  resetBtn.addEventListener('click', reset);
+
+  function handleSuccess(dataArray, filenameHint = 'data') {
+    if (!Array.isArray(dataArray) || dataArray.length === 0) {
+      alert("No valid data rows found to parse.");
+      return;
+    }
+    parsedData = dataArray;
+    dropzone.style.display = 'none';
+    textarea.style.display = 'none';
+    parseBtn.style.display = 'none';
+    controls.style.display = 'block';
+    statusEl.textContent = `✅ Successfully parsed ${dataArray.length} rows. Ready for export.`;
+    statusEl.dataset.filenameHint = filenameHint;
+  }
+
+  // --- File Drop Logic ---
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#5B8DEF'; });
+  dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(91,141,239,0.3)');
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = 'rgba(91,141,239,0.3)';
+    if (e.dataTransfer.files.length > 0) processFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) processFile(e.target.files[0]);
+  });
+
+  async function processFile(file) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    const baseName = file.name.replace(/\.[^/.]+$/, "");
+
+    try {
+      if (ext === 'json') {
+        const text = await file.text();
+        const json = JSON.parse(text);
+        handleSuccess(Array.isArray(json) ? json : [json], baseName);
+      } else if (ext === 'csv') {
+        Papa.parse(file, {
+          header: true,
+          skipEmptyLines: true,
+          complete: function(results) {
+            handleSuccess(results.data, baseName);
+          },
+          error: function(err) { alert("CSV Parse Error: " + err.message); }
+        });
+      } else if (ext === 'xlsx' || ext === 'xls') {
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(firstSheet);
+        handleSuccess(data, baseName);
+      } else {
+        alert("Unsupported file type. Please upload JSON, CSV, or Excel.");
+      }
+    } catch (err) {
+      alert("Error parsing file: " + err.message);
+    }
+  }
+
+  // --- Raw Text Logic ---
+  parseBtn.addEventListener('click', () => {
+    const text = textarea.value.trim();
+    if (!text) { alert("Please paste some data first."); return; }
+
+    try {
+      const json = JSON.parse(text);
+      handleSuccess(Array.isArray(json) ? json : [json], 'pasted_data');
+      return;
+    } catch (e) {
+      // Fall back to CSV
+      Papa.parse(text, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          if (results.data && results.data.length > 0 && Object.keys(results.data[0]).length > 1) {
+            handleSuccess(results.data, 'pasted_data');
+          } else {
+            alert("Could not detect valid JSON or CSV format.");
+          }
+        }
+      });
+    }
+  });
+
+  // --- Export Logic ---
+  exportJsonBtn.addEventListener('click', () => {
+    if (!parsedData) return;
+    const jsonStr = JSON.stringify(parsedData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    triggerDownload(blob, `${statusEl.dataset.filenameHint}_converted.json`);
+  });
+
+  exportCsvBtn.addEventListener('click', () => {
+    if (!parsedData) return;
+    const csvStr = Papa.unparse(parsedData);
+    const blob = new Blob([csvStr], { type: 'text/csv;charset=utf-8;' });
+    triggerDownload(blob, `${statusEl.dataset.filenameHint}_converted.csv`);
+  });
+
+  exportXlsxBtn.addEventListener('click', () => {
+    if (!parsedData) return;
+    const worksheet = XLSX.utils.json_to_sheet(parsedData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+    XLSX.writeFile(workbook, `${statusEl.dataset.filenameHint}_converted.xlsx`);
   });
 }

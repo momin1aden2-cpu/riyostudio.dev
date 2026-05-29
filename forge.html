@@ -41,6 +41,10 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
+
+  <!-- Data Converter Dependencies -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -107,6 +111,7 @@
             <div class="forge-dashboard">
         <div class="forge-sidebar">
           <button class="forge-tab-btn active" data-target="view-converter">🔄 Media Converter</button>
+          <button class="forge-tab-btn" data-target="view-data">📊 Data Un-Breaker</button>
           <button class="forge-tab-btn" data-target="view-heic">🍎 HEIC Decoder</button>
           <button class="forge-tab-btn" data-target="view-compressor">🗜️ Target Compressor</button>
           <button class="forge-tab-btn" data-target="view-pdf">✍️ PDF Signer</button>
@@ -156,6 +161,44 @@
           </div>
         </div>
 
+        </div>
+
+        <div class="tool-view" id="view-data">
+          <!-- Tool: Data Converter -->
+          <div class="bento-card reveal">
+            <div class="bento-card-header">
+              <h3>📊 The "Un-Break My Data" Converter</h3>
+              <p>Instantly convert messy database dumps between JSON, CSV, and Excel locally. <span style="color:#10B981;">HIPAA & GDPR Compliant</span> — your client data never leaves this device.</p>
+            </div>
+            <div class="bento-card-body" style="display: flex; flex-direction: column; gap: 1rem;">
+              
+              <div id="data-dropzone" class="scanner-dropzone" style="border-color: rgba(91,141,239,0.3); background: rgba(91,141,239,0.02);">
+                <input type="file" id="data-input" accept=".json,.csv,.xlsx,.xls" style="display: none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="dropzone-icon" style="color: #5B8DEF; width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.8;">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <p>Drag & Drop a Database File</p>
+                <span style="font-size: 0.8rem; color: var(--text-dim);">Supported: JSON, CSV, XLSX</span>
+              </div>
+
+              <div style="text-align: center; color: var(--text-muted); font-family: 'JetBrains Mono'; font-size: 0.8rem;">— OR PASTE RAW DATA —</div>
+
+              <textarea id="data-textarea" class="cyber-input" style="width: 100%; height: 150px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; resize: vertical;" placeholder="Paste raw JSON array or CSV text here..."></textarea>
+              <button id="data-parse-btn" class="cyber-submit-btn scanner-btn" style="width: 100%; border-color: #5B8DEF; color: #5B8DEF; background: transparent;">[ PARSE RAW TEXT ]</button>
+
+              <div id="data-controls" style="display: none; padding-top: 1rem; border-top: 1px dashed rgba(255,255,255,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                  <span id="data-status" style="font-family: 'JetBrains Mono'; color: #10B981; font-size: 0.85rem;"></span>
+                  <button id="data-reset-btn" class="nav-link" style="border: 1px solid #EF4444; border-radius: 4px; padding: 2px 10px; background: transparent; color: #EF4444;">Reset</button>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button id="data-export-json" class="cyber-submit-btn scanner-btn" style="flex: 1; padding: 12px; font-size: 0.85rem;">[ EXPORT JSON ]</button>
+                  <button id="data-export-csv" class="cyber-submit-btn scanner-btn" style="flex: 1; padding: 12px; font-size: 0.85rem;">[ EXPORT CSV ]</button>
+                  <button id="data-export-xlsx" class="cyber-submit-btn scanner-btn" style="flex: 1; padding: 12px; font-size: 0.85rem; border-color: #10B981; color: #10B981; background: rgba(16,185,129,0.05);">[ EXPORT EXCEL ]</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="tool-view" id="view-heic">
         <!-- Tool 2: HEIC Decoder -->
@@ -494,6 +537,6 @@
 
   <script src="bg.js?v=4"></script>
   <script src="script.js?v=4"></script>
-  <script src="forge.js?v=5"></script>
+  <script src="forge.js?v=6"></script>
 </body>
 </html>
