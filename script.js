@@ -6,6 +6,17 @@
 (function () {
   'use strict';
 
+  // Register Service Worker for Offline PWA Support
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').then(registration => {
+        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+      }).catch(err => {
+        console.error('ServiceWorker registration failed: ', err);
+      });
+    });
+  }
+
   // Global Error Tracker for Diagnostics
   window._sysErrors = [];
   window.addEventListener('error', (e) => { window._sysErrors.push(e.message || 'Unknown Error'); });
