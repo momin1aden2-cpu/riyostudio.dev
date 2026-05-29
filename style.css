@@ -1854,6 +1854,33 @@ html.supernova body {
 @media (max-width: 900px) {
   .forge-dashboard {
     grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .forge-sidebar {
+    position: relative;
+    top: 0;
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 0.5rem;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin-bottom: 0.5rem;
+  }
+  
+  .forge-sidebar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .forge-tab-btn {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+  
+  .forge-sponsor-banner {
+    display: none !important;
   }
 }
 
