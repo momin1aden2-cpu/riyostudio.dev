@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Riyo Studio</title>
+  
+  <meta name="theme-color" content="#060B14">
+  <meta name="color-scheme" content="dark">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap">
+
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="apple-touch-icon" href="assets/icon.png">
+  <link rel="stylesheet" href="style.css?v=11">
+
+  <style>
+    .legal-content h1 { color: var(--text-main); margin-bottom: 0.5rem; font-size: 2.5rem; }
+    .legal-content h2 { color: var(--text-main); margin-top: 2rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; }
+    .legal-content h3 { color: var(--text-main); margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    .legal-content p { margin-bottom: 1rem; color: var(--text-dim); line-height: 1.7; }
+    .legal-content ul { margin-bottom: 1.5rem; padding-left: 1.5rem; color: var(--text-dim); }
+    .legal-content li { margin-bottom: 0.5rem; line-height: 1.6; }
+    .legal-content .highlight-box { background: rgba(16,185,129,0.05); border-left: 3px solid var(--accent); padding: 1rem; margin-bottom: 1.5rem; border-radius: 0 6px 6px 0; }
+  </style>
+</head>
+<body>
+  <!-- Interactive Background Canvas -->
+  <canvas id="quantum-field"></canvas>
+
+  <!-- Navigation -->
+  <nav class="nav" id="main-nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-brand" aria-label="Riyo Studio home">
+        <img src="assets/icon.png" alt="Riyo Studio" class="nav-brand-icon-img">
+        <div class="nav-brand-text">
+          <span class="nav-brand-name">Riyo Studio</span>
+          <span class="nav-brand-tag">SaaS Developer Studio</span>
+        </div>
+      </a>
+
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="invoice.html" class="nav-link">Invoice Maker</a>
+        <a href="qr.html" class="nav-link">QR Hub</a>
+        <a href="scanner.html" class="nav-link">AI Scanner</a>
+        <a href="forge.html" class="nav-link">File Forge</a>
+        <div class="nav-dropdown-wrapper">
+          <button class="nav-menu-btn" id="nav-menu-open" aria-label="Open menu" style="padding: 6px 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); color: var(--text-dim); transition: all 0.2s; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-left: 8px;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <circle cx="5" cy="12" r="2"></circle>
+              <circle cx="12" cy="12" r="2"></circle>
+              <circle cx="19" cy="12" r="2"></circle>
+            </svg>
+          </button>
+          
+          <!-- Context Dropdown -->
+          <div class="nav-dropdown" id="nav-dropdown">
+            <a href="index.html#about">About Us</a>
+            <a href="index.html#contact" class="nav-cta-btn">Get in Touch</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="legal-main" style="padding-top: 140px; padding-bottom: 80px; min-height: calc(100vh - 300px); position: relative; z-index: 10;">
+    <div class="container legal-content" style="max-width: 800px; margin: 0 auto; background: rgba(16, 20, 30, 0.6); padding: 3rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(20px);">
+
+      <h1>Privacy Policy</h1>
+      <p style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--brand-accent);">Last Updated: May 2026</p>
+      
+      <div class="highlight-box">
+        <strong>The TL;DR on Zero-Server Privacy:</strong> The tools on Riyo Studio (File Forge, AI Scanner, QR Hub, Invoice Maker) are designed to run <strong>entirely in your web browser</strong>. We do not upload, process, or store your JSON data, PDF documents, cover letters, invoices, or QR code payloads on any remote servers. Your data never leaves your device.
+      </div>
+
+      <h2>1. Introduction</h2>
+      <p>Riyo Studio ("we", "us", or "our") operates the riyostudio.dev website and its associated suite of developer and business tools. This Privacy Policy outlines how we handle information in accordance with the <em>Privacy Act 1988 (Cth)</em> and the Australian Privacy Principles (APPs). We are a registered business operating in Western Australia.</p>
+
+      <h2>2. The Data We Do NOT Collect</h2>
+      <p>Because our core tools are built with a "client-side first" architecture, we fundamentally do not have access to the data you process using them. Specifically:</p>
+      <ul>
+        <li><strong>File Forge:</strong> JSON data, CSV data, JWT tokens, and images processed in the forge are handled strictly by your local browser memory.</li>
+        <li><strong>AI Scanner:</strong> The text, resumes, and documentation you paste for analysis are scanned locally.</li>
+        <li><strong>QR Hub:</strong> The URLs, vCard details, WiFi passwords, and Crypto addresses used to generate QR codes are processed locally.</li>
+        <li><strong>Invoice Maker:</strong> Client details, financial data, and business logos reside in your browser and are generated into a PDF on your device.</li>
+      </ul>
+
+      <h2>3. The Data We May Collect</h2>
+      <p>We only collect data when you actively provide it to us outside of the client-side tools, or through standard web infrastructure:</p>
+      <ul>
+        <li><strong>Contact Forms:</strong> If you use the "Get in Touch" form, we collect your name, email address, and message in order to respond to your inquiry.</li>
+        <li><strong>Analytics & Logging:</strong> Like most websites, our hosting provider automatically logs standard connection data such as IP addresses, browser types, and access times for security and performance monitoring.</li>
+      </ul>
+
+      <h2>4. Cookies and Local Storage</h2>
+      <p>We do not use tracking cookies for targeted advertising. We may use your browser's <code>localStorage</code> or <code>sessionStorage</code> to save your UI preferences (like the dark mode toggle or command palette history). This data remains on your device.</p>
+
+      <h2>5. Sharing Your Information</h2>
+      <p>We do not sell, trade, or rent your personal information to third parties. We will only disclose information if required to do so by Australian law (e.g., via a court order).</p>
+
+      <h2>6. Your Rights</h2>
+      <p>Under the APPs, you have the right to request access to the personal information we hold about you and to ask that we correct it. Since we do not retain user data from our tools, this generally only applies to direct email correspondence or contact form submissions.</p>
+
+      <h2>7. Contact Us</h2>
+      <p>If you have any questions about this Privacy Policy or our zero-server architecture, please contact us via the form on our homepage.</p>
+
+    </div>
+  </main>
+  <!-- Footer -->
+  <footer class="footer" id="footer" style="position: relative; z-index: 10;">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="nav-brand" aria-label="Riyo Studio home">
+            <img src="assets/icon.png" alt="Riyo Studio" class="nav-brand-icon-img">
+            <div class="nav-brand-text">
+              <span class="nav-brand-name">Riyo Studio</span>
+              <span class="nav-brand-tag">SaaS Developer Studio</span>
+            </div>
+          </a>
+          <p>
+            A registered Australian business based in Western Australia. Building, shipping, and maintaining SaaS products end-to-end.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Tools</h4>
+          <a href="invoice.html">Invoice Maker</a>
+          <a href="qr.html">QR Hub</a>
+          <a href="scanner.html">AI Scanner</a>
+          <a href="forge.html">File Forge</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="terms.html">Terms of Service</a>
+          <a href="disclaimer.html">Disclaimer</a>
+        </div>
+      </div>
+
+      <div class="footer-divider"></div>
+
+      <div class="footer-bottom">
+        <span class="footer-copy">© 2026 Riyo Studio. All rights reserved.</span>
+        <div class="footer-legal">
+          <span style="font-size: 12px; color: rgba(255,255,255,0.3);">Registered Business · Western Australia, Australia</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+  <script src="script.js?v=2"></script>
+</body>
+</html>
