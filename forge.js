@@ -3,6 +3,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   initUniversalConverter();
   initDataConverter();
+  initJwtDecoder();
   initHeicDecoder();
   initTargetCompressor();
   initPdfSigner();
@@ -1355,5 +1356,69 @@ function initDataConverter() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
     XLSX.writeFile(workbook, `${statusEl.dataset.filenameHint}_converted.xlsx`);
+  });
+}
+
+// ---------------------------------------------------------
+// 10. SECURE JWT DECODER
+// ---------------------------------------------------------
+function initJwtDecoder() {
+  const input = document.getElementById('jwt-input');
+  const errorEl = document.getElementById('jwt-error');
+  const outputEl = document.getElementById('jwt-output');
+  const headerEl = document.getElementById('jwt-header');
+  const payloadEl = document.getElementById('jwt-payload');
+
+  function decodeBase64Url(str) {
+    // Standardize Base64-URL to Base64
+    let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = base64.length % 4;
+    if (pad) {
+      if (pad === 1) throw new Error('InvalidBase64');
+      base64 += new Array(5 - pad).join('=');
+    }
+    // Decode and URI-decode to support UTF-8 payloads
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const decoder = new TextDecoder('utf-8');
+    return decoder.decode(bytes);
+  }
+
+  input.addEventListener('input', () => {
+    const token = input.value.trim();
+    if (!token) {
+      errorEl.style.display = 'none';
+      outputEl.style.display = 'none';
+      return;
+    }
+
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      errorEl.textContent = 'Invalid JWT format. A valid token must contain 3 parts separated by dots (header.payload.signature).';
+      errorEl.style.display = 'block';
+      outputEl.style.display = 'none';
+      return;
+    }
+
+    try {
+      const headerRaw = decodeBase64Url(parts[0]);
+      const payloadRaw = decodeBase64Url(parts[1]);
+
+      const headerObj = JSON.parse(headerRaw);
+      const payloadObj = JSON.parse(payloadRaw);
+
+      headerEl.textContent = JSON.stringify(headerObj, null, 2);
+      payloadEl.textContent = JSON.stringify(payloadObj, null, 2);
+
+      errorEl.style.display = 'none';
+      outputEl.style.display = 'flex';
+    } catch (err) {
+      errorEl.textContent = 'Failed to decode token. Ensure it is a valid Base64-encoded JWT.';
+      errorEl.style.display = 'block';
+      outputEl.style.display = 'none';
+    }
   });
 }
