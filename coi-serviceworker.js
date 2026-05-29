@@ -4,6 +4,12 @@ if (typeof window === 'undefined') {
   self.addEventListener("activate", event => event.waitUntil(self.clients.claim()));
   
   self.addEventListener("fetch", function (event) {
+    // DO NOT intercept cross-origin requests (CDNs, APIs, Fonts)
+    // This prevents the browser from applying connect-src CSP to script/style tags.
+    if (!event.request.url.startsWith(self.location.origin)) {
+      return;
+    }
+
     if (event.request.cache === "only-if-cached" && event.request.mode !== "same-origin") {
       return;
     }
