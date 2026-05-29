@@ -1396,6 +1396,58 @@ a, button, input, textarea, .nav-brand {
   cursor: none !important;
 }
 
+/* Remove outline on focus for inputs globally */
+input:focus, textarea:focus, select:focus, button:focus {
+  outline: none;
+}
+
+/* ==========================================================================
+   PWA STANDALONE MODE (NATIVE APP FEEL)
+   ========================================================================== */
+@media (display-mode: standalone) {
+  /* 1. Hide the Web Marketing Fluff */
+  .hero-eyebrow,
+  #hero-title,
+  .hero-sub,
+  .hero-scroll,
+  .services,
+  .about,
+  .footer,
+  .nav-brand-tag {
+    display: none !important;
+  }
+
+  /* 2. Reposition the Hero to act as the App Dashboard */
+  .hero {
+    padding: 100px 0 20px !important;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  /* 3. Make the tools grid massive and native-feeling */
+  .hero-tools-grid {
+    margin-top: 0 !important;
+    grid-template-columns: 1fr !important; /* Stack vertically for native feel */
+    gap: 20px !important;
+  }
+
+  .hero-tools-grid .tool-card {
+    padding: 32px 24px !important;
+    border-radius: 16px !important;
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+  }
+
+  /* 4. Fix Navbar */
+  .nav {
+    background: rgba(6, 11, 20, 0.9) !important;
+    backdrop-filter: blur(20px) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+  }
+}
+
 .custom-cursor-dot {
   position: fixed;
   top: 0;
