@@ -1,6 +1,5 @@
 const CACHE_NAME = 'riyo-studio-v1';
 
-// Pre-cache all major HTML, CSS, and JS routes so they load instantly offline.
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -26,7 +25,6 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[ServiceWorker] Pre-caching offline assets');
-      // We use a try-catch pattern to prevent one bad asset from failing the entire cache block
       return Promise.allSettled(PRECACHE_ASSETS.map(url => cache.add(url)));
     })
   );
@@ -34,7 +32,6 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
-  // Clear old caches
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -49,30 +46,40 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Stale-While-Revalidate Strategy for all GET requests (including external CDNs!)
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      // Fire off a network request to get the absolute latest version
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
-        // Cache the fresh response for the NEXT time they visit
-        // Only cache valid responses (we check status 200 or opaque responses for CDNs with status 0)
-        if (networkResponse && (networkResponse.status === 200 || networkResponse.status === 0) && networkResponse.type !== 'error') {
+      if (cachedResponse) {
+        // Return from cache immediately
+        // Update cache in the background
+        event.waitUntil(
+          fetch(event.request).then((networkResponse) => {
+            if (networkResponse && (networkResponse.status === 200 || networkResponse.status === 0)) {
+              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse.clone()));
+            }
+          }).catch(() => {})
+        );
+        return cachedResponse;
+      }
+      
+      // Not in cache, fetch from network
+      return fetch(event.request).then((networkResponse) => {
+        if (networkResponse && (networkResponse.status === 200 || networkResponse.status === 0)) {
           const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
         }
         return networkResponse;
       }).catch((err) => {
-        console.warn('[ServiceWorker] Network request failed, relying purely on offline cache.', err);
+        console.warn('[ServiceWorker] Network error on fetch', err);
+        // Prevent browser throwing a blank page
+        return new Response('<h1 style="color:white;font-family:sans-serif;text-align:center;margin-top:20%">Network Error. Try refreshing.</h1>', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/html' }
+        });
       });
-
-      // If we have it in cache, return immediately (lightning fast!).
-      // The fetchPromise will quietly update the cache in the background.
-      return cachedResponse || fetchPromise;
     })
   );
 });

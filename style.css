@@ -1332,7 +1332,7 @@ select.cyber-input option {
 }
 
 @media (max-width: 768px) {
-  .nav-links { display: none; }
+  .nav-links > a.nav-link { display: none; }
   .nav-cta-btn.desktop { display: none; }
   .nav-mobile-btn { display: flex; align-items: center; justify-content: center; }
 

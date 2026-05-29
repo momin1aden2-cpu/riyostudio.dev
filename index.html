@@ -95,7 +95,11 @@
   <nav class="nav" id="main-nav">
     <div class="nav-inner">
       <a href="index.html" class="nav-brand" aria-label="Riyo Studio home">
-        <img src="assets/icon.png" alt="Riyo Studio" class="nav-brand-icon-img">
+        <svg class="nav-brand-icon-svg" viewBox="0 0 32 32" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6)); display: block;">
+  <rect width="32" height="32" rx="8" fill="rgba(16, 185, 129, 0.1)" stroke="#10B981" stroke-width="1.5"/>
+  <path d="M11 22V10H17C19.2091 10 21 11.7909 21 14C21 16.2091 19.2091 18 17 18H11" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M15 18L20 22" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
         <div class="nav-brand-text">
           <span class="nav-brand-name">Riyo Studio</span>
           <span class="nav-brand-tag">SaaS Developer Studio</span>
@@ -139,30 +143,38 @@
         <span>We build software that</span><br><span>solves <span class="accent">real problems.</span></span><span class="cursor">_</span>
       </h1>
 
-      <p class="hero-sub reveal reveal-delay-2">
-        A full-stack Australian developer studio. We design, build, and scale SaaS platforms, native mobile apps, and high-performance websites.
+      
+      <p class="hero-sub reveal reveal-delay-2" style="max-width: 600px; margin: 1.5rem auto;">
+        No Servers. No Tracking. 100% Free. <br>
+        A premium suite of developer and business tools that run securely on your device.
       </p>
 
-      <div class="hero-stats reveal reveal-delay-3">
-        <div class="hero-stat">
-          <span class="hero-stat-num">3+</span>
-          <span class="hero-stat-label">Core Services</span>
-        </div>
-        <div class="hero-stat">
-          <span class="hero-stat-num">100%</span>
-          <span class="hero-stat-label">Australian</span>
-        </div>
-        <div class="hero-stat">
-          <span class="hero-stat-num">6+</span>
-          <span class="hero-stat-label">Years Shipping</span>
-        </div>
-      </div>
-
-      <div class="hero-tools reveal reveal-delay-3" style="margin-top: 3rem; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
-        <a href="forge.html" class="nav-cta-btn" style="background: #10B981; color: #000; border-color: #10B981; font-weight: bold; font-size: 1.1rem; padding: 16px 32px; box-shadow: 0 0 20px rgba(16,185,129,0.4);">
-          > ENTER THE UNIVERSAL FORGE (100% Free Tools)
+      <div class="hero-tools-grid reveal reveal-delay-3" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 3rem; text-align: left; max-width: 800px; margin-left: auto; margin-right: auto; margin-bottom: 4rem;">
+        
+        <a href="invoice.html" class="tool-card" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 24px; text-decoration: none; display: flex; flex-direction: column; transition: all 0.3s ease; position: relative; overflow: hidden; group;">
+          <div style="font-size: 2rem; margin-bottom: 12px;">🧾</div>
+          <h3 style="color: var(--text-main); font-size: 1.2rem; margin-bottom: 8px;">Invoice Maker</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0; line-height: 1.5;">Generate sleek, professional PDF invoices directly in your browser.</p>
         </a>
-        <span style="font-family: 'JetBrains Mono'; font-size: 0.8rem; color: var(--text-muted);">No Servers. No Tracking. Runs locally on your device.</span>
+
+        <a href="scanner.html" class="tool-card" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 24px; text-decoration: none; display: flex; flex-direction: column; transition: all 0.3s ease;">
+          <div style="font-size: 2rem; margin-bottom: 12px;">🤖</div>
+          <h3 style="color: var(--text-main); font-size: 1.2rem; margin-bottom: 8px;">AI Scanner</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0; line-height: 1.5;">Detect LLM-generated text patterns and overused buzzwords instantly.</p>
+        </a>
+
+        <a href="qr.html" class="tool-card" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 24px; text-decoration: none; display: flex; flex-direction: column; transition: all 0.3s ease;">
+          <div style="font-size: 2rem; margin-bottom: 12px;">📱</div>
+          <h3 style="color: var(--text-main); font-size: 1.2rem; margin-bottom: 8px;">QR Hub</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0; line-height: 1.5;">Create custom, zero-watermark QR codes for URLs, WiFi, and vCards.</p>
+        </a>
+
+        <a href="forge.html" class="tool-card" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 24px; text-decoration: none; display: flex; flex-direction: column; transition: all 0.3s ease;">
+          <div style="font-size: 2rem; margin-bottom: 12px;">⚒️</div>
+          <h3 style="color: var(--text-main); font-size: 1.2rem; margin-bottom: 8px;">File Forge</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0; line-height: 1.5;">Format JSON, decode JWTs, convert HEIC, and merge PDFs.</p>
+        </a>
+
       </div>
 
       <div class="hero-scroll reveal reveal-delay-4">
@@ -368,7 +380,11 @@
       <div class="footer-grid">
         <div class="footer-brand">
           <a href="index.html" class="nav-brand" aria-label="Riyo Studio home">
-            <img src="assets/icon.png" alt="Riyo Studio" class="nav-brand-icon-img">
+            <svg class="nav-brand-icon-svg" viewBox="0 0 32 32" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6)); display: block;">
+  <rect width="32" height="32" rx="8" fill="rgba(16, 185, 129, 0.1)" stroke="#10B981" stroke-width="1.5"/>
+  <path d="M11 22V10H17C19.2091 10 21 11.7909 21 14C21 16.2091 19.2091 18 17 18H11" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M15 18L20 22" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
             <div class="nav-brand-text">
               <span class="nav-brand-name">Riyo Studio</span>
               <span class="nav-brand-tag">SaaS Developer Studio</span>
