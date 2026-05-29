@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice Maker — Frictionless PDF Receipts | Riyo Studio</title>
+  
+  <meta name="theme-color" content="#060B14">
+  <meta name="color-scheme" content="dark">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap">
+
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="apple-touch-icon" href="assets/icon.png">
+  <link rel="stylesheet" href="style.css?v=9">
+
+  <!-- html2pdf Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    /* Custom Styling for the Invoice Generator Layout */
+    .invoice-container {
+      max-width: 1400px;
+      margin: 120px auto 40px auto;
+      padding: 0 5%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    @media (max-width: 1100px) {
+      .invoice-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .tool-panel {
+      background: rgba(16, 20, 30, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 2rem;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .tool-panel::-webkit-scrollbar { width: 6px; }
+    .tool-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+    .invoice-header-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .invoice-header-subtitle {
+      color: var(--text-dim);
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+      line-height: 1.5;
+    }
+
+    /* Form Styles */
+    .section-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--brand-accent);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 0.5rem;
+    }
+
+    .input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-group.full {
+      grid-column: span 2;
+    }
+
+    .input-label {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    .line-item-row {
+      display: grid;
+      grid-template-columns: 3fr 1fr 1fr auto;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      align-items: center;
+    }
+
+    .btn-small {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #fff;
+      padding: 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s ease;
+    }
+    .btn-small:hover { background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.5); color: #EF4444; }
+
+    .btn-add {
+      background: rgba(16,185,129,0.1);
+      border: 1px dashed rgba(16,185,129,0.4);
+      color: #10B981;
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 0.5rem;
+      transition: all 0.2s ease;
+    }
+    .btn-add:hover { background: rgba(16,185,129,0.2); }
+
+    /* A4 Paper Canvas (Right Panel) */
+    .canvas-wrapper {
+      background: rgba(0,0,0,0.5);
+      border-radius: 12px;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      overflow-y: auto;
+      max-height: 80vh;
+    }
+
+    #a4-paper {
+      background: #ffffff;
+      width: 210mm;
+      min-height: 297mm;
+      padding: 20mm;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      color: #1a1a1a;
+      font-family: 'Inter', sans-serif;
+      box-sizing: border-box;
+      /* CSS scaling for preview on smaller screens */
+      transform-origin: top center;
+    }
+
+    @media (max-width: 1400px) { #a4-paper { transform: scale(0.85); margin-bottom: -15%; } }
+    @media (max-width: 1100px) { #a4-paper { transform: scale(1); margin-bottom: 0; } }
+    @media (max-width: 900px) { #a4-paper { transform: scale(0.6); margin-bottom: -40%; } }
+    @media (max-width: 600px) { #a4-paper { transform: scale(0.4); margin-bottom: -60%; } }
+
+    /* Internal Invoice Styling */
+    .inv-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 3rem;
+      border-bottom: 2px solid #f0f0f0;
+      padding-bottom: 2rem;
+    }
+    .inv-logo-area img { max-width: 150px; max-height: 80px; object-fit: contain; }
+    .inv-company-details { text-align: right; font-size: 0.9rem; color: #555; }
+    .inv-company-details h2 { color: #111; margin: 0 0 0.5rem 0; font-weight: 700; font-size: 1.5rem; }
+    
+    .inv-meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+    .inv-bill-to h3 { color: #888; font-size: 0.8rem; text-transform: uppercase; margin: 0 0 0.5rem 0; letter-spacing: 1px; }
+    .inv-bill-to p { margin: 0; font-size: 0.95rem; line-height: 1.5; color: #111; font-weight: 500; }
+    
+    .inv-details { text-align: right; }
+    .inv-details h1 { font-size: 2.5rem; color: #111; margin: 0 0 1rem 0; font-weight: 800; letter-spacing: -1px; }
+    .inv-details p { margin: 0 0 0.25rem 0; font-size: 0.9rem; color: #555; }
+    .inv-details span { font-weight: 600; color: #111; }
+
+    .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 3rem; }
+    .inv-table th { text-align: left; padding: 1rem 0.5rem; border-bottom: 2px solid #111; color: #111; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; }
+    .inv-table td { padding: 1rem 0.5rem; border-bottom: 1px solid #eee; color: #333; font-size: 0.95rem; }
+    .inv-table th.right, .inv-table td.right { text-align: right; }
+    
+    .inv-summary { width: 300px; margin-left: auto; }
+    .inv-summary-row { display: flex; justify-content: space-between; padding: 0.5rem 0; color: #555; font-size: 0.95rem; }
+    .inv-summary-row.total { font-weight: 800; color: #111; font-size: 1.25rem; border-top: 2px solid #111; padding-top: 1rem; margin-top: 0.5rem; }
+
+    .inv-footer { margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #f0f0f0; color: #888; font-size: 0.85rem; text-align: center; }
+
+    /* Export Action */
+    .export-action-bar {
+      position: sticky;
+      bottom: 0;
+      background: rgba(16, 20, 30, 0.9);
+      backdrop-filter: blur(10px);
+      padding: 1.5rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      justify-content: center;
+      margin-top: auto;
+      z-index: 10;
+    }
+    
+    .export-btn {
+      background: var(--brand-accent);
+      color: #fff;
+      border: none;
+      padding: 1rem 3rem;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: 0 4px 15px rgba(91,141,239,0.4);
+      transition: all 0.2s ease;
+    }
+    .export-btn:hover { background: #4A79D6; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(91,141,239,0.6); }
+
+  </style>
+</head>
+<body>
+
+  <canvas id="quantum-field"></canvas>
+
+  <!-- NAVIGATION -->
+  <nav class="nav" id="main-nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-brand" aria-label="Riyo Studio home">
+        <img src="assets/icon.png" alt="Riyo Studio" class="nav-brand-icon-img">
+        <div class="nav-brand-text">
+          <span class="nav-brand-name">Riyo Studio</span>
+          <span class="nav-brand-tag">SaaS Developer Studio</span>
+        </div>
+      </a>
+
+      <div class="nav-links">
+        <a href="index.html#products" class="nav-link">Products</a>
+        <a href="index.html#about" class="nav-link">About</a>
+        <a href="invoice.html" class="nav-link active">Invoice Maker</a>
+        <a href="qr.html" class="nav-link">QR Hub</a>
+        <a href="scanner.html" class="nav-link">AI Scanner</a>
+        <a href="forge.html" class="nav-link">File Forge</a>
+      </div>
+
+      <div class="nav-mobile-actions">
+        <button class="nav-mobile-btn" id="nav-mobile-open" aria-label="Open menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="nav-mobile-overlay" id="nav-mobile-overlay">
+    <div class="nav-mobile-panel">
+      <button class="nav-mobile-close" id="nav-mobile-close" aria-label="Close menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="nav-mobile-links">
+        <a href="index.html#products">Products</a>
+        <a href="index.html#about">About</a>
+        <a href="invoice.html">Invoice Maker</a>
+        <a href="qr.html">QR Hub</a>
+        <a href="scanner.html">AI Scanner</a>
+        <a href="forge.html">File Forge</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="invoice-container">
+    
+    <!-- LEFT PANEL: CONTROLS -->
+    <div class="tool-panel" style="padding-bottom: 0;">
+      <div style="padding-bottom: 2rem;">
+        <h1 class="invoice-header-title">📄 Frictionless Invoices</h1>
+        <p class="invoice-header-subtitle">Generate pixel-perfect PDF receipts instantly. Your company details are silently saved offline in your browser memory for your next visit.</p>
+
+        <!-- Company Info (Auto-Saved) -->
+        <div class="section-title">Your Company (Auto-Saved)</div>
+        <div class="input-grid">
+          <div class="input-group">
+            <label class="input-label">Business Name</label>
+            <input type="text" id="in-comp-name" class="cyber-input" placeholder="Your Company LLC">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Tax ID / ABN</label>
+            <input type="text" id="in-comp-tax" class="cyber-input" placeholder="ABN 12 345 678 901">
+          </div>
+          <div class="input-group full">
+            <label class="input-label">Business Address</label>
+            <input type="text" id="in-comp-addr" class="cyber-input" placeholder="123 Creator St, Sydney NSW">
+          </div>
+          <div class="input-group full">
+            <label class="input-label">Upload Logo (Optional)</label>
+            <input type="file" id="in-comp-logo" class="cyber-input" accept="image/png, image/jpeg, image/svg+xml">
+          </div>
+        </div>
+
+        <!-- Invoice Details -->
+        <div class="section-title">Invoice Details</div>
+        <div class="input-grid">
+          <div class="input-group">
+            <label class="input-label">Invoice Number</label>
+            <input type="text" id="in-inv-num" class="cyber-input" placeholder="INV-0001">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Date Issued</label>
+            <input type="date" id="in-inv-date" class="cyber-input">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Tax/GST Rate (%)</label>
+            <input type="number" id="in-inv-taxrate" class="cyber-input" value="10" min="0" step="0.1">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Currency Symbol</label>
+            <input type="text" id="in-inv-cur" class="cyber-input" value="$" maxlength="3">
+          </div>
+        </div>
+
+        <!-- Client Info -->
+        <div class="section-title">Billed To (Client)</div>
+        <div class="input-grid">
+          <div class="input-group full">
+            <label class="input-label">Client Name / Business</label>
+            <input type="text" id="in-client-name" class="cyber-input" placeholder="Acme Corp">
+          </div>
+          <div class="input-group full">
+            <label class="input-label">Client Address</label>
+            <input type="text" id="in-client-addr" class="cyber-input" placeholder="456 Buyer Rd, Melbourne VIC">
+          </div>
+        </div>
+
+        <!-- Line Items -->
+        <div class="section-title">Line Items</div>
+        <div id="line-items-container">
+          <!-- JS will inject rows here -->
+        </div>
+        <button class="btn-add" id="btn-add-item">+ ADD LINE ITEM</button>
+
+        <!-- Payment Details (Auto-Saved) -->
+        <div class="section-title" style="margin-top: 2rem;">Payment Instructions (Auto-Saved)</div>
+        <div class="input-group full" style="margin-bottom: 2rem;">
+          <textarea id="in-pay-details" class="cyber-input" style="height: 80px; resize: vertical;" placeholder="BSB: 000-000&#10;ACC: 12345678&#10;Please pay within 14 days."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: PREVIEW -->
+    <div class="canvas-wrapper">
+      <div id="a4-paper">
+        <!-- INVOICE CONTENT -->
+        <div class="inv-header">
+          <div class="inv-logo-area" id="out-logo-container">
+            <img id="out-logo" style="display: none;" />
+          </div>
+          <div class="inv-company-details">
+            <h2 id="out-comp-name">Your Company LLC</h2>
+            <p style="margin: 0;" id="out-comp-tax">ABN 12 345 678 901</p>
+            <p style="margin: 0;" id="out-comp-addr">123 Creator St, Sydney NSW</p>
+          </div>
+        </div>
+
+        <div class="inv-meta-grid">
+          <div class="inv-bill-to">
+            <h3>Billed To</h3>
+            <p id="out-client-name">Acme Corp</p>
+            <p style="color: #555; font-weight: 400;" id="out-client-addr">456 Buyer Rd, Melbourne VIC</p>
+          </div>
+          <div class="inv-details">
+            <h1>INVOICE</h1>
+            <p>Invoice No: <span id="out-inv-num">INV-0001</span></p>
+            <p>Date: <span id="out-inv-date">Oct 24, 2026</span></p>
+          </div>
+        </div>
+
+        <table class="inv-table">
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th class="right">Qty</th>
+              <th class="right">Price</th>
+              <th class="right">Amount</th>
+            </tr>
+          </thead>
+          <tbody id="out-table-body">
+            <!-- JS INJECTED -->
+          </tbody>
+        </table>
+
+        <div class="inv-summary">
+          <div class="inv-summary-row">
+            <span>Subtotal</span>
+            <span id="out-subtotal">$0.00</span>
+          </div>
+          <div class="inv-summary-row">
+            <span id="out-tax-label">Tax (10%)</span>
+            <span id="out-tax">$0.00</span>
+          </div>
+          <div class="inv-summary-row total">
+            <span>Total Due</span>
+            <span id="out-total">$0.00</span>
+          </div>
+        </div>
+
+        <div class="inv-footer">
+          <strong style="color: #333; display: block; margin-bottom: 0.25rem;">Payment Instructions:</strong>
+          <div id="out-pay-details" style="white-space: pre-line;">BSB: 000-000
+ACC: 12345678
+Please pay within 14 days.</div>
+        </div>
+      </div>
+
+      <!-- EXPORT DOCK -->
+      <div class="export-action-bar">
+        <button class="export-btn" id="btn-export-pdf">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          DOWNLOAD PDF
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="perf-hud" aria-hidden="true">
+    <span class="perf-label">SYS_PERF:</span>
+    <span id="fps-counter">60 FPS</span>
+  </div>
+
+  <!-- Custom Cursor -->
+  <div class="custom-cursor-dot" id="cursor-dot"></div>
+  <div class="custom-cursor-ring" id="cursor-ring"></div>
+
+  <script src="bg.js?v=4"></script>
+  <script src="script.js?v=4"></script>
+  <script src="invoice.js?v=1"></script>
+</body>
+</html>
