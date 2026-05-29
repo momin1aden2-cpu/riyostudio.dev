@@ -954,26 +954,50 @@ function initTextExtractor() {
   });
 }
 
-// Dashboard Tab Switching Logic
+// Dashboard Tab Switching Logic & Mobile Accordion
 document.addEventListener('DOMContentLoaded', () => {
   const tabBtns = document.querySelectorAll('.forge-tab-btn');
   const toolViews = document.querySelectorAll('.tool-view');
+  const forgeStage = document.querySelector('.forge-stage');
+
+  function handleLayout() {
+    const isMobile = window.innerWidth <= 900;
+    const activeBtn = document.querySelector('.forge-tab-btn.active');
+    const targetId = activeBtn ? activeBtn.getAttribute('data-target') : null;
+    const activeView = targetId ? document.getElementById(targetId) : null;
+
+    if (isMobile && activeBtn && activeView) {
+      // Mobile Accordion: Move active view directly under the active button in the DOM
+      activeBtn.insertAdjacentElement('afterend', activeView);
+    } else if (!isMobile) {
+      // Desktop: Move all views back to forge-stage to preserve CSS Grid layout
+      toolViews.forEach(v => forgeStage.appendChild(v));
+    }
+  }
 
   tabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      // Remove active from all
+      // Remove active state
       tabBtns.forEach(b => b.classList.remove('active'));
       toolViews.forEach(v => v.classList.remove('active'));
 
-      // Add active to clicked
+      // Set active state
       btn.classList.add('active');
       const targetId = btn.getAttribute('data-target');
       const targetView = document.getElementById(targetId);
+      
       if (targetView) {
         targetView.classList.add('active');
+        handleLayout(); // Shuffle DOM if needed
       }
     });
   });
+
+  // Re-calculate DOM layout on window resize
+  window.addEventListener('resize', handleLayout);
+  
+  // Initial layout boot
+  handleLayout();
 });
 
 // ==========================================
