@@ -562,30 +562,56 @@ function initPdfSigner() {
     }, 'image/png');
   });
 
-  // Dragging overlay
-  overlay.addEventListener('mousedown', (e) => {
+  // Dragging and Pinch-Zoom overlay
+  let initialPinchDistance = null;
+  let initialScale = 1;
+
+  function handleDragStart(clientX, clientY) {
     isDragging = true;
     const overlayRect = overlay.getBoundingClientRect();
-    // Offset of mouse from top-left of overlay
-    dragOffset.x = e.clientX - overlayRect.left;
-    dragOffset.y = e.clientY - overlayRect.top;
-  });
-  window.addEventListener('mousemove', (e) => {
+    dragOffset.x = clientX - overlayRect.left;
+    dragOffset.y = clientY - overlayRect.top;
+  }
+
+  function handleDragMove(clientX, clientY) {
     if (!isDragging) return;
     const containerRect = document.getElementById('pdf-render-container').getBoundingClientRect();
-    
-    // Calculate new top-left of overlay in viewport coordinates
-    const newViewportX = e.clientX - dragOffset.x;
-    const newViewportY = e.clientY - dragOffset.y;
-    
-    // Convert viewport coordinates to container-relative coordinates
-    let newLeft = newViewportX - containerRect.left;
-    let newTop = newViewportY - containerRect.top;
-    
+    let newLeft = (clientX - dragOffset.x) - containerRect.left;
+    let newTop = (clientY - dragOffset.y) - containerRect.top;
     overlay.style.left = `${newLeft}px`;
     overlay.style.top = `${newTop}px`;
-  });
+  }
+
+  overlay.addEventListener('mousedown', (e) => handleDragStart(e.clientX, e.clientY));
+  window.addEventListener('mousemove', (e) => handleDragMove(e.clientX, e.clientY));
   window.addEventListener('mouseup', () => isDragging = false);
+
+  // Mobile Touch Support
+  overlay.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      initialPinchDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      initialScale = parseFloat(getComputedStyle(overlay).width);
+    } else if (e.touches.length === 1) {
+      handleDragStart(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: false });
+
+  window.addEventListener('touchmove', (e) => {
+    if (isDragging && e.touches.length === 1) {
+      e.preventDefault(); // Prevent scrolling while dragging
+      handleDragMove(e.touches[0].clientX, e.touches[0].clientY);
+    } else if (e.touches.length === 2 && initialPinchDistance) {
+      e.preventDefault();
+      const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      const scaleFactor = currentDistance / initialPinchDistance;
+      overlay.style.width = `${initialScale * scaleFactor}px`;
+    }
+  }, { passive: false });
+
+  window.addEventListener('touchend', () => { 
+    isDragging = false; 
+    initialPinchDistance = null; 
+  });
 
   // Resize overlay with wheel
   overlay.addEventListener('wheel', (e) => {
@@ -797,6 +823,11 @@ function initScreenRecorder() {
   let stream = null;
 
   startBtn.addEventListener('click', async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      alert("⚠️ Screen Recording is a Desktop-only feature.\n\nMobile browsers (iOS Safari, Chrome Android) physically block apps from capturing the screen for security reasons.");
+      return;
+    }
+
     try {
       stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
       
