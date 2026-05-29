@@ -347,36 +347,40 @@ section {
 }
 
 
-/* Mobile hamburger */
-.nav-mobile-btn {
-  display: none;
+/* Hamburger Menu Button */
+.nav-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 8px;
   color: var(--text);
   border-radius: 8px;
   transition: background 0.15s;
+  cursor: pointer;
+  margin-left: 16px;
 }
 
-.nav-mobile-btn:hover { background: var(--bg-surface); }
+.nav-menu-btn:hover { background: var(--bg-surface); }
 
-.nav-mobile-btn svg {
+.nav-menu-btn svg {
   width: 24px;
   height: 24px;
 }
 
-/* Mobile nav overlay */
-.nav-mobile-overlay {
+/* Off-canvas Menu Overlay */
+.nav-menu-overlay {
   display: none;
   position: fixed;
   inset: 0;
-  z-index: 99;
+  z-index: 999;
   background: rgba(6, 11, 20, 0.92);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
 }
 
-.nav-mobile-overlay.open { display: flex; }
+.nav-menu-overlay.open { display: flex; }
 
-.nav-mobile-panel {
+.nav-menu-panel {
   width: 100%;
   max-width: 400px;
   margin-left: auto;
@@ -385,27 +389,29 @@ section {
   flex-direction: column;
   border-left: 1px solid var(--border);
   background: rgba(6, 11, 20, 0.95);
+  box-shadow: -10px 0 30px rgba(0,0,0,0.5);
 }
 
-.nav-mobile-close {
+.nav-menu-close {
   align-self: flex-end;
   padding: 8px;
   color: var(--text-dim);
   border-radius: 8px;
   margin-bottom: 32px;
+  cursor: pointer;
 }
 
-.nav-mobile-close:hover { color: var(--text); background: var(--bg-surface); }
+.nav-menu-close:hover { color: var(--text); background: var(--bg-surface); }
 
-.nav-mobile-close svg { width: 24px; height: 24px; }
+.nav-menu-close svg { width: 24px; height: 24px; }
 
-.nav-mobile-links {
+.nav-menu-links {
   display: flex;
   flex-direction: column;
   gap: 0;
 }
 
-.nav-mobile-links a {
+.nav-menu-links a {
   display: block;
   padding: 16px 0;
   font-size: 18px;
@@ -415,9 +421,9 @@ section {
   transition: color 0.2s;
 }
 
-.nav-mobile-links a:hover { color: var(--text); }
+.nav-menu-links a:hover { color: var(--text); }
 
-.nav-mobile-links .nav-cta-btn {
+.nav-menu-links .nav-cta-btn {
   margin-top: 24px;
   text-align: center;
   display: block;

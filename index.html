@@ -94,7 +94,7 @@
   <!-- Navigation -->
   <nav class="nav" id="main-nav">
     <div class="nav-inner">
-      <a href="#" class="nav-brand" aria-label="Riyo Studio home">
+      <a href="index.html" class="nav-brand" aria-label="Riyo Studio home">
         <img src="assets/icon.png" alt="Riyo Studio" class="nav-brand-icon-img">
         <div class="nav-brand-text">
           <span class="nav-brand-name">Riyo Studio</span>
@@ -103,45 +103,30 @@
       </a>
 
       <div class="nav-links">
-        <a href="#products" class="nav-link">Products</a>
-        <a href="#about" class="nav-link">About</a>
-        <a href="#process" class="nav-link">Process</a>
         <a href="invoice.html" class="nav-link">Invoice Maker</a>
         <a href="qr.html" class="nav-link">QR Hub</a>
         <a href="scanner.html" class="nav-link">AI Scanner</a>
         <a href="forge.html" class="nav-link">File Forge</a>
-        <a href="#contact" class="nav-cta-btn desktop">Get in Touch</a>
-      </div>
-
-      <div class="nav-mobile-actions">
-
-        <button class="nav-mobile-btn" id="nav-mobile-open" aria-label="Open menu">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <button class="nav-menu-btn" id="nav-menu-open" aria-label="Open menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 6h16M4 12h16M4 18h16"></path>
           </svg>
         </button>
       </div>
     </div>
   </nav>
 
-  <!-- Mobile nav overlay -->
-  <div class="nav-mobile-overlay" id="nav-mobile-overlay">
-    <div class="nav-mobile-panel">
-      <button class="nav-mobile-close" id="nav-mobile-close" aria-label="Close menu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Hamburger Menu Overlay -->
+  <div class="nav-menu-overlay" id="nav-menu-overlay">
+    <div class="nav-menu-panel">
+      <button class="nav-menu-close" id="nav-menu-close" aria-label="Close menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"></path>
         </svg>
       </button>
-      <div class="nav-mobile-links">
-        <a href="#products">Products</a>
-        <a href="#about">About</a>
-        <a href="#process">Process</a>
-        <a href="invoice.html">Invoice Maker</a>
-        <a href="qr.html">QR Hub</a>
-        <a href="scanner.html">AI Scanner</a>
-        <a href="forge.html">File Forge</a>
-        <a href="#contact" class="nav-cta-btn">Get in Touch</a>
-
+      <div class="nav-menu-links">
+        <a href="index.html#about">About Us</a>
+        <a href="index.html#contact" class="nav-cta-btn">Get in Touch</a>
       </div>
     </div>
   </div>
@@ -220,66 +205,7 @@
     </div>
   </section>
 
-  <!-- Products -->
-  <section class="products" id="products">
-    <div class="container">
-      <div class="products-header">
-        <div class="eyebrow reveal">Our Products</div>
-        <h2 class="reveal reveal-delay-1">Built from scratch. Shipped to real users.</h2>
-        <p class="reveal reveal-delay-2">
-          Every product under Riyo Studio is designed, developed, and maintained end-to-end — from the first line of code to the live deployment.
-        </p>
-      </div>
 
-      <div class="products-grid">
-        <!-- RenterIQ -->
-        <div class="product-card renteriq reveal">
-          <div class="product-card-header">
-            <img src="assets/renteriq-logo.png" alt="RenterIQ Logo" class="product-logo-img">
-            <h3>RenterIQ</h3>
-            <span class="product-badge">Live</span>
-          </div>
-          <p class="product-desc">
-            The free app for Australian renters. Instant tenancy rights answers, condition reports with photos, four-way bond comparison, plain-English lease review, and an encrypted document vault. Covers all states and territories.
-          </p>
-          <div class="product-features">
-            <span class="product-feature-pill">Condition Reports</span>
-            <span class="product-feature-pill">Bond Compare</span>
-            <span class="product-feature-pill">Rights Hub</span>
-            <span class="product-feature-pill">Lease Review</span>
-            <span class="product-feature-pill">Document Vault</span>
-            <span class="product-feature-pill">AI Helpers</span>
-          </div>
-          <a href="https://renteriq.com.au" target="_blank" rel="noopener" class="product-link">
-            Visit renteriq.com.au <span class="arrow">→</span>
-          </a>
-        </div>
-
-        <!-- ShiftCore -->
-        <div class="product-card shiftcore reveal reveal-delay-1">
-          <div class="product-card-header">
-            <img src="assets/shiftcore-logo.png" alt="ShiftCore Logo" class="product-logo-img">
-            <h3>ShiftCore</h3>
-            <span class="product-badge">Live</span>
-          </div>
-          <p class="product-desc">
-            The personal organisation app for FIFO workers. Manage your roster, track ticket expiries, store documents securely, and never forget your isolation lock with Isotrac — the personal lock reminder built right in.
-          </p>
-          <div class="product-features">
-            <span class="product-feature-pill">Roster Manager</span>
-            <span class="product-feature-pill">Ticket Tracker</span>
-            <span class="product-feature-pill">Secure Vault</span>
-            <span class="product-feature-pill">Voice Handover</span>
-            <span class="product-feature-pill">Isotrac</span>
-            <span class="product-feature-pill">Google Play</span>
-          </div>
-          <a href="https://shiftcore.com.au" target="_blank" rel="noopener" class="product-link">
-            Visit shiftcore.com.au <span class="arrow">→</span>
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <!-- About -->
   <section class="about" id="about">
@@ -362,41 +288,7 @@
     </div>
   </section>
 
-  <!-- Process -->
-  <section class="process" id="process">
-    <div class="container">
-      <div class="process-header">
-        <div class="eyebrow reveal">How It Works</div>
-        <h2 class="reveal reveal-delay-1">From idea to live product.</h2>
-        <p class="reveal reveal-delay-2">
-          Every Riyo Studio product follows the same disciplined approach — find a real problem, build the solution, ship it, and keep improving.
-        </p>
-      </div>
 
-      <div class="process-steps">
-        <div class="process-step reveal">
-          <div class="step-num">1</div>
-          <div class="step-icon">🔍</div>
-          <h3>Identify a Problem</h3>
-          <p>Real-world pain points that software can genuinely fix. No vanity projects — every product starts with a problem worth solving.</p>
-        </div>
-
-        <div class="process-step reveal reveal-delay-1">
-          <div class="step-num">2</div>
-          <div class="step-icon">🛠️</div>
-          <h3>Design & Build</h3>
-          <p>Full-stack development from scratch. UI design, frontend, backend, database, authentication, deployment — all handled end to end.</p>
-        </div>
-
-        <div class="process-step reveal reveal-delay-2">
-          <div class="step-num">3</div>
-          <div class="step-icon">🚀</div>
-          <h3>Ship & Iterate</h3>
-          <p>Launch to real users, gather feedback, and continuously improve. Every product gets better with each release cycle.</p>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <!-- Contact -->
   <section class="contact" id="contact">

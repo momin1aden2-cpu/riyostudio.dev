@@ -47,45 +47,40 @@
     }
   }
 
+  // Hamburger Menu
+  const navMenuBtn = document.getElementById('nav-menu-open');
+  const navMenuOverlay = document.getElementById('nav-menu-overlay');
+  const navMenuClose = document.getElementById('nav-menu-close');
+
+  if (navMenuBtn && navMenuOverlay && navMenuClose) {
+    navMenuBtn.addEventListener('click', () => {
+      navMenuOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    });
+
+    navMenuClose.addEventListener('click', () => {
+      navMenuOverlay.classList.remove('open');
+      document.body.style.overflow = '';
+    });
+
+    navMenuOverlay.addEventListener('click', (e) => {
+      if (e.target === navMenuOverlay) {
+        navMenuOverlay.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    });
+
+    const menuLinks = navMenuOverlay.querySelectorAll('.nav-menu-links a');
+    menuLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        navMenuOverlay.classList.remove('open');
+        document.body.style.overflow = '';
+      });
+    });
+  }
+
   window.addEventListener('scroll', updateNavScroll, { passive: true });
   updateNavScroll();
-
-  // Mobile menu
-  const mobileOpenBtn = document.getElementById('nav-mobile-open');
-  const mobileCloseBtn = document.getElementById('nav-mobile-close');
-  const mobileOverlay = document.getElementById('nav-mobile-overlay');
-
-  function openMobile() {
-    mobileOverlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeMobile() {
-    mobileOverlay.classList.remove('open');
-    document.body.style.overflow = '';
-  }
-
-  if (mobileOpenBtn) {
-    mobileOpenBtn.addEventListener('click', openMobile);
-    mobileCloseBtn.addEventListener('click', closeMobile);
-
-    // Close on overlay background click
-    mobileOverlay.addEventListener('click', function (e) {
-      if (e.target === mobileOverlay) closeMobile();
-    });
-
-    // Close on link click
-    mobileOverlay.querySelectorAll('a').forEach(function (link) {
-      link.addEventListener('click', closeMobile);
-    });
-  }
-
-  // Close on Escape key
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && mobileOverlay.classList.contains('open')) {
-      closeMobile();
-    }
-  });
 
   // Scroll-triggered reveal animations
   const revealElements = document.querySelectorAll('.reveal');
