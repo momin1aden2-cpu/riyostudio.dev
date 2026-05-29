@@ -1143,6 +1143,12 @@ section {
   outline: none;
 }
 
+select.cyber-input option {
+  background-color: #0a0f1c;
+  color: #e2e8f0;
+  padding: 8px;
+}
+
 .cyber-input::placeholder {
   color: rgba(148, 163, 184, 0.3);
 }
