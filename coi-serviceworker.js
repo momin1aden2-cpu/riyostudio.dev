@@ -25,7 +25,9 @@ if (typeof window === 'undefined') {
           newHeaders.set("Cross-Origin-Embedder-Policy", "require-corp");
           newHeaders.set("Cross-Origin-Opener-Policy", "same-origin");
           
-          return new Response(response.body, {
+          const body = (response.status === 204 || response.status === 205 || response.status === 304) ? null : response.body;
+
+          return new Response(body, {
             status: response.status,
             statusText: response.statusText,
             headers: newHeaders,
