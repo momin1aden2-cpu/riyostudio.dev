@@ -152,6 +152,35 @@
       </div>
     </div>
   </footer>
-  <script src="script.js?v=2"></script>
+  
+  <!-- Dev's Dev: Live Performance HUD -->
+  <div id="perf-hud" aria-hidden="true">
+    <span class="perf-label">SYS_PERF:</span>
+    <span id="fps-counter">60 FPS</span>
+  </div>
+
+  <!-- Custom Cursor -->
+  <div class="custom-cursor-dot" id="cursor-dot"></div>
+  <div class="custom-cursor-ring" id="cursor-ring"></div>
+
+  <!-- Command Palette -->
+  <div class="cmd-palette-overlay" id="cmd-palette">
+    <div class="cmd-palette-modal">
+      <div class="cmd-palette-header">
+        <span class="cmd-prompt">></span>
+        <input type="text" id="cmd-input" placeholder="Type a command or search..." autocomplete="off" aria-label="Search system commands">
+        <span class="cmd-shortcut">ESC</span>
+      </div>
+      <div class="cmd-palette-body">
+        <div class="cmd-group">Navigation</div>
+        <button class="cmd-option" data-action="navigate" data-target="index.html">Go to Home</button>
+        <button class="cmd-option" data-action="navigate" data-target="invoice.html">Launch Invoice Maker</button>
+        <button class="cmd-option" data-action="navigate" data-target="qr.html">Launch QR Hub</button>
+        <button class="cmd-option" data-action="navigate" data-target="scanner.html">Launch AI Scanner</button>
+        <button class="cmd-option" data-action="navigate" data-target="forge.html">Launch File Forge</button>
+      </div>
+    </div>
+  </div>
+\n  <script src="script.js?v=2"></script>
 </body>
 </html>
