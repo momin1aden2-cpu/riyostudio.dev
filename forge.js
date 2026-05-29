@@ -73,7 +73,7 @@ function initUniversalConverter() {
       setupOptions(['mp4', 'webm', 'gif', 'mp3', 'wav']);
       loadFFmpeg();
     } else {
-      alert("Unsupported file type.");
+      showToast("Hold up mate, that's an unsupported file type.", "error");
       controls.style.display = 'none';
       return;
     }
@@ -304,7 +304,7 @@ function initHeicDecoder() {
 
   function handleFile(file) {
     if (!file.name.toLowerCase().endsWith('.heic')) {
-      alert('Please upload a .heic file.');
+      showToast("Righto, you need to upload a .heic file for this one mate.", "error");
       return;
     }
     currentFile = file;
@@ -371,7 +371,7 @@ function initTargetCompressor() {
 
   function handleFile(file) {
     if (!file.type.startsWith('image/')) {
-      alert('Please upload an image.');
+      showToast("Mate, please upload an image file first.", "error");
       return;
     }
     currentFile = file;
@@ -478,7 +478,7 @@ function initPdfSigner() {
 
   async function handleFile(file) {
     if (file.type !== 'application/pdf') {
-      alert('Please upload a PDF file.');
+      showToast("You need to upload a PDF file for this, mate.", "error");
       return;
     }
     dropzone.style.display = 'none';
@@ -666,9 +666,9 @@ function initPdfSigner() {
       triggerDownload(new Blob([pdfBytes], { type: 'application/pdf' }), 'signed_document.pdf');
     } catch (err) {
       if (err.message.includes('Expected instance of') || err.message.includes('encrypted')) {
-        alert(`LOCKED DOCUMENT ERROR:\n\nThis PDF has strict editing restrictions or encryption applied by its creator, preventing the engine from stamping the signature.\n\nQUICK FIX:\n1. Open the original PDF in your browser.\n2. Click "Print" and choose "Save as PDF".\n3. Upload that new copy here, and it will sign perfectly!`);
+        showToast("Crikey! This PDF is locked with strict restrictions. Try 'Print to PDF' first to unlock it.", "error");
       } else {
-        alert(`Error flattening PDF: ${err.message}`);
+        showToast("Bugger! Error flattening the PDF: " + err.message, "error");
       }
     } finally {
       saveBtn.disabled = false;
@@ -826,7 +826,7 @@ function initScreenRecorder() {
 
   startBtn.addEventListener('click', async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-      alert("⚠️ Screen Recording is a Desktop-only feature.\n\nMobile browsers (iOS Safari, Chrome Android) physically block apps from capturing the screen for security reasons.");
+      showToast("Hold your horses mate. Screen recording is a desktop-only feature.", "error");
       return;
     }
 
@@ -861,7 +861,7 @@ function initScreenRecorder() {
       
       mediaRecorder.start(1000); // 1-second chunks to prevent memory bloat
     } catch (err) {
-      alert("Screen recording cancelled or failed: " + err.message);
+      showToast("Screen recording went belly up: " + err.message, "error");
     }
   });
 
@@ -925,7 +925,7 @@ function initTextExtractor() {
 
   async function handleOcrFile(file) {
     if (!file.type.startsWith('image/')) {
-      alert("Please upload a valid image file (PNG, JPG).");
+      showToast("Mate, please upload a valid image file like PNG or JPG.", "error");
       return;
     }
 
@@ -1253,7 +1253,7 @@ function initDataConverter() {
 
   function handleSuccess(dataArray, filenameHint = 'data') {
     if (!Array.isArray(dataArray) || dataArray.length === 0) {
-      alert("No valid data rows found to parse.");
+      showToast("Couldn't find any valid data rows in there, mate.", "error");
       return;
     }
     parsedData = dataArray;
@@ -1294,7 +1294,7 @@ function initDataConverter() {
           complete: function(results) {
             handleSuccess(results.data, baseName);
           },
-          error: function(err) { alert("CSV Parse Error: " + err.message); }
+          error: function(err) { showToast("CSV Parse Error: " + err.message, "error"); }
         });
       } else if (ext === 'xlsx' || ext === 'xls') {
         const buffer = await file.arrayBuffer();
@@ -1303,17 +1303,17 @@ function initDataConverter() {
         const data = XLSX.utils.sheet_to_json(firstSheet);
         handleSuccess(data, baseName);
       } else {
-        alert("Unsupported file type. Please upload JSON, CSV, or Excel.");
+        showToast("Unsupported file mate. Toss us a JSON, CSV, or Excel file.", "error");
       }
     } catch (err) {
-      alert("Error parsing file: " + err.message);
+      showToast("Error parsing the file mate: " + err.message, "error");
     }
   }
 
   // --- Raw Text Logic ---
   parseBtn.addEventListener('click', () => {
     const text = textarea.value.trim();
-    if (!text) { alert("Please paste some data first."); return; }
+    if (!text) { showToast("Mate, you gotta paste some data in first.", "error"); return; }
 
     try {
       const json = JSON.parse(text);
@@ -1328,7 +1328,7 @@ function initDataConverter() {
           if (results.data && results.data.length > 0 && Object.keys(results.data[0]).length > 1) {
             handleSuccess(results.data, 'pasted_data');
           } else {
-            alert("Could not detect valid JSON or CSV format.");
+            showToast("Crikey, I couldn't detect a valid JSON or CSV format in that.", "error");
           }
         }
       });

@@ -79,10 +79,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function handleFile(file) {
-    if (file.size > 5 * 1024 * 1024) return alert("File is too large. Max 5MB.");
+    if (file.size > 5 * 1024 * 1024) return showToast("Hold up mate, that file is too large. Keep it under 5MB.", "error");
     
     if (file.type === 'application/pdf' || file.name.endsWith('.pdf') || file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
-      return alert("ERROR: You uploaded a binary file (PDF or Word Doc).\n\nBecause this scanner runs 100% offline in your browser for privacy, it cannot parse binary files. Please open your document, copy the text, and paste it into the box instead.");
+      return showToast("Crikey! You uploaded a binary file. Since we run 100% offline, we can't parse PDFs or Word Docs yet. Just copy and paste the text instead, mate.", "error");
     }
     
     const codeExtensions = ['.js', '.py', '.html', '.css', '.ts', '.jsx', '.tsx', '.json', '.java', '.c', '.cpp', '.php', '.rb', '.go'];
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   scanBtn.addEventListener('click', async () => {
     const text = inputEl.value;
-    if (!text.trim()) return alert("Mate, paste something in first.");
+    if (!text.trim()) return showToast("Mate, you gotta paste something in first before we can scan it.", "error");
 
     currentFileType = detectPayloadType(text);
 

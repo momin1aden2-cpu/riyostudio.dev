@@ -741,3 +741,28 @@
   }
 
 })();
+
+// --- GLOBAL TOAST SYSTEM ---
+window.showToast = function(message, type = 'error') {
+  let container = document.getElementById('riyo-toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'riyo-toast-container';
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement('div');
+  toast.className = 'riyo-toast ' + type;
+  toast.innerHTML = `<div class="riyo-toast-icon">${type === 'error' ? '⚠️' : '✅'}</div><div class="riyo-toast-msg">${message}</div><button class="riyo-toast-close">&times;</button>`;
+  container.appendChild(toast);
+  
+  // Trigger animation
+  requestAnimationFrame(() => toast.classList.add('show'));
+  
+  const removeToast = () => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  };
+  
+  toast.querySelector('.riyo-toast-close').onclick = removeToast;
+  setTimeout(() => { if (toast.parentNode) removeToast(); }, 5000);
+};
