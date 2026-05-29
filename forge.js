@@ -758,15 +758,13 @@ function initExpenseFlattener() {
       const { PDFDocument } = PDFLib;
       const pdfDoc = await PDFDocument.create();
       
-      // A4 size: 595.28 x 841.89
-      const page = pdfDoc.addPage([595.28, 841.89]);
-      const margin = 20;
-      const usableWidth = 595.28 - (margin * 2);
-      const usableHeight = 841.89 - (margin * 2);
-      const rowHeight = usableHeight / files.length;
-      let currentY = 841.89 - margin; // pdf-lib y-axis starts from bottom
-      
       for (const f of files) {
+        // Create a dedicated A4 page for each image
+        const page = pdfDoc.addPage([595.28, 841.89]);
+        const margin = 20;
+        const usableWidth = 595.28 - (margin * 2);
+        const usableHeight = 841.89 - (margin * 2);
+
         const bytes = await f.arrayBuffer();
         let img;
         if (f.type === 'image/jpeg') img = await pdfDoc.embedJpg(bytes);
@@ -781,21 +779,16 @@ function initExpenseFlattener() {
           img = await pdfDoc.embedPng(await blob.arrayBuffer());
         }
         
-        // Scale to fit within its allocated row height (minus some padding)
-        const { width, height } = img.scaleToFit(usableWidth, rowHeight - 20);
+        // Scale the image to fit perfectly inside the full page margins
+        const { width, height } = img.scaleToFit(usableWidth, usableHeight);
         
-        // Center vertically within the row block
-        const centerY = currentY - (rowHeight / 2);
-        const imageBottomY = centerY - (height / 2);
-        
+        // Draw perfectly centered on the page
         page.drawImage(img, {
-          x: margin + (usableWidth / 2 - width / 2), // Center horizontally
-          y: imageBottomY,
+          x: margin + (usableWidth / 2 - width / 2),
+          y: margin + (usableHeight / 2 - height / 2),
           width,
           height,
         });
-        
-        currentY -= rowHeight;
       }
       
       const pdfBytes = await pdfDoc.save();
