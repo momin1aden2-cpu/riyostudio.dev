@@ -285,8 +285,7 @@ function initUniversalConverter() {
       }
       runArgs.push(outputName);
 
-      const exitCode = await ffmpegInstance.run(...runArgs);
-      if (exitCode !== 0) throw new Error(`FFmpeg failed`);
+      await ffmpegInstance.run(...runArgs);
 
       const data = ffmpegInstance.FS('readFile', outputName);
       let mimeType = 'video/mp4';
