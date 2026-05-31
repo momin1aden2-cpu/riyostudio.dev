@@ -925,15 +925,20 @@ function initScreenRecorder() {
     }
 
     try {
-      // Get screen video/audio
-      rawDisplayStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      const wantMic = document.getElementById('recorder-mic-toggle').checked;
+      const wantSysAudio = document.getElementById('recorder-sys-toggle').checked;
+
+      // Get screen video/audio based on toggle
+      rawDisplayStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: wantSysAudio });
       
-      // Try to get microphone audio
+      // Try to get microphone audio if requested
       rawMicStream = null;
-      try {
-        rawMicStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      } catch (err) {
-        console.warn("Microphone access denied or unavailable.", err);
+      if (wantMic) {
+        try {
+          rawMicStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        } catch (err) {
+          console.warn("Microphone access denied or unavailable.", err);
+        }
       }
 
       // Mix the audio tracks together if both exist using Web Audio API

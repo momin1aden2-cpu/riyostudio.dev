@@ -362,6 +362,17 @@
               </div>
             </div>
             
+            <div style="width: 100%; display: flex; justify-content: space-between; margin-bottom: 1rem; font-family: 'JetBrains Mono'; font-size: 0.85rem; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;" title="Record your voice via microphone">
+                <input type="checkbox" id="recorder-mic-toggle" style="accent-color: #10B981;" checked>
+                🎤 Microphone
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;" title="Record computer/tab sounds">
+                <input type="checkbox" id="recorder-sys-toggle" style="accent-color: #10B981;" checked>
+                💻 System Audio
+              </label>
+            </div>
+            
             <button id="recorder-start-btn" class="cyber-submit-btn scanner-btn" style="width: 100%;">[ START ]</button>
             <button id="recorder-stop-btn" class="cyber-submit-btn scanner-btn" style="width: 100%; display: none; background: rgba(239,68,68,0.1); border-color: #EF4444; color: #EF4444;">[ STOP RECORDING ]</button>
             
@@ -570,6 +581,6 @@
 
   <script src="bg.js?v=4"></script>
   <script src="script.js?v=4"></script>
-  <script src="forge.js?v=24"></script>
+  <script src="forge.js?v=25"></script>
 </body>
 </html>
