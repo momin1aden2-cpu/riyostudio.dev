@@ -80,10 +80,24 @@ function initUniversalConverter() {
     controls.style.display = 'block';
   }
 
+  const formatDescriptions = {
+    'mp4': 'Universal Video format. Compatible with all devices including Apple.',
+    'webm': 'Web Video format. Highly compressed for browser playback.',
+    'gif': 'Animated Image format. No audio track, looping animation.',
+    'mp3': 'Audio-Only format. Extracts the audio track for music or podcasts.',
+    'wav': 'Uncompressed Audio-Only format. High quality audio extraction.',
+    'webp': 'Modern Web Image. highly compressed and fast loading.',
+    'png': 'Lossless Image format. Supports transparency.',
+    'jpeg': 'Standard Photo format. Good compression for photos.',
+    'ico': 'Windows Icon format. Scales down to 256x256.',
+    'bmp': 'Uncompressed Image format. Raw pixel data.'
+  };
+
   function setupOptions(formats) {
     formats.forEach(fmt => {
       const btn = document.createElement('button');
       btn.textContent = fmt.toUpperCase();
+      btn.title = formatDescriptions[fmt] || `Convert to ${fmt.toUpperCase()}`;
       btn.className = 'nav-link';
       btn.style.border = '1px solid rgba(255,255,255,0.2)';
       btn.style.borderRadius = '4px';
