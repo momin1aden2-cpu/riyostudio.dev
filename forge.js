@@ -248,7 +248,7 @@ function initUniversalConverter() {
         ffmpegInstance = createFFmpeg({ 
           log: false, 
           logger: ({ message }) => logTerminal(message),
-          corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
+          corePath: '/assets/ffmpeg/ffmpeg-core.js'
         });
         await ffmpegInstance.load();
       }
