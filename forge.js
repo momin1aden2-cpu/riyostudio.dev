@@ -248,13 +248,14 @@ function initUniversalConverter() {
         ffmpegInstance = createFFmpeg({ 
           log: true, 
           logger: ({ message }) => logTerminal(message),
-          progress: ({ ratio }) => {
-            if (ratio > 0 && ratio <= 1) {
-              const btn = document.getElementById('forge-btn');
-              if (btn) btn.textContent = `[ FORGING... ${Math.round(ratio * 100)}% ]`;
-            }
-          },
           corePath: new URL('/assets/ffmpeg/ffmpeg-core.js', window.location.href).href
+        });
+        
+        ffmpegInstance.setProgress(({ ratio }) => {
+          if (ratio > 0 && ratio <= 1) {
+            const btn = document.getElementById('forge-btn');
+            if (btn) btn.textContent = `[ FORGING... ${Math.round(ratio * 100)}% ]`;
+          }
         });
         
         await ffmpegInstance.load();
