@@ -207,10 +207,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const oldTransform = element.style.transform;
     const oldShadow = element.style.boxShadow;
     const oldMargin = element.style.margin;
+    const oldPosition = element.style.position;
+    const oldTop = element.style.top;
+    const oldLeft = element.style.left;
+    const oldZIndex = element.style.zIndex;
     
     element.style.transform = 'none';
     element.style.boxShadow = 'none'; // Prevent shadow from causing a 2nd blank page
     element.style.margin = '0';
+    
+    // Force the element to the absolute top left so html2canvas doesn't clip it
+    element.style.position = 'fixed';
+    element.style.top = '0';
+    element.style.left = '0';
+    element.style.zIndex = '-9999';
     
     const filename = `${inputs.invNum.value || 'Invoice'}_${inputs.clientName.value || 'Client'}.pdf`;
 
@@ -222,8 +232,8 @@ document.addEventListener('DOMContentLoaded', () => {
         scale: 2, 
         useCORS: true, 
         logging: false,
-        windowWidth: 800, // Force desktop width for mobile rendering
-        scrollY: 0 // Prevent scrolling from capturing blank spaces
+        scrollY: 0,
+        scrollX: 0
       },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
@@ -233,6 +243,10 @@ document.addEventListener('DOMContentLoaded', () => {
       element.style.transform = oldTransform;
       element.style.boxShadow = oldShadow;
       element.style.margin = oldMargin;
+      element.style.position = oldPosition;
+      element.style.top = oldTop;
+      element.style.left = oldLeft;
+      element.style.zIndex = oldZIndex;
     });
   });
 
