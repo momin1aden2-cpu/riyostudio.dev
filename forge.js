@@ -610,6 +610,17 @@ function initPdfSigner() {
       overlay.src = URL.createObjectURL(blob);
       overlay.style.display = 'block';
       overlay.style.width = '200px'; // Initial scale
+      
+      const containerRect = document.getElementById('pdf-render-container').getBoundingClientRect();
+      const viewportMiddleY = window.innerHeight / 2;
+      let relativeTop = (viewportMiddleY - containerRect.top) - 50;
+      
+      if (relativeTop < 0) relativeTop = 50;
+      if (relativeTop > containerRect.height - 100) relativeTop = containerRect.height - 100;
+      
+      overlay.style.top = `${relativeTop}px`;
+      overlay.style.left = '50px';
+
       saveBtn.style.display = 'block';
       drawBtn.textContent = '[ REDRAW SIGNATURE ]';
       sigModal.style.display = 'none';
