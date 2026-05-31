@@ -252,6 +252,13 @@ function initUniversalConverter() {
           wasmPath: new URL('/assets/ffmpeg/ffmpeg-core.wasm', window.location.href).href,
           workerPath: new URL('/assets/ffmpeg/ffmpeg-core.worker.js', window.location.href).href
         });
+        
+        ffmpegInstance.setProgress(({ ratio }) => {
+          if (ratio > 0 && ratio <= 1) {
+            document.querySelector('#convert-btn').textContent = `[ FORGING... ${Math.round(ratio * 100)}% ]`;
+          }
+        });
+        
         await ffmpegInstance.load();
       }
 
@@ -260,7 +267,16 @@ function initUniversalConverter() {
       const outputName = `output_${Date.now()}.${targetFormat}`;
 
       ffmpegInstance.FS('writeFile', inputName, await fetchFile(currentFile));
-      const exitCode = await ffmpegInstance.run('-i', inputName, outputName);
+      
+      let runArgs = ['-i', inputName];
+      if (targetFormat === 'mp4') {
+        runArgs.push('-vcodec', 'libx264', '-preset', 'ultrafast');
+      } else if (targetFormat === 'webm') {
+        runArgs.push('-c:v', 'libvpx-vp9', '-deadline', 'realtime', '-cpu-used', '8');
+      }
+      runArgs.push(outputName);
+
+      const exitCode = await ffmpegInstance.run(...runArgs);
       if (exitCode !== 0) throw new Error(`FFmpeg failed`);
 
       const data = ffmpegInstance.FS('readFile', outputName);
