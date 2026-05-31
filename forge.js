@@ -1417,11 +1417,16 @@ function initGhostMaker() {
              leafletMap = null;
            }
            
+           // Completely destroy and recreate the DOM element to prevent Leaflet from caching 0x0 dimensions
+           const parent = document.getElementById('ghost-map-parent');
+           parent.innerHTML = '<div id="ghost-map" style="width: 100%; height: 100%;"></div><div id="ghost-map-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-surface); align-items: center; justify-content: center; color: var(--text-dim); z-index: 1000;">No GPS Coordinates Found</div>';
+           
            leafletMap = L.map('ghost-map').setView([output.latitude, output.longitude], 15);
            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
               attribution: '&copy; OpenStreetMap contributors',
               maxZoom: 19,
-              className: 'dark-map-tiles'
+              className: 'dark-map-tiles',
+              crossOrigin: true
            }).addTo(leafletMap);
            
            const redIcon = L.divIcon({
@@ -1434,6 +1439,7 @@ function initGhostMaker() {
            
            setTimeout(() => { if(leafletMap) leafletMap.invalidateSize(); }, 100);
            setTimeout(() => { if(leafletMap) leafletMap.invalidateSize(); }, 500);
+           setTimeout(() => { if(leafletMap) leafletMap.invalidateSize(); }, 1500);
          } else {
            document.getElementById('ghost-map').style.visibility = 'hidden';
            document.getElementById('ghost-map-overlay').style.display = 'flex';
