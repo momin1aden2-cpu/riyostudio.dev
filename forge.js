@@ -972,10 +972,40 @@ function initScreenRecorder() {
     }
   });
   
-  saveBtn.addEventListener('click', () => {
-    if (finalBlob) {
-      triggerDownload(finalBlob, `recording_${Date.now()}.webm`);
-      showToast("Video saved to your downloads mate!", "success");
+  // Prevent accidentally navigating away from the page while recording
+  window.addEventListener('beforeunload', (e) => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      e.preventDefault();
+      e.returnValue = 'You are currently recording. If you leave this page, your recording will be lost.';
+    }
+  });
+  
+  saveBtn.addEventListener('click', async () => {
+    if (!finalBlob) return;
+    
+    try {
+      // Try to use the modern File System Access API so user can choose destination
+      if (window.showSaveFilePicker) {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: `recording_${Date.now()}.webm`,
+          types: [{
+            description: 'WebM Video',
+            accept: { 'video/webm': ['.webm'] },
+          }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(finalBlob);
+        await writable.close();
+        showToast("Video saved exactly where you wanted it mate!", "success");
+      } else {
+        // Fallback to standard download folder
+        triggerDownload(finalBlob, `recording_${Date.now()}.webm`);
+        showToast("Video saved to your downloads mate!", "success");
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        showToast("Error saving file: " + err.message, "error");
+      }
     }
   });
 
