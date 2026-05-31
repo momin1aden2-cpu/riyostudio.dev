@@ -205,21 +205,34 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Temporarily reset CSS scale transform to ensure native resolution capture
     const oldTransform = element.style.transform;
+    const oldShadow = element.style.boxShadow;
+    const oldMargin = element.style.margin;
+    
     element.style.transform = 'none';
+    element.style.boxShadow = 'none'; // Prevent shadow from causing a 2nd blank page
+    element.style.margin = '0';
     
     const filename = `${inputs.invNum.value || 'Invoice'}_${inputs.clientName.value || 'Client'}.pdf`;
 
     const opt = {
       margin:       0,
       filename:     filename.replace(/[^a-z0-9_-]/gi, '_').toLowerCase() + '.pdf',
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, logging: false },
+      image:        { type: 'jpeg', quality: 1.0 },
+      html2canvas:  { 
+        scale: 2, 
+        useCORS: true, 
+        logging: false,
+        windowWidth: 800, // Force desktop width for mobile rendering
+        scrollY: 0 // Prevent scrolling from capturing blank spaces
+      },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
     html2pdf().set(opt).from(element).save().then(() => {
-      // Restore CSS transform
+      // Restore CSS transform and shadow
       element.style.transform = oldTransform;
+      element.style.boxShadow = oldShadow;
+      element.style.margin = oldMargin;
     });
   });
 
