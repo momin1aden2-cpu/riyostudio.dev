@@ -506,18 +506,18 @@
                   </div>
                 </div>
                 
-                <div style="display: flex; gap: 1rem; margin-top: 2rem; align-items: center; flex-wrap: wrap;">
-                  <button id="ghost-reset-main-btn" class="nav-link" style="border: 1px solid var(--border); background: transparent; color: var(--text-main); flex: 1; min-width: 150px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; padding: 12px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 2rem; align-items: center;">
+                  <button id="ghost-reset-main-btn" class="nav-link" style="border: 1px solid var(--border); background: transparent; color: var(--text-main); border-radius: 4px; font-family: 'JetBrains Mono', monospace; padding: 12px; white-space: nowrap;">
                     [ CHECK ANOTHER BATCH ]
                   </button>
-                  <select id="ghost-spoof-select" class="cyber-input" style="flex: 1; min-width: 200px; padding: 12px; font-family: 'JetBrains Mono'; cursor: pointer;">
+                  <select id="ghost-spoof-select" class="cyber-input" style="padding: 12px; font-family: 'JetBrains Mono'; cursor: pointer; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
                     <option value="strip">Action: Strip All Metadata</option>
                     <option value="spoof-area51">Spoof Location: Area 51, NV</option>
                     <option value="spoof-bermuda">Spoof Location: Bermuda Triangle</option>
                     <option value="spoof-northpole">Spoof Location: North Pole</option>
                     <option value="spoof-null">Spoof Location: Null Island (0,0)</option>
                   </select>
-                  <button id="ghost-strip-btn" class="cyber-submit-btn scanner-btn" style="background: rgba(16, 185, 129, 0.1); border-color: #10B981; color: #10B981; flex: 1.5; min-width: 200px; margin: 0; padding: 12px;">
+                  <button id="ghost-strip-btn" class="cyber-submit-btn scanner-btn" style="background: rgba(16, 185, 129, 0.1); border-color: #10B981; color: #10B981; margin: 0; padding: 12px; white-space: nowrap;">
                     [ EXECUTE & DOWNLOAD ]
                   </button>
                 </div>
