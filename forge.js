@@ -1500,7 +1500,7 @@ function initDataConverter() {
     try {
       if (ext === 'json') {
         const text = await file.text();
-        const json = JSON.parse(text);
+        const json = window.JSON5 ? JSON5.parse(text) : JSON.parse(text);
         handleSuccess(Array.isArray(json) ? json : [json], baseName);
       } else if (ext === 'csv') {
         Papa.parse(file, {
@@ -1531,7 +1531,7 @@ function initDataConverter() {
     if (!text) { showToast("Mate, you gotta paste some data in first.", "error"); return; }
 
     try {
-      const json = JSON.parse(text);
+      const json = window.JSON5 ? JSON5.parse(text) : JSON.parse(text);
       handleSuccess(Array.isArray(json) ? json : [json], 'pasted_data');
       return;
     } catch (e) {
