@@ -1412,18 +1412,18 @@ function initGhostMaker() {
 
          // Init Map if GPS exists
          if (hasGPS && output.latitude && output.longitude) {
-           if (!leafletMap) {
-             leafletMap = L.map('ghost-map').setView([output.latitude, output.longitude], 15);
-             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors',
-                maxZoom: 19,
-                className: 'dark-map-tiles'
-             }).addTo(leafletMap);
-           } else {
-             leafletMap.setView([output.latitude, output.longitude], 15);
+           if (leafletMap) {
+             leafletMap.remove();
+             leafletMap = null;
            }
            
-           if (mapMarker) leafletMap.removeLayer(mapMarker);
+           leafletMap = L.map('ghost-map').setView([output.latitude, output.longitude], 15);
+           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '&copy; OpenStreetMap contributors',
+              maxZoom: 19,
+              className: 'dark-map-tiles'
+           }).addTo(leafletMap);
+           
            const redIcon = L.divIcon({
               className: 'custom-div-icon',
               html: "<div style='background-color:#EF4444;width:15px;height:15px;border-radius:50%;border:2px solid white;box-shadow: 0 0 10px rgba(239,68,68,0.8);'></div>",
@@ -1431,7 +1431,9 @@ function initGhostMaker() {
               iconAnchor: [7.5, 7.5]
            });
            mapMarker = L.marker([output.latitude, output.longitude], {icon: redIcon}).addTo(leafletMap);
-           setTimeout(() => { leafletMap.invalidateSize(); }, 300);
+           
+           setTimeout(() => { if(leafletMap) leafletMap.invalidateSize(); }, 100);
+           setTimeout(() => { if(leafletMap) leafletMap.invalidateSize(); }, 500);
          } else {
            document.getElementById('ghost-map').style.visibility = 'hidden';
            document.getElementById('ghost-map-overlay').style.display = 'flex';
