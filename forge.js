@@ -866,8 +866,38 @@ function initScreenRecorder() {
     }
 
     try {
-      stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      // Get screen video/audio
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
       
+      // Try to get microphone audio
+      let micStream = null;
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      } catch (err) {
+        console.warn("Microphone access denied or unavailable.", err);
+      }
+
+      // Mix the audio tracks together if both exist using Web Audio API
+      let mixedStream = displayStream;
+      if (micStream && micStream.getAudioTracks().length > 0) {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const dest = audioCtx.createMediaStreamDestination();
+        
+        if (displayStream.getAudioTracks().length > 0) {
+          const systemSource = audioCtx.createMediaStreamSource(new MediaStream(displayStream.getAudioTracks()));
+          systemSource.connect(dest);
+        }
+        
+        const micSource = audioCtx.createMediaStreamSource(micStream);
+        micSource.connect(dest);
+        
+        mixedStream = new MediaStream([
+          ...displayStream.getVideoTracks(),
+          ...dest.stream.getAudioTracks()
+        ]);
+      }
+      
+      stream = mixedStream;
       preview.srcObject = stream;
       preview.style.display = 'block';
       placeholder.style.display = 'none';
