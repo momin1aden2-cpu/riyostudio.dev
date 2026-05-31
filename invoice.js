@@ -203,24 +203,16 @@ document.addEventListener('DOMContentLoaded', () => {
   btnExport.addEventListener('click', () => {
     const element = document.getElementById('a4-paper');
     
-    // Temporarily reset CSS scale transform to ensure native resolution capture
-    const oldTransform = element.style.transform;
+    // Temporarily remove shadow and margin to prevent a 2nd blank page
     const oldShadow = element.style.boxShadow;
     const oldMargin = element.style.margin;
-    const oldPosition = element.style.position;
-    const oldTop = element.style.top;
-    const oldLeft = element.style.left;
-    const oldZIndex = element.style.zIndex;
     
-    element.style.transform = 'none';
-    element.style.boxShadow = 'none'; // Prevent shadow from causing a 2nd blank page
+    element.style.boxShadow = 'none';
     element.style.margin = '0';
     
-    // Force the element to the absolute top left so html2canvas doesn't clip it
-    element.style.position = 'fixed';
-    element.style.top = '0';
-    element.style.left = '0';
-    element.style.zIndex = '-9999';
+    // Briefly scroll to top to prevent html2canvas blank page offset bug on mobile
+    const currentScroll = window.scrollY;
+    window.scrollTo(0, 0);
     
     const filename = `${inputs.invNum.value || 'Invoice'}_${inputs.clientName.value || 'Client'}.pdf`;
 
@@ -232,21 +224,16 @@ document.addEventListener('DOMContentLoaded', () => {
         scale: 2, 
         useCORS: true, 
         logging: false,
-        scrollY: 0,
-        scrollX: 0
+        scrollY: 0
       },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
     html2pdf().set(opt).from(element).save().then(() => {
-      // Restore CSS transform and shadow
-      element.style.transform = oldTransform;
+      // Restore CSS and scroll position
       element.style.boxShadow = oldShadow;
       element.style.margin = oldMargin;
-      element.style.position = oldPosition;
-      element.style.top = oldTop;
-      element.style.left = oldLeft;
-      element.style.zIndex = oldZIndex;
+      window.scrollTo(0, currentScroll);
     });
   });
 
