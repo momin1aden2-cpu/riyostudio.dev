@@ -255,7 +255,8 @@ function initUniversalConverter() {
         
         ffmpegInstance.setProgress(({ ratio }) => {
           if (ratio > 0 && ratio <= 1) {
-            document.querySelector('#convert-btn').textContent = `[ FORGING... ${Math.round(ratio * 100)}% ]`;
+            const btn = document.getElementById('forge-btn');
+            if (btn) btn.textContent = `[ FORGING... ${Math.round(ratio * 100)}% ]`;
           }
         });
         
