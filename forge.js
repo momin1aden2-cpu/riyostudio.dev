@@ -248,7 +248,7 @@ function initUniversalConverter() {
         ffmpegInstance = createFFmpeg({ 
           log: false, 
           logger: ({ message }) => logTerminal(message),
-          corePath: '/assets/ffmpeg/ffmpeg-core.js'
+          corePath: new URL('/assets/ffmpeg/ffmpeg-core.js', window.location.href).href
         });
         await ffmpegInstance.load();
       }
