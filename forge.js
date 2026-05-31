@@ -1273,91 +1273,134 @@ function initGhostMaker() {
   const resultsArea = document.getElementById('ghost-results');
   const metaList = document.getElementById('ghost-metadata-list');
   const stripBtn = document.getElementById('ghost-strip-btn');
-  let currentFile = null;
+  const threatBadge = document.getElementById('ghost-threat-badge');
+  const fileCount = document.getElementById('ghost-file-count');
+  const spoofSelect = document.getElementById('ghost-spoof-select');
+  
+  let currentFiles = []; // Array of processed blobs/files
   let leafletMap = null;
   let mapMarker = null;
 
   dropzone.addEventListener('click', () => input.click());
-
   dropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropzone.style.borderColor = '#10B981';
     dropzone.style.background = 'rgba(16, 185, 129, 0.1)';
   });
-
   dropzone.addEventListener('dragleave', (e) => {
     e.preventDefault();
     dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)';
     dropzone.style.background = 'rgba(16, 185, 129, 0.02)';
   });
-
   dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
     dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)';
     dropzone.style.background = 'rgba(16, 185, 129, 0.02)';
-    
-    if (e.dataTransfer.files.length > 0) {
-      processGhostFile(e.dataTransfer.files[0]);
-    }
+    if (e.dataTransfer.files.length > 0) processGhostFiles(e.dataTransfer.files);
   });
-
   input.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) {
-      processGhostFile(e.target.files[0]);
-    }
+    if (e.target.files.length > 0) processGhostFiles(e.target.files);
   });
 
-  async function processGhostFile(file) {
-    if (!file.type.match('image.*')) return;
-    currentFile = file;
+  async function processGhostFiles(fileList) {
+    currentFiles = Array.from(fileList);
+    if (currentFiles.length === 0) return;
+    
     dropzone.style.display = 'none';
     resultsArea.style.display = 'block';
+    fileCount.textContent = `${currentFiles.length} file(s) selected`;
+    metaList.innerHTML = '<div style="color: #10B981;">Analyzing raw file data...</div>';
+    threatBadge.style.display = 'none';
+    stripBtn.style.display = 'block';
     
-    metaList.innerHTML = '<div style="color: #10B981;">Analyzing raw image data...</div>';
-
+    // We only show preview/threat for the FIRST file to keep UI clean
+    const firstFile = currentFiles[0];
+    
     try {
-      // Parse EXIF Data
-      let output = await exifr.parse(file);
-      if (!output) output = {};
+      let output = {};
+      let hasGPS = false;
+      let hasHardwareInfo = false;
+      let ext = firstFile.name.split('.').pop().toLowerCase();
       
-      // Aggressively hunt for GPS data
-      try {
-        const gps = await exifr.gps(file);
-        if (gps) {
-          output.latitude = gps.latitude;
-          output.longitude = gps.longitude;
+      if (ext === 'pdf') {
+        // Parse PDF Metadata
+        const arrayBuffer = await firstFile.arrayBuffer();
+        const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer, { updateMetadata: false });
+        
+        output = {
+          Title: pdfDoc.getTitle() || '',
+          Author: pdfDoc.getAuthor() || '',
+          Subject: pdfDoc.getSubject() || '',
+          Creator: pdfDoc.getCreator() || '',
+          Producer: pdfDoc.getProducer() || '',
+          CreationDate: pdfDoc.getCreationDate() ? pdfDoc.getCreationDate().toLocaleString() : '',
+          ModificationDate: pdfDoc.getModificationDate() ? pdfDoc.getModificationDate().toLocaleString() : ''
+        };
+        
+        // Clean empty fields
+        for (let k in output) {
+          if (!output[k]) delete output[k];
         }
-      } catch(e) {}
+        
+        if (Object.keys(output).length > 0) hasHardwareInfo = true; // PDF software info
+      } else {
+        // Image Processing (JPG, PNG, WEBP, HEIC)
+        let parseFile = firstFile;
+        
+        if (ext === 'heic' && window.heic2any) {
+           metaList.innerHTML = '<div style="color: #10B981;">Decoding HEIC container...</div>';
+           try {
+              parseFile = await heic2any({ blob: firstFile, toType: "image/jpeg", quality: 0.9 });
+              parseFile.name = firstFile.name.replace(/\.heic$/i, '.jpg');
+           } catch(e) {
+              console.warn("Failed to decode HEIC to JPG for parsing", e);
+           }
+        }
+        
+        try {
+          let parsedExif = await exifr.parse(parseFile);
+          if (parsedExif) output = parsedExif;
+          const gps = await exifr.gps(parseFile);
+          if (gps) {
+            output.latitude = gps.latitude;
+            output.longitude = gps.longitude;
+            hasGPS = true;
+          }
+          if (output.Make || output.Model || output.Software) hasHardwareInfo = true;
+        } catch(e) {
+           console.warn("EXIF parsing error", e);
+        }
+      }
       
+      // Calculate Threat Score
+      threatBadge.style.display = 'block';
+      if (hasGPS) {
+        threatBadge.style.color = '#EF4444'; // Red
+        threatBadge.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+        threatBadge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+        threatBadge.textContent = '🔴 CRITICAL RISK: Exact GPS Coordinates Found';
+      } else if (hasHardwareInfo || Object.keys(output).length > 0) {
+        threatBadge.style.color = '#F59E0B'; // Yellow
+        threatBadge.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
+        threatBadge.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+        threatBadge.textContent = '🟡 MODERATE RISK: Tracking Metadata Found';
+      } else {
+        threatBadge.style.color = '#10B981'; // Green
+        threatBadge.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+        threatBadge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+        threatBadge.textContent = '🟢 SAFE: No Tracking Data Found';
+      }
+
       metaList.innerHTML = '';
       if (Object.keys(output).length === 0) {
-         metaList.innerHTML = `
-           <div style="color: #10B981; margin-bottom: 1rem;">[✓] Image is pristine. Zero tracking metadata found.</div>
-           <button id="ghost-reset-btn" class="nav-link" style="border: 1px solid #10B981; background: transparent; color: #10B981; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
-             Check Another Photo
-           </button>
-         `;
+         metaList.innerHTML = `<div style="color: #10B981; margin-bottom: 1rem;">[✓] File is pristine. Zero tracking metadata found.</div>`;
          document.getElementById('ghost-map-parent').style.display = 'none';
-         document.getElementById('ghost-strip-btn').style.display = 'none';
-         
-         document.getElementById('ghost-reset-btn').addEventListener('click', () => {
-           dropzone.style.display = 'flex';
-           resultsArea.style.display = 'none';
-           currentFile = null;
-           document.getElementById('ghost-strip-btn').style.display = 'block'; // reset strip btn
-         });
       } else {
          let html = '<ul>';
-         let hasGPS = false;
          for (const [key, value] of Object.entries(output)) {
-           // Skip massive raw array data buffers
            if (typeof value === 'object' && value !== null && !Array.isArray(value)) continue;
-           
-           if (key === 'latitude' || key === 'longitude') hasGPS = true;
-           
            let displayVal = value;
            if (displayVal instanceof Date) displayVal = displayVal.toLocaleString();
-           
            html += `<li style="margin-bottom: 4px;"><strong>${key}:</strong> ${displayVal}</li>`;
          }
          html += '</ul>';
@@ -1371,30 +1414,23 @@ function initGhostMaker() {
          if (hasGPS && output.latitude && output.longitude) {
            if (!leafletMap) {
              leafletMap = L.map('ghost-map').setView([output.latitude, output.longitude], 15);
-             // Use ultra-reliable OpenStreetMap tiles
              L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors',
                 maxZoom: 19,
-                className: 'dark-map-tiles',
-                crossOrigin: true
+                className: 'dark-map-tiles'
              }).addTo(leafletMap);
            } else {
              leafletMap.setView([output.latitude, output.longitude], 15);
            }
            
            if (mapMarker) leafletMap.removeLayer(mapMarker);
-           
-           // Custom red dot marker
            const redIcon = L.divIcon({
               className: 'custom-div-icon',
               html: "<div style='background-color:#EF4444;width:15px;height:15px;border-radius:50%;border:2px solid white;box-shadow: 0 0 10px rgba(239,68,68,0.8);'></div>",
               iconSize: [15, 15],
               iconAnchor: [7.5, 7.5]
            });
-           
            mapMarker = L.marker([output.latitude, output.longitude], {icon: redIcon}).addTo(leafletMap);
-           
-           // Force map refresh to fix container sizing bugs
            setTimeout(() => { leafletMap.invalidateSize(); }, 300);
          } else {
            document.getElementById('ghost-map').style.visibility = 'hidden';
@@ -1406,53 +1442,169 @@ function initGhostMaker() {
     }
   }
 
-  // Reset the UI to check another photo when metadata was found
   const resetMainBtn = document.getElementById('ghost-reset-main-btn');
   if (resetMainBtn) {
     resetMainBtn.addEventListener('click', () => {
       dropzone.style.display = 'flex';
       resultsArea.style.display = 'none';
-      currentFile = null;
+      currentFiles = [];
     });
   }
 
-  // The Canvas Wash (Wipe Metadata)
-  stripBtn.addEventListener('click', () => {
-    if (!currentFile) return;
-    stripBtn.innerText = '[ SCRUBBING DATA... ]';
+  // The Ghost Process (Scrubbing / Spoofing)
+  stripBtn.addEventListener('click', async () => {
+    if (currentFiles.length === 0) return;
+    stripBtn.innerText = '[ PROCESSING... ]';
+    stripBtn.disabled = true;
     
-    const img = new Image();
-    const url = URL.createObjectURL(currentFile);
+    const action = spoofSelect ? spoofSelect.value : 'strip';
+    let processedBlobs = [];
     
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      // Physically redraw the pixels, dropping all EXIF in the process
-      ctx.drawImage(img, 0, 0);
-      
-      // Export as a pristine blob
-      canvas.toBlob((blob) => {
-        const cleanUrl = URL.createObjectURL(blob);
-        triggerDownload(blob, 'ghost_' + currentFile.name);
-        
-        stripBtn.style.background = 'rgba(16, 185, 129, 0.2)';
-        stripBtn.style.color = '#10B981';
-        stripBtn.innerText = '[ DATA DESTROYED - FILE DOWNLOADED ]';
-        
-        URL.revokeObjectURL(url);
-        
-        setTimeout(() => {
-          stripBtn.style.background = 'rgba(16, 185, 129, 0.1)';
-          stripBtn.innerText = '[ STRIP ALL TRACKING DATA ]';
-          dropzone.style.display = 'flex';
-          resultsArea.style.display = 'none';
-          currentFile = null;
-        }, 3000);
-      }, currentFile.type, 1.0);
+    // Spoofing Data coordinates [Lat, Lng]
+    const spoofer = {
+      'spoof-area51': [37.2343, -115.8066],
+      'spoof-bermuda': [25.0000, -71.0000],
+      'spoof-northpole': [90.0000, 0.0000],
+      'spoof-null': [0.0000, 0.0000]
     };
-    img.src = url;
+
+    for (let i = 0; i < currentFiles.length; i++) {
+      let file = currentFiles[i];
+      let ext = file.name.split('.').pop().toLowerCase();
+      let originalName = file.name;
+      
+      if (ext === 'pdf') {
+         // PDF Scrubbing
+         const arrayBuffer = await file.arrayBuffer();
+         const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+         pdfDoc.setTitle('');
+         pdfDoc.setAuthor('');
+         pdfDoc.setSubject('');
+         pdfDoc.setCreator('');
+         pdfDoc.setProducer('');
+         pdfDoc.setKeywords([]);
+         const pdfBytes = await pdfDoc.save();
+         processedBlobs.push({ name: 'ghost_' + originalName, blob: new Blob([pdfBytes], { type: 'application/pdf' }) });
+      } else {
+         // Image Scrubbing / Spoofing
+         let imgBlob = file;
+         if (ext === 'heic' && window.heic2any) {
+            try {
+              // Extract preview from HEIC to speed it up or convert full
+              let hBlob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
+              imgBlob = Array.isArray(hBlob) ? hBlob[0] : hBlob;
+              ext = 'jpg';
+              originalName = originalName.replace(/\.heic$/i, '.jpg');
+            } catch (e) {
+              console.warn("Failed HEIC to JPG conversion during scrubbing", e);
+              continue;
+            }
+         }
+         
+         // Canvas wash to strip EXIF
+         const cleanBlob = await new Promise((resolve) => {
+            const img = new Image();
+            const url = URL.createObjectURL(imgBlob);
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              canvas.toBlob((blob) => {
+                 URL.revokeObjectURL(url);
+                 resolve(blob);
+              }, ext === 'png' ? 'image/png' : 'image/jpeg', 1.0);
+            };
+            img.src = url;
+         });
+
+         // Inject EXIF if Spoofing
+         if (action.startsWith('spoof-') && window.piexif && (ext === 'jpg' || ext === 'jpeg')) {
+            const coords = spoofer[action];
+            if (coords) {
+               try {
+                 const lat = Math.abs(coords[0]);
+                 const lng = Math.abs(coords[1]);
+                 const latRef = coords[0] < 0 ? 'S' : 'N';
+                 const lngRef = coords[1] < 0 ? 'W' : 'E';
+                 
+                 const degToExif = (deg) => {
+                    const d = Math.floor(deg);
+                    const minFloat = (deg - d) * 60;
+                    const m = Math.floor(minFloat);
+                    const sFloat = (minFloat - m) * 60;
+                    const s = Math.round(sFloat * 100);
+                    return [[d, 1], [m, 1], [s, 100]];
+                 };
+                 
+                 const zeroth = {};
+                 const exif = {};
+                 const gps = {};
+                 
+                 gps[piexif.GPSIFD.GPSLatitudeRef] = latRef;
+                 gps[piexif.GPSIFD.GPSLatitude] = degToExif(lat);
+                 gps[piexif.GPSIFD.GPSLongitudeRef] = lngRef;
+                 gps[piexif.GPSIFD.GPSLongitude] = degToExif(lng);
+                 
+                 // Add fake camera make
+                 zeroth[piexif.ImageIFD.Make] = "Spoofed Camera";
+                 zeroth[piexif.ImageIFD.Model] = "Ghost Maker v1.0";
+                 
+                 const exifObj = {"0th": zeroth, "Exif": exif, "GPS": gps};
+                 const exifBytes = piexif.dump(exifObj);
+                 
+                 // Read blob as dataURL to insert EXIF
+                 const reader = new FileReader();
+                 const spoofedBlob = await new Promise((resolve) => {
+                    reader.onload = (e) => {
+                       const inserted = piexif.insert(exifBytes, e.target.result);
+                       // Convert dataURL back to blob
+                       fetch(inserted)
+                         .then(res => res.blob())
+                         .then(resolve);
+                    };
+                    reader.readAsDataURL(cleanBlob);
+                 });
+                 processedBlobs.push({ name: 'ghost_' + originalName, blob: spoofedBlob });
+               } catch(e) {
+                 console.warn("EXIF spoofing failed, using clean blob", e);
+                 processedBlobs.push({ name: 'ghost_' + originalName, blob: cleanBlob });
+               }
+            } else {
+               processedBlobs.push({ name: 'ghost_' + originalName, blob: cleanBlob });
+            }
+         } else {
+            processedBlobs.push({ name: 'ghost_' + originalName, blob: cleanBlob });
+         }
+      }
+    }
+    
+    // Download logic
+    if (processedBlobs.length === 1) {
+       triggerDownload(processedBlobs[0].blob, processedBlobs[0].name);
+    } else if (processedBlobs.length > 1 && window.JSZip) {
+       stripBtn.innerText = '[ ZIPPING FILES... ]';
+       const zip = new JSZip();
+       processedBlobs.forEach(pb => {
+          zip.file(pb.name, pb.blob);
+       });
+       const zipBlob = await zip.generateAsync({type:"blob"});
+       triggerDownload(zipBlob, 'ghost_scrubbed_files.zip');
+    }
+
+    stripBtn.style.background = 'rgba(16, 185, 129, 0.2)';
+    stripBtn.style.color = '#10B981';
+    stripBtn.innerText = '[ JOB COMPLETE ]';
+    
+    setTimeout(() => {
+      stripBtn.style.background = 'rgba(16, 185, 129, 0.1)';
+      stripBtn.innerText = '[ EXECUTE & DOWNLOAD ]';
+      stripBtn.disabled = false;
+      dropzone.style.display = 'flex';
+      resultsArea.style.display = 'none';
+      currentFiles = [];
+    }, 3000);
   });
 }
 

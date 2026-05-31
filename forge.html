@@ -42,6 +42,8 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/piexifjs/1.0.6/piexif.min.js"></script>
 
   <!-- Data Converter Dependencies -->
   <script src="https://unpkg.com/json5@2/dist/index.min.js"></script>
@@ -463,43 +465,60 @@
           <div class="bento-card reveal">
             <div class="bento-card-header">
               <h3>👻 The Ghost Maker (EXIF Scrubber)</h3>
-              <p>Instantly map and completely strip all hidden tracking metadata (GPS, Date, Camera) from your photos.</p>
+              <p>Instantly map and completely strip all hidden tracking metadata from photos (JPG, PNG, WEBP, HEIC) and documents (PDF). Drop up to 50 files at once for high-speed bulk scrubbing, or spoof your GPS location to throw trackers off your trail.</p>
             </div>
             <div class="bento-card-body">
               <div id="ghost-dropzone" class="scanner-dropzone" style="border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.02);">
-                <input type="file" id="ghost-input" accept="image/jpeg, image/png, image/webp" style="display: none;">
+                <input type="file" id="ghost-input" accept="image/jpeg, image/png, image/webp, image/heic, .heic, application/pdf" multiple style="display: none;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="dropzone-icon" style="color: #10B981; width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.8;">
                   <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke-linecap="round" stroke-linejoin="round"/>
                   <circle cx="12" cy="9" r="2.5" />
                 </svg>
-                <p>Drop a photo to reveal hidden tracking data</p>
-                <span style="font-size: 0.8rem; color: var(--text-dim);">Supported: JPG, PNG, WEBP</span>
+                <p>Drop photos or PDFs to reveal hidden tracking data</p>
+                <span style="font-size: 0.8rem; color: var(--text-dim);">Supported: JPG, PNG, WEBP, HEIC, PDF</span>
               </div>
               
               <div id="ghost-results" style="display: none; margin-top: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                  <div id="ghost-threat-badge" style="padding: 6px 12px; border-radius: 4px; font-family: 'JetBrains Mono'; font-weight: bold; font-size: 0.9rem; border: 1px solid currentColor;">
+                    <!-- Populated by JS -->
+                  </div>
+                  <div id="ghost-file-count" style="font-family: 'JetBrains Mono'; color: var(--text-dim); font-size: 0.85rem;">
+                    1 file selected
+                  </div>
+                </div>
+                
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                   <div style="display: flex; flex-direction: column; gap: 1rem;">
-                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #EF4444; text-transform: uppercase;">Tracking Data Found:</div>
-                    <div id="ghost-metadata-list" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-dim); max-height: 250px; overflow-y: auto;">
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase;">Tracking Data Found (First File):</div>
+                    <div id="ghost-metadata-list" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-dim); max-height: 250px; overflow-y: auto;">
                       <!-- EXIF data goes here -->
                     </div>
                   </div>
                   <div style="display: flex; flex-direction: column; gap: 1rem;">
-                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #EF4444; text-transform: uppercase;">GPS Location Coordinates:</div>
-                    <div id="ghost-map-parent" style="position: relative; height: 250px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.4); overflow: hidden;">
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase;">GPS Location Coordinates:</div>
+                    <div id="ghost-map-parent" style="position: relative; height: 250px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden;">
                       <div id="ghost-map" style="width: 100%; height: 100%;"></div>
                       <div id="ghost-map-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-surface); align-items: center; justify-content: center; color: var(--text-dim); z-index: 1000;">
                         No GPS Coordinates Found
                       </div>
                     </div>
+                  </div>
                 </div>
                 
-                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-                  <button id="ghost-reset-main-btn" class="nav-link" style="border: 1px solid var(--border); background: transparent; color: var(--text-main); width: 100%; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">
-                    [ CHECK ANOTHER PHOTO ]
+                <div style="display: flex; gap: 1rem; margin-top: 2rem; align-items: center; flex-wrap: wrap;">
+                  <button id="ghost-reset-main-btn" class="nav-link" style="border: 1px solid var(--border); background: transparent; color: var(--text-main); flex: 1; min-width: 150px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; padding: 12px;">
+                    [ CHECK ANOTHER BATCH ]
                   </button>
-                  <button id="ghost-strip-btn" class="cyber-submit-btn scanner-btn" style="background: rgba(16, 185, 129, 0.1); border-color: #10B981; color: #10B981; width: 100%; margin: 0;">
-                    [ STRIP ALL TRACKING DATA ]
+                  <select id="ghost-spoof-select" class="cyber-input" style="flex: 1; min-width: 200px; padding: 12px; font-family: 'JetBrains Mono'; cursor: pointer;">
+                    <option value="strip">Action: Strip All Metadata</option>
+                    <option value="spoof-area51">Spoof Location: Area 51, NV</option>
+                    <option value="spoof-bermuda">Spoof Location: Bermuda Triangle</option>
+                    <option value="spoof-northpole">Spoof Location: North Pole</option>
+                    <option value="spoof-null">Spoof Location: Null Island (0,0)</option>
+                  </select>
+                  <button id="ghost-strip-btn" class="cyber-submit-btn scanner-btn" style="background: rgba(16, 185, 129, 0.1); border-color: #10B981; color: #10B981; flex: 1.5; min-width: 200px; margin: 0; padding: 12px;">
+                    [ EXECUTE & DOWNLOAD ]
                   </button>
                 </div>
               </div>
