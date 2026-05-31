@@ -247,7 +247,16 @@ function initUniversalConverter() {
         const { createFFmpeg } = FFmpeg;
         ffmpegInstance = createFFmpeg({ 
           log: true, 
-          logger: ({ message }) => logTerminal(message),
+          logger: ({ message }) => {
+            logTerminal(message);
+            if (message.includes('time=')) {
+              const timeMatch = message.match(/time=(\d{2}:\d{2}:\d{2}\.\d{2})/);
+              if (timeMatch && timeMatch[1]) {
+                const btn = document.getElementById('forge-btn');
+                if (btn) btn.textContent = `[ FORGING... ${timeMatch[1]} ]`;
+              }
+            }
+          },
           corePath: new URL('/assets/ffmpeg/ffmpeg-core.js', window.location.href).href
         });
         
