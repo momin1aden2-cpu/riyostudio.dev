@@ -145,7 +145,19 @@ function initUniversalConverter() {
           }, mimeType, quality);
         });
       } else if (targetFormat === 'ico') {
-        const blob = await encodeICO(canvas);
+        // ICO files must be small (typically max 256x256)
+        let icoCanvas = canvas;
+        if (canvas.width > 256 || canvas.height > 256) {
+          logTerminal(`Scaling down to 256x256 for ICO format...`);
+          icoCanvas = document.createElement('canvas');
+          const scale = Math.min(256 / canvas.width, 256 / canvas.height);
+          icoCanvas.width = Math.floor(canvas.width * scale);
+          icoCanvas.height = Math.floor(canvas.height * scale);
+          const icoCtx = icoCanvas.getContext('2d');
+          icoCtx.drawImage(canvas, 0, 0, icoCanvas.width, icoCanvas.height);
+        }
+        
+        const blob = await encodeICO(icoCanvas);
         triggerDownload(blob, `forged_${currentFile.name.split('.')[0]}.ico`);
         logTerminal(`[200 OK] ICO Forging Complete!`);
       } else if (targetFormat === 'bmp') {
