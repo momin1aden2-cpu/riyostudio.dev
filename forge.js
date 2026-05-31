@@ -821,12 +821,20 @@ function initExpenseFlattener() {
       const { PDFDocument } = PDFLib;
       const pdfDoc = await PDFDocument.create();
       
+      // A4 size: 595.28 x 841.89
+      const page = pdfDoc.addPage([595.28, 841.89]);
       const margin = 20;
       const usableWidth = 595.28 - (margin * 2);
       const usableHeight = 841.89 - (margin * 2);
+
+      // Smart Grid Calculation to fit all on one page
+      const cols = Math.ceil(Math.sqrt(files.length));
+      const rows = Math.ceil(files.length / cols);
+      
+      const cellWidth = usableWidth / cols;
+      const cellHeight = usableHeight / rows;
       
       for (let i = 0; i < files.length; i++) {
-        const page = pdfDoc.addPage([595.28, 841.89]);
         const f = files[i];
         const bytes = await f.arrayBuffer();
         let img;
@@ -841,12 +849,21 @@ function initExpenseFlattener() {
           img = await pdfDoc.embedPng(await blob.arrayBuffer());
         }
         
-        // Scale to fit inside the A4 page perfectly without distortion
-        const { width, height } = img.scaleToFit(usableWidth, usableHeight);
+        // Calculate grid position
+        const colIndex = i % cols;
+        const rowIndex = Math.floor(i / cols);
+        
+        // Scale to fit inside the grid cell perfectly without distortion
+        const { width, height } = img.scaleToFit(cellWidth - 10, cellHeight - 10);
+        
+        // Calculate X and Y to center the image within its specific cell
+        // pdf-lib Y axis starts from the bottom!
+        const cellX = margin + (colIndex * cellWidth);
+        const cellY = 841.89 - margin - (rowIndex * cellHeight) - cellHeight; // Bottom of the cell
         
         page.drawImage(img, {
-          x: margin + (usableWidth / 2 - width / 2),
-          y: margin + (usableHeight / 2 - height / 2),
+          x: cellX + (cellWidth / 2 - width / 2),
+          y: cellY + (cellHeight / 2 - height / 2),
           width,
           height,
         });
