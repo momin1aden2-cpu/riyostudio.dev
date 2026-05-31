@@ -246,18 +246,19 @@ function initUniversalConverter() {
         logTerminal(`Allocating buffer...`);
         const { createFFmpeg } = FFmpeg;
         ffmpegInstance = createFFmpeg({ 
-          log: true, 
-          logger: ({ message }) => {
-            logTerminal(message);
-            if (message.includes('time=')) {
-              const timeMatch = message.match(/time=(\d{2}:\d{2}:\d{2}\.\d{2})/);
-              if (timeMatch && timeMatch[1]) {
-                const btn = document.getElementById('forge-btn');
-                if (btn) btn.textContent = `[ FORGING... ${timeMatch[1]} ]`;
-              }
-            }
-          },
+          log: true,
           corePath: new URL('/assets/ffmpeg/ffmpeg-core.js', window.location.href).href
+        });
+        
+        ffmpegInstance.setLogger(({ type, message }) => {
+          logTerminal(`[${type}] ${message}`);
+          if (message.includes('time=')) {
+            const timeMatch = message.match(/time=(\d{2}:\d{2}:\d{2}\.\d{2})/);
+            if (timeMatch && timeMatch[1]) {
+              const btn = document.getElementById('forge-btn');
+              if (btn) btn.textContent = `[ FORGING... ${timeMatch[1]} ]`;
+            }
+          }
         });
         
         ffmpegInstance.setProgress(({ ratio }) => {
