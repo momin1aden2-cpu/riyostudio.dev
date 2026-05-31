@@ -1337,7 +1337,7 @@ function initGhostMaker() {
              Check Another Photo
            </button>
          `;
-         document.getElementById('ghost-map').style.display = 'none';
+         document.getElementById('ghost-map-parent').style.display = 'none';
          document.getElementById('ghost-strip-btn').style.display = 'none';
          
          document.getElementById('ghost-reset-btn').addEventListener('click', () => {
@@ -1363,7 +1363,9 @@ function initGhostMaker() {
          html += '</ul>';
          metaList.innerHTML = html;
 
-         document.getElementById('ghost-map').style.display = 'block';
+         document.getElementById('ghost-map-parent').style.display = 'block';
+         document.getElementById('ghost-map').style.visibility = 'visible';
+         document.getElementById('ghost-map-overlay').style.display = 'none';
 
          // Init Map if GPS exists
          if (hasGPS && output.latitude && output.longitude) {
@@ -1395,7 +1397,8 @@ function initGhostMaker() {
            // Force map refresh to fix container sizing bugs
            setTimeout(() => { leafletMap.invalidateSize(); }, 300);
          } else {
-           document.getElementById('ghost-map').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-dim);">No GPS Coordinates Found</div>';
+           document.getElementById('ghost-map').style.visibility = 'hidden';
+           document.getElementById('ghost-map-overlay').style.display = 'flex';
          }
       }
     } catch (err) {
