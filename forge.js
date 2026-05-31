@@ -254,9 +254,7 @@ function initUniversalConverter() {
               if (btn) btn.textContent = `[ FORGING... ${Math.round(ratio * 100)}% ]`;
             }
           },
-          corePath: new URL('/assets/ffmpeg/ffmpeg-core.js', window.location.href).href,
-          wasmPath: new URL('/assets/ffmpeg/ffmpeg-core.wasm', window.location.href).href,
-          workerPath: new URL('/assets/ffmpeg/ffmpeg-core.worker.js', window.location.href).href
+          corePath: new URL('/assets/ffmpeg/ffmpeg-core.js', window.location.href).href
         });
         
         await ffmpegInstance.load();
