@@ -201,18 +201,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 7. PDF Export
   btnExport.addEventListener('click', () => {
-    const element = document.getElementById('a4-paper');
+    const originalElement = document.getElementById('a4-paper');
     
-    // Temporarily remove shadow and margin to prevent a 2nd blank page
-    const oldShadow = element.style.boxShadow;
-    const oldMargin = element.style.margin;
+    // Clone the element to bypass all viewport and CSS scaling issues on mobile
+    const clone = originalElement.cloneNode(true);
+    clone.id = 'a4-paper-clone';
     
-    element.style.boxShadow = 'none';
-    element.style.margin = '0';
+    // Force absolute positioning off-screen and enforce A4 dimensions
+    clone.style.position = 'absolute';
+    clone.style.top = '-9999px';
+    clone.style.left = '-9999px';
+    clone.style.margin = '0';
+    clone.style.boxShadow = 'none';
+    clone.style.transform = 'none';
+    clone.style.width = '210mm';
+    clone.style.minHeight = '297mm';
     
-    // Briefly scroll to top to prevent html2canvas blank page offset bug on mobile
-    const currentScroll = window.scrollY;
-    window.scrollTo(0, 0);
+    // Append to body so html2canvas can access it
+    document.body.appendChild(clone);
     
     const filename = `${inputs.invNum.value || 'Invoice'}_${inputs.clientName.value || 'Client'}.pdf`;
 
@@ -224,16 +230,14 @@ document.addEventListener('DOMContentLoaded', () => {
         scale: 2, 
         useCORS: true, 
         logging: false,
-        scrollY: 0
+        windowWidth: 800
       },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    html2pdf().set(opt).from(element).save().then(() => {
-      // Restore CSS and scroll position
-      element.style.boxShadow = oldShadow;
-      element.style.margin = oldMargin;
-      window.scrollTo(0, currentScroll);
+    html2pdf().set(opt).from(clone).save().then(() => {
+      // Clean up the clone
+      document.body.removeChild(clone);
     });
   });
 

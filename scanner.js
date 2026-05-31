@@ -20,50 +20,240 @@ document.addEventListener('DOMContentLoaded', () => {
   const heuristics = [
     // True Blue Human Indicators (Negative Weight = Reduces AI Score)
     { regex: /\b(yeah nah|nah yeah)\b/gi, reason: "Aussie logic gate detected. 100% human.", type: 'human', weight: -20 },
-    { regex: /\b(mate|fair dinkum|strewth)\b/gi, reason: "True blue Aussie vernacular.", type: 'human', weight: -15 },
+    { regex: /\b(mate|fair dinkum|strewth|crikey)\b/gi, reason: "True blue Aussie vernacular.", type: 'human', weight: -15 },
     { regex: /\/\/\s*todo:\s*fix\s*(this\s*)?(shit|crap|junk)/gi, reason: "Frustrated dev comment. AI is never this honest.", type: 'human', weight: -30 },
-    { regex: /console\.log\(['"](here|test|wtf|plz work)['"]\)/gi, reason: "Desperation logging. A classic human trait.", type: 'human', weight: -30 },
+    { regex: /console\.log\(['"](here|test|wtf|plz work|fml)['"]\)/gi, reason: "Desperation logging. A classic human trait.", type: 'human', weight: -30 },
+    { regex: /\b(chuck|whack|bung)\b/gi, reason: "Casual placement verbs, very human.", type: 'human', weight: -10 },
 
     // The Roasts (ChatGPT Giveaways)
-    { regex: /\b(delve)\b/gi, reason: "Mate, nobody has used the word 'delve' since 1842. Just say 'look into'.", type: 'vocab', weight: 20 },
-    { regex: /\b(tapestry)\b/gi, reason: "A rich tapestry? What are you, Shakespeare? Just say 'a bunch of stuff'.", type: 'vocab', weight: 15 },
-    { regex: /\b(testament to)\b/gi, reason: "Sounds like a eulogy, not a dev doc. Classic AI.", type: 'vocab', weight: 10 },
-    { regex: /\b(in conclusion)\b/gi, reason: "Did you just finish a year 9 English essay? ChatGPT loves this.", type: 'vocab', weight: 15 },
-    { regex: /\b(it is important to note)\b/gi, reason: "The ultimate AI filler phrase. Zero value.", type: 'vocab', weight: 20 },
-    { regex: /\b(crucial)\b/gi, reason: "Overused AI adjective.", type: 'vocab', weight: 5 },
-    { regex: /\b(underscore)\b/gi, reason: "Stop trying to sound smart. It's AI.", type: 'vocab', weight: 10 },
-    { regex: /\b(multifaceted)\b/gi, reason: "You mean 'complicated'? Just say that.", type: 'vocab', weight: 15 },
-    { regex: /\b(foster)\b/gi, reason: "Unless you're talking about the beer, this is ChatGPT.", type: 'vocab', weight: 10 },
-    { regex: /\b(navigating the complexities)\b/gi, reason: "Total wank word salad. Absolute AI.", type: 'vocab', weight: 20 },
-    { regex: /\b(ultimately,)\b/gi, reason: "Lazy concluding transition.", type: 'vocab', weight: 10 },
-    { regex: /\b(not only.*?but also)\b/gi, reason: "Formulaic rhetorical rubbish.", type: 'vocab', weight: 10 },
-
-    // New Corporate Slop
-    { regex: /\b(landscape)\b/gi, reason: "'In today's digital landscape...' 🤮 Pure corporate AI slop.", type: 'vocab', weight: 10 },
-    { regex: /\b(seamless\w*)\b/gi, reason: "Nothing is 'seamless'. AI loves this lie.", type: 'vocab', weight: 15 },
-    { regex: /\b(leverage)\b/gi, reason: "Unless you're using a crowbar, stop saying 'leverage'.", type: 'vocab', weight: 15 },
-    { regex: /\b(demystify)\b/gi, reason: "It's code, not magic. Stop trying to 'demystify' it.", type: 'vocab', weight: 10 },
-    { regex: /\b(comprehensive)\b/gi, reason: "AI thinks every list it makes is 'comprehensive'.", type: 'vocab', weight: 5 },
-    { regex: /\b(unleash)\b/gi, reason: "'Unleash the power...' Okay, Thanos. Definitely a robot.", type: 'vocab', weight: 15 },
-    { regex: /\b(robust)\b/gi, reason: "Every AI thinks its code is 'robust'. It never is.", type: 'vocab', weight: 10 },
+    { 
+      regex: /\b(delve)\b/gi, 
+      reason: "Mate, nobody has used the word 'delve' since 1842.", 
+      type: 'vocab', weight: 20,
+      alternatives: { au: 'have a squiz at', us: 'look into', uk: 'look into', global: 'explore' }
+    },
+    { 
+      regex: /\b(tapestry)\b/gi, 
+      reason: "A rich tapestry? What are you, Shakespeare?", 
+      type: 'vocab', weight: 15,
+      alternatives: { au: 'a whole bunch of stuff', us: 'a collection', uk: 'a mixture', global: 'a complex mix' }
+    },
+    { 
+      regex: /\b(testament to)\b/gi, 
+      reason: "Sounds like a eulogy, not a dev doc. Classic AI.", 
+      type: 'vocab', weight: 10,
+      alternatives: { au: 'goes to show', us: 'proves', uk: 'shows', global: 'demonstrates' }
+    },
+    { 
+      regex: /\b(in conclusion)\b/gi, 
+      reason: "Did you just finish a year 9 English essay?", 
+      type: 'vocab', weight: 15,
+      alternatives: { au: 'at the end of the day', us: 'to wrap up', uk: 'to sum up', global: 'finally' }
+    },
+    { 
+      regex: /\b(it is important to note)\b/gi, 
+      reason: "The ultimate AI filler phrase. Zero value.", 
+      type: 'vocab', weight: 20,
+      alternatives: { au: 'keep in mind', us: 'note that', uk: 'worth noting', global: 'remember that' }
+    },
+    { 
+      regex: /\b(crucial)\b/gi, 
+      reason: "Overused AI adjective.", 
+      type: 'vocab', weight: 5,
+      alternatives: { au: 'bloody important', us: 'important', uk: 'key', global: 'essential' }
+    },
+    { 
+      regex: /\b(underscore)\b/gi, 
+      reason: "Stop trying to sound smart. It's AI.", 
+      type: 'vocab', weight: 10,
+      alternatives: { au: 'highlight', us: 'emphasize', uk: 'highlight', global: 'highlight' }
+    },
+    { 
+      regex: /\b(multifaceted)\b/gi, 
+      reason: "You mean 'complicated'? Just say that.", 
+      type: 'vocab', weight: 15,
+      alternatives: { au: 'a bit of a mess', us: 'complex', uk: 'complex', global: 'complex' }
+    },
+    { 
+      regex: /\b(foster)\b/gi, 
+      reason: "Unless you're talking about the beer, this is ChatGPT.", 
+      type: 'vocab', weight: 10,
+      alternatives: { au: 'build up', us: 'encourage', uk: 'promote', global: 'encourage' }
+    },
+    { 
+      regex: /\b(navigating the complexities)\b/gi, 
+      reason: "Total wank word salad. Absolute AI.", 
+      type: 'vocab', weight: 20,
+      alternatives: { au: 'dealing with the bullshit', us: 'handling the tough parts', uk: 'managing the difficulties', global: 'dealing with issues' }
+    },
+    { 
+      regex: /\b(ultimately,)\b/gi, 
+      reason: "Lazy concluding transition.", 
+      type: 'vocab', weight: 10,
+      alternatives: { au: 'at the end of the day,', us: 'in the end,', uk: 'in the end,', global: 'finally,' }
+    },
+    { 
+      regex: /\b(not only.*?but also)\b/gi, 
+      reason: "Formulaic rhetorical rubbish.", 
+      type: 'vocab', weight: 10,
+      alternatives: { au: 'both [x] and [y]', us: 'both [x] and [y]', uk: 'both [x] and [y]', global: 'both [x] and [y]' }
+    },
+    { 
+      regex: /\b(landscape)\b/gi, 
+      reason: "'In today's digital landscape...' 🤮 Pure corporate AI slop.", 
+      type: 'vocab', weight: 10,
+      alternatives: { au: 'scene', us: 'environment', uk: 'environment', global: 'world' }
+    },
+    { 
+      regex: /\b(seamless\w*)\b/gi, 
+      reason: "Nothing is 'seamless'. AI loves this lie.", 
+      type: 'vocab', weight: 15,
+      alternatives: { au: 'smooth', us: 'smooth', uk: 'smooth', global: 'smooth' }
+    },
+    { 
+      regex: /\b(leverage)\b/gi, 
+      reason: "Unless you're using a crowbar, stop saying 'leverage'.", 
+      type: 'vocab', weight: 15,
+      alternatives: { au: 'use', us: 'use', uk: 'use', global: 'use' }
+    },
+    { 
+      regex: /\b(demystify)\b/gi, 
+      reason: "It's code, not magic. Stop trying to 'demystify' it.", 
+      type: 'vocab', weight: 10,
+      alternatives: { au: 'explain', us: 'explain', uk: 'clear up', global: 'explain' }
+    },
+    { 
+      regex: /\b(comprehensive)\b/gi, 
+      reason: "AI thinks every list it makes is 'comprehensive'.", 
+      type: 'vocab', weight: 5,
+      alternatives: { au: 'full', us: 'complete', uk: 'thorough', global: 'detailed' }
+    },
+    { 
+      regex: /\b(unleash)\b/gi, 
+      reason: "'Unleash the power...' Okay, Thanos. Definitely a robot.", 
+      type: 'vocab', weight: 15,
+      alternatives: { au: 'let loose', us: 'release', uk: 'release', global: 'use' }
+    },
+    { 
+      regex: /\b(robust)\b/gi, 
+      reason: "Every AI thinks its code is 'robust'. It never is.", 
+      type: 'vocab', weight: 10,
+      alternatives: { au: 'solid', us: 'solid', uk: 'reliable', global: 'strong' }
+    },
+    { 
+      regex: /\b(transformative)\b/gi, 
+      reason: "Hyperbolic AI buzzword.", 
+      type: 'vocab', weight: 15,
+      alternatives: { au: 'game-changing', us: 'major', uk: 'major', global: 'significant' }
+    },
+    { 
+      regex: /\b(paramount)\b/gi, 
+      reason: "It's not a mountain, it's just important.", 
+      type: 'vocab', weight: 10,
+      alternatives: { au: 'top priority', us: 'vital', uk: 'crucial', global: 'very important' }
+    },
+    { 
+      regex: /\b(embark)\b/gi, 
+      reason: "Are we getting on a ship? No, we're writing code.", 
+      type: 'vocab', weight: 10,
+      alternatives: { au: 'kick off', us: 'start', uk: 'begin', global: 'start' }
+    },
+    { 
+      regex: /\b(supercharge)\b/gi, 
+      reason: "AI marketing speak for 'make it slightly better'.", 
+      type: 'vocab', weight: 15,
+      alternatives: { au: 'beef up', us: 'boost', uk: 'improve', global: 'enhance' }
+    },
+    { 
+      regex: /\b(dive in)\b/gi, 
+      reason: "ChatGPT loves to 'dive in' to topics.", 
+      type: 'vocab', weight: 15,
+      alternatives: { au: 'get stuck in', us: 'get started', uk: 'begin', global: 'start' }
+    },
+    { 
+      regex: /\b(moreover)\b/gi, 
+      reason: "Nobody says 'moreover' in real life.", 
+      type: 'vocab', weight: 10,
+      alternatives: { au: 'plus', us: 'also', uk: 'furthermore', global: 'additionally' }
+    },
 
     // AI Formatting/Structure
-    { regex: /:\s*\n\s*(1\.|-|\*)\s/g, reason: "The classic 'Here are 3 things:' list setup. ChatGPT's favorite format.", type: 'vocab', weight: 20 },
+    { 
+      regex: /:\s*\n\s*(1\.|-|\*)\s/g, 
+      reason: "The classic 'Here are 3 things:' list setup. ChatGPT's favorite format.", 
+      type: 'vocab', weight: 20,
+      alternatives: { au: '(Just write a normal paragraph mate)', us: '(Consider writing without a bulleted list)', uk: '(Try a more organic structure)', global: '(Avoid overly structured lists)' }
+    },
     
     // AI Apologies & Meta-text
-    { regex: /(as an ai language model)/gi, reason: "Dead giveaway. Straight to the bin.", type: 'apology', weight: 100 },
-    { regex: /(i apologize)/gi, reason: "AI begging for forgiveness.", type: 'apology', weight: 20 },
-    { regex: /(sure, i can help with that)/gi, reason: "Classic robot obedience.", type: 'apology', weight: 40 },
-    { regex: /(certainly!)/gi, reason: "Too enthusiastic. Definitely a bot.", type: 'apology', weight: 15 },
+    { 
+      regex: /(as an ai language model)/gi, 
+      reason: "Dead giveaway. Straight to the bin.", 
+      type: 'apology', weight: 100,
+      alternatives: { au: '(Delete this garbage)', us: '(Remove AI disclaimer)', uk: '(Remove AI disclaimer)', global: '(Remove this phrase entirely)' }
+    },
+    { 
+      regex: /(i apologize)/gi, 
+      reason: "AI begging for forgiveness.", 
+      type: 'apology', weight: 20,
+      alternatives: { au: 'sorry mate', us: 'sorry', uk: 'sorry about that', global: 'sorry' }
+    },
+    { 
+      regex: /(sure, i can help with that)/gi, 
+      reason: "Classic robot obedience.", 
+      type: 'apology', weight: 40,
+      alternatives: { au: 'no worries, I gotcha', us: 'sure thing', uk: 'of course', global: 'yes' }
+    },
+    { 
+      regex: /(certainly!)/gi, 
+      reason: "Too enthusiastic. Definitely a bot.", 
+      type: 'apology', weight: 15,
+      alternatives: { au: 'too easy', us: 'sure', uk: 'absolutely', global: 'yes' }
+    },
     
     // Code Artifacts
-    { regex: /(here is the updated code)/gi, reason: "Forgot to delete the AI's chat text, didn't you?", type: 'code_artifact', weight: 50 },
-    { regex: /(```[a-z]*\n)/gi, reason: "Leftover markdown formatting in a raw file. Busted.", type: 'code_artifact', weight: 30 },
-    { regex: /(```)/g, reason: "Leftover markdown block. Vibe coding exposed.", type: 'code_artifact', weight: 30 },
-    { regex: /(\/\/ \.\.\. existing code \.\.\.)/gi, reason: "The AI got lazy and skipped the rest of the code.", type: 'code_artifact', weight: 50 },
-    { regex: /(<!-- \.\.\. existing code \.\.\. -->)/gi, reason: "Lazy AI HTML truncation.", type: 'code_artifact', weight: 50 },
-    { regex: /(\/\/ Your code here)/gi, reason: "AI left you a placeholder.", type: 'code_artifact', weight: 20 },
-    { regex: /\/\/\s*This is a helper function/gi, reason: "Over-explaining obvious code. AI classic.", type: 'code_artifact', weight: 15 }
+    { 
+      regex: /(here is the updated code)/gi, 
+      reason: "Forgot to delete the AI's chat text, didn't you?", 
+      type: 'code_artifact', weight: 50,
+      alternatives: { au: '(Just delete it, mate)', us: '(Remove conversational text)', uk: '(Remove chat text)', global: '(Delete this)' }
+    },
+    { 
+      regex: /(```[a-z]*\n)/gi, 
+      reason: "Leftover markdown formatting in a raw file. Busted.", 
+      type: 'code_artifact', weight: 30,
+      alternatives: { au: '(Strip out the markdown)', us: '(Remove markdown)', uk: '(Remove markdown)', global: '(Remove markdown)' }
+    },
+    { 
+      regex: /(```)/g, 
+      reason: "Leftover markdown block. Vibe coding exposed.", 
+      type: 'code_artifact', weight: 30,
+      alternatives: { au: '(Delete the backticks)', us: '(Remove markdown ticks)', uk: '(Remove markdown ticks)', global: '(Remove markdown)' }
+    },
+    { 
+      regex: /(\/\/ \.\.\. existing code \.\.\.)/gi, 
+      reason: "The AI got lazy and skipped the rest of the code.", 
+      type: 'code_artifact', weight: 50,
+      alternatives: { au: '(Write the actual code you lazy bugger)', us: '(Implement the missing code)', uk: '(Fill in the missing code)', global: '(Write the full code)' }
+    },
+    { 
+      regex: /(<!-- \.\.\. existing code \.\.\. -->)/gi, 
+      reason: "Lazy AI HTML truncation.", 
+      type: 'code_artifact', weight: 50,
+      alternatives: { au: '(Put the HTML back)', us: '(Restore HTML)', uk: '(Restore HTML)', global: '(Restore full HTML)' }
+    },
+    { 
+      regex: /(\/\/ Your code here)/gi, 
+      reason: "AI left you a placeholder.", 
+      type: 'code_artifact', weight: 20,
+      alternatives: { au: '(Actually do the work)', us: '(Implement logic here)', uk: '(Add your logic)', global: '(Implement functionality)' }
+    },
+    { 
+      regex: /\/\/\s*This is a helper function/gi, 
+      reason: "Over-explaining obvious code. AI classic.", 
+      type: 'code_artifact', weight: 15,
+      alternatives: { au: '(We know, delete the comment)', us: '(Remove redundant comment)', uk: '(Remove redundant comment)', global: '(Delete comment)' }
+    }
   ];
 
   dropzone.addEventListener('click', () => fileInput.click());
@@ -237,6 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.warn("ML API Blocked. Falling back to Aussie Heuristics.");
     }
 
+    const dialect = document.getElementById('dialect-selector') ? document.getElementById('dialect-selector').value : 'global';
     let totalIssues = 0;
     let counts = { vocab: 0, apology: 0, code_artifact: 0, human: 0 };
     let foundFootprints = {}; 
@@ -253,14 +444,29 @@ document.addEventListener('DOMContentLoaded', () => {
         
         counts[h.type] += matches.length;
         const matchPhrase = matches[0].toLowerCase();
+        
+        let alternativeText = null;
+        if (h.alternatives) {
+           alternativeText = h.alternatives[dialect] || h.alternatives['global'];
+        }
+
         if (!foundFootprints[matchPhrase]) {
-          foundFootprints[matchPhrase] = { count: 0, reason: h.reason, type: h.type };
+          foundFootprints[matchPhrase] = { 
+            count: 0, 
+            reason: h.reason, 
+            type: h.type,
+            alternative: alternativeText 
+          };
         }
         foundFootprints[matchPhrase].count += matches.length;
 
         highlightedText = highlightedText.replace(h.regex, (match) => {
            const markClass = h.type === 'human' ? 'human-mark' : '';
-           return `<mark class="${markClass}" data-reason="${h.reason}">${match}</mark>`;
+           let reasonText = h.reason;
+           if (alternativeText) {
+             reasonText += ` Try: '${alternativeText}'`;
+           }
+           return `<mark class="${markClass}" data-reason="${reasonText}">${match}</mark>`;
         });
       }
     });
@@ -384,16 +590,24 @@ document.addEventListener('DOMContentLoaded', () => {
         let titleClass = data.type === 'human' ? 'safe' : (data.type === 'vocab' ? '' : 'danger');
         let titleText = data.type === 'human' ? `True Blue: "${key}"` : `Busted: "${key}" (Found ${data.count}x)`;
         
+        let alternativeHTML = '';
+        let alternativeTextForReceipt = '';
+        if (data.alternative) {
+          alternativeHTML = `<div style="margin-top: 0.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--brand-accent);">> Suggested alternative: <span style="color: #fff;">${data.alternative}</span></div>`;
+          alternativeTextForReceipt = `\n  > Suggested alternative: ${data.alternative}`;
+        }
+
         reportHTML += `
           <div class="report-item">
             <div class="report-item-icon">${icon}</div>
             <div>
               <div class="report-item-title ${titleClass}">${titleText}</div>
               <div style="color: var(--text-dim);">${data.reason}</div>
+              ${alternativeHTML}
             </div>
           </div>
         `;
-        redditReceiptText += `- "${key}": ${data.reason}\n`;
+        redditReceiptText += `- "${key}": ${data.reason}${alternativeTextForReceipt}\n`;
       });
       reportHTML += `</div>`;
     }

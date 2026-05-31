@@ -112,9 +112,19 @@
               <textarea id="scanner-input" class="cyber-input scanner-textarea" placeholder="_ or paste your code, cover letter, or documentation here..." spellcheck="false" style="min-height: 250px; font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; line-height: 1.5; resize: vertical;"></textarea>
               <div class="cyber-border"></div>
             </div>
+
+            <div style="margin-top: 1.5rem;">
+              <label class="cyber-label"><span class="accent">></span> Human Alternative Dialect</label>
+              <select id="dialect-selector" class="cyber-input" style="width: 100%; margin-top: 0.5rem; cursor: pointer;">
+                <option value="au">Australian (Aussie Slang)</option>
+                <option value="uk">British English</option>
+                <option value="us">US English</option>
+                <option value="global" selected>Global / Standard</option>
+              </select>
+            </div>
           </div>
           
-          <button id="scan-btn" class="cyber-submit-btn scanner-btn" style="width: 100%; margin-top: 1rem;">
+          <button id="scan-btn" class="cyber-submit-btn scanner-btn" style="width: 100%; margin-top: 1.5rem;">
             [ INITIATE SCAN ]
           </button>
         </div>
@@ -249,6 +259,6 @@
   <!-- Scripts -->
   <script src="bg.js?v=2"></script>
   <script src="script.js?v=3"></script>
-  <script src="scanner.js"></script>
+  <script src="scanner.js?v=2"></script>
 </body>
 </html>
