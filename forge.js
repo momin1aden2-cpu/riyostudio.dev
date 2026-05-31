@@ -848,6 +848,8 @@ function initScreenRecorder() {
   let mediaRecorder = null;
   let recordedChunks = [];
   let stream = null;
+  let rawDisplayStream = null;
+  let rawMicStream = null;
   let finalBlob = null;
   let timerInterval = null;
   let startTime = 0;
@@ -858,6 +860,12 @@ function initScreenRecorder() {
     const secs = String(diff % 60).padStart(2, '0');
     timeDisplay.textContent = `${mins}:${secs}`;
   }
+  
+  function stopAllTracks() {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    if (rawDisplayStream) rawDisplayStream.getTracks().forEach(t => t.stop());
+    if (rawMicStream) rawMicStream.getTracks().forEach(t => t.stop());
+  }
 
   startBtn.addEventListener('click', async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
@@ -867,32 +875,34 @@ function initScreenRecorder() {
 
     try {
       // Get screen video/audio
-      const displayStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      rawDisplayStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
       
       // Try to get microphone audio
-      let micStream = null;
+      rawMicStream = null;
       try {
-        micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        rawMicStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       } catch (err) {
         console.warn("Microphone access denied or unavailable.", err);
       }
 
       // Mix the audio tracks together if both exist using Web Audio API
-      let mixedStream = displayStream;
-      if (micStream && micStream.getAudioTracks().length > 0) {
+      let mixedStream = rawDisplayStream;
+      let isMicActive = false;
+      if (rawMicStream && rawMicStream.getAudioTracks().length > 0) {
+        isMicActive = true;
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const dest = audioCtx.createMediaStreamDestination();
         
-        if (displayStream.getAudioTracks().length > 0) {
-          const systemSource = audioCtx.createMediaStreamSource(new MediaStream(displayStream.getAudioTracks()));
+        if (rawDisplayStream.getAudioTracks().length > 0) {
+          const systemSource = audioCtx.createMediaStreamSource(new MediaStream(rawDisplayStream.getAudioTracks()));
           systemSource.connect(dest);
         }
         
-        const micSource = audioCtx.createMediaStreamSource(micStream);
+        const micSource = audioCtx.createMediaStreamSource(rawMicStream);
         micSource.connect(dest);
         
         mixedStream = new MediaStream([
-          ...displayStream.getVideoTracks(),
+          ...rawDisplayStream.getVideoTracks(),
           ...dest.stream.getAudioTracks()
         ]);
       }
@@ -901,6 +911,12 @@ function initScreenRecorder() {
       preview.srcObject = stream;
       preview.style.display = 'block';
       placeholder.style.display = 'none';
+      
+      indicator.innerHTML = `<div class="recording-dot"></div><span id="recorder-time" style="color: #EF4444; font-family: 'JetBrains Mono'; font-size: 0.8rem; font-weight: bold;">00:00</span>` + 
+                            (isMicActive ? `<span style="color:#10B981; font-size: 0.7rem; margin-left: 5px;">🎤 ON</span>` : `<span style="color:#6B7280; font-size: 0.7rem; margin-left: 5px;">🎤 OFF</span>`);
+      // re-fetch timeDisplay reference because we replaced innerHTML
+      const newTimeDisplay = indicator.querySelector('#recorder-time');
+      
       indicator.style.display = 'flex';
       
       startBtn.style.display = 'none';
@@ -927,6 +943,8 @@ function initScreenRecorder() {
         preview.srcObject = null;
         preview.src = URL.createObjectURL(finalBlob);
         preview.controls = true; // allow them to play it back
+        
+        stopAllTracks();
       };
       
       // Listen for browser native stop button (e.g. Chrome's "Stop sharing" banner)
@@ -935,7 +953,12 @@ function initScreenRecorder() {
       };
       
       startTime = Date.now();
-      timerInterval = setInterval(updateTimer, 1000);
+      timerInterval = setInterval(() => {
+        const diff = Math.floor((Date.now() - startTime) / 1000);
+        const mins = String(Math.floor(diff / 60)).padStart(2, '0');
+        const secs = String(diff % 60).padStart(2, '0');
+        if (newTimeDisplay) newTimeDisplay.textContent = `${mins}:${secs}`;
+      }, 1000);
       mediaRecorder.start(1000); // 1-second chunks to prevent memory bloat
     } catch (err) {
       showToast("Screen recording went belly up: " + err.message, "error");
@@ -945,7 +968,7 @@ function initScreenRecorder() {
   stopBtn.addEventListener('click', () => {
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
       mediaRecorder.stop();
-      stream.getTracks().forEach(track => track.stop());
+      stopAllTracks();
     }
   });
   
