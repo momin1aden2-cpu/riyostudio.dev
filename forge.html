@@ -506,20 +506,34 @@
                   </div>
                 </div>
                 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 2rem; align-items: center;">
-                  <button id="ghost-reset-main-btn" class="nav-link" style="border: 1px solid var(--border); background: transparent; color: var(--text-main); border-radius: 4px; font-family: 'JetBrains Mono', monospace; padding: 12px; white-space: nowrap;">
-                    [ CHECK ANOTHER BATCH ]
-                  </button>
-                  <select id="ghost-spoof-select" class="cyber-input" style="padding: 12px; font-family: 'JetBrains Mono'; cursor: pointer; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
-                    <option value="strip">Action: Completely Strip Metadata (Clean Image)</option>
-                    <option value="spoof-area51">Spoof Location: Area 51, NV</option>
-                    <option value="spoof-bermuda">Spoof Location: Bermuda Triangle</option>
-                    <option value="spoof-northpole">Spoof Location: North Pole</option>
-                    <option value="spoof-null">Spoof Location: Null Island (0,0)</option>
-                  </select>
-                  <button id="ghost-strip-btn" class="cyber-submit-btn scanner-btn" style="background: rgba(16, 185, 129, 0.1); border-color: #10B981; color: #10B981; margin: 0; padding: 12px; white-space: nowrap;">
-                    [ EXECUTE & DOWNLOAD ]
-                  </button>
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; margin-top: 2rem;">
+                  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                      <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-dim);">
+                        <strong>OPTIONAL:</strong> Inject Fake GPS Location
+                      </div>
+                      <select id="ghost-spoof-select" class="cyber-input" style="flex: 1; max-width: 300px; padding: 10px; font-family: 'JetBrains Mono'; cursor: pointer; border-color: rgba(16, 185, 129, 0.4); color: #10B981; background: rgba(0,0,0,0.5);">
+                        <option value="strip">No (Just Clean Image)</option>
+                        <option value="spoof-area51">Spoof: Area 51, NV</option>
+                        <option value="spoof-bermuda">Spoof: Bermuda Triangle</option>
+                        <option value="spoof-northpole">Spoof: North Pole</option>
+                        <option value="spoof-null">Spoof: Null Island (0,0)</option>
+                      </select>
+                    </div>
+
+                    <div style="height: 1px; background: rgba(255,255,255,0.05); width: 100%;"></div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                      <button id="ghost-reset-main-btn" class="nav-link" style="border: 1px solid var(--border); background: transparent; color: var(--text-main); border-radius: 4px; font-family: 'JetBrains Mono', monospace; padding: 12px; white-space: nowrap; transition: all 0.2s;">
+                        [ CHECK ANOTHER BATCH ]
+                      </button>
+                      <button id="ghost-strip-btn" class="cyber-submit-btn scanner-btn" style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10B981; color: #10B981; margin: 0; padding: 12px; white-space: nowrap; font-weight: bold; font-size: 1rem; box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);">
+                        [ EXECUTE & DOWNLOAD ]
+                      </button>
+                    </div>
+
+                  </div>
                 </div>
               </div>
             </div>
