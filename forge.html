@@ -137,6 +137,10 @@
             <div class="btn-title">👻 Ghost Maker</div>
             <div class="btn-tagline">Strip EXIF Data & GPS location</div>
           </button>
+          <button class="forge-tab-btn" data-target="view-bulk-optimizer">
+            <div class="btn-title">📦 Bulk Optimizer</div>
+            <div class="btn-tagline">Compress & convert 100+ images</div>
+          </button>
           <button class="forge-tab-btn" data-target="view-ocr">
             <div class="btn-title">📝 Text Extractor</div>
             <div class="btn-tagline">Extract text from images locally</div>
@@ -420,6 +424,68 @@
 
         </div>
         <div class="tool-view" id="view-ocr">
+        <!-- Tool 8: Bulk Image Optimizer -->
+        <div class="tool-view" id="view-bulk-optimizer">
+          <div class="bento-card reveal">
+            <div class="bento-card-header">
+              <h3>📦 Bulk Image Optimizer</h3>
+              <p>Instantly compress and convert up to 100 images entirely in your browser using an ultra-fast hardware-accelerated canvas engine. Everything is downloaded as a single ZIP.</p>
+            </div>
+            <div class="bento-card-body">
+              <div id="bulk-dropzone" class="scanner-dropzone" style="border-color: rgba(99, 102, 241, 0.3); background: rgba(99, 102, 241, 0.02);">
+                <input type="file" id="bulk-file-input" multiple style="display: none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="dropzone-icon" style="color: #6366F1; width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.8;">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <p>Drag & Drop up to 100 images here</p>
+                <span style="font-size: 0.8rem; color: var(--text-dim);">Supported: JPG, PNG, WEBP, HEIC, SVG</span>
+              </div>
+              
+              <div id="bulk-controls" style="display: none; margin-top: 1.5rem;">
+                <div style="font-family: 'JetBrains Mono'; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                  <span id="bulk-file-count" style="color: #6366F1; font-weight: bold;">0</span> files selected
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 16px;">
+                  
+                  <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label style="font-family: 'JetBrains Mono'; font-size: 0.85rem; color: var(--text-muted);">TARGET FORMAT</label>
+                    <select id="bulk-format-select" class="cyber-input" style="padding: 10px; font-family: 'JetBrains Mono'; cursor: pointer;">
+                      <option value="image/webp">WEBP (Best for Web)</option>
+                      <option value="image/jpeg">JPG (Standard)</option>
+                      <option value="image/png">PNG (Lossless, larger)</option>
+                    </select>
+                  </div>
+
+                  <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label style="font-family: 'JetBrains Mono'; font-size: 0.85rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+                      <span>COMPRESSION QUALITY</span>
+                      <span id="bulk-quality-display" style="color: #6366F1; font-weight: bold;">80%</span>
+                    </label>
+                    <input type="range" id="bulk-quality-slider" min="1" max="100" value="80" style="width: 100%; margin-top: 8px; accent-color: #6366F1;">
+                    <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 4px;">Lower % = Smaller file size</div>
+                  </div>
+
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1.5rem;">
+                  <button id="bulk-reset-btn" class="nav-link" style="border: 1px solid var(--border); background: transparent; color: var(--text-main); border-radius: 4px; font-family: 'JetBrains Mono', monospace; padding: 12px; transition: all 0.2s;">
+                    [ CANCEL / CLEAR ]
+                  </button>
+                  <button id="bulk-execute-btn" class="cyber-submit-btn scanner-btn" style="background: rgba(99, 102, 241, 0.15); border: 1px solid #6366F1; color: #6366F1; margin: 0; padding: 12px; font-weight: bold; font-size: 1rem; box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);">
+                    [ OPTIMIZE & DOWNLOAD ZIP ]
+                  </button>
+                </div>
+                
+                <div id="bulk-status" style="margin-top: 1rem; font-family: 'JetBrains Mono'; font-size: 0.85rem; color: #6366F1; text-align: center; display: none;">
+                  Processing: <span id="bulk-progress">0</span>%
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
         <!-- Tool 7: Instant Text Extractor (OCR) -->
         <div class="bento-card bento-wide reveal reveal-delay-4">
           <div class="bento-card-header">
