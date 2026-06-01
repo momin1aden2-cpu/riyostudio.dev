@@ -78,14 +78,28 @@ body {
   color: var(--text);
   min-height: 100vh;
   line-height: 1.6;
+  position: relative;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
-/* Ambient background orbs - dimmed for canvas */
 body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -5;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Ambient background orbs - dimmed for canvas */
+body::after {
   content: '';
   position: fixed;
   inset: -15%;
@@ -107,7 +121,7 @@ body::before {
   height: 100vh;
   z-index: -10;
   pointer-events: none;
-  opacity: 0.6; /* Dim the whole canvas so text pops */
+  opacity: 0.8;
 }
 
 @keyframes ambient-drift {
