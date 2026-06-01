@@ -93,7 +93,7 @@
           <p class="hero-sub" style="max-width: 1200px; margin: 0 auto; font-size: 1.2rem; white-space: nowrap;">Design premium, pro-grade logos entirely in your browser. 100% private.</p>
         </div>
 
-        <div style="display: grid; grid-template-columns: 320px 1fr 340px; gap: 24px; align-items: start; max-width: 1800px; margin: 0 auto; width: 100%;">
+        <div style="display: grid; grid-template-columns: 350px 1fr; gap: 24px; align-items: start;">
           <!-- Controls Panel -->
           <div class="tool-panel" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 24px;">
             
@@ -133,7 +133,53 @@
             </div>
 
             <!-- Dynamic Properties Panel (Hidden by default, shows when object is selected) -->
-            
+            <div id="object-properties" style="display: none; padding: 16px; background: rgba(0,0,0,0.3); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; flex-direction: column; gap: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.85rem; color: #10B981; font-family: 'JetBrains Mono'; text-transform: uppercase;">Selected Element</span>
+                <button id="delete-obj-btn" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1.2rem;" title="Delete Object">🗑️</button>
+              </div>
+
+              <div id="font-prop-group" class="form-group" style="display: none;">
+                <label style="display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Typography</label>
+                <select id="obj-font-select" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text-main); font-family: inherit; font-size: 0.9rem; cursor: pointer;">
+                  <option value="Inter">Inter</option>
+                  <option value="Outfit">Outfit</option>
+                  <option value="Space Grotesk">Space Grotesk</option>
+                  <option value="Playfair Display">Playfair</option>
+                  <option value="Cinzel">Cinzel</option>
+                  <option value="Clash Display">Clash Display</option>
+                  <option value="Syne">Syne</option>
+                  <option value="Syncopate">Syncopate</option>
+                  <option value="Bricolage Grotesque">Bricolage</option>
+                  <option value="DM Sans">DM Sans</option>
+                </select>
+                <div style="display: flex; gap: 4px; margin-top: 8px;">
+                  <button id="font-bold-btn" style="flex: 1; padding: 6px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 4px; color: var(--text-main); cursor: pointer; font-weight: bold;">B</button>
+                  <button id="font-italic-btn" style="flex: 1; padding: 6px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 4px; color: var(--text-main); cursor: pointer; font-style: italic; font-family: serif;">I</button>
+                  <button id="font-underline-btn" style="flex: 1; padding: 6px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 4px; color: var(--text-main); cursor: pointer; text-decoration: underline;">U</button>
+                </div>
+                <button id="split-words-btn" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.05); border: 1px dashed var(--border); border-radius: 6px; color: var(--text-main); cursor: pointer; font-size: 0.85rem; margin-top: 8px;">✂️ Split into Words</button>
+                <div style="margin-top: 12px;">
+                  <label style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Letter Spacing <span id="spacing-val">0</span></label>
+                  <input type="range" id="letter-spacing-slider" min="-200" max="800" value="0" style="width: 100%;">
+                </div>
+                <div style="margin-top: 12px;">
+                  <label style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Curve Text <span id="curve-val">0</span></label>
+                  <input type="range" id="text-curve-slider" min="-100" max="100" value="0" style="width: 100%;">
+                </div>
+              </div>
+              <div id="image-prop-group" class="form-group" style="display: none;">
+                <button id="remove-bg-btn" style="width: 100%; padding: 8px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; color: #10B981; cursor: pointer; font-size: 0.85rem;">✨ Remove Background (AI)</button>
+              </div>
+
+              <div class="form-group">
+                <label style="display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Color</label>
+                <div style="display: flex; gap: 8px;">
+                  <input type="color" id="obj-color-picker" value="#ffffff" style="height: 32px; width: 48px; cursor: pointer; background: none; border: none; padding: 0;">
+                  <input type="text" id="obj-color-hex" value="#ffffff" style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text-main); font-family: 'JetBrains Mono'; font-size: 0.9rem;">
+                </div>
+              </div>
+            </div>
 
             <div class="form-group">
               <label style="display: block; font-size: 0.9rem; color: var(--text-dim); margin-bottom: 8px;">Background Theme</label>
@@ -152,12 +198,39 @@
             <div style="height: 1px; background: var(--border); margin: 8px 0;"></div>
 
             
-              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                
+                <button id="save-proj-btn" style="padding: 10px; background: rgba(59, 130, 246, 0.1); border: 1px dashed rgba(59, 130, 246, 0.5); border-radius: 8px; color: #3b82f6; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    💾 Save Project
+                </button>
+                <button id="load-proj-btn" style="padding: 10px; background: rgba(59, 130, 246, 0.1); border: 1px dashed rgba(59, 130, 246, 0.5); border-radius: 8px; color: #3b82f6; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    📂 Load Project
+                </button>
 
-            
+                <button id="toggle-grid-btn" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px dashed var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    📐 Toggle Grid
+                </button>
+                <button id="preview-mockup-btn" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px dashed var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    🕶️ 3D Mockup
+                </button>
+              </div>
+
+            <button id="logo-export-btn" class="nav-cta-btn" style="width: 100%; padding: 14px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; color: #10B981; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.2s;">
+              Download 4K PNG
+            </button>
+            <p style="text-align: center; font-size: 12px; color: var(--text-muted); margin-top: -12px;">100% Private - Rendered locally</p>
           </div>
 
-          
+          <!-- Live Preview Canvas -->
+          <div class="canvas-container" style="background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 16px; display: flex; align-items: center; justify-content: center; min-height: 500px; position: relative; overflow: hidden; padding: 40px;">
+            <!-- Checkerboard background pattern for transparency visualization -->
+            <div style="position: absolute; inset: 0; background-image: linear-gradient(45deg, rgba(255,255,255,0.02) 25%, transparent 25%), linear-gradient(-45deg, rgba(255,255,255,0.02) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.02) 75%), linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.02) 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px; z-index: 0;"></div>
+            
+            <!-- Actual Canvas Wrapper -->
+            <div id="logo-render-wrapper" style="position: relative; z-index: 1; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); border-radius: 12px; overflow: hidden;">
+                <canvas id="logo-canvas" width="1600" height="800" style="width: 100%; height: 100%; object-fit: contain;"></canvas>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -254,7 +327,7 @@
   <script src="bg.js?v=16" defer></script>
   <script src="script.js?v=20" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
-  <script src="logo.js?v=12" defer></script>
+  <script src="logo.js?v=11" defer></script>
 
     <!-- Mockup Modal -->
     <div id="mockup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
