@@ -538,6 +538,7 @@ function initPdfSigner() {
     }
     dropzone.style.display = 'none';
     workspace.style.display = 'block';
+    saveBtn.style.display = 'block';
     
     if (validFiles.length === 1) {
       currentFileBytes = await validFiles[0].arrayBuffer();
@@ -590,6 +591,7 @@ function initPdfSigner() {
     drawBtn.textContent = '[ DRAW SIGNATURE ]';
     currentFileBytes = null;
     pdfDoc = null;
+    signatureBlob = null;
   });
 
   // Signature Pad Logic
@@ -637,7 +639,6 @@ function initPdfSigner() {
       overlay.style.top = `${relativeTop}px`;
       overlay.style.left = '50px';
 
-      saveBtn.style.display = 'block';
       drawBtn.textContent = '[ REDRAW SIGNATURE ]';
       sigModal.style.display = 'none';
     }, 'image/png');
@@ -705,53 +706,56 @@ function initPdfSigner() {
   // Flatten and Save
   saveBtn.addEventListener('click', async () => {
     saveBtn.disabled = true;
-    saveBtn.textContent = '[ FLATTENING... ]';
+    saveBtn.textContent = '[ EXPORTING PDF... ]';
 
     try {
       const { PDFDocument } = PDFLib;
       // Pass a clone of the buffer as a Uint8Array to prevent buffer exhaustion issues
       const doc = await PDFDocument.load(new Uint8Array(currentFileBytes.slice(0)), { ignoreEncryption: true });
-      const pages = doc.getPages();
-      const page = pages[pageNum - 1]; // 0-indexed
+      
+      if (signatureBlob && overlay.style.display !== 'none') {
+        const pages = doc.getPages();
+        const page = pages[pageNum - 1]; // 0-indexed
 
-      const sigImage = await doc.embedPng(await signatureBlob.arrayBuffer());
-      
-      // Calculate coordinates relative to unscaled PDF
-      const overlayRect = overlay.getBoundingClientRect();
-      const canvasRect = renderCanvas.getBoundingClientRect();
-      
-      // Top left offset in HTML pixels
-      const htmlX = overlayRect.left - canvasRect.left;
-      const htmlY = overlayRect.top - canvasRect.top;
-      
-      // Convert HTML pixels to PDF points using the scale
-      const pdfX = htmlX / pdfRenderScale;
-      const htmlH = overlayRect.height;
-      const pdfW = overlayRect.width / pdfRenderScale;
-      const pdfH = htmlH / pdfRenderScale;
-      
-      // pdf-lib y-axis starts from BOTTOM left
-      const pageHeight = page.getHeight();
-      const pdfY = pageHeight - (htmlY / pdfRenderScale) - pdfH;
+        const sigImage = await doc.embedPng(await signatureBlob.arrayBuffer());
+        
+        // Calculate coordinates relative to unscaled PDF
+        const overlayRect = overlay.getBoundingClientRect();
+        const canvasRect = renderCanvas.getBoundingClientRect();
+        
+        // Top left offset in HTML pixels
+        const htmlX = overlayRect.left - canvasRect.left;
+        const htmlY = overlayRect.top - canvasRect.top;
+        
+        // Convert HTML pixels to PDF points using the scale
+        const pdfX = htmlX / pdfRenderScale;
+        const htmlH = overlayRect.height;
+        const pdfW = overlayRect.width / pdfRenderScale;
+        const pdfH = htmlH / pdfRenderScale;
+        
+        // pdf-lib y-axis starts from BOTTOM left
+        const pageHeight = page.getHeight();
+        const pdfY = pageHeight - (htmlY / pdfRenderScale) - pdfH;
 
-      page.drawImage(sigImage, {
-        x: pdfX,
-        y: pdfY,
-        width: pdfW,
-        height: pdfH,
-      });
+        page.drawImage(sigImage, {
+          x: pdfX,
+          y: pdfY,
+          width: pdfW,
+          height: pdfH,
+        });
+      }
 
       const pdfBytes = await doc.save({ updateFieldAppearances: false });
-      triggerDownload(new Blob([pdfBytes], { type: 'application/pdf' }), 'signed_document.pdf');
+      triggerDownload(new Blob([pdfBytes], { type: 'application/pdf' }), 'studio_document.pdf');
     } catch (err) {
       if (err.message.includes('Expected instance of') || err.message.includes('encrypted')) {
         showToast("Crikey! This PDF is locked with strict restrictions. Try 'Print to PDF' first to unlock it.", "error");
       } else {
-        showToast("Bugger! Error flattening the PDF: " + err.message, "error");
+        showToast("Bugger! Error exporting the PDF: " + err.message, "error");
       }
     } finally {
       saveBtn.disabled = false;
-      saveBtn.textContent = '[ FLATTEN & DOWNLOAD ]';
+      saveBtn.textContent = '[ EXPORT PDF ]';
     }
   });
 }
