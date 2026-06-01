@@ -17,7 +17,3 @@ self.addEventListener('activate', (e) => {
   e.waitUntil(self.clients.claim());
 });
 
-// Pass all requests directly to the network, doing nothing.
-self.addEventListener('fetch', (e) => {
-  // Bypassing cache completely to restore normal website functionality
-});
