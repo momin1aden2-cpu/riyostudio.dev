@@ -1240,8 +1240,9 @@ function initTextExtractor() {
         textarea.value = text;
       } else {
         // Audio/Video logic using Whisper
-        const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/+esm');
+        const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
         env.allowLocalModels = false;
+        env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/';
         
         statusText.textContent = 'Loading Whisper AI (One-time download)...';
         const transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny', {
