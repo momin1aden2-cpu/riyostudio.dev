@@ -33,6 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const textCurveSlider = document.getElementById('text-curve-slider');
   const curveVal = document.getElementById('curve-val');
 
+  const fontBoldBtn = document.getElementById('font-bold-btn');
+  const fontItalicBtn = document.getElementById('font-italic-btn');
+  const fontUnderlineBtn = document.getElementById('font-underline-btn');
+
   let currentTheme = 'dark';
 
   // Create a persistent background rectangle
@@ -56,17 +60,17 @@ document.addEventListener('DOMContentLoaded', () => {
       bgRect.set('fill', '#050505');
     } else if (currentTheme === 'midnight') {
       bgRect.set('fill', new fabric.Gradient({
-        type: 'linear', gradientUnits: 'pixels', coords: { x1: 0, y1: 0, x2: canvas.width, y2: canvas.height },
+        type: 'linear', gradientUnits: 'percentage', coords: { x1: 0, y1: 0, x2: 1, y2: 1 },
         colorStops: [ { offset: 0, color: '#1e1b4b' }, { offset: 1, color: '#312e81' } ]
       }));
     } else if (currentTheme === 'sunset') {
       bgRect.set('fill', new fabric.Gradient({
-        type: 'linear', gradientUnits: 'pixels', coords: { x1: 0, y1: 0, x2: canvas.width, y2: canvas.height },
+        type: 'linear', gradientUnits: 'percentage', coords: { x1: 0, y1: 0, x2: 1, y2: 1 },
         colorStops: [ { offset: 0, color: '#f97316' }, { offset: 1, color: '#db2777' } ]
       }));
     } else if (currentTheme === 'holographic') {
       bgRect.set('fill', new fabric.Gradient({
-        type: 'linear', gradientUnits: 'pixels', coords: { x1: 0, y1: 0, x2: canvas.width, y2: canvas.height },
+        type: 'linear', gradientUnits: 'percentage', coords: { x1: 0, y1: 0, x2: 1, y2: 1 },
         colorStops: [ { offset: 0, color: '#e0e7ff' }, { offset: 1, color: '#f3e8ff' } ]
       }));
     } else if (currentTheme === 'grid') {
@@ -189,6 +193,38 @@ document.addEventListener('DOMContentLoaded', () => {
       canvas.renderAll();
     }
   });
+
+  if (fontBoldBtn) {
+    fontBoldBtn.addEventListener('click', () => {
+      const activeObj = canvas.getActiveObject();
+      if (activeObj && (activeObj.type === 'i-text' || activeObj.type === 'text')) {
+        const isBold = activeObj.fontWeight === 'bold' || activeObj.fontWeight >= 700;
+        activeObj.set('fontWeight', isBold ? 'normal' : 'bold');
+        canvas.renderAll();
+      }
+    });
+  }
+
+  if (fontItalicBtn) {
+    fontItalicBtn.addEventListener('click', () => {
+      const activeObj = canvas.getActiveObject();
+      if (activeObj && (activeObj.type === 'i-text' || activeObj.type === 'text')) {
+        const isItalic = activeObj.fontStyle === 'italic';
+        activeObj.set('fontStyle', isItalic ? 'normal' : 'italic');
+        canvas.renderAll();
+      }
+    });
+  }
+
+  if (fontUnderlineBtn) {
+    fontUnderlineBtn.addEventListener('click', () => {
+      const activeObj = canvas.getActiveObject();
+      if (activeObj && (activeObj.type === 'i-text' || activeObj.type === 'text')) {
+        activeObj.set('underline', !activeObj.underline);
+        canvas.renderAll();
+      }
+    });
+  }
 
   deleteBtn.addEventListener('click', deleteSelected);
 
