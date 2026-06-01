@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   const curveFactor = val; // -100 to 100
                   const controlY = -curveFactor * 2;
                   
-                  const pathString = \`M 0 0 Q \${w/2} \${controlY} \${w} 0\`;
+                  const pathString = `M 0 0 Q ${w/2} ${controlY} ${w} 0`;
                   const path = new fabric.Path(pathString);
                   
                   activeObj.set({ path: path });
