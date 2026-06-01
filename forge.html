@@ -124,8 +124,8 @@
             <div class="btn-tagline">Shrink images to exact sizes</div>
           </button>
           <button class="forge-tab-btn" data-target="view-pdf">
-            <div class="btn-title">✍️ PDF Signer</div>
-            <div class="btn-tagline">Add signatures to documents</div>
+            <div class="btn-title">📑 PDF Studio</div>
+            <div class="btn-tagline">Sign & merge multiple PDFs</div>
           </button>
           <button class="forge-tab-btn" data-target="view-expense">
             <div class="btn-title">📑 Expense Flattener</div>
@@ -144,12 +144,12 @@
             <div class="btn-tagline">Compress & convert 100+ images</div>
           </button>
           <button class="forge-tab-btn" data-target="view-bg-remover">
-            <div class="btn-title">✂️ AI Background Remover</div>
-            <div class="btn-tagline">Cut out subjects locally</div>
+            <div class="btn-title">✂️ AI BG & Vectorizer</div>
+            <div class="btn-tagline">Cut out subjects & export SVG</div>
           </button>
           <button class="forge-tab-btn" data-target="view-ocr">
-            <div class="btn-title">📝 Text Extractor</div>
-            <div class="btn-tagline">Extract text from images locally</div>
+            <div class="btn-title">📝 Text & Audio Extractor</div>
+            <div class="btn-tagline">Transcribe images & audio locally</div>
           </button>
           
           <div class="forge-sponsor-banner" style="margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center;">
@@ -315,15 +315,15 @@
 
         </div>
         <div class="tool-view" id="view-pdf">
-        <!-- Tool 4: PDF Signer -->
+        <!-- Tool 4: PDF Studio -->
         <div class="bento-card bento-wide reveal reveal-delay-1">
           <div class="bento-card-header">
-            <h3>✍️ Zero-Friction PDF Signer</h3>
-            <p>Sign PDFs directly in your browser. Drag and drop your signature exactly where you want it.</p>
+            <h3>📑 PDF Studio (Sign & Merge)</h3>
+            <p>Sign PDFs directly in your browser or drop multiple PDFs to instantly merge them into one document.</p>
           </div>
           <div class="bento-card-body" style="display: flex; flex-direction: column; align-items: center;">
             <div id="pdf-dropzone" class="scanner-dropzone" style="width: 100%; border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.02);">
-              <input type="file" id="pdf-input" accept="application/pdf" style="display: none;">
+              <input type="file" id="pdf-input" accept="application/pdf" multiple style="display: none;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="dropzone-icon" style="color: #10B981; width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.8;">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                 <polyline points="14 2 14 8 20 8"></polyline>
@@ -496,9 +496,9 @@
         <div class="tool-view" id="view-bg-remover">
           <div class="bento-card reveal">
             <div class="bento-card-header">
-              <h3>✂️ AI Background Remover</h3>
-              <p>Drop a photo below and our local AI will instantly detect the main subject, cut out the background, and give you a perfectly transparent PNG. The AI runs entirely in your browser—your images are never uploaded.</p>
-            </div>
+            <h3>✂️ AI Background Remover & Vectorizer</h3>
+            <p>Drop a photo below to instantly cut out the background and build a composite, or trace it into an infinitely scalable SVG Vector graphic.</p>
+          </div>
             <div class="bento-card-body">
               <div id="bg-dropzone" class="scanner-dropzone" style="border-color: rgba(236, 72, 153, 0.3); background: rgba(236, 72, 153, 0.02);">
                 <input type="file" id="bg-file-input" accept="image/jpeg, image/png, image/webp, image/heic, .heic" style="display: none;">
@@ -580,6 +580,9 @@
                     <button id="bg-download-btn" class="cyber-submit-btn scanner-btn" style="background: rgba(236, 72, 153, 0.15); border: 1px solid #EC4899; color: #EC4899; margin: 0; padding: 12px; font-weight: bold; font-size: 1rem; box-shadow: 0 0 15px rgba(236, 72, 153, 0.2);">
                       [ DOWNLOAD EDITED COMPOSITE ]
                     </button>
+                    <button id="bg-svg-btn" class="cyber-submit-btn scanner-btn" style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10B981; color: #10B981; margin: 0; padding: 12px; font-weight: bold; font-size: 1rem; box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);">
+                      [ EXPORT AS SVG VECTOR ]
+                    </button>
                   </div>
                 </div>
               </div>
@@ -588,19 +591,19 @@
           </div>
         </div>
 
-        <!-- Tool 7: Instant Text Extractor (OCR) -->
+        <!-- Tool 7: Instant Text & Audio Extractor -->
         <div class="bento-card bento-wide reveal reveal-delay-4">
           <div class="bento-card-header">
-            <h3>📝 Instant Text Extractor</h3>
-            <p>Extract text from images using an embedded OCR engine. Runs 100% locally in a background thread.</p>
+            <h3>📝 Instant Text & Audio Extractor</h3>
+            <p>Extract text from images (OCR) or transcribe Audio/Video (Whisper AI) locally in your browser.</p>
           </div>
           <div class="bento-card-body">
             <div id="ocr-dropzone" class="scanner-dropzone">
-              <input type="file" id="ocr-input" accept="image/jpeg, image/png, image/webp" style="display: none;">
+              <input type="file" id="ocr-input" accept="image/jpeg, image/png, image/webp, audio/*, video/*" style="display: none;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="dropzone-icon" style="color: #A78BFA; width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.8;">
                 <path d="M4 7V4h16v3M9 20h6M12 4v16"/>
               </svg>
-              <p>Drag & Drop an image (Receipt, Document, Screenshot)</p>
+              <p>Drag & Drop an Image, Audio, or Video file</p>
             </div>
             
             <!-- Sleek Progress UI -->
@@ -816,6 +819,6 @@
 
   <script src="bg.js?v=4"></script>
   <script src="script.js?v=4"></script>
-  <script src="forge.js?v=30"></script>
+  <script src="forge.js?v=31"></script>
 </body>
 </html>

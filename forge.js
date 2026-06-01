@@ -524,21 +524,35 @@ function initPdfSigner() {
   dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
     dropzone.style.borderColor = 'rgba(16,185,129,0.3)';
-    if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
   });
   fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) handleFile(e.target.files[0]);
+    if (e.target.files.length > 0) handleFiles(e.target.files);
   });
 
-  async function handleFile(file) {
-    if (file.type !== 'application/pdf') {
-      showToast("You need to upload a PDF file for this, mate.", "error");
+  async function handleFiles(files) {
+    const validFiles = Array.from(files).filter(f => f.type === 'application/pdf');
+    if (validFiles.length === 0) {
+      showToast("You need to upload at least one PDF file, mate.", "error");
       return;
     }
     dropzone.style.display = 'none';
     workspace.style.display = 'block';
     
-    currentFileBytes = await file.arrayBuffer();
+    if (validFiles.length === 1) {
+      currentFileBytes = await validFiles[0].arrayBuffer();
+    } else {
+      showToast(`Merging ${validFiles.length} PDFs...`, "success");
+      const mergedPdf = await PDFLib.PDFDocument.create();
+      for (const file of validFiles) {
+        const bytes = await file.arrayBuffer();
+        const pdf = await PDFLib.PDFDocument.load(bytes);
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        copiedPages.forEach((page) => mergedPdf.addPage(page));
+      }
+      const mergedBytes = await mergedPdf.save();
+      currentFileBytes = mergedBytes.buffer.slice(mergedBytes.byteOffset, mergedBytes.byteOffset + mergedBytes.byteLength);
+    }
     
     // Load with pdf.js using a copy of the buffer to prevent detachment
     const pdfjsLib = window['pdfjs-dist/build/pdf'];
@@ -1156,9 +1170,16 @@ function initTextExtractor() {
     }
   });
 
+  async function decodeAudioFile(file) {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+    const arrayBuffer = await file.arrayBuffer();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    return audioBuffer.getChannelData(0);
+  }
+
   async function handleOcrFile(file) {
-    if (!file.type.startsWith('image/')) {
-      showToast("Mate, please upload a valid image file like PNG or JPG.", "error");
+    if (!file.type.startsWith('image/') && !file.type.startsWith('audio/') && !file.type.startsWith('video/')) {
+      showToast("Mate, please upload a valid image, audio, or video file.", "error");
       return;
     }
 
@@ -1169,33 +1190,63 @@ function initTextExtractor() {
     progressBar.style.width = '0%';
     statusText.textContent = 'Initializing Engine...';
     percentage.textContent = '0%';
+    statusText.style.color = '#A78BFA';
     
     try {
-      const worker = await Tesseract.createWorker('eng', 1, {
-        workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
-        corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.0/tesseract-core.wasm.js',
-        logger: m => {
-          console.log("Tesseract Status:", m);
-          if (m.status) {
-            // Capitalize first letter for premium look
-            const statusStr = m.status.charAt(0).toUpperCase() + m.status.slice(1);
-            statusText.textContent = statusStr;
+      if (file.type.startsWith('image/')) {
+        const worker = await Tesseract.createWorker('eng', 1, {
+          workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
+          corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.0/tesseract-core.wasm.js',
+          logger: m => {
+            if (m.status) {
+              const statusStr = m.status.charAt(0).toUpperCase() + m.status.slice(1);
+              statusText.textContent = statusStr;
+            }
+            const pct = Math.floor((m.progress || 0) * 100);
+            percentage.textContent = `${pct}%`;
+            progressBar.style.width = `${pct}%`;
           }
-          const pct = Math.floor((m.progress || 0) * 100);
-          percentage.textContent = `${pct}%`;
-          progressBar.style.width = `${pct}%`;
-        }
-      });
-      
-      statusText.textContent = 'Processing Image...';
-      const { data: { text } } = await worker.recognize(file);
-      
-      await worker.terminate();
-      
-      // Show Results
-      progressContainer.style.display = 'none';
-      workspace.style.display = 'block';
-      textarea.value = text;
+        });
+        
+        statusText.textContent = 'Processing Image...';
+        const { data: { text } } = await worker.recognize(file);
+        await worker.terminate();
+        
+        progressContainer.style.display = 'none';
+        workspace.style.display = 'block';
+        textarea.value = text;
+      } else {
+        // Audio/Video logic using Whisper
+        const { pipeline } = await import('https://esm.sh/@xenova/transformers');
+        
+        statusText.textContent = 'Loading Whisper AI (One-time download)...';
+        const transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny', {
+          progress_callback: (data) => {
+            if (data.status === 'downloading') {
+               statusText.textContent = `Downloading AI Model (${data.file})...`;
+            } else if (data.status === 'progress') {
+               const pct = Math.round(data.progress);
+               percentage.textContent = `${pct}%`;
+               progressBar.style.width = `${pct}%`;
+            }
+          }
+        });
+
+        statusText.textContent = 'Decoding Audio...';
+        percentage.textContent = '100%';
+        progressBar.style.width = '100%';
+        const audioData = await decodeAudioFile(file);
+        
+        statusText.textContent = 'Transcribing Speech (This may take a minute)...';
+        const output = await transcriber(audioData, {
+          chunk_length_s: 30,
+          stride_length_s: 5
+        });
+        
+        progressContainer.style.display = 'none';
+        workspace.style.display = 'block';
+        textarea.value = output.text.trim();
+      }
       
     } catch (err) {
       statusText.textContent = 'Error: ' + err.message;
@@ -1996,6 +2047,7 @@ function initBackgroundRemover() {
   
   const resetBtn = document.getElementById('bg-reset-btn');
   const downloadBtn = document.getElementById('bg-download-btn');
+  const svgBtn = document.getElementById('bg-svg-btn');
 
   // UI Controls
   const btnTransparent = document.getElementById('bg-preset-transparent');
@@ -2240,6 +2292,37 @@ function initBackgroundRemover() {
           downloadBtn.textContent = 'Error during export';
           downloadBtn.disabled = false;
         });
+      };
+
+      svgBtn.onclick = async () => {
+        if (!rawTransparentBlob) return;
+        svgBtn.textContent = 'TRACING VECTOR...';
+        svgBtn.disabled = true;
+
+        try {
+          if (!window.ImageTracer) {
+            await new Promise((resolve, reject) => {
+              const script = document.createElement('script');
+              script.src = 'https://unpkg.com/imagetracerjs@1.2.6/imagetracer_v1.2.6.js';
+              script.onload = resolve;
+              script.onerror = reject;
+              document.body.appendChild(script);
+            });
+          }
+
+          const tempUrl = URL.createObjectURL(rawTransparentBlob);
+          ImageTracer.imageToSVG(tempUrl, (svgString) => {
+            URL.revokeObjectURL(tempUrl);
+            const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+            triggerDownload(svgBlob, `${originalName}_vector.svg`);
+            svgBtn.textContent = '[ EXPORT AS SVG VECTOR ]';
+            svgBtn.disabled = false;
+          }, { scale: 1, numberofcolors: 16, strokewidth: 1 });
+        } catch (e) {
+          console.error(e);
+          svgBtn.textContent = 'Error Tracing';
+          svgBtn.disabled = false;
+        }
       };
 
     } catch (err) {
