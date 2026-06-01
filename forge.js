@@ -2015,6 +2015,201 @@ function initBackgroundRemover() {
     dropzone.style.borderColor = 'rgba(236, 72, 153, 0.3)';
     dropzone.style.background = 'rgba(236, 72, 153, 0.02)';
     if (e.dataTransfer.files.length > 0) processBgImage(e.dataTransfer.files[0]);
+      errorEl.style.display = 'block';
+      outputEl.style.display = 'none';
+    }
+  });
+}
+
+// 9. BULK IMAGE OPTIMIZER
+function initBulkOptimizer() {
+  const dropzone = document.getElementById('bulk-dropzone');
+  const input = document.getElementById('bulk-file-input');
+  const controls = document.getElementById('bulk-controls');
+  const fileCountEl = document.getElementById('bulk-file-count');
+  const formatSelect = document.getElementById('bulk-format-select');
+  const qualitySlider = document.getElementById('bulk-quality-slider');
+  const qualityDisplay = document.getElementById('bulk-quality-display');
+  const executeBtn = document.getElementById('bulk-execute-btn');
+  const resetBtn = document.getElementById('bulk-reset-btn');
+  const statusArea = document.getElementById('bulk-status');
+  const progressEl = document.getElementById('bulk-progress');
+
+  let bulkFiles = [];
+
+  dropzone.addEventListener('click', (e) => {
+    if (e.target !== input) input.click();
+  });
+
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = '#6366F1';
+    dropzone.style.background = 'rgba(99, 102, 241, 0.1)';
+  });
+
+  dropzone.addEventListener('dragleave', () => {
+    dropzone.style.borderColor = 'rgba(99, 102, 241, 0.3)';
+    dropzone.style.background = 'rgba(99, 102, 241, 0.02)';
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = 'rgba(99, 102, 241, 0.3)';
+    dropzone.style.background = 'rgba(99, 102, 241, 0.02)';
+    if (e.dataTransfer.files.length > 0) handleBulkFiles(e.dataTransfer.files);
+  });
+
+  input.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) handleBulkFiles(e.target.files);
+  });
+
+  qualitySlider.addEventListener('input', (e) => {
+    qualityDisplay.textContent = `${e.target.value}%`;
+  });
+
+  function handleBulkFiles(files) {
+    // Only accept up to 100 images
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/svg+xml'];
+    let added = 0;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      let t = file.type;
+      
+      // Fallback for .heic on Windows/Chrome which might lack type
+      if (!t && file.name.toLowerCase().endsWith('.heic')) {
+        t = 'image/heic';
+      }
+
+      if (validTypes.includes(t)) {
+        if (bulkFiles.length < 100) {
+          bulkFiles.push(file);
+          added++;
+        }
+      }
+    }
+
+    if (bulkFiles.length > 0) {
+      dropzone.style.display = 'none';
+      controls.style.display = 'block';
+      fileCountEl.textContent = bulkFiles.length;
+    }
+    input.value = ''; // reset
+  }
+
+  resetBtn.addEventListener('click', () => {
+    bulkFiles = [];
+    dropzone.style.display = 'flex';
+    controls.style.display = 'none';
+    statusArea.style.display = 'none';
+    executeBtn.disabled = false;
+    executeBtn.textContent = '[ OPTIMIZE & DOWNLOAD ZIP ]';
+  });
+
+  executeBtn.addEventListener('click', async () => {
+    if (bulkFiles.length === 0) return;
+    
+    executeBtn.disabled = true;
+    executeBtn.textContent = '[ PROCESSING... ]';
+    statusArea.style.display = 'block';
+    
+    const zip = new JSZip();
+    const folder = zip.folder("optimized_images");
+    
+    const targetFormat = formatSelect.value;
+    const quality = parseInt(qualitySlider.value, 10) / 100;
+    
+    // Canvas context for drawing
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    for (let i = 0; i < bulkFiles.length; i++) {
+      let file = bulkFiles[i];
+      let t = file.type;
+      if (!t && file.name.toLowerCase().endsWith('.heic')) t = 'image/heic';
+
+      progressEl.textContent = Math.round((i / bulkFiles.length) * 100);
+
+      try {
+        let blobToDraw = file;
+        
+        if (t === 'image/heic') {
+          // Convert HEIC first via heic2any
+          const convertedBlob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 1.0 });
+          blobToDraw = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        }
+
+        // Draw onto canvas
+        const bmp = await createImageBitmap(blobToDraw);
+        canvas.width = bmp.width;
+        canvas.height = bmp.height;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(bmp, 0, 0);
+
+        // Convert canvas to target format blob
+        const optimizedBlob = await new Promise(resolve => canvas.toBlob(resolve, targetFormat, targetFormat === 'image/png' ? undefined : quality));
+        
+        let ext = targetFormat.split('/')[1];
+        if (ext === 'jpeg') ext = 'jpg';
+        
+        const originalNameBase = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+        folder.file(`${originalNameBase}_optimized.${ext}`, optimizedBlob);
+
+        bmp.close(); // free memory
+      } catch (err) {
+        console.error("Failed to process", file.name, err);
+      }
+    }
+
+    progressEl.textContent = 100;
+    executeBtn.textContent = '[ PACKAGING ZIP... ]';
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    triggerDownload(zipBlob, 'bulk_optimized_images.zip');
+
+    executeBtn.textContent = '[ DONE! ]';
+    setTimeout(() => {
+      resetBtn.click();
+    }, 2000);
+  });
+}
+
+// 10. AI BACKGROUND REMOVER
+function initBackgroundRemover() {
+  const dropzone = document.getElementById('bg-dropzone');
+  const input = document.getElementById('bg-file-input');
+  const workspace = document.getElementById('bg-workspace');
+  const loadingArea = document.getElementById('bg-loading');
+  const statusText = document.getElementById('bg-status-text');
+  const progressText = document.getElementById('bg-progress-text');
+  const previewContainer = document.getElementById('bg-preview-container');
+  const resultImg = document.getElementById('bg-result-img');
+  const controls = document.getElementById('bg-controls');
+  const resetBtn = document.getElementById('bg-reset-btn');
+  const downloadBtn = document.getElementById('bg-download-btn');
+
+  let currentBlobUrl = null;
+
+  dropzone.addEventListener('click', (e) => {
+    if (e.target !== input) input.click();
+  });
+
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = '#EC4899';
+    dropzone.style.background = 'rgba(236, 72, 153, 0.1)';
+  });
+
+  dropzone.addEventListener('dragleave', () => {
+    dropzone.style.borderColor = 'rgba(236, 72, 153, 0.3)';
+    dropzone.style.background = 'rgba(236, 72, 153, 0.02)';
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = 'rgba(236, 72, 153, 0.3)';
+    dropzone.style.background = 'rgba(236, 72, 153, 0.02)';
+    if (e.dataTransfer.files.length > 0) processBgImage(e.dataTransfer.files[0]);
   });
 
   input.addEventListener('change', (e) => {
@@ -2044,7 +2239,10 @@ function initBackgroundRemover() {
 
       statusText.textContent = 'Warming up AI Engine (this takes a moment on the first run)...';
 
-      // Load imgly
+      // Load imgly via dynamic import to avoid global scope issues
+      const imglyMod = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.3/+esm');
+      const removeBackground = imglyMod.default || imglyMod.removeBackground;
+
       const config = {
         progress: (key, current, total) => {
           if (key === 'compute:inference') {
@@ -2059,7 +2257,7 @@ function initBackgroundRemover() {
         }
       };
 
-      const transparentBlob = await imglyRemoveBackground(processFile, config);
+      const transparentBlob = await removeBackground(processFile, config);
 
       // Display result
       currentBlobUrl = URL.createObjectURL(transparentBlob);
