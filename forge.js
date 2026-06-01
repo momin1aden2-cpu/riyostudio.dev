@@ -505,8 +505,10 @@ function initPdfSigner() {
   let pageNum = 1;
   let pdfRenderScale = 1.5;
   let pdfPageViewport = null;
-  
+    
   let signatureBlob = null;
+  let pageRendering = false;
+  let pageNumPending = null;
   let isDragging = false;
   let dragOffset = { x: 0, y: 0 };
   let sigPadCtx = sigPad.getContext('2d');
@@ -564,6 +566,11 @@ function initPdfSigner() {
   }
 
   async function renderPage(num) {
+    if (pageRendering) {
+      pageNumPending = num;
+      return;
+    }
+    pageRendering = true;
     const page = await pdfDoc.getPage(num);
     // Use container width to calculate scale
     const containerWidth = document.getElementById('pdf-render-container').clientWidth;
@@ -576,8 +583,20 @@ function initPdfSigner() {
     
     const ctx = renderCanvas.getContext('2d');
     const renderContext = { canvasContext: ctx, viewport: pdfPageViewport };
-    await page.render(renderContext).promise;
+    try {
+      await page.render(renderContext).promise;
+    } catch(e) {
+      if(e.name !== 'RenderingCancelledException') {
+        console.error("PDF Render Error", e);
+      }
+    }
     pageNumSpan.textContent = num;
+    pageRendering = false;
+    if (pageNumPending !== null) {
+      const nextNum = pageNumPending;
+      pageNumPending = null;
+      renderPage(nextNum);
+    }
   }
 
   prevBtn.addEventListener('click', () => { if (pageNum <= 1) return; pageNum--; renderPage(pageNum); });
