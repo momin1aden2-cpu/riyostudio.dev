@@ -242,56 +242,7 @@
     });
   });
 
-  // Custom cursor
-  const cursorDot = document.getElementById('cursor-dot');
-  const cursorRing = document.getElementById('cursor-ring');
-  let mouseX = window.innerWidth / 2;
-  let mouseY = window.innerHeight / 2;
-  let ringX = mouseX;
-  let ringY = mouseY;
-  let isHovering = false;
 
-  if (cursorDot && cursorRing) {
-    // Hide default cursor globally
-    document.body.style.cursor = 'none';
-
-    window.addEventListener('mousemove', (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-      
-      // Instantly move the dot
-      cursorDot.style.left = mouseX + 'px';
-      cursorDot.style.top = mouseY + 'px';
-    });
-
-    // Smooth follow for the ring
-    function renderCursor() {
-      // Ease the ring towards the mouse
-      ringX += (mouseX - ringX) * 0.15;
-      ringY += (mouseY - ringY) * 0.15;
-      
-      cursorRing.style.left = ringX + 'px';
-      cursorRing.style.top = ringY + 'px';
-      
-      requestAnimationFrame(renderCursor);
-    }
-    requestAnimationFrame(renderCursor);
-
-    // Hover states for links and buttons
-    const hoverElements = document.querySelectorAll('a, button, input, textarea');
-    hoverElements.forEach(el => {
-      el.addEventListener('mouseenter', () => {
-        cursorDot.classList.add('hover');
-        cursorRing.classList.add('hover');
-        isHovering = true;
-      });
-      el.addEventListener('mouseleave', () => {
-        cursorDot.classList.remove('hover');
-        cursorRing.classList.remove('hover');
-        isHovering = false;
-      });
-    });
-  }
 
   // Command palette logic
   const cmdPalette = document.getElementById('cmd-palette');

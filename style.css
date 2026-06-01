@@ -1413,15 +1413,9 @@ select.cyber-input option {
 
 /* -- UX Enhancements -- */
 
-/* Cursor override */
-body {
-  cursor: none; /* Hide default cursor */
-}
 
-/* Ensure links also hide default cursor */
-a, button, input, textarea, .nav-brand {
-  cursor: none !important;
-}
+
+
 
 /* Remove outline on focus for inputs globally */
 input:focus, textarea:focus, select:focus, button:focus {
@@ -1475,49 +1469,7 @@ input:focus, textarea:focus, select:focus, button:focus {
   }
 }
 
-.custom-cursor-dot {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 6px;
-  height: 6px;
-  background: var(--accent);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 99999;
-  transform: translate(-50%, -50%);
-  transition: width 0.2s, height 0.2s, background-color 0.2s;
-}
 
-.custom-cursor-ring {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--accent-glow);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 99998;
-  transform: translate(-50%, -50%);
-  transition: width 0.2s, height 0.2s, border-color 0.2s;
-  /* Smooth trailing effect handled in JS */
-}
-
-/* Hover state for cursor */
-.custom-cursor-dot.hover {
-  width: 10px;
-  height: 10px;
-  background: #fff;
-  box-shadow: 0 0 10px var(--accent);
-}
-
-.custom-cursor-ring.hover {
-  width: 48px;
-  height: 48px;
-  border-color: var(--accent);
-  background: rgba(59, 130, 246, 0.05);
-}
 
 /* Command Palette */
 .cmd-palette-overlay {
