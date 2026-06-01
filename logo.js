@@ -12,15 +12,24 @@ document.addEventListener('DOMContentLoaded', () => {
   // UI Elements
   const addTextBtn = document.getElementById('add-text-btn');
   const addShapeBtn = document.getElementById('add-shape-btn');
+  const addImageBtn = document.getElementById('add-image-btn');
+  const imageUploadInput = document.getElementById('image-upload-input');
+  
   const themeBtns = document.querySelectorAll('.theme-btn');
   const exportBtn = document.getElementById('logo-export-btn');
 
   const objPropsPanel = document.getElementById('object-properties');
   const fontPropGroup = document.getElementById('font-prop-group');
+  const imagePropGroup = document.getElementById('image-prop-group');
   const fontSelect = document.getElementById('obj-font-select');
   const colorPicker = document.getElementById('obj-color-picker');
   const colorHex = document.getElementById('obj-color-hex');
   const deleteBtn = document.getElementById('delete-obj-btn');
+  
+  const splitWordsBtn = document.getElementById('split-words-btn');
+  const removeBgBtn = document.getElementById('remove-bg-btn');
+  const textCurveSlider = document.getElementById('text-curve-slider');
+  const curveVal = document.getElementById('curve-val');
 
   // Canvas State Defaults
   let currentTheme = 'dark';
@@ -40,7 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Initial Background
   updateBackground();
 
   // Control Handle Customization (Cyber aesthetic)
@@ -111,15 +119,26 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Color sync
     const color = activeObj.fill || '#ffffff';
-    colorPicker.value = color;
-    colorHex.value = color;
+    colorPicker.value = typeof color === 'string' ? color : '#ffffff';
+    colorHex.value = typeof color === 'string' ? color : '#ffffff';
 
-    // Font sync (only for text)
+    // UI Groups sync
     if (activeObj.type === 'i-text' || activeObj.type === 'text') {
       fontPropGroup.style.display = 'block';
+      if (imagePropGroup) imagePropGroup.style.display = 'none';
       fontSelect.value = activeObj.fontFamily || 'Inter';
+      
+      // Update curve slider to match current state
+      if (!activeObj.path) {
+          textCurveSlider.value = 0;
+          curveVal.textContent = "0";
+      }
+    } else if (activeObj.type === 'image') {
+      fontPropGroup.style.display = 'none';
+      if (imagePropGroup) imagePropGroup.style.display = 'block';
     } else {
       fontPropGroup.style.display = 'none';
+      if (imagePropGroup) imagePropGroup.style.display = 'none';
     }
   }
 
@@ -131,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   colorPicker.addEventListener('input', (e) => {
     const activeObj = canvas.getActiveObject();
-    if (activeObj) {
+    if (activeObj && activeObj.type !== 'image') {
       activeObj.set('fill', e.target.value);
       colorHex.value = e.target.value;
       canvas.renderAll();
@@ -140,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   colorHex.addEventListener('input', (e) => {
     const activeObj = canvas.getActiveObject();
-    if (activeObj && /^#[0-9A-F]{6}$/i.test(e.target.value)) {
+    if (activeObj && activeObj.type !== 'image' && /^#[0-9A-F]{6}$/i.test(e.target.value)) {
       activeObj.set('fill', e.target.value);
       colorPicker.value = e.target.value;
       canvas.renderAll();
@@ -152,7 +171,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (activeObj && (activeObj.type === 'i-text' || activeObj.type === 'text')) {
       activeObj.set('fontFamily', e.target.value);
       
-      // Auto-set weight for specific fonts
       if (e.target.value === 'Cinzel' || e.target.value === 'Playfair Display') {
         activeObj.set('fontWeight', '800');
       } else {
@@ -168,7 +186,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Keyboard Delete
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Delete' || e.key === 'Backspace') {
-      // Don't delete if editing text inside the object or input fields
       if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
       const activeObj = canvas.getActiveObject();
       if (activeObj && activeObj.isEditing) return;
@@ -176,6 +193,142 @@ document.addEventListener('DOMContentLoaded', () => {
       deleteSelected();
     }
   });
+
+  // --- Advanced Feature Listeners ---
+
+  addImageBtn.addEventListener('click', () => {
+      imageUploadInput.click();
+  });
+
+  imageUploadInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (f) => {
+          const data = f.target.result;
+          fabric.Image.fromURL(data, (img) => {
+              // Scale down if too large
+              if (img.width > 800) {
+                  img.scaleToWidth(800);
+              }
+              img.set({
+                  left: canvas.width / 2,
+                  top: canvas.height / 2,
+                  originX: 'center',
+                  originY: 'center',
+                  shadow: currentTheme === 'cyber' ? new fabric.Shadow({ color: '#10B981', blur: 30 }) : null
+              });
+              canvas.add(img);
+              canvas.setActiveObject(img);
+              canvas.renderAll();
+          });
+      };
+      reader.readAsDataURL(file);
+      // Reset input
+      imageUploadInput.value = '';
+  });
+
+  if (removeBgBtn) {
+      removeBgBtn.addEventListener('click', async () => {
+          const activeObj = canvas.getActiveObject();
+          if (activeObj && activeObj.type === 'image') {
+              if (typeof imglyRemoveBackground === 'undefined') {
+                  alert('Background removal model is still loading. Please try again in a moment.');
+                  return;
+              }
+
+              removeBgBtn.textContent = '⏳ Processing (AI)...';
+              removeBgBtn.disabled = true;
+
+              try {
+                  const blob = await fetch(activeObj.getSrc()).then(r => r.blob());
+                  const imageBlob = await imglyRemoveBackground(blob);
+                  const url = URL.createObjectURL(imageBlob);
+                  
+                  fabric.Image.fromURL(url, (img) => {
+                      img.set({
+                          left: activeObj.left,
+                          top: activeObj.top,
+                          scaleX: activeObj.scaleX,
+                          scaleY: activeObj.scaleY,
+                          angle: activeObj.angle,
+                          originX: activeObj.originX,
+                          originY: activeObj.originY,
+                          shadow: activeObj.shadow
+                      });
+                      canvas.remove(activeObj);
+                      canvas.add(img);
+                      canvas.setActiveObject(img);
+                      canvas.renderAll();
+                  });
+              } catch (err) {
+                  console.error(err);
+                  alert('Failed to remove background.');
+              }
+
+              removeBgBtn.textContent = '✨ Remove Background (AI)';
+              removeBgBtn.disabled = false;
+          }
+      });
+  }
+
+  if (splitWordsBtn) {
+      splitWordsBtn.addEventListener('click', () => {
+          const activeObj = canvas.getActiveObject();
+          if (activeObj && (activeObj.type === 'i-text' || activeObj.type === 'text')) {
+              const text = activeObj.text;
+              const words = text.split(' ').filter(w => w.trim() !== '');
+              if (words.length <= 1) return;
+              
+              const startY = canvas.height / 2 - ((words.length * activeObj.fontSize) / 2);
+              
+              canvas.remove(activeObj);
+              
+              words.forEach((word, index) => {
+                  const textObj = new fabric.IText(word, {
+                      left: canvas.width / 2,
+                      top: startY + (index * (activeObj.fontSize + 20)),
+                      fontFamily: activeObj.fontFamily,
+                      fill: activeObj.fill,
+                      fontSize: activeObj.fontSize,
+                      fontWeight: activeObj.fontWeight,
+                      originX: 'center',
+                      originY: 'center',
+                      shadow: activeObj.shadow
+                  });
+                  canvas.add(textObj);
+              });
+              canvas.renderAll();
+          }
+      });
+  }
+
+  if (textCurveSlider) {
+      textCurveSlider.addEventListener('input', (e) => {
+          const activeObj = canvas.getActiveObject();
+          const val = parseInt(e.target.value);
+          if (curveVal) curveVal.textContent = val;
+          
+          if (activeObj && (activeObj.type === 'i-text' || activeObj.type === 'text')) {
+              if (val === 0) {
+                  activeObj.set('path', null);
+              } else {
+                  // Generate an SVG path arc
+                  // Fabric text paths work best when the path length matches the text width roughly
+                  const w = activeObj.width;
+                  const curveFactor = val; // -100 to 100
+                  const controlY = -curveFactor * 2;
+                  
+                  const pathString = \`M 0 0 Q \${w/2} \${controlY} \${w} 0\`;
+                  const path = new fabric.Path(pathString);
+                  
+                  activeObj.set({ path: path });
+              }
+              canvas.renderAll();
+          }
+      });
+  }
 
   // --- UI Buttons Listeners ---
 
@@ -205,11 +358,10 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.discardActiveObject(); // Deselect to remove control handles
     canvas.renderAll();
     
-    // Fabric.js toDataURL supports higher multiplier
     const dataURL = canvas.toDataURL({
       format: 'png',
       quality: 1,
-      multiplier: 2 // Output 3200x1600 for ultra crisp 4K logos
+      multiplier: 2
     });
     
     const link = document.createElement('a');
