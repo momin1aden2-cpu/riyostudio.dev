@@ -734,3 +734,36 @@ if (fpsEl) {
     }
     requestAnimationFrame(updateFPS);
 }
+
+  // Newsletter form handling
+  const newsletterForms = document.querySelectorAll('.newsletter-form');
+  newsletterForms.forEach(form => {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const btn = form.querySelector('.newsletter-submit-btn');
+      const success = form.querySelector('.newsletter-success');
+      const inputWrap = form.querySelector('div[style*="display: flex;"]');
+
+      const formData = new FormData(form);
+      btn.textContent = 'SENDING...';
+      btn.disabled = true;
+
+      fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: { Accept: 'application/json' },
+      }).then(res => {
+        if (res.ok) {
+          inputWrap.style.display = 'none';
+          success.style.display = 'block';
+        } else {
+          throw new Error('Failed');
+        }
+      }).catch(err => {
+        if (window.showToast) window.showToast('Submission failed. Please check your connection.', 'error');
+        btn.textContent = 'SUBSCRIBE';
+        btn.disabled = false;
+      });
+    });
+  });
+

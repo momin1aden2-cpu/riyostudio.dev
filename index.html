@@ -17,6 +17,22 @@
 -->
 <html lang="en-AU">
 <head>
+<!-- Google Analytics Placeholder -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6P5C0ZYLE0"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-6P5C0ZYLE0');
+</script>
+<!-- Microsoft Clarity Placeholder -->
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "x0b9dklpwu");
+</script>
   <style>body { background-color: #060B14 !important; }</style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -327,7 +343,7 @@
 
         <div class="contact-form-wrap reveal reveal-delay-2">
           <form id="contact-form" action="https://api.web3forms.com/submit" method="POST" class="cyber-form">
-            <input type="hidden" name="access_key" value="YOUR_ACCESS_KEY_HERE">
+            <input type="hidden" name="access_key" value="f082846d-6298-49c4-9109-4bc3fa19884d">
             <input type="hidden" name="subject" value="New Contact from RiyoStudio.dev">
             <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
 
@@ -372,6 +388,25 @@
   </section>
 
   <!-- Footer -->
+    <!-- Global Newsletter Section -->
+  <section class="newsletter-section" style="padding: 60px 20px; background: rgba(16, 185, 129, 0.05); border-top: 1px solid rgba(16, 185, 129, 0.1); border-bottom: 1px solid rgba(16, 185, 129, 0.1); text-align: center; position: relative; z-index: 10;">
+    <div class="container fluid" style="max-width: 600px; margin: 0 auto;">
+      <h2 style="font-size: 2rem; color: #fff; margin-bottom: 16px;">Join the Developer Collective</h2>
+      <p style="color: var(--text-dim); margin-bottom: 32px; font-size: 1.1rem;">Get notified when we launch new zero-server tools and pro-grade SaaS kits. No spam, ever.</p>
+      
+      <form class="newsletter-form" action="https://api.web3forms.com/submit" method="POST" style="display: flex; gap: 12px; flex-direction: column;">
+        <input type="hidden" name="access_key" value="f082846d-6298-49c4-9109-4bc3fa19884d">
+        <input type="hidden" name="subject" value="New Newsletter Subscriber!">
+        <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
+        
+        <div style="display: flex; gap: 8px; width: 100%;">
+          <input type="email" name="email" placeholder="enter_your_email@domain.com" required style="flex: 1; padding: 16px 20px; background: rgba(0,0,0,0.4); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; color: #fff; font-size: 1rem; outline: none; transition: border 0.2s;" onfocus="this.style.borderColor='#10B981'" onblur="this.style.borderColor='rgba(16,185,129,0.3)'">
+          <button type="submit" class="newsletter-submit-btn" style="padding: 0 32px; background: #10B981; color: #000; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 1rem;" onmouseover="this.style.background='#34d399'; this.style.transform='scale(1.02)';" onmouseout="this.style.background='#10B981'; this.style.transform='scale(1)';">SUBSCRIBE</button>
+        </div>
+        <div class="newsletter-success" style="color: #10B981; font-weight: 600; display: none; margin-top: 12px; font-size: 1.1rem;">? Transmission secured. Welcome to the collective.</div>
+      </form>
+    </div>
+  </section>
   <footer class="footer" id="footer" style="position: relative; z-index: 10;">
     <div class="container fluid">
       <div class="footer-grid">
@@ -460,3 +495,4 @@
   <script src="script.js?v=20"></script>
 </body>
 </html>
+
