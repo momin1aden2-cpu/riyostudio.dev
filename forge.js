@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initTextExtractor();
   initGhostMaker();
   initBulkOptimizer();
+  initBackgroundRemover();
 });
 
 function triggerDownload(blob, filename) {
@@ -1975,5 +1976,122 @@ function initBulkOptimizer() {
     setTimeout(() => {
       resetBtn.click();
     }, 2000);
+  });
+}
+
+// 10. AI BACKGROUND REMOVER
+function initBackgroundRemover() {
+  const dropzone = document.getElementById('bg-dropzone');
+  const input = document.getElementById('bg-file-input');
+  const workspace = document.getElementById('bg-workspace');
+  const loadingArea = document.getElementById('bg-loading');
+  const statusText = document.getElementById('bg-status-text');
+  const progressText = document.getElementById('bg-progress-text');
+  const previewContainer = document.getElementById('bg-preview-container');
+  const resultImg = document.getElementById('bg-result-img');
+  const controls = document.getElementById('bg-controls');
+  const resetBtn = document.getElementById('bg-reset-btn');
+  const downloadBtn = document.getElementById('bg-download-btn');
+
+  let currentBlobUrl = null;
+
+  dropzone.addEventListener('click', (e) => {
+    if (e.target !== input) input.click();
+  });
+
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = '#EC4899';
+    dropzone.style.background = 'rgba(236, 72, 153, 0.1)';
+  });
+
+  dropzone.addEventListener('dragleave', () => {
+    dropzone.style.borderColor = 'rgba(236, 72, 153, 0.3)';
+    dropzone.style.background = 'rgba(236, 72, 153, 0.02)';
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = 'rgba(236, 72, 153, 0.3)';
+    dropzone.style.background = 'rgba(236, 72, 153, 0.02)';
+    if (e.dataTransfer.files.length > 0) processBgImage(e.dataTransfer.files[0]);
+  });
+
+  input.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) processBgImage(e.target.files[0]);
+  });
+
+  async function processBgImage(file) {
+    if (!file) return;
+
+    // Reset UI
+    dropzone.style.display = 'none';
+    workspace.style.display = 'block';
+    loadingArea.style.display = 'block';
+    previewContainer.style.display = 'none';
+    controls.style.display = 'none';
+    if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+    
+    let processFile = file;
+    
+    try {
+      // Handle HEIC fallback
+      if (file.name.toLowerCase().endsWith('.heic')) {
+        statusText.textContent = 'Decoding HEIC image first...';
+        const convertedBlob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 1.0 });
+        processFile = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+      }
+
+      statusText.textContent = 'Warming up AI Engine (this takes a moment on the first run)...';
+
+      // Load imgly
+      const config = {
+        progress: (key, current, total) => {
+          if (key === 'compute:inference') {
+            statusText.textContent = 'Removing background...';
+          } else {
+            statusText.textContent = `Downloading AI Model (${key})...`;
+          }
+          if (total) {
+            const p = Math.round((current / total) * 100);
+            progressText.textContent = `${p}%`;
+          }
+        }
+      };
+
+      const transparentBlob = await imglyRemoveBackground(processFile, config);
+
+      // Display result
+      currentBlobUrl = URL.createObjectURL(transparentBlob);
+      resultImg.src = currentBlobUrl;
+      
+      loadingArea.style.display = 'none';
+      previewContainer.style.display = 'block';
+      controls.style.display = 'flex';
+      
+      const originalName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+      const downloadName = `${originalName}_transparent.png`;
+      
+      downloadBtn.onclick = () => {
+        triggerDownload(transparentBlob, downloadName);
+      };
+
+    } catch (err) {
+      console.error(err);
+      statusText.textContent = 'Error processing image: ' + err.message;
+      progressText.textContent = 'Failed';
+      controls.style.display = 'flex';
+      downloadBtn.style.display = 'none'; // hide download button on error
+    }
+  }
+
+  resetBtn.addEventListener('click', () => {
+    input.value = '';
+    dropzone.style.display = 'flex';
+    workspace.style.display = 'none';
+    if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+    currentBlobUrl = null;
+    resultImg.src = '';
+    downloadBtn.style.display = 'block'; // Ensure download button is back for next run
   });
 }

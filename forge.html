@@ -39,8 +39,10 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   
   <!-- Ghost Maker Dependencies -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/piexifjs@1.0.6/piexif.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Background Remover Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.3/dist/imgly-background-removal.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/piexifjs/1.0.6/piexif.min.js"></script>
@@ -140,6 +142,10 @@
           <button class="forge-tab-btn" data-target="view-bulk-optimizer">
             <div class="btn-title">📦 Bulk Optimizer</div>
             <div class="btn-tagline">Compress & convert 100+ images</div>
+          </button>
+          <button class="forge-tab-btn" data-target="view-bg-remover">
+            <div class="btn-title">✂️ AI Background Remover</div>
+            <div class="btn-tagline">Cut out subjects locally</div>
           </button>
           <button class="forge-tab-btn" data-target="view-ocr">
             <div class="btn-title">📝 Text Extractor</div>
@@ -479,6 +485,48 @@
                 
                 <div id="bulk-status" style="margin-top: 1rem; font-family: 'JetBrains Mono'; font-size: 0.85rem; color: #6366F1; text-align: center; display: none;">
                   Processing: <span id="bulk-progress">0</span>%
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Tool 9: AI Background Remover -->
+        <div class="tool-view" id="view-bg-remover">
+          <div class="bento-card reveal">
+            <div class="bento-card-header">
+              <h3>✂️ AI Background Remover</h3>
+              <p>Drop a photo below and our local AI will instantly detect the main subject, cut out the background, and give you a perfectly transparent PNG. The AI runs entirely in your browser—your images are never uploaded.</p>
+            </div>
+            <div class="bento-card-body">
+              <div id="bg-dropzone" class="scanner-dropzone" style="border-color: rgba(236, 72, 153, 0.3); background: rgba(236, 72, 153, 0.02);">
+                <input type="file" id="bg-file-input" accept="image/jpeg, image/png, image/webp, image/heic, .heic" style="display: none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="dropzone-icon" style="color: #EC4899; width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.8;">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <p>Drag & Drop an image here</p>
+                <span style="font-size: 0.8rem; color: var(--text-dim);">Supported: JPG, PNG, WEBP, HEIC</span>
+              </div>
+              
+              <div id="bg-workspace" style="display: none; margin-top: 1.5rem; text-align: center;">
+                <div id="bg-loading" style="font-family: 'JetBrains Mono'; color: #EC4899; font-size: 0.9rem; margin-bottom: 1rem;">
+                  <div class="spinner" style="display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(236, 72, 153, 0.3); border-top-color: #EC4899; border-radius: 50%; animation: spin 1s linear infinite; vertical-align: middle; margin-right: 8px;"></div>
+                  <span id="bg-status-text">Warming up AI Engine (this takes a moment on the first run)...</span>
+                  <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 5px;">Progress: <span id="bg-progress-text">0%</span></div>
+                </div>
+                
+                <div id="bg-preview-container" style="display: none; margin: 1.5rem auto; max-width: 400px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'20\' height=\'20\'><rect width=\'10\' height=\'10\' fill=\'#333\'/><rect x=\'10\' width=\'10\' height=\'10\' fill=\'#444\'/><rect y=\'10\' width=\'10\' height=\'10\' fill=\'#444\'/><rect x=\'10\' y=\'10\' width=\'10\' height=\'10\' fill=\'#333\'/></svg>');">
+                  <img id="bg-result-img" src="" style="width: 100%; height: auto; display: block;">
+                </div>
+
+                <div id="bg-controls" style="display: none; justify-content: center; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap;">
+                  <button id="bg-reset-btn" class="nav-link" style="border: 1px solid var(--border); background: transparent; color: var(--text-main); border-radius: 4px; font-family: 'JetBrains Mono', monospace; padding: 12px; transition: all 0.2s;">
+                    [ PROCESS ANOTHER ]
+                  </button>
+                  <button id="bg-download-btn" class="cyber-submit-btn scanner-btn" style="background: rgba(236, 72, 153, 0.15); border: 1px solid #EC4899; color: #EC4899; margin: 0; padding: 12px; font-weight: bold; font-size: 1rem; box-shadow: 0 0 15px rgba(236, 72, 153, 0.2);">
+                    [ DOWNLOAD TRANSPARENT PNG ]
+                  </button>
                 </div>
               </div>
 
