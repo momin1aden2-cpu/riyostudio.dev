@@ -1,4 +1,4 @@
-﻿// forge.js
+// forge.js
 
 document.addEventListener('DOMContentLoaded', () => {
   initUniversalConverter();
@@ -2043,8 +2043,8 @@ function initBackgroundRemover() {
 
       statusText.textContent = 'Warming up AI Engine (this takes a moment on the first run)...';
 
-      // Load imgly via dynamic import to avoid global scope issues
-      const imglyMod = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.3/+esm');
+      // Load imgly via dynamic import from esm.sh to properly resolve its dependencies (lodash)
+      const imglyMod = await import('https://esm.sh/@imgly/background-removal@1.4.3');
       const removeBackground = imglyMod.default || imglyMod.removeBackground;
 
       const config = {
