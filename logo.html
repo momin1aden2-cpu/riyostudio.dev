@@ -188,6 +188,16 @@
 
             <div style="height: 1px; background: var(--border); margin: 8px 0;"></div>
 
+            
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                <button id="toggle-grid-btn" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px dashed var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    📐 Toggle Grid
+                </button>
+                <button id="preview-mockup-btn" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px dashed var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    🕶️ 3D Mockup
+                </button>
+              </div>
+
             <button id="logo-export-btn" class="nav-cta-btn" style="width: 100%; padding: 14px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; color: #10B981; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.2s;">
               Download 4K PNG
             </button>
@@ -300,7 +310,7 @@
   <script src="bg.js?v=16" defer></script>
   <script src="script.js?v=20" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
-  <script src="logo.js?v=9" defer></script>
+  <script src="logo.js?v=10" defer></script>
 
     <!-- Mockup Modal -->
     <div id="mockup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
