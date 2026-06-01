@@ -12,6 +12,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // UI Elements
   const addTextBtn = document.getElementById('add-text-btn');
   
+  function resizeCanvas() {
+    // We are now using pure CSS aspect-ratio scaling in logo.html!
+    // We only need to tell FabricJS to recalculate its mouse offsets when the window resizes.
+    if (canvas) canvas.calcOffset();
+  }
+  
+  window.addEventListener('resize', resizeCanvas);
+  setTimeout(resizeCanvas, 100);
+  setTimeout(resizeCanvas, 500);
+  setTimeout(resizeCanvas, 1500);
+  
   const addBrandTextBtn = document.getElementById('add-brand-text-btn');
   const toggleGridBtn = document.getElementById('toggle-grid-btn');
   const previewMockupBtn = document.getElementById('preview-mockup-btn');
@@ -126,13 +137,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function addText() {
     const text = new fabric.IText('Your Brand', {
-      left: canvas.width / 2, top: canvas.height / 2, fontFamily: 'Clash Display',
+      left: 800, top: 400, fontFamily: 'Clash Display',
       fill: (currentTheme === 'light' || currentTheme === 'holographic') ? '#111111' : '#ffffff',
       fontSize: 120, fontWeight: '700', originX: 'center', originY: 'center',
-      shadow: currentTheme === 'cyber' ? new fabric.Shadow({ color: '#10B981', blur: 30 }) : null
+      shadow: currentTheme === 'cyber' ? new fabric.Shadow({ color: '#10B981', blur: 30 }) : null,
+      objectCaching: false
     });
     canvas.add(text);
     canvas.setActiveObject(text);
+    
+    document.fonts.ready.then(() => {
+        text.setCoords();
+        canvas.renderAll();
+    });
     canvas.renderAll();
   }
 
@@ -604,18 +621,24 @@ document.addEventListener('DOMContentLoaded', () => {
               fabric.loadSVGFromString(svgText, (objects, options) => {
                   const iconObj = fabric.util.groupSVGElements(objects, options);
                   iconObj.set({
-                      left: canvas.width / 2, top: canvas.height / 2 - 60,
+                      left: 800, top: 340,
                       originX: 'center', originY: 'center', fill: '#8b5cf6',
                       scaleX: 100 / (iconObj.width || 100), scaleY: 100 / (iconObj.height || 100)
                   });
                   canvas.add(iconObj);
                   
                   const textObj = new fabric.IText(brandName.toUpperCase(), {
-                      left: canvas.width / 2, top: canvas.height / 2 + 50,
+                      left: 800, top: 460,
                       fontFamily: 'Space Grotesk', fontWeight: 'bold', fontSize: 54, fill: '#ffffff',
-                      originX: 'center', originY: 'center', charSpacing: 100
+                      originX: 'center', originY: 'center', objectCaching: false
                   });
                   canvas.add(textObj);
+                  
+                  // Ensure canvas updates if fonts are still loading
+                  document.fonts.ready.then(() => {
+                      textObj.setCoords();
+                      canvas.renderAll();
+                  });
                   canvas.renderAll();
               });
           }
