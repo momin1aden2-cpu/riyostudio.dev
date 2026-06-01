@@ -717,3 +717,20 @@ window.showToast = function(message, type = 'error') {
   toast.querySelector('.riyo-toast-close').onclick = removeToast;
   setTimeout(() => { if (toast.parentNode) removeToast(); }, 5000);
 };
+// Real FPS Counter
+const fpsEl = document.getElementById('fps-counter');
+if (fpsEl) {
+    let frameCount = 0;
+    let lastTime = performance.now();
+    
+    function updateFPS(now) {
+        frameCount++;
+        if (now - lastTime >= 1000) {
+            fpsEl.textContent = frameCount + ' FPS';
+            frameCount = 0;
+            lastTime = now;
+        }
+        requestAnimationFrame(updateFPS);
+    }
+    requestAnimationFrame(updateFPS);
+}
