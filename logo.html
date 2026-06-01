@@ -173,6 +173,10 @@
                 </div>
                 <button id="split-words-btn" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.05); border: 1px dashed var(--border); border-radius: 6px; color: var(--text-main); cursor: pointer; font-size: 0.85rem; margin-top: 8px;">✂️ Split into Words</button>
                 <div style="margin-top: 12px;">
+                  <label style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Letter Spacing <span id="spacing-val">0</span></label>
+                  <input type="range" id="letter-spacing-slider" min="-200" max="800" value="0" style="width: 100%;">
+                </div>
+                <div style="margin-top: 12px;">
                   <label style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Curve Text <span id="curve-val">0</span></label>
                   <input type="range" id="text-curve-slider" min="-100" max="100" value="0" style="width: 100%;">
                 </div>
@@ -318,6 +322,6 @@
   <script src="bg.js?v=16" defer></script>
   <script src="script.js?v=20" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
-  <script src="logo.js?v=6" defer></script>
+  <script src="logo.js?v=7" defer></script>
 </body>
 </html>
