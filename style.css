@@ -1311,7 +1311,7 @@ select.cyber-input option {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 28px;
+  padding-bottom: 64px; /* Give clearance for the fixed perf HUD */
   flex-wrap: wrap;
   gap: 12px;
 }
