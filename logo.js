@@ -35,36 +35,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let currentTheme = 'dark';
 
+  // Create a persistent background rectangle
+  const bgRect = new fabric.Rect({
+    left: 0, top: 0, width: canvas.width, height: canvas.height,
+    selectable: false, evented: false, excludeFromExport: false,
+    fill: '#0a0a0a'
+  });
+  canvas.add(bgRect);
+  canvas.sendToBack(bgRect);
+
   function updateBackground() {
+    bgRect.set('width', canvas.width);
+    bgRect.set('height', canvas.height);
+    
     if (currentTheme === 'dark') {
-      canvas.setBackgroundColor('#0a0a0a', canvas.renderAll.bind(canvas));
+      bgRect.set('fill', '#0a0a0a');
     } else if (currentTheme === 'light') {
-      canvas.setBackgroundColor('#ffffff', canvas.renderAll.bind(canvas));
+      bgRect.set('fill', '#ffffff');
     } else if (currentTheme === 'cyber') {
-      canvas.setBackgroundColor('#050505', canvas.renderAll.bind(canvas));
+      bgRect.set('fill', '#050505');
     } else if (currentTheme === 'midnight') {
-      const grad = new fabric.Gradient({
-        type: 'linear', coords: { x1: 0, y1: 0, x2: canvas.width, y2: canvas.height },
+      bgRect.set('fill', new fabric.Gradient({
+        type: 'linear', gradientUnits: 'pixels', coords: { x1: 0, y1: 0, x2: canvas.width, y2: canvas.height },
         colorStops: [ { offset: 0, color: '#1e1b4b' }, { offset: 1, color: '#312e81' } ]
-      });
-      canvas.setBackgroundColor(grad, canvas.renderAll.bind(canvas));
+      }));
     } else if (currentTheme === 'sunset') {
-      const grad = new fabric.Gradient({
-        type: 'linear', coords: { x1: 0, y1: 0, x2: canvas.width, y2: canvas.height },
+      bgRect.set('fill', new fabric.Gradient({
+        type: 'linear', gradientUnits: 'pixels', coords: { x1: 0, y1: 0, x2: canvas.width, y2: canvas.height },
         colorStops: [ { offset: 0, color: '#f97316' }, { offset: 1, color: '#db2777' } ]
-      });
-      canvas.setBackgroundColor(grad, canvas.renderAll.bind(canvas));
+      }));
     } else if (currentTheme === 'holographic') {
-      const grad = new fabric.Gradient({
-        type: 'linear', coords: { x1: 0, y1: 0, x2: canvas.width, y2: canvas.height },
+      bgRect.set('fill', new fabric.Gradient({
+        type: 'linear', gradientUnits: 'pixels', coords: { x1: 0, y1: 0, x2: canvas.width, y2: canvas.height },
         colorStops: [ { offset: 0, color: '#e0e7ff' }, { offset: 1, color: '#f3e8ff' } ]
-      });
-      canvas.setBackgroundColor(grad, canvas.renderAll.bind(canvas));
+      }));
     } else if (currentTheme === 'grid') {
-      canvas.setBackgroundColor('#111111', canvas.renderAll.bind(canvas));
+      bgRect.set('fill', '#111111');
     } else {
-      canvas.setBackgroundColor('', canvas.renderAll.bind(canvas));
+      bgRect.set('fill', 'transparent');
     }
+    
+    // Make sure background rect is strictly at the bottom
+    canvas.sendToBack(bgRect);
+    canvas.renderAll();
   }
 
   updateBackground();
