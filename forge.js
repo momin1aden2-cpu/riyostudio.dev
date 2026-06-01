@@ -1282,7 +1282,9 @@ function initGhostMaker() {
   let leafletMap = null;
   let mapMarker = null;
 
-  dropzone.addEventListener('click', () => input.click());
+  dropzone.addEventListener('click', (e) => {
+    if (e.target !== input) input.click();
+  });
   dropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropzone.style.borderColor = '#10B981';
@@ -1839,7 +1841,9 @@ function initBulkOptimizer() {
 
   let bulkFiles = [];
 
-  dropzone.addEventListener('click', () => input.click());
+  dropzone.addEventListener('click', (e) => {
+    if (e.target !== input) input.click();
+  });
 
   dropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
