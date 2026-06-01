@@ -13,7 +13,8 @@
 -->
 <html lang="en-AU">
 <head>
-  <script src="coi-serviceworker.js"></script>
+  <style>body { background-color: #060B14 !important; }</style>
+  
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Logo Maker — Design Premium Logos | Riyo Studio</title>
@@ -74,7 +75,7 @@
           <p class="hero-sub" style="max-width: 1200px; margin: 0 auto; font-size: 1.2rem; white-space: nowrap;">Design premium, pro-grade logos entirely in your browser. 100% private.</p>
         </div>
 
-        <div style="display: grid; grid-template-columns: 360px 1fr 360px; gap: 24px; align-items: start; max-width: 1800px; margin: 0 auto; width: 100%;">
+        <div class="logo-maker-grid">
           <!-- Controls Panel -->
           <div class="tool-panel" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 32px; display: flex; flex-direction: column; gap: 28px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
             
@@ -87,7 +88,7 @@
                 </div>
             </div>
 
-            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px;">
+            <div class="form-group" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
               <button id="add-text-btn" class="nav-link" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 1.0rem;">
                 <span style="font-size: 1.3rem;">T</span> Text
               </button>
@@ -342,10 +343,10 @@
     <span>Ctrl K</span>
   </button>
 
-  <script src="bg.js?v=17" defer></script>
-  <script src="script.js?v=21" defer></script>
+  <script src="bg.js?v=16"></script>
+  <script src="script.js?v=20"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
-  <script src="logo.js?v=998" defer></script>
+  <script src="logo.js?v=14"></script>
 
     <!-- Mockup Modal -->
     <div id="mockup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
