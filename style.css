@@ -1,4 +1,4 @@
-﻿/* Reset */
+/* Reset */
 *,
 *::before,
 *::after {
@@ -1754,8 +1754,9 @@ input:focus, textarea:focus, select:focus, button:focus {
 }
 
 #fps-counter {
-  color: var(--accent);
+  color: #00ff41; /* Bright hacker green */
   font-weight: 700;
+  text-shadow: 0 0 8px rgba(0, 255, 65, 0.5); /* Subtle glow */
 }
 
 /* =====================================================================
