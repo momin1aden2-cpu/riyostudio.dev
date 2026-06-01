@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <!-- 
 =============================================================================
-  ██████╗ ██╗██╗   ██╗ ██████╗     ███████╗████████╗██╗   ██╗██████╗ ██╗ ██████╗ 
-  ██╔══██╗██║╚██╗ ██╔╝██╔═══██╗    ██╔════╝╚══██╔══╝██║   ██║██╔══██╗██║██╔═══██╗
-  ██████╔╝██║ ╚████╔╝ ██║   ██║    ███████╗   ██║   ██║   ██║██║  ██║██║██║   ██║
-  ██╔══██╗██║  ╚██╔╝  ██║   ██║    ╚════██║   ██║   ██║   ██║██║  ██║██║██║   ██║
-  ██║  ██║██║   ██║   ╚██████╔╝    ███████║   ██║   ╚██████╔╝██████╔╝██║╚██████╔╝
-  ╚═╝  ╚═╝╚═╝   ╚═╝    ╚═════╝     ╚══════╝   ╚═╝    ╚═════╝ ╚═════╝ ╚═╝ ╚═════╝ 
+  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ•—â–ˆâ–ˆâ•—   â–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—     â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—   â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— 
+  â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ•— â–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•”â•â•â•â–ˆâ–ˆâ•—    â–ˆâ–ˆâ•”â•â•â•â•â•â•šâ•â•â–ˆâ–ˆâ•”â•â•â•â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â•â–ˆâ–ˆâ•—
+  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘ â•šâ–ˆâ–ˆâ–ˆâ–ˆâ•”â• â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘    â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘
+  â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘  â•šâ–ˆâ–ˆâ•”â•  â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘    â•šâ•â•â•â•â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘
+  â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•    â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•
+  â•šâ•â•  â•šâ•â•â•šâ•â•   â•šâ•â•    â•šâ•â•â•â•â•â•     â•šâ•â•â•â•â•â•â•   â•šâ•â•    â•šâ•â•â•â•â•â• â•šâ•â•â•â•â•â• â•šâ•â• â•šâ•â•â•â•â•â• 
 
   THE FILE FORGE
 =============================================================================
@@ -16,7 +16,7 @@
   <script src="coi-serviceworker.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Forge — Universal File Converter | Riyo Studio</title>
+  <title>The Forge â€” Universal File Converter | Riyo Studio</title>
   
   <meta name="theme-color" content="#060B14">
   <meta name="color-scheme" content="dark">
@@ -79,20 +79,17 @@
         <a href="forge.html" class="nav-link">File Forge</a>
         <div class="nav-dropdown-wrapper">
           <button class="nav-menu-btn" id="nav-menu-open" aria-label="Open menu" style="padding: 6px 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); color: var(--text-dim); transition: all 0.2s; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-left: 8px;">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="4" y1="6" x2="20" y2="6"></line>
-              <line x1="4" y1="12" x2="20" y2="12"></line>
-              <line x1="4" y1="18" x2="20" y2="18"></line>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <circle cx="5" cy="12" r="2"></circle>
+              <circle cx="12" cy="12" r="2"></circle>
+              <circle cx="19" cy="12" r="2"></circle>
             </svg>
           </button>
           
           <!-- Context Dropdown -->
-          <div class="nav-dropdown" id="nav-dropdown" style="width: 220px; padding: 12px; gap: 8px;">
-            <a href="index.html" style="font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 8px; padding-bottom: 12px;">🏠 Home</a>
-            <a href="invoice.html">🧾 Invoice Maker</a>
-            <a href="scanner.html">🤖 AI Scanner</a>
-            <a href="qr.html">📱 QR Hub</a>
-            <a href="forge.html">⚒️ File Forge</a>
+          <div class="nav-dropdown" id="nav-dropdown">
+            <a href="index.html#about">About Us</a>
+            <a href="index.html#contact" class="nav-cta-btn">Get in Touch</a>
           </div>
         </div>
       </div>
@@ -104,51 +101,51 @@
       <div class="forge-dashboard" style="margin-top: 2rem;">
         <div class="forge-sidebar">
           <button class="forge-tab-btn active" data-target="view-converter">
-            <div class="btn-title">🔄 Media Converter</div>
+            <div class="btn-title">ðŸ”„ Media Converter</div>
             <div class="btn-tagline">Convert audio, video & images</div>
           </button>
           <button class="forge-tab-btn" data-target="view-data">
-            <div class="btn-title">📊 Data Un-Breaker</div>
+            <div class="btn-title">ðŸ“Š Data Un-Breaker</div>
             <div class="btn-tagline">Convert JSON, CSV & Excel</div>
           </button>
           <button class="forge-tab-btn" data-target="view-jwt">
-            <div class="btn-title">🔐 Secure JWT Decoder</div>
+            <div class="btn-title">ðŸ” Secure JWT Decoder</div>
             <div class="btn-tagline">Decode JSON Web Tokens</div>
           </button>
           <button class="forge-tab-btn" data-target="view-heic">
-            <div class="btn-title">🍎 HEIC Decoder</div>
+            <div class="btn-title">ðŸŽ HEIC Decoder</div>
             <div class="btn-tagline">Convert Apple Photos to JPG</div>
           </button>
           <button class="forge-tab-btn" data-target="view-compressor">
-            <div class="btn-title">🗜️ Target Compressor</div>
+            <div class="btn-title">ðŸ—œï¸ Target Compressor</div>
             <div class="btn-tagline">Shrink images to exact sizes</div>
           </button>
           <button class="forge-tab-btn" data-target="view-pdf">
-            <div class="btn-title">📑 PDF Studio</div>
+            <div class="btn-title">ðŸ“‘ PDF Studio</div>
             <div class="btn-tagline">Sign & merge multiple PDFs</div>
           </button>
           <button class="forge-tab-btn" data-target="view-expense">
-            <div class="btn-title">📑 Expense Flattener</div>
+            <div class="btn-title">ðŸ“‘ Expense Flattener</div>
             <div class="btn-tagline">Merge receipts into A4 PDFs</div>
           </button>
           <button class="forge-tab-btn" data-target="view-recorder">
-            <div class="btn-title">🎥 Screen Recorder</div>
+            <div class="btn-title">ðŸŽ¥ Screen Recorder</div>
             <div class="btn-tagline">Capture screen to WebM</div>
           </button>
           <button class="forge-tab-btn" data-target="view-ghost">
-            <div class="btn-title">👻 Ghost Maker</div>
+            <div class="btn-title">ðŸ‘» Ghost Maker</div>
             <div class="btn-tagline">Strip EXIF Data & GPS location</div>
           </button>
           <button class="forge-tab-btn" data-target="view-bulk-optimizer">
-            <div class="btn-title">📦 Bulk Optimizer</div>
+            <div class="btn-title">ðŸ“¦ Bulk Optimizer</div>
             <div class="btn-tagline">Compress & convert 100+ images</div>
           </button>
           <button class="forge-tab-btn" data-target="view-bg-remover">
-            <div class="btn-title">✂️ AI BG & Vectorizer</div>
+            <div class="btn-title">âœ‚ï¸ AI BG & Vectorizer</div>
             <div class="btn-tagline">Cut out subjects & export SVG</div>
           </button>
           <button class="forge-tab-btn" data-target="view-ocr">
-            <div class="btn-title">📝 Text & Audio Extractor</div>
+            <div class="btn-title">ðŸ“ Text & Audio Extractor</div>
             <div class="btn-tagline">Transcribe images & audio locally</div>
           </button>
           
@@ -168,7 +165,7 @@
           <!-- Tool 1: Universal Converter & Extractor -->
           <div class="bento-card reveal">
             <div class="bento-card-header">
-              <h3>🔄 The Heavyweight Extractor & Media Converter</h3>
+              <h3>ðŸ”„ The Heavyweight Extractor & Media Converter</h3>
               <p>Drop a 2GB Zoom meeting here to instantly extract the MP3 audio offline. Convert images, audio, and video between major formats entirely in your browser.</p>
             </div>
           <div class="bento-card-body">
@@ -199,8 +196,8 @@
           <!-- Tool: Data Converter -->
           <div class="bento-card reveal">
             <div class="bento-card-header">
-              <h3>📊 The "Un-Break My Data" Converter</h3>
-              <p>Instantly convert messy database dumps between JSON, CSV, and Excel locally. <span style="color:#10B981;">HIPAA & GDPR Compliant</span> — your client data never leaves this device.</p>
+              <h3>ðŸ“Š The "Un-Break My Data" Converter</h3>
+              <p>Instantly convert messy database dumps between JSON, CSV, and Excel locally. <span style="color:#10B981;">HIPAA & GDPR Compliant</span> â€” your client data never leaves this device.</p>
             </div>
             <div class="bento-card-body" style="display: flex; flex-direction: column; gap: 1rem;">
               
@@ -213,7 +210,7 @@
                 <span style="font-size: 0.8rem; color: var(--text-dim);">Supported: JSON, CSV, XLSX</span>
               </div>
 
-              <div style="text-align: center; color: var(--text-muted); font-family: 'JetBrains Mono'; font-size: 0.8rem;">— OR PASTE RAW DATA —</div>
+              <div style="text-align: center; color: var(--text-muted); font-family: 'JetBrains Mono'; font-size: 0.8rem;">â€” OR PASTE RAW DATA â€”</div>
 
               <textarea id="data-textarea" class="cyber-input" style="width: 100%; height: 150px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; resize: vertical;" placeholder="Paste raw JSON array or CSV text here..."></textarea>
               <button id="data-parse-btn" class="cyber-submit-btn scanner-btn" style="width: 100%; border-color: #5B8DEF; color: #5B8DEF; background: transparent;">[ PARSE RAW TEXT ]</button>
@@ -237,7 +234,7 @@
           <!-- Tool: JWT Decoder -->
           <div class="bento-card reveal">
             <div class="bento-card-header">
-              <h3>🔐 Secure JWT Decoder</h3>
+              <h3>ðŸ” Secure JWT Decoder</h3>
               <p>Decode JSON Web Tokens instantly and completely offline. Your production secrets never leave this device.</p>
             </div>
             <div class="bento-card-body" style="display: flex; flex-direction: column; gap: 1rem;">
@@ -265,7 +262,7 @@
         <!-- Tool 2: HEIC Decoder -->
         <div class="bento-card reveal reveal-delay-1">
           <div class="bento-card-header">
-            <h3>🍎 HEIC Decoder</h3>
+            <h3>ðŸŽ HEIC Decoder</h3>
             <p>Convert Apple HEIC photos to standard JPG or PNG.</p>
           </div>
           <div class="bento-card-body">
@@ -292,7 +289,7 @@
         <!-- Tool 3: Target Compressor -->
         <div class="bento-card reveal reveal-delay-2">
           <div class="bento-card-header">
-            <h3>🗜️ Target Compressor</h3>
+            <h3>ðŸ—œï¸ Target Compressor</h3>
             <p>Compress images to a specific target file size.</p>
           </div>
           <div class="bento-card-body">
@@ -318,7 +315,7 @@
         <!-- Tool 4: PDF Studio -->
         <div class="bento-card bento-wide reveal reveal-delay-1">
           <div class="bento-card-header">
-            <h3>📑 PDF Studio (Sign & Merge)</h3>
+            <h3>ðŸ“‘ PDF Studio (Sign & Merge)</h3>
             <p>Sign PDFs directly in your browser or drop multiple PDFs to instantly merge them into one document.</p>
           </div>
           <div class="bento-card-body" style="display: flex; flex-direction: column; align-items: center;">
@@ -363,7 +360,7 @@
         <!-- Tool 5: Expense Flattener -->
         <div class="bento-card reveal reveal-delay-2">
           <div class="bento-card-header">
-            <h3>📑 Expense Flattener</h3>
+            <h3>ðŸ“‘ Expense Flattener</h3>
             <p>Merge multiple receipts into a single A4 PDF.</p>
           </div>
           <div class="bento-card-body">
@@ -389,7 +386,7 @@
         <!-- Tool 6: Screen Recorder -->
         <div class="bento-card reveal reveal-delay-3">
           <div class="bento-card-header">
-            <h3>🎥 No-Login Screen Recorder</h3>
+            <h3>ðŸŽ¥ No-Login Screen Recorder</h3>
             <p>Record your screen directly to WebM. Zero tracking.</p>
             <p style="font-size: 0.8rem; color: #F59E0B; margin-top: 5px;"><strong>Tip:</strong> Keep this tab open while recording. Open a new tab to record other websites, or minimize the browser entirely to record games, PowerPoints, and desktop apps!</p>
           </div>
@@ -407,11 +404,11 @@
             <div style="width: 100%; display: flex; justify-content: space-between; margin-bottom: 1rem; font-family: 'JetBrains Mono'; font-size: 0.85rem; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
               <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;" title="Record your voice via microphone">
                 <input type="checkbox" id="recorder-mic-toggle" style="accent-color: #10B981;" checked>
-                🎤 Microphone
+                ðŸŽ¤ Microphone
               </label>
               <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;" title="Record computer/tab sounds">
                 <input type="checkbox" id="recorder-sys-toggle" style="accent-color: #10B981;" checked>
-                💻 System Audio
+                ðŸ’» System Audio
               </label>
             </div>
             
@@ -434,7 +431,7 @@
         <div class="tool-view" id="view-bulk-optimizer">
           <div class="bento-card reveal">
             <div class="bento-card-header">
-              <h3>📦 Bulk Image Optimizer</h3>
+              <h3>ðŸ“¦ Bulk Image Optimizer</h3>
               <p>Instantly compress and convert up to 100 images entirely in your browser using an ultra-fast hardware-accelerated canvas engine. Everything is downloaded as a single ZIP.</p>
             </div>
             <div class="bento-card-body">
@@ -496,7 +493,7 @@
         <div class="tool-view" id="view-bg-remover">
           <div class="bento-card reveal">
             <div class="bento-card-header">
-            <h3>✂️ AI Background Remover & Vectorizer</h3>
+            <h3>âœ‚ï¸ AI Background Remover & Vectorizer</h3>
             <p>Drop a photo below to instantly cut out the background and build a composite, or trace it into an infinitely scalable SVG Vector graphic.</p>
           </div>
             <div class="bento-card-body">
@@ -594,7 +591,7 @@
         <!-- Tool 7: Instant Text & Audio Extractor -->
         <div class="bento-card bento-wide reveal reveal-delay-4">
           <div class="bento-card-header">
-            <h3>📝 Instant Text & Audio Extractor</h3>
+            <h3>ðŸ“ Instant Text & Audio Extractor</h3>
             <p>Extract text from images (OCR) or transcribe Audio/Video (Whisper AI) locally in your browser.</p>
           </div>
           <div class="bento-card-body">
@@ -635,7 +632,7 @@
           <!-- Tool 8: The Ghost Maker -->
           <div class="bento-card reveal">
             <div class="bento-card-header">
-              <h3>👻 The Ghost Maker (EXIF Scrubber)</h3>
+              <h3>ðŸ‘» The Ghost Maker (EXIF Scrubber)</h3>
               <p>Instantly map and completely strip all hidden tracking metadata from photos (JPG, PNG, WEBP, HEIC) and documents (PDF). Drop up to 50 files at once for high-speed bulk scrubbing, or spoof your GPS location to throw trackers off your trail.</p>
             </div>
             <div class="bento-card-body">
@@ -770,9 +767,9 @@
       <div class="footer-divider"></div>
 
       <div class="footer-bottom">
-        <span class="footer-copy">© 2026 Riyo Studio. All rights reserved.</span>
+        <span class="footer-copy">Â© 2026 Riyo Studio. All rights reserved.</span>
         <div class="footer-legal">
-          <span style="font-size: 12px; color: rgba(255,255,255,0.3);">Registered Business · Western Australia, Australia</span>
+          <span style="font-size: 12px; color: rgba(255,255,255,0.3);">Registered Business Â· Western Australia, Australia</span>
         </div>
       </div>
     </div>
@@ -822,3 +819,4 @@
   <script src="forge.js?v=31"></script>
 </body>
 </html>
+
