@@ -98,39 +98,49 @@
           <!-- Controls Panel -->
           <div class="tool-panel" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 24px;">
             
-            <div class="form-group">
-              <label style="display: block; font-size: 0.9rem; color: var(--text-dim); margin-bottom: 8px;">Brand Name</label>
-              <input type="text" id="logo-text-input" value="Riyo Studio" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; color: var(--text-main); font-family: inherit; font-size: 1rem;">
+            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <button id="add-text-btn" class="nav-link" style="padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span style="font-size: 1.2rem;">T</span> Add Text
+              </button>
+              <button id="add-shape-btn" class="nav-link" style="padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span style="font-size: 1.2rem;">✨</span> Add Icon
+              </button>
             </div>
 
-            <div class="form-group">
-              <label style="display: block; font-size: 0.9rem; color: var(--text-dim); margin-bottom: 8px;">Typography</label>
-              <select id="logo-font-select" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; color: var(--text-main); font-family: inherit; font-size: 1rem; cursor: pointer;">
-                <option value="Inter">Inter (Clean, Modern)</option>
-                <option value="Outfit">Outfit (Tech, Geometric)</option>
-                <option value="Space Grotesk">Space Grotesk (Cyber, Edgy)</option>
-                <option value="Playfair Display">Playfair (Elegant, Serif)</option>
-                <option value="Cinzel">Cinzel (Premium, Luxury)</option>
-              </select>
-            </div>
+            <!-- Dynamic Properties Panel (Hidden by default, shows when object is selected) -->
+            <div id="object-properties" style="display: none; padding: 16px; background: rgba(0,0,0,0.3); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; flex-direction: column; gap: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.85rem; color: #10B981; font-family: 'JetBrains Mono'; text-transform: uppercase;">Selected Element</span>
+                <button id="delete-obj-btn" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1.2rem;" title="Delete Object">🗑️</button>
+              </div>
 
-            <div class="form-group">
-              <label style="display: block; font-size: 0.9rem; color: var(--text-dim); margin-bottom: 8px;">Icon Shape</label>
-              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
-                <button class="icon-btn active" data-icon="none" style="padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-dim); cursor: pointer;">None</button>
-                <button class="icon-btn" data-icon="circle" style="padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; color: var(--text-dim); cursor: pointer;">●</button>
-                <button class="icon-btn" data-icon="square" style="padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; color: var(--text-dim); cursor: pointer;">■</button>
-                <button class="icon-btn" data-icon="triangle" style="padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; color: var(--text-dim); cursor: pointer;">▲</button>
+              <div id="font-prop-group" class="form-group" style="display: none;">
+                <label style="display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Typography</label>
+                <select id="obj-font-select" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text-main); font-family: inherit; font-size: 0.9rem; cursor: pointer;">
+                  <option value="Inter">Inter</option>
+                  <option value="Outfit">Outfit</option>
+                  <option value="Space Grotesk">Space Grotesk</option>
+                  <option value="Playfair Display">Playfair</option>
+                  <option value="Cinzel">Cinzel</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label style="display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Color</label>
+                <div style="display: flex; gap: 8px;">
+                  <input type="color" id="obj-color-picker" value="#ffffff" style="height: 32px; width: 48px; cursor: pointer; background: none; border: none; padding: 0;">
+                  <input type="text" id="obj-color-hex" value="#ffffff" style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text-main); font-family: 'JetBrains Mono'; font-size: 0.9rem;">
+                </div>
               </div>
             </div>
 
             <div class="form-group">
-              <label style="display: block; font-size: 0.9rem; color: var(--text-dim); margin-bottom: 8px;">Theme Preset</label>
+              <label style="display: block; font-size: 0.9rem; color: var(--text-dim); margin-bottom: 8px;">Background Theme</label>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                 <button class="theme-btn active" data-theme="dark" style="padding: 10px; background: #111; border: 1px solid var(--border); border-radius: 8px; color: #fff; cursor: pointer;">Minimal Dark</button>
                 <button class="theme-btn" data-theme="light" style="padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 8px; color: #000; cursor: pointer;">Minimal Light</button>
                 <button class="theme-btn" data-theme="cyber" style="padding: 10px; background: #0a0a0a; border: 1px solid #10B981; border-radius: 8px; color: #10B981; cursor: pointer;">Cyber Green</button>
-                <button class="theme-btn" data-theme="premium" style="padding: 10px; background: linear-gradient(135deg, #2a2a35, #101018); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; cursor: pointer;">Premium Glass</button>
+                <button class="theme-btn" data-theme="transparent" style="padding: 10px; background: transparent; border: 1px dashed var(--text-muted); border-radius: 8px; color: var(--text-muted); cursor: pointer;">Transparent</button>
               </div>
             </div>
 
@@ -247,6 +257,7 @@
 
   <script src="bg.js?v=16" defer></script>
   <script src="script.js?v=20" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
   <script src="logo.js" defer></script>
 </body>
 </html>

@@ -1,196 +1,228 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const canvas = document.getElementById('logo-canvas');
-  if (!canvas) return; // Not on the logo page
+  const canvasElement = document.getElementById('logo-canvas');
+  if (!canvasElement || typeof fabric === 'undefined') return;
 
-  const ctx = canvas.getContext('2d');
-  
+  // Initialize Fabric Canvas (Internal 1600x800 for 4K-ish exports, CSS handles display scaling)
+  const canvas = new fabric.Canvas('logo-canvas', {
+    width: 1600,
+    height: 800,
+    preserveObjectStacking: true
+  });
+
   // UI Elements
-  const textInput = document.getElementById('logo-text-input');
-  const fontSelect = document.getElementById('logo-font-select');
-  const iconBtns = document.querySelectorAll('.icon-btn');
+  const addTextBtn = document.getElementById('add-text-btn');
+  const addShapeBtn = document.getElementById('add-shape-btn');
   const themeBtns = document.querySelectorAll('.theme-btn');
   const exportBtn = document.getElementById('logo-export-btn');
 
-  // State
-  let state = {
-    text: 'Riyo Studio',
-    font: 'Inter',
-    icon: 'none',
-    theme: 'dark'
-  };
+  const objPropsPanel = document.getElementById('object-properties');
+  const fontPropGroup = document.getElementById('font-prop-group');
+  const fontSelect = document.getElementById('obj-font-select');
+  const colorPicker = document.getElementById('obj-color-picker');
+  const colorHex = document.getElementById('obj-color-hex');
+  const deleteBtn = document.getElementById('delete-obj-btn');
 
-  // Themes Configuration
+  // Canvas State Defaults
+  let currentTheme = 'dark';
   const themes = {
-    'dark': {
-      bg: '#0a0a0a',
-      text: '#ffffff',
-      icon: '#10B981',
-      shadow: 'rgba(0,0,0,0)',
-      gradient: false
-    },
-    'light': {
-      bg: '#ffffff',
-      text: '#111111',
-      icon: '#10B981',
-      shadow: 'rgba(0,0,0,0.1)',
-      gradient: false
-    },
-    'cyber': {
-      bg: '#050505',
-      text: '#10B981',
-      icon: '#10B981',
-      shadow: 'rgba(16,185,129,0.5)',
-      gradient: false
-    },
-    'premium': {
-      bg: '#1a1a24', // Base, will be overwritten by gradient
-      text: '#ffffff',
-      icon: '#ffffff',
-      shadow: 'rgba(0,0,0,0.5)',
-      gradient: true
-    }
+    'dark': '#0a0a0a',
+    'light': '#ffffff',
+    'cyber': '#050505',
+    'transparent': null
   };
 
-  function drawLogo() {
-    // High-res canvas setup (Internal resolution is 1600x800 for 4K-ish exports)
-    const w = canvas.width;
-    const h = canvas.height;
-    
-    const theme = themes[state.theme];
-
-    // 1. Draw Background
-    if (theme.gradient) {
-      const grad = ctx.createLinearGradient(0, 0, w, h);
-      grad.addColorStop(0, '#2a2a35');
-      grad.addColorStop(1, '#101018');
-      ctx.fillStyle = grad;
+  function updateBackground() {
+    const bg = themes[currentTheme];
+    if (bg) {
+      canvas.setBackgroundColor(bg, canvas.renderAll.bind(canvas));
     } else {
-      ctx.fillStyle = theme.bg;
+      canvas.setBackgroundColor('', canvas.renderAll.bind(canvas));
     }
-    ctx.fillRect(0, 0, w, h);
-
-    // 2. Setup Layout Math
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    
-    const centerX = w / 2;
-    let centerY = h / 2;
-
-    // Adjust Y if icon is present
-    const hasIcon = state.icon !== 'none';
-    const iconSize = 120;
-    const gap = 40;
-
-    let textY = centerY;
-    let iconY = centerY;
-
-    if (hasIcon) {
-      iconY = centerY - 60;
-      textY = centerY + 80;
-    }
-
-    // 3. Draw Icon (if any)
-    if (hasIcon) {
-      ctx.save();
-      ctx.fillStyle = theme.icon;
-      ctx.shadowColor = theme.shadow;
-      ctx.shadowBlur = state.theme === 'cyber' ? 30 : 20;
-      ctx.shadowOffsetY = state.theme === 'cyber' ? 0 : 10;
-      
-      ctx.beginPath();
-      if (state.icon === 'circle') {
-        ctx.arc(centerX, iconY, iconSize/2, 0, Math.PI * 2);
-      } else if (state.icon === 'square') {
-        ctx.roundRect(centerX - iconSize/2, iconY - iconSize/2, iconSize, iconSize, 16);
-      } else if (state.icon === 'triangle') {
-        ctx.moveTo(centerX, iconY - iconSize/2);
-        ctx.lineTo(centerX + iconSize/2, iconY + iconSize/2);
-        ctx.lineTo(centerX - iconSize/2, iconY + iconSize/2);
-        ctx.closePath();
-      }
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // 4. Draw Text
-    ctx.save();
-    
-    // Set font style based on choice
-    let fontWeight = '600';
-    if (state.font === 'Cinzel' || state.font === 'Playfair Display') {
-      fontWeight = '800';
-    } else if (state.font === 'Space Grotesk') {
-      fontWeight = '700';
-    }
-
-    ctx.font = `${fontWeight} 120px "${state.font}", sans-serif`;
-    
-    // Add text shadow/glow
-    ctx.shadowColor = theme.shadow;
-    ctx.shadowBlur = state.theme === 'cyber' ? 40 : 15;
-    ctx.shadowOffsetY = state.theme === 'cyber' ? 0 : 8;
-
-    // Gradient text for premium theme
-    if (state.theme === 'premium') {
-      const txtGrad = ctx.createLinearGradient(centerX - 400, textY - 60, centerX + 400, textY + 60);
-      txtGrad.addColorStop(0, '#ffffff');
-      txtGrad.addColorStop(1, '#a0a0b0');
-      ctx.fillStyle = txtGrad;
-    } else {
-      ctx.fillStyle = theme.text;
-    }
-
-    // Add slight letter spacing (Canvas API doesn't support native letter-spacing easily, so we rely on font defaults for V1)
-    ctx.fillText(state.text || 'Your Brand', centerX, textY);
-    ctx.restore();
   }
 
-  // --- Event Listeners ---
+  // Initial Background
+  updateBackground();
 
-  textInput.addEventListener('input', (e) => {
-    state.text = e.target.value;
-    drawLogo();
+  // Control Handle Customization (Cyber aesthetic)
+  fabric.Object.prototype.set({
+    transparentCorners: false,
+    cornerColor: '#10B981',
+    cornerStrokeColor: '#000000',
+    borderColor: '#10B981',
+    cornerSize: 16,
+    padding: 10,
+    cornerStyle: 'circle'
+  });
+
+  // --- Core Functions ---
+
+  function addText() {
+    const text = new fabric.IText('Your Brand', {
+      left: canvas.width / 2,
+      top: canvas.height / 2,
+      fontFamily: 'Inter',
+      fill: currentTheme === 'light' ? '#111111' : '#ffffff',
+      fontSize: 120,
+      fontWeight: '600',
+      originX: 'center',
+      originY: 'center',
+      shadow: currentTheme === 'cyber' ? new fabric.Shadow({ color: '#10B981', blur: 30 }) : null
+    });
+    canvas.add(text);
+    canvas.setActiveObject(text);
+    canvas.renderAll();
+  }
+
+  function addShape() {
+    const shape = new fabric.Circle({
+      left: canvas.width / 2,
+      top: 200,
+      radius: 80,
+      fill: '#10B981',
+      originX: 'center',
+      originY: 'center',
+      shadow: currentTheme === 'cyber' ? new fabric.Shadow({ color: '#10B981', blur: 30 }) : null
+    });
+    canvas.add(shape);
+    canvas.setActiveObject(shape);
+    canvas.renderAll();
+  }
+
+  function deleteSelected() {
+    const activeObjects = canvas.getActiveObjects();
+    if (activeObjects.length) {
+      canvas.discardActiveObject();
+      activeObjects.forEach(function(object) {
+        canvas.remove(object);
+      });
+    }
+  }
+
+  // --- Property Panel Sync ---
+
+  function updatePropertyPanel() {
+    const activeObj = canvas.getActiveObject();
+    if (!activeObj) {
+      objPropsPanel.style.display = 'none';
+      return;
+    }
+
+    objPropsPanel.style.display = 'flex';
+    
+    // Color sync
+    const color = activeObj.fill || '#ffffff';
+    colorPicker.value = color;
+    colorHex.value = color;
+
+    // Font sync (only for text)
+    if (activeObj.type === 'i-text' || activeObj.type === 'text') {
+      fontPropGroup.style.display = 'block';
+      fontSelect.value = activeObj.fontFamily || 'Inter';
+    } else {
+      fontPropGroup.style.display = 'none';
+    }
+  }
+
+  canvas.on('selection:created', updatePropertyPanel);
+  canvas.on('selection:updated', updatePropertyPanel);
+  canvas.on('selection:cleared', updatePropertyPanel);
+
+  // --- Input Listeners ---
+
+  colorPicker.addEventListener('input', (e) => {
+    const activeObj = canvas.getActiveObject();
+    if (activeObj) {
+      activeObj.set('fill', e.target.value);
+      colorHex.value = e.target.value;
+      canvas.renderAll();
+    }
+  });
+
+  colorHex.addEventListener('input', (e) => {
+    const activeObj = canvas.getActiveObject();
+    if (activeObj && /^#[0-9A-F]{6}$/i.test(e.target.value)) {
+      activeObj.set('fill', e.target.value);
+      colorPicker.value = e.target.value;
+      canvas.renderAll();
+    }
   });
 
   fontSelect.addEventListener('change', (e) => {
-    state.font = e.target.value;
-    drawLogo();
+    const activeObj = canvas.getActiveObject();
+    if (activeObj && (activeObj.type === 'i-text' || activeObj.type === 'text')) {
+      activeObj.set('fontFamily', e.target.value);
+      
+      // Auto-set weight for specific fonts
+      if (e.target.value === 'Cinzel' || e.target.value === 'Playfair Display') {
+        activeObj.set('fontWeight', '800');
+      } else {
+        activeObj.set('fontWeight', '600');
+      }
+      
+      canvas.renderAll();
+    }
   });
 
-  iconBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      iconBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.icon = btn.dataset.icon;
-      drawLogo();
-    });
+  deleteBtn.addEventListener('click', deleteSelected);
+
+  // Keyboard Delete
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      // Don't delete if editing text inside the object or input fields
+      if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+      const activeObj = canvas.getActiveObject();
+      if (activeObj && activeObj.isEditing) return;
+      
+      deleteSelected();
+    }
   });
+
+  // --- UI Buttons Listeners ---
+
+  addTextBtn.addEventListener('click', addText);
+  addShapeBtn.addEventListener('click', addShape);
 
   themeBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       themeBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      state.theme = btn.dataset.theme;
-      drawLogo();
+      currentTheme = btn.dataset.theme;
+      updateBackground();
+
+      // Cyber glow effect toggle
+      canvas.getObjects().forEach(obj => {
+        if (currentTheme === 'cyber') {
+          obj.set('shadow', new fabric.Shadow({ color: '#10B981', blur: 30 }));
+        } else {
+          obj.set('shadow', null);
+        }
+      });
+      canvas.renderAll();
     });
   });
 
   exportBtn.addEventListener('click', () => {
-    const dataURL = canvas.toDataURL('image/png', 1.0);
+    canvas.discardActiveObject(); // Deselect to remove control handles
+    canvas.renderAll();
+    
+    // Fabric.js toDataURL supports higher multiplier
+    const dataURL = canvas.toDataURL({
+      format: 'png',
+      quality: 1,
+      multiplier: 2 // Output 3200x1600 for ultra crisp 4K logos
+    });
+    
     const link = document.createElement('a');
-    link.download = `${state.text.trim() || 'logo'}-highres.png`;
+    link.download = 'riyo-logo-export.png';
     link.href = dataURL;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   });
 
-  // Wait for fonts to load before initial draw to prevent flash of fallback font
+  // Add initial elements
   document.fonts.ready.then(() => {
-    drawLogo();
+    addText();
   });
-
-  // Initial draw
-  drawLogo();
 
 });
