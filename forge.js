@@ -2048,6 +2048,7 @@ function initBackgroundRemover() {
       const removeBackground = imglyMod.default || imglyMod.removeBackground;
 
       const config = {
+        publicPath: "https://unpkg.com/@imgly/background-removal@1.4.3/dist/",
         progress: (key, current, total) => {
           if (key === 'compute:inference') {
             statusText.textContent = 'Removing background...';
