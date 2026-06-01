@@ -1986,13 +1986,163 @@ function initBackgroundRemover() {
   const loadingArea = document.getElementById('bg-loading');
   const statusText = document.getElementById('bg-status-text');
   const progressText = document.getElementById('bg-progress-text');
+  
+  // Editor Elements
+  const editorWrapper = document.getElementById('bg-editor-wrapper');
   const previewContainer = document.getElementById('bg-preview-container');
+  const bgLayer = document.getElementById('bg-layer');
+  const cutoutContainer = document.getElementById('cutout-container');
   const resultImg = document.getElementById('bg-result-img');
-  const controls = document.getElementById('bg-controls');
+  
   const resetBtn = document.getElementById('bg-reset-btn');
   const downloadBtn = document.getElementById('bg-download-btn');
 
+  // UI Controls
+  const btnTransparent = document.getElementById('bg-preset-transparent');
+  const btnColor = document.getElementById('bg-preset-color');
+  const colorPicker = document.getElementById('bg-color-picker');
+  const btnOffice = document.getElementById('bg-preset-office');
+  const btnNature = document.getElementById('bg-preset-nature');
+  const btnStudio = document.getElementById('bg-preset-studio');
+  const customUpload = document.getElementById('bg-custom-upload');
+  
+  const scaleSlider = document.getElementById('cutout-scale');
+  const rotateSlider = document.getElementById('cutout-rotate');
+  const flipBtn = document.getElementById('cutout-flip-btn');
+  const centerBtn = document.getElementById('cutout-center-btn');
+
   let currentBlobUrl = null;
+  let rawTransparentBlob = null;
+
+  // Editor State
+  let currentBgType = 'transparent';
+  let currentBgColor = '#10B981';
+  let currentBgImageSrc = null;
+  let cutoutScale = 1;
+  let cutoutRotate = 0;
+  let cutoutFlip = 1;
+  let currentX = 0;
+  let currentY = 0;
+  let isDragging = false;
+  let startX = 0; let startY = 0;
+
+  // --- Dragging Logic ---
+  const startDrag = (clientX, clientY) => {
+    isDragging = true;
+    startX = clientX - currentX;
+    startY = clientY - currentY;
+    cutoutContainer.style.cursor = 'grabbing';
+  };
+  const moveDrag = (clientX, clientY) => {
+    if (!isDragging) return;
+    currentX = clientX - startX;
+    currentY = clientY - startY;
+    updateCutoutTransform();
+  };
+  const endDrag = () => {
+    isDragging = false;
+    cutoutContainer.style.cursor = 'grab';
+  };
+
+  cutoutContainer.addEventListener('mousedown', (e) => startDrag(e.clientX, e.clientY));
+  window.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
+  window.addEventListener('mouseup', endDrag);
+
+  cutoutContainer.addEventListener('touchstart', (e) => startDrag(e.touches[0].clientX, e.touches[0].clientY));
+  window.addEventListener('touchmove', (e) => moveDrag(e.touches[0].clientX, e.touches[0].clientY));
+  window.addEventListener('touchend', endDrag);
+
+  function updateCutoutTransform() {
+    cutoutContainer.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px))`;
+    resultImg.style.transform = `scale(${cutoutScale}) rotate(${cutoutRotate}deg) scaleX(${cutoutFlip})`;
+  }
+
+  // --- Transform Controls ---
+  scaleSlider.addEventListener('input', (e) => { cutoutScale = parseFloat(e.target.value); updateCutoutTransform(); });
+  rotateSlider.addEventListener('input', (e) => { cutoutRotate = parseInt(e.target.value); updateCutoutTransform(); });
+  flipBtn.addEventListener('click', () => { cutoutFlip *= -1; updateCutoutTransform(); });
+  centerBtn.addEventListener('click', () => {
+    currentX = 0; currentY = 0; cutoutScale = 1; cutoutRotate = 0; cutoutFlip = 1;
+    scaleSlider.value = 1; rotateSlider.value = 0;
+    updateCutoutTransform();
+  });
+
+  // --- Background Selection Logic ---
+  function setBackground(type, value) {
+    currentBgType = type;
+    if (type === 'transparent') {
+      bgLayer.style.background = 'transparent';
+      currentBgImageSrc = null;
+    } else if (type === 'color') {
+      bgLayer.style.background = value;
+      currentBgColor = value;
+      currentBgImageSrc = null;
+    } else if (type === 'image') {
+      bgLayer.style.background = `url('${value}') center/cover no-repeat`;
+      currentBgImageSrc = value;
+    }
+  }
+
+  btnTransparent.onclick = () => setBackground('transparent');
+  colorPicker.oninput = (e) => setBackground('color', e.target.value);
+  btnOffice.onclick = () => setBackground('image', 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1080&q=80');
+  btnNature.onclick = () => setBackground('image', 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1080&q=80');
+  btnStudio.onclick = () => setBackground('image', 'https://images.unsplash.com/photo-1598084991519-c90900bc9f9c?auto=format&fit=crop&w=1080&q=80');
+  
+  customUpload.onchange = (e) => {
+    if (e.target.files.length > 0) {
+      const url = URL.createObjectURL(e.target.files[0]);
+      setBackground('image', url);
+    }
+  };
+
+  // --- Exporting Logic ---
+  async function exportComposite(originalName) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 1080;
+    canvas.height = 1080;
+
+    // Draw Background
+    if (currentBgType === 'color') {
+      ctx.fillStyle = currentBgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else if (currentBgType === 'image' && currentBgImageSrc) {
+      const bgImg = new Image();
+      bgImg.crossOrigin = 'anonymous';
+      await new Promise(r => { bgImg.onload = r; bgImg.src = currentBgImageSrc; });
+      const scale = Math.max(canvas.width / bgImg.width, canvas.height / bgImg.height);
+      const x = (canvas.width / 2) - (bgImg.width / 2) * scale;
+      const y = (canvas.height / 2) - (bgImg.height / 2) * scale;
+      ctx.drawImage(bgImg, x, y, bgImg.width * scale, bgImg.height * scale);
+    }
+
+    // Draw Cutout
+    const fgImg = new Image();
+    await new Promise(r => { fgImg.onload = r; fgImg.src = resultImg.src; });
+
+    const rect = previewContainer.getBoundingClientRect();
+    const exportScale = canvas.width / rect.width; 
+
+    // Compute contain scaling used by object-fit: contain natively
+    const containScale = Math.min(rect.width / fgImg.width, rect.height / fgImg.height);
+    const drawW = fgImg.width * containScale;
+    const drawH = fgImg.height * containScale;
+
+    const cx = (canvas.width / 2) + (currentX * exportScale);
+    const cy = (canvas.height / 2) + (currentY * exportScale);
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate((cutoutRotate * Math.PI) / 180);
+    ctx.scale(cutoutFlip * cutoutScale, cutoutScale);
+    ctx.drawImage(fgImg, -drawW / 2, -drawH / 2, drawW, drawH);
+    ctx.restore();
+
+    canvas.toBlob((blob) => {
+      triggerDownload(blob, `${originalName}_composite.png`);
+    }, 'image/png');
+  }
 
   dropzone.addEventListener('click', (e) => {
     if (e.target !== input) input.click();
@@ -2027,8 +2177,7 @@ function initBackgroundRemover() {
     dropzone.style.display = 'none';
     workspace.style.display = 'block';
     loadingArea.style.display = 'block';
-    previewContainer.style.display = 'none';
-    controls.style.display = 'none';
+    editorWrapper.style.display = 'none';
     if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
     
     let processFile = file;
@@ -2065,18 +2214,32 @@ function initBackgroundRemover() {
       const transparentBlob = await removeBackground(processFile, config);
 
       // Display result
+      rawTransparentBlob = transparentBlob;
       currentBlobUrl = URL.createObjectURL(transparentBlob);
       resultImg.src = currentBlobUrl;
       
+      // Reset editor state
+      currentX = 0; currentY = 0; cutoutScale = 1; cutoutRotate = 0; cutoutFlip = 1;
+      scaleSlider.value = 1; rotateSlider.value = 0;
+      updateCutoutTransform();
+      setBackground('transparent');
+
       loadingArea.style.display = 'none';
-      previewContainer.style.display = 'block';
-      controls.style.display = 'flex';
+      editorWrapper.style.display = 'block';
       
       const originalName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
-      const downloadName = `${originalName}_transparent.png`;
       
       downloadBtn.onclick = () => {
-        triggerDownload(transparentBlob, downloadName);
+        downloadBtn.textContent = 'EXPORTING COMPOSITE...';
+        downloadBtn.disabled = true;
+        exportComposite(originalName).then(() => {
+          downloadBtn.textContent = '[ DOWNLOAD EDITED COMPOSITE ]';
+          downloadBtn.disabled = false;
+        }).catch(e => {
+          console.error(e);
+          downloadBtn.textContent = 'Error during export';
+          downloadBtn.disabled = false;
+        });
       };
 
     } catch (err) {
@@ -2094,7 +2257,7 @@ function initBackgroundRemover() {
     workspace.style.display = 'none';
     if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
     currentBlobUrl = null;
+    rawTransparentBlob = null;
     resultImg.src = '';
-    downloadBtn.style.display = 'block'; // Ensure download button is back for next run
   });
 }

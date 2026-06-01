@@ -516,17 +516,71 @@
                   <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 5px;">Progress: <span id="bg-progress-text">0%</span></div>
                 </div>
                 
-                <div id="bg-preview-container" style="display: none; margin: 1.5rem auto; max-width: 400px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'20\' height=\'20\'><rect width=\'10\' height=\'10\' fill=\'#333\'/><rect x=\'10\' width=\'10\' height=\'10\' fill=\'#444\'/><rect y=\'10\' width=\'10\' height=\'10\' fill=\'#444\'/><rect x=\'10\' y=\'10\' width=\'10\' height=\'10\' fill=\'#333\'/></svg>');">
-                  <img id="bg-result-img" src="" style="width: 100%; height: auto; display: block;">
-                </div>
+                <div id="bg-editor-wrapper" style="display: none; margin-top: 1.5rem;">
+                  <!-- Main Interactive Canvas Area -->
+                  <div id="bg-preview-container" style="position: relative; margin: 0 auto; width: 100%; max-width: 500px; aspect-ratio: 1/1; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background-color: transparent; background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'20\' height=\'20\'><rect width=\'10\' height=\'10\' fill=\'#333\'/><rect x=\'10\' width=\'10\' height=\'10\' fill=\'#444\'/><rect y=\'10\' width=\'10\' height=\'10\' fill=\'#444\'/><rect x=\'10\' y=\'10\' width=\'10\' height=\'10\' fill=\'#333\'/></svg>');">
+                    <!-- Dynamic Background Layer -->
+                    <div id="bg-layer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; z-index: 1;"></div>
+                    
+                    <!-- Draggable Cutout Layer -->
+                    <div id="cutout-container" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); cursor: grab; z-index: 2; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%;">
+                      <img id="bg-result-img" src="" style="width: 100%; height: auto; object-fit: contain; pointer-events: none; filter: drop-shadow(0px 10px 20px rgba(0,0,0,0.5)); transform-origin: center;">
+                    </div>
+                  </div>
 
-                <div id="bg-controls" style="display: none; justify-content: center; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap;">
-                  <button id="bg-reset-btn" class="nav-link" style="border: 1px solid var(--border); background: transparent; color: var(--text-main); border-radius: 4px; font-family: 'JetBrains Mono', monospace; padding: 12px; transition: all 0.2s;">
-                    [ PROCESS ANOTHER ]
-                  </button>
-                  <button id="bg-download-btn" class="cyber-submit-btn scanner-btn" style="background: rgba(236, 72, 153, 0.15); border: 1px solid #EC4899; color: #EC4899; margin: 0; padding: 12px; font-weight: bold; font-size: 1rem; box-shadow: 0 0 15px rgba(236, 72, 153, 0.2);">
-                    [ DOWNLOAD TRANSPARENT PNG ]
-                  </button>
+                  <!-- Editor Controls -->
+                  <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; margin: 1.5rem auto; max-width: 500px; text-align: left;">
+                    
+                    <!-- Background Selection -->
+                    <div style="margin-bottom: 1rem;">
+                      <label style="font-family: 'JetBrains Mono'; font-size: 0.8rem; color: #EC4899; margin-bottom: 8px; display: block;">1. CHOOSE BACKGROUND</label>
+                      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button id="bg-preset-transparent" class="nav-link" style="padding: 6px 12px; border: 1px solid var(--border); background: rgba(255,255,255,0.1); color: var(--text-main); border-radius: 4px; font-size: 0.8rem;">Transparent</button>
+                        <button id="bg-preset-color" class="nav-link" style="padding: 6px 12px; border: 1px solid var(--border); background: transparent; color: var(--text-main); border-radius: 4px; font-size: 0.8rem; position: relative;">
+                          Color <input type="color" id="bg-color-picker" value="#10B981" style="opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;">
+                        </button>
+                        <button id="bg-preset-office" class="nav-link" style="padding: 6px 12px; border: 1px solid var(--border); background: transparent; color: var(--text-main); border-radius: 4px; font-size: 0.8rem;">Office</button>
+                        <button id="bg-preset-nature" class="nav-link" style="padding: 6px 12px; border: 1px solid var(--border); background: transparent; color: var(--text-main); border-radius: 4px; font-size: 0.8rem;">Nature</button>
+                        <button id="bg-preset-studio" class="nav-link" style="padding: 6px 12px; border: 1px solid var(--border); background: transparent; color: var(--text-main); border-radius: 4px; font-size: 0.8rem;">Studio</button>
+                        <button class="nav-link" style="padding: 6px 12px; border: 1px solid var(--border); background: transparent; color: var(--text-main); border-radius: 4px; font-size: 0.8rem; position: relative;">
+                          Upload Image <input type="file" id="bg-custom-upload" accept="image/*" style="opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;">
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Cutout Controls -->
+                    <div>
+                      <label style="font-family: 'JetBrains Mono'; font-size: 0.8rem; color: #EC4899; margin-bottom: 8px; display: block;">2. POSITION & TRANSFORM (Or drag image directly)</label>
+                      
+                      <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                          <span style="font-size: 0.8rem; width: 60px;">Scale</span>
+                          <input type="range" id="cutout-scale" min="0.1" max="3" step="0.05" value="1" style="flex: 1; accent-color: #EC4899;">
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                          <span style="font-size: 0.8rem; width: 60px;">Rotate</span>
+                          <input type="range" id="cutout-rotate" min="-180" max="180" step="1" value="0" style="flex: 1; accent-color: #EC4899;">
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 12px; margin-top: 4px;">
+                          <button id="cutout-flip-btn" class="nav-link" style="padding: 6px 12px; border: 1px solid var(--border); background: transparent; color: var(--text-main); border-radius: 4px; font-size: 0.8rem;">Flip Horizontal</button>
+                          <button id="cutout-center-btn" class="nav-link" style="padding: 6px 12px; border: 1px solid var(--border); background: transparent; color: var(--text-main); border-radius: 4px; font-size: 0.8rem;">Reset Position</button>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <!-- Actions -->
+                  <div id="bg-controls" style="display: flex; justify-content: center; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap;">
+                    <button id="bg-reset-btn" class="nav-link" style="border: 1px solid var(--border); background: transparent; color: var(--text-main); border-radius: 4px; font-family: 'JetBrains Mono', monospace; padding: 12px; transition: all 0.2s;">
+                      [ PROCESS ANOTHER ]
+                    </button>
+                    <button id="bg-download-btn" class="cyber-submit-btn scanner-btn" style="background: rgba(236, 72, 153, 0.15); border: 1px solid #EC4899; color: #EC4899; margin: 0; padding: 12px; font-weight: bold; font-size: 1rem; box-shadow: 0 0 15px rgba(236, 72, 153, 0.2);">
+                      [ DOWNLOAD EDITED COMPOSITE ]
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -762,6 +816,6 @@
 
   <script src="bg.js?v=4"></script>
   <script src="script.js?v=4"></script>
-  <script src="forge.js?v=29"></script>
+  <script src="forge.js?v=30"></script>
 </body>
 </html>
