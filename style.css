@@ -1935,21 +1935,35 @@ html.supernova body {
   }
   
   .forge-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0;
-    background: transparent;
-    border: none;
-  }
-  
-  .forge-tab-btn {
-    padding: 16px;
-    font-size: 1rem;
-    background: rgba(10, 15, 25, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-  }
+      display: flex;
+      flex-direction: row;
+      gap: 0.75rem;
+      padding: 0 0 10px 0;
+      background: transparent;
+      border: none;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .forge-sidebar::-webkit-scrollbar {
+      height: 4px;
+    }
+    .forge-sidebar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+    
+    .forge-tab-btn {
+      flex: 0 0 auto;
+      width: 260px;
+      scroll-snap-align: start;
+      padding: 16px;
+      font-size: 1rem;
+      background: rgba(10, 15, 25, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+    }
   
   .forge-tab-btn.active {
     border-color: rgba(255, 255, 255, 0.2);
@@ -1962,16 +1976,26 @@ html.supernova body {
 }
 
 .forge-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  background: rgba(10, 15, 25, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 1rem;
-  position: sticky;
-  top: 100px;
-}
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: rgba(10, 15, 25, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 1rem;
+    position: sticky;
+    top: 100px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+  }
+
+  .forge-sidebar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .forge-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+  }
 
 .forge-tab-btn {
   display: flex;
