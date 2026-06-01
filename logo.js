@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const canvasElement = document.getElementById('logo-canvas');
   if (!canvasElement || typeof fabric === 'undefined') return;
 
-  // Initialize Fabric Canvas (Internal 1600x800 for 4K-ish exports, CSS handles display scaling)
+  // Initialize Fabric Canvas
   const canvas = new fabric.Canvas('logo-canvas', {
     width: 1600,
     height: 800,
@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const addShapeBtn = document.getElementById('add-shape-btn');
   const addImageBtn = document.getElementById('add-image-btn');
   const imageUploadInput = document.getElementById('image-upload-input');
+  const iconPanel = document.getElementById('icon-library-panel');
+  const libIconBtns = document.querySelectorAll('.lib-icon-btn');
   
   const themeBtns = document.querySelectorAll('.theme-btn');
   const exportBtn = document.getElementById('logo-export-btn');
@@ -31,19 +33,35 @@ document.addEventListener('DOMContentLoaded', () => {
   const textCurveSlider = document.getElementById('text-curve-slider');
   const curveVal = document.getElementById('curve-val');
 
-  // Canvas State Defaults
   let currentTheme = 'dark';
-  const themes = {
-    'dark': '#0a0a0a',
-    'light': '#ffffff',
-    'cyber': '#050505',
-    'transparent': null
-  };
 
   function updateBackground() {
-    const bg = themes[currentTheme];
-    if (bg) {
-      canvas.setBackgroundColor(bg, canvas.renderAll.bind(canvas));
+    if (currentTheme === 'dark') {
+      canvas.setBackgroundColor('#0a0a0a', canvas.renderAll.bind(canvas));
+    } else if (currentTheme === 'light') {
+      canvas.setBackgroundColor('#ffffff', canvas.renderAll.bind(canvas));
+    } else if (currentTheme === 'cyber') {
+      canvas.setBackgroundColor('#050505', canvas.renderAll.bind(canvas));
+    } else if (currentTheme === 'midnight') {
+      const grad = new fabric.Gradient({
+        type: 'linear', coords: { x1: 0, y1: 0, x2: canvas.width, y2: canvas.height },
+        colorStops: [ { offset: 0, color: '#1e1b4b' }, { offset: 1, color: '#312e81' } ]
+      });
+      canvas.setBackgroundColor(grad, canvas.renderAll.bind(canvas));
+    } else if (currentTheme === 'sunset') {
+      const grad = new fabric.Gradient({
+        type: 'linear', coords: { x1: 0, y1: 0, x2: canvas.width, y2: canvas.height },
+        colorStops: [ { offset: 0, color: '#f97316' }, { offset: 1, color: '#db2777' } ]
+      });
+      canvas.setBackgroundColor(grad, canvas.renderAll.bind(canvas));
+    } else if (currentTheme === 'holographic') {
+      const grad = new fabric.Gradient({
+        type: 'linear', coords: { x1: 0, y1: 0, x2: canvas.width, y2: canvas.height },
+        colorStops: [ { offset: 0, color: '#e0e7ff' }, { offset: 1, color: '#f3e8ff' } ]
+      });
+      canvas.setBackgroundColor(grad, canvas.renderAll.bind(canvas));
+    } else if (currentTheme === 'grid') {
+      canvas.setBackgroundColor('#111111', canvas.renderAll.bind(canvas));
     } else {
       canvas.setBackgroundColor('', canvas.renderAll.bind(canvas));
     }
@@ -51,29 +69,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   updateBackground();
 
-  // Control Handle Customization (Cyber aesthetic)
   fabric.Object.prototype.set({
-    transparentCorners: false,
-    cornerColor: '#10B981',
-    cornerStrokeColor: '#000000',
-    borderColor: '#10B981',
-    cornerSize: 16,
-    padding: 10,
-    cornerStyle: 'circle'
+    transparentCorners: false, cornerColor: '#10B981', cornerStrokeColor: '#000000',
+    borderColor: '#10B981', cornerSize: 16, padding: 10, cornerStyle: 'circle'
   });
-
-  // --- Core Functions ---
 
   function addText() {
     const text = new fabric.IText('Your Brand', {
-      left: canvas.width / 2,
-      top: canvas.height / 2,
-      fontFamily: 'Inter',
-      fill: currentTheme === 'light' ? '#111111' : '#ffffff',
-      fontSize: 120,
-      fontWeight: '600',
-      originX: 'center',
-      originY: 'center',
+      left: canvas.width / 2, top: canvas.height / 2, fontFamily: 'Clash Display',
+      fill: (currentTheme === 'light' || currentTheme === 'holographic') ? '#111111' : '#ffffff',
+      fontSize: 120, fontWeight: '700', originX: 'center', originY: 'center',
       shadow: currentTheme === 'cyber' ? new fabric.Shadow({ color: '#10B981', blur: 30 }) : null
     });
     canvas.add(text);
@@ -81,32 +86,36 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.renderAll();
   }
 
-  function addShape() {
-    const shape = new fabric.Circle({
-      left: canvas.width / 2,
-      top: 200,
-      radius: 80,
-      fill: '#10B981',
-      originX: 'center',
-      originY: 'center',
-      shadow: currentTheme === 'cyber' ? new fabric.Shadow({ color: '#10B981', blur: 30 }) : null
+  addShapeBtn.addEventListener('click', () => {
+    if (iconPanel) {
+      iconPanel.style.display = iconPanel.style.display === 'none' ? 'grid' : 'none';
+    }
+  });
+
+  libIconBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const svgPath = btn.getAttribute('data-svg');
+      if (!svgPath) return;
+      const path = new fabric.Path(svgPath, {
+        left: canvas.width / 2, top: canvas.height / 2,
+        fill: (currentTheme === 'light' || currentTheme === 'holographic') ? '#111111' : '#ffffff',
+        originX: 'center', originY: 'center', scaleX: 6, scaleY: 6,
+        shadow: currentTheme === 'cyber' ? new fabric.Shadow({ color: '#10B981', blur: 30 }) : null
+      });
+      canvas.add(path);
+      canvas.setActiveObject(path);
+      canvas.renderAll();
+      iconPanel.style.display = 'none';
     });
-    canvas.add(shape);
-    canvas.setActiveObject(shape);
-    canvas.renderAll();
-  }
+  });
 
   function deleteSelected() {
     const activeObjects = canvas.getActiveObjects();
     if (activeObjects.length) {
       canvas.discardActiveObject();
-      activeObjects.forEach(function(object) {
-        canvas.remove(object);
-      });
+      activeObjects.forEach(obj => canvas.remove(obj));
     }
   }
-
-  // --- Property Panel Sync ---
 
   function updatePropertyPanel() {
     const activeObj = canvas.getActiveObject();
@@ -114,24 +123,17 @@ document.addEventListener('DOMContentLoaded', () => {
       objPropsPanel.style.display = 'none';
       return;
     }
-
     objPropsPanel.style.display = 'flex';
-    
-    // Color sync
     const color = activeObj.fill || '#ffffff';
     colorPicker.value = typeof color === 'string' ? color : '#ffffff';
     colorHex.value = typeof color === 'string' ? color : '#ffffff';
 
-    // UI Groups sync
     if (activeObj.type === 'i-text' || activeObj.type === 'text') {
       fontPropGroup.style.display = 'block';
       if (imagePropGroup) imagePropGroup.style.display = 'none';
       fontSelect.value = activeObj.fontFamily || 'Inter';
-      
-      // Update curve slider to match current state
-      if (!activeObj.path) {
-          textCurveSlider.value = 0;
-          curveVal.textContent = "0";
+      if (textCurveSlider && curveVal) {
+          if (!activeObj.path) { textCurveSlider.value = 0; curveVal.textContent = "0"; }
       }
     } else if (activeObj.type === 'image') {
       fontPropGroup.style.display = 'none';
@@ -146,23 +148,17 @@ document.addEventListener('DOMContentLoaded', () => {
   canvas.on('selection:updated', updatePropertyPanel);
   canvas.on('selection:cleared', updatePropertyPanel);
 
-  // --- Input Listeners ---
-
   colorPicker.addEventListener('input', (e) => {
     const activeObj = canvas.getActiveObject();
     if (activeObj && activeObj.type !== 'image') {
-      activeObj.set('fill', e.target.value);
-      colorHex.value = e.target.value;
-      canvas.renderAll();
+      activeObj.set('fill', e.target.value); colorHex.value = e.target.value; canvas.renderAll();
     }
   });
 
   colorHex.addEventListener('input', (e) => {
     const activeObj = canvas.getActiveObject();
     if (activeObj && activeObj.type !== 'image' && /^#[0-9A-F]{6}$/i.test(e.target.value)) {
-      activeObj.set('fill', e.target.value);
-      colorPicker.value = e.target.value;
-      canvas.renderAll();
+      activeObj.set('fill', e.target.value); colorPicker.value = e.target.value; canvas.renderAll();
     }
   });
 
@@ -170,62 +166,45 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeObj = canvas.getActiveObject();
     if (activeObj && (activeObj.type === 'i-text' || activeObj.type === 'text')) {
       activeObj.set('fontFamily', e.target.value);
-      
-      if (e.target.value === 'Cinzel' || e.target.value === 'Playfair Display') {
+      if (e.target.value === 'Cinzel' || e.target.value === 'Playfair Display' || e.target.value === 'Bricolage Grotesque' || e.target.value === 'Syne') {
         activeObj.set('fontWeight', '800');
+      } else if (e.target.value === 'Clash Display' || e.target.value === 'Syncopate') {
+        activeObj.set('fontWeight', '700');
       } else {
         activeObj.set('fontWeight', '600');
       }
-      
       canvas.renderAll();
     }
   });
 
   deleteBtn.addEventListener('click', deleteSelected);
 
-  // Keyboard Delete
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Delete' || e.key === 'Backspace') {
       if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
       const activeObj = canvas.getActiveObject();
       if (activeObj && activeObj.isEditing) return;
-      
       deleteSelected();
     }
   });
 
-  // --- Advanced Feature Listeners ---
-
-  addImageBtn.addEventListener('click', () => {
-      imageUploadInput.click();
-  });
+  addImageBtn.addEventListener('click', () => imageUploadInput.click());
 
   imageUploadInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-
       const reader = new FileReader();
       reader.onload = (f) => {
-          const data = f.target.result;
-          fabric.Image.fromURL(data, (img) => {
-              // Scale down if too large
-              if (img.width > 800) {
-                  img.scaleToWidth(800);
-              }
+          fabric.Image.fromURL(f.target.result, (img) => {
+              if (img.width > 800) img.scaleToWidth(800);
               img.set({
-                  left: canvas.width / 2,
-                  top: canvas.height / 2,
-                  originX: 'center',
-                  originY: 'center',
+                  left: canvas.width / 2, top: canvas.height / 2, originX: 'center', originY: 'center',
                   shadow: currentTheme === 'cyber' ? new fabric.Shadow({ color: '#10B981', blur: 30 }) : null
               });
-              canvas.add(img);
-              canvas.setActiveObject(img);
-              canvas.renderAll();
+              canvas.add(img); canvas.setActiveObject(img); canvas.renderAll();
           });
       };
       reader.readAsDataURL(file);
-      // Reset input
       imageUploadInput.value = '';
   });
 
@@ -234,41 +213,24 @@ document.addEventListener('DOMContentLoaded', () => {
           const activeObj = canvas.getActiveObject();
           if (activeObj && activeObj.type === 'image') {
               if (typeof imglyRemoveBackground === 'undefined') {
-                  alert('Background removal model is still loading. Please try again in a moment.');
-                  return;
+                  alert('Background removal model is still loading. Please try again in a moment.'); return;
               }
-
-              removeBgBtn.textContent = '⏳ Processing (AI)...';
-              removeBgBtn.disabled = true;
-
+              removeBgBtn.textContent = '⏳ Processing (AI)...'; removeBgBtn.disabled = true;
               try {
                   const blob = await fetch(activeObj.getSrc()).then(r => r.blob());
                   const imageBlob = await imglyRemoveBackground(blob);
                   const url = URL.createObjectURL(imageBlob);
-                  
                   fabric.Image.fromURL(url, (img) => {
                       img.set({
-                          left: activeObj.left,
-                          top: activeObj.top,
-                          scaleX: activeObj.scaleX,
-                          scaleY: activeObj.scaleY,
-                          angle: activeObj.angle,
-                          originX: activeObj.originX,
-                          originY: activeObj.originY,
-                          shadow: activeObj.shadow
+                          left: activeObj.left, top: activeObj.top, scaleX: activeObj.scaleX, scaleY: activeObj.scaleY,
+                          angle: activeObj.angle, originX: activeObj.originX, originY: activeObj.originY, shadow: activeObj.shadow
                       });
-                      canvas.remove(activeObj);
-                      canvas.add(img);
-                      canvas.setActiveObject(img);
-                      canvas.renderAll();
+                      canvas.remove(activeObj); canvas.add(img); canvas.setActiveObject(img); canvas.renderAll();
                   });
               } catch (err) {
-                  console.error(err);
-                  alert('Failed to remove background.');
+                  console.error(err); alert('Failed to remove background.');
               }
-
-              removeBgBtn.textContent = '✨ Remove Background (AI)';
-              removeBgBtn.disabled = false;
+              removeBgBtn.textContent = '✨ Remove Background (AI)'; removeBgBtn.disabled = false;
           }
       });
   }
@@ -280,22 +242,13 @@ document.addEventListener('DOMContentLoaded', () => {
               const text = activeObj.text;
               const words = text.split(' ').filter(w => w.trim() !== '');
               if (words.length <= 1) return;
-              
               const startY = canvas.height / 2 - ((words.length * activeObj.fontSize) / 2);
-              
               canvas.remove(activeObj);
-              
               words.forEach((word, index) => {
                   const textObj = new fabric.IText(word, {
-                      left: canvas.width / 2,
-                      top: startY + (index * (activeObj.fontSize + 20)),
-                      fontFamily: activeObj.fontFamily,
-                      fill: activeObj.fill,
-                      fontSize: activeObj.fontSize,
-                      fontWeight: activeObj.fontWeight,
-                      originX: 'center',
-                      originY: 'center',
-                      shadow: activeObj.shadow
+                      left: canvas.width / 2, top: startY + (index * (activeObj.fontSize + 20)),
+                      fontFamily: activeObj.fontFamily, fill: activeObj.fill, fontSize: activeObj.fontSize,
+                      fontWeight: activeObj.fontWeight, originX: 'center', originY: 'center', shadow: activeObj.shadow
                   });
                   canvas.add(textObj);
               });
@@ -309,20 +262,13 @@ document.addEventListener('DOMContentLoaded', () => {
           const activeObj = canvas.getActiveObject();
           const val = parseInt(e.target.value);
           if (curveVal) curveVal.textContent = val;
-          
           if (activeObj && (activeObj.type === 'i-text' || activeObj.type === 'text')) {
               if (val === 0) {
                   activeObj.set('path', null);
               } else {
-                  // Generate an SVG path arc
-                  // Fabric text paths work best when the path length matches the text width roughly
-                  const w = activeObj.width;
-                  const curveFactor = val; // -100 to 100
-                  const controlY = -curveFactor * 2;
-                  
+                  const w = activeObj.width; const curveFactor = val; const controlY = -curveFactor * 2;
                   const pathString = `M 0 0 Q ${w/2} ${controlY} ${w} 0`;
                   const path = new fabric.Path(pathString);
-                  
                   activeObj.set({ path: path });
               }
               canvas.renderAll();
@@ -330,10 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  // --- UI Buttons Listeners ---
-
   addTextBtn.addEventListener('click', addText);
-  addShapeBtn.addEventListener('click', addShape);
 
   themeBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -342,7 +285,6 @@ document.addEventListener('DOMContentLoaded', () => {
       currentTheme = btn.dataset.theme;
       updateBackground();
 
-      // Cyber glow effect toggle
       canvas.getObjects().forEach(obj => {
         if (currentTheme === 'cyber') {
           obj.set('shadow', new fabric.Shadow({ color: '#10B981', blur: 30 }));
@@ -355,26 +297,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   exportBtn.addEventListener('click', () => {
-    canvas.discardActiveObject(); // Deselect to remove control handles
-    canvas.renderAll();
-    
-    const dataURL = canvas.toDataURL({
-      format: 'png',
-      quality: 1,
-      multiplier: 2
-    });
-    
-    const link = document.createElement('a');
-    link.download = 'riyo-logo-export.png';
-    link.href = dataURL;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    canvas.discardActiveObject(); canvas.renderAll();
+    const dataURL = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 2 });
+    const link = document.createElement('a'); link.download = 'riyo-logo-export.png';
+    link.href = dataURL; document.body.appendChild(link); link.click(); document.body.removeChild(link);
   });
 
-  // Add initial elements
-  document.fonts.ready.then(() => {
-    addText();
-  });
-
+  document.fonts.ready.then(() => { addText(); });
 });
