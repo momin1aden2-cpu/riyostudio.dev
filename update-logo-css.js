@@ -1,7 +1,7 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 let css = fs.readFileSync('style.css', 'utf8');
 
-css += \n/* Logo Maker Specifics */
+css += `\n/* Logo Maker Specifics */
 .icon-btn, .theme-btn {
   transition: all 0.2s ease;
 }
@@ -18,6 +18,6 @@ css += \n/* Logo Maker Specifics */
   border: 2px solid #10B981 !important;
   box-shadow: 0 0 16px rgba(16, 185, 129, 0.4);
 }
-;
+`;
 
 fs.writeFileSync('style.css', css, 'utf8');
