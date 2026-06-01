@@ -1566,11 +1566,16 @@ function initGhostMaker() {
                  const reader = new FileReader();
                  const spoofedBlob = await new Promise((resolve) => {
                     reader.onload = (e) => {
-                       const inserted = piexif.insert(exifBytes, e.target.result);
-                       // Convert dataURL back to blob
-                       fetch(inserted)
-                         .then(res => res.blob())
-                         .then(resolve);
+                        const inserted = piexif.insert(exifBytes, e.target.result);
+                        // Manually convert dataURL to blob to bypass CSP fetch restrictions on data: URIs
+                        const byteString = atob(inserted.split(',')[1]);
+                        const mimeString = inserted.split(',')[0].split(':')[1].split(';')[0];
+                        const ab = new ArrayBuffer(byteString.length);
+                        const ia = new Uint8Array(ab);
+                        for (let i = 0; i < byteString.length; i++) {
+                            ia[i] = byteString.charCodeAt(i);
+                        }
+                        resolve(new Blob([ab], {type: mimeString}));
                     };
                     reader.readAsDataURL(cleanBlob);
                  });
