@@ -1,4 +1,4 @@
-/* Reset */
+﻿/* Reset */
 *,
 *::before,
 *::after {
@@ -167,6 +167,11 @@ button {
   padding: 0 24px;
   position: relative;
   z-index: 1;
+}
+
+.container.fluid {
+  max-width: 100%;
+  padding: 0 4vw;
 }
 
 section {
@@ -467,8 +472,16 @@ section {
 }
 
 .hero .container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 24px;
   position: relative;
   z-index: 1;
+}
+
+.container.fluid {
+  max-width: 100%;
+  padding: 0 4vw;
 }
 
 .hero-eyebrow {
@@ -1932,15 +1945,15 @@ html.supernova body {
 }
 /* Forge Dashboard Layout */
 .forge-dashboard {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 2rem;
-  margin-top: 1rem;
-  max-width: 1400px;
-  margin-left: auto;
-  margin-right: auto;
-  align-items: start;
-}
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 2rem;
+    margin-top: 1rem;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    align-items: start;
+  }
 
 @media (max-width: 900px) {
   .forge-dashboard {
@@ -2141,3 +2154,4 @@ html.supernova body {
 .riyo-toast-close:hover {
   color: #fff;
 }
+
