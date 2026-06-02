@@ -34,35 +34,40 @@
     /* Custom Styling for the Invoice Generator Layout */
     .invoice-container {
       max-width: 100%;
-      margin: 120px auto 40px auto;
-      padding: 0 5%;
+      margin: 100px auto 0 auto;
+      padding: 0;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 2rem;
+      gap: 0;
+      align-items: start;
+      min-height: calc(100vh - 100px);
     }
 
-    @media (max-width: 1100px) {
+    @media (max-width: 1000px) {
       .invoice-container {
         grid-template-columns: 1fr;
       }
     }
 
     .tool-panel {
-      background: rgba(16, 20, 30, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 12px;
-      padding: 2rem;
+      background: rgba(16, 20, 30, 0.85);
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 0;
+      padding: 2rem 2.5rem;
       backdrop-filter: blur(20px);
-      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-      max-height: 80vh;
+      max-height: calc(100vh - 100px);
       overflow-y: auto;
+      position: sticky;
+      top: 100px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.1) transparent;
     }
 
     .tool-panel::-webkit-scrollbar { width: 6px; }
     .tool-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 
     .invoice-header-title {
-      font-size: 1.5rem;
+      font-size: 1.75rem;
       font-weight: 700;
       color: var(--text-main);
       margin-bottom: 0.5rem;
@@ -73,28 +78,29 @@
 
     .invoice-header-subtitle {
       color: var(--text-dim);
-      font-size: 0.95rem;
+      font-size: 1rem;
       margin-bottom: 2rem;
-      line-height: 1.5;
+      line-height: 1.6;
     }
 
     /* Form Styles */
     .section-title {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       color: var(--brand-accent);
-      margin-bottom: 1rem;
+      margin-bottom: 1.25rem;
       text-transform: uppercase;
       letter-spacing: 1px;
       border-bottom: 1px solid rgba(255,255,255,0.1);
-      padding-bottom: 0.5rem;
+      padding-bottom: 0.6rem;
+      margin-top: 0.5rem;
     }
 
     .input-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1rem;
-      margin-bottom: 2rem;
+      margin-bottom: 1.75rem;
     }
 
     .input-group {
@@ -108,8 +114,30 @@
     }
 
     .input-label {
-      font-size: 0.8rem;
+      font-size: 0.9rem;
       color: var(--text-dim);
+      font-weight: 500;
+    }
+
+    /* Bigger inputs for the invoice form */
+    .tool-panel .cyber-input {
+      padding: 14px 16px;
+      font-size: 15px;
+      background: rgba(6, 11, 20, 0.6);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+    }
+    .tool-panel textarea.cyber-input {
+      padding: 14px 16px;
+      font-size: 15px;
+      background: rgba(6, 11, 20, 0.6);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+    }
+    .tool-panel .cyber-input:focus,
+    .tool-panel textarea.cyber-input:focus {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(6, 11, 20, 0.8);
     }
 
     .line-item-row {
@@ -147,22 +175,27 @@
     .btn-add:hover { background: rgba(16,185,129,0.2); }
 
     .canvas-wrapper {
-      background: rgba(0,0,0,0.5);
-      border-radius: 12px;
+      background: rgba(0,0,0,0.15);
+      border: none;
+      border-radius: 0;
       padding: 2rem;
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      position: relative;
+      justify-content: center;
+      align-items: flex-start;
+      position: sticky;
+      top: 100px;
       overflow-y: auto;
-      overflow-x: auto;
-      max-height: 80vh;
-      max-width: 100vw;
+      max-height: calc(100vh - 100px);
     }
 
     @media (max-width: 768px) {
       .canvas-wrapper {
         padding: 1rem;
+        position: relative;
+        top: 0;
+        max-height: none;
+        overflow-y: auto;
+        overflow-x: auto;
         align-items: flex-start;
       }
       .tool-panel {
@@ -170,63 +203,319 @@
       }
     }
 
+    /* =========================================================
+       PRO-GRADE INVOICE PAPER
+       ========================================================= */
     #a4-paper {
-      background: #ffffff;
+      /* Theme variables */
+      --inv-primary: #111111;
+      --inv-primary-light: rgba(17, 17, 17, 0.04);
+      --inv-bg: #ffffff;
+      --inv-text: #1a1a1a;
+      --inv-text-muted: #6b7280;
+      --inv-text-secondary: #374151;
+      --inv-border: #e5e7eb;
+      --inv-border-strong: #d1d5db;
+      --inv-card-bg: #f9fafb;
+      --inv-stripe: rgba(0,0,0,0.018);
+
+      background: var(--inv-bg);
       width: 210mm;
       min-height: 297mm;
-      padding: 20mm;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-      color: #1a1a1a;
+      padding: 24mm 26mm 20mm 26mm;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.45);
+      border-radius: 2px;
+      color: var(--inv-text);
       font-family: 'Inter', sans-serif;
       box-sizing: border-box;
-      /* CSS scaling for preview on smaller screens */
-      transform-origin: top center;
+      transform-origin: top left;
+      transition: background 0.3s, color 0.3s;
     }
 
-    @media (max-width: 1400px) { #a4-paper { transform: scale(0.85); margin-bottom: -15%; } }
-    @media (max-width: 1100px) { #a4-paper { transform: scale(1); margin-bottom: 0; } }
-    @media (max-width: 900px) { #a4-paper { transform: scale(0.6); margin-bottom: -40%; } }
-    @media (max-width: 600px) { #a4-paper { transform: scale(0.4); margin-bottom: -60%; } }
+    /* ── DARK THEME ── */
+    #a4-paper.dark-invoice {
+      --inv-bg: #0f1219;
+      --inv-text: #e5e7eb;
+      --inv-text-muted: #9ca3af;
+      --inv-text-secondary: #d1d5db;
+      --inv-border: rgba(255,255,255,0.08);
+      --inv-border-strong: rgba(255,255,255,0.14);
+      --inv-card-bg: rgba(255,255,255,0.04);
+      --inv-stripe: rgba(255,255,255,0.025);
+    }
+    #a4-paper.dark-invoice .inv-company-details p,
+    #a4-paper.dark-invoice .inv-details p { color: var(--inv-text-muted); }
+    #a4-paper.dark-invoice .inv-details span { color: var(--inv-text); }
+    #a4-paper.dark-invoice .rich-text strong { color: var(--inv-text); }
 
-    /* Internal Invoice Styling */
+    /* ── HEADER ── */
     .inv-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 3rem;
-      border-bottom: 2px solid #f0f0f0;
+      margin-bottom: 2.5rem;
       padding-bottom: 2rem;
+      border-bottom: 3px solid var(--inv-primary);
     }
-    .inv-logo-area img { max-width: 150px; max-height: 80px; object-fit: contain; }
-    .inv-company-details { text-align: right; font-size: 0.9rem; color: #555; }
-    .inv-company-details h2 { color: #111; margin: 0 0 0.5rem 0; font-weight: 700; font-size: 1.5rem; }
-    
+    .inv-logo-area img {
+      max-width: 160px;
+      max-height: 80px;
+      object-fit: contain;
+    }
+    .inv-company-details {
+      text-align: right;
+      font-size: 0.85rem;
+      color: var(--inv-text-muted);
+      line-height: 1.7;
+    }
+    .inv-company-details h2 {
+      color: var(--inv-primary);
+      margin: 0 0 0.4rem 0;
+      font-weight: 800;
+      font-size: 1.5rem;
+      letter-spacing: -0.5px;
+    }
+
+    /* ── META GRID (Bill-To + Invoice Details as cards) ── */
     .inv-meta-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-      margin-bottom: 3rem;
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
     }
-    .inv-bill-to h3 { color: #888; font-size: 0.8rem; text-transform: uppercase; margin: 0 0 0.5rem 0; letter-spacing: 1px; }
-    .inv-bill-to p { margin: 0; font-size: 0.95rem; line-height: 1.5; color: #111; font-weight: 500; }
-    
-    .inv-details { text-align: right; }
-    .inv-details h1 { font-size: 2.5rem; color: #111; margin: 0 0 1rem 0; font-weight: 800; letter-spacing: -1px; }
-    .inv-details p { margin: 0 0 0.25rem 0; font-size: 0.9rem; color: #555; }
-    .inv-details span { font-weight: 600; color: #111; }
+    .inv-bill-to,
+    .inv-details {
+      background: var(--inv-card-bg);
+      border: 1px solid var(--inv-border);
+      border-radius: 10px;
+      padding: 1.5rem 1.75rem;
+    }
+    .inv-bill-to h3 {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--inv-text-muted);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      margin: 0 0 0.75rem 0;
+      letter-spacing: 2px;
+      font-weight: 600;
+    }
+    .inv-bill-to p {
+      margin: 0 0 0.15rem 0;
+      font-size: 0.95rem;
+      line-height: 1.65;
+      color: var(--inv-text);
+      font-weight: 500;
+    }
 
-    .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 3rem; }
-    .inv-table th { text-align: left; padding: 1rem 0.5rem; border-bottom: 2px solid #111; color: #111; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; }
-    .inv-table td { padding: 1rem 0.5rem; border-bottom: 1px solid #eee; color: #333; font-size: 0.95rem; }
-    .inv-table th.right, .inv-table td.right { text-align: right; }
-    
-    .inv-summary { width: 300px; margin-left: auto; }
-    .inv-summary-row { display: flex; justify-content: space-between; padding: 0.5rem 0; color: #555; font-size: 0.95rem; }
-    .inv-summary-row.total { font-weight: 800; color: #111; font-size: 1.25rem; border-top: 2px solid #111; padding-top: 1rem; margin-top: 0.5rem; }
+    .inv-details {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .inv-details h1 {
+      font-size: 2.2rem;
+      color: var(--inv-primary);
+      margin: 0 0 1rem 0;
+      font-weight: 800;
+      letter-spacing: -1px;
+      text-transform: uppercase;
+    }
+    .inv-details p {
+      margin: 0 0 0.35rem 0;
+      font-size: 0.85rem;
+      color: var(--inv-text-muted);
+    }
+    .inv-details .inv-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--inv-text-muted);
+    }
+    .inv-details span {
+      font-weight: 700;
+      color: var(--inv-text);
+      font-size: 0.95rem;
+    }
 
-    .inv-footer { margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #f0f0f0; color: #888; font-size: 0.85rem; text-align: center; }
+    /* ── TABLE ── */
+    .inv-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-bottom: 2.5rem;
+      border: 1px solid var(--inv-border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .inv-table th {
+      font-family: 'JetBrains Mono', monospace;
+      text-align: left;
+      padding: 1rem 1.25rem;
+      background: var(--inv-primary);
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      border-bottom: none;
+    }
+    #a4-paper.dark-invoice .inv-table th {
+      background: var(--inv-primary);
+      color: #fff;
+    }
+    .inv-table td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--inv-border);
+      color: var(--inv-text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    .inv-table tbody tr:nth-child(even) td {
+      background: var(--inv-stripe);
+    }
+    .inv-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .inv-table th.right,
+    .inv-table td.right {
+      text-align: right;
+    }
 
-    /* Export Action */
+    /* ── SUMMARY ── */
+    .inv-summary {
+      width: 320px;
+      margin-left: auto;
+      background: var(--inv-card-bg);
+      border: 1px solid var(--inv-border);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+    }
+    .inv-summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.6rem 0;
+      color: var(--inv-text-muted);
+      font-size: 0.9rem;
+    }
+    .inv-summary-row .inv-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .inv-summary-row.total {
+      font-weight: 800;
+      color: var(--inv-primary);
+      font-size: 1.2rem;
+      border-top: 2px solid var(--inv-primary);
+      padding-top: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    /* ── FOOTER ── */
+    .inv-footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--inv-border);
+      color: var(--inv-text-muted);
+      font-size: 0.82rem;
+      text-align: center;
+      line-height: 1.7;
+    }
+    .inv-footer strong {
+      color: var(--inv-text-secondary);
+      display: block;
+      margin-bottom: 0.4rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    /* ── CONTACT ROWS ── */
+    .inv-contact-row {
+      display: flex;
+      gap: 1.25rem;
+      font-size: 0.8rem;
+      color: var(--inv-text-muted);
+      margin-top: 0.6rem;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+    .inv-contact-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .client-contact-row {
+      display: flex;
+      gap: 1.25rem;
+      font-size: 0.8rem;
+      color: var(--inv-text-muted);
+      margin-top: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    /* ── RICH TEXT ── */
+    .rich-text strong { font-weight: 700; color: var(--inv-text); }
+    .rich-text u { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--inv-primary); }
+    .rich-text .box {
+      border: 1.5px solid var(--inv-primary);
+      padding: 2px 8px;
+      border-radius: 5px;
+      background: var(--inv-primary-light);
+      display: inline-block;
+      font-weight: 600;
+    }
+
+    /* ── DARK MODE TOGGLE ── */
+    .dark-toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .dark-toggle-wrap span {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: rgba(255,255,255,0.1);
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.15);
+      transition: all 0.3s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 2px;
+      bottom: 2px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+    .toggle-switch input:checked + .toggle-slider {
+      background: var(--brand-accent, #10B981);
+      border-color: transparent;
+    }
+    .toggle-switch input:checked + .toggle-slider::before {
+      transform: translateX(20px);
+    }
+
+    /* ── EXPORT ── */
     .export-action-bar {
       position: sticky;
       bottom: 0;
@@ -239,7 +528,6 @@
       margin-top: auto;
       z-index: 10;
     }
-    
     .export-btn {
       background: var(--brand-accent);
       color: #fff;
@@ -295,8 +583,8 @@
   <div class="invoice-container">
     
     <!-- LEFT PANEL: CONTROLS -->
-    <div class="tool-panel" style="padding-bottom: 0;">
-      <div style="padding-bottom: 2rem;">
+    <div class="tool-panel">
+      <div>
         <h1 class="invoice-header-title">📄 Frictionless Invoices</h1>
         <p class="invoice-header-subtitle">Generate pixel-perfect PDF receipts instantly. Your company details are silently saved offline in your browser memory for your next visit.</p>
 
@@ -314,6 +602,18 @@
           <div class="input-group full">
             <label class="input-label">Business Address</label>
             <input type="text" id="in-comp-addr" class="cyber-input" placeholder="123 Creator St, Sydney NSW">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Email Address</label>
+            <input type="email" id="in-comp-email" class="cyber-input" placeholder="hello@company.com">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Phone Number</label>
+            <input type="text" id="in-comp-phone" class="cyber-input" placeholder="+1 234 567 890">
+          </div>
+          <div class="input-group full">
+            <label class="input-label">Website</label>
+            <input type="url" id="in-comp-web" class="cyber-input" placeholder="www.company.com">
           </div>
           <div class="input-group full">
             <label class="input-label">Upload Logo (Optional)</label>
@@ -340,6 +640,23 @@
             <label class="input-label">Currency Symbol</label>
             <input type="text" id="in-inv-cur" class="cyber-input" value="$" maxlength="3">
           </div>
+          <div class="input-group">
+            <label class="input-label">Theme Color</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <input type="color" id="in-inv-color" value="#111111" style="width: 40px; height: 40px; padding: 0; border: none; border-radius: 4px; cursor: pointer; background: none;">
+              <span style="font-size: 0.8rem; color: var(--text-dim);">Brand color</span>
+            </div>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Dark Invoice</label>
+            <div class="dark-toggle-wrap">
+              <label class="toggle-switch">
+                <input type="checkbox" id="in-inv-dark">
+                <span class="toggle-slider"></span>
+              </label>
+              <span>Dark Mode PDF</span>
+            </div>
+          </div>
         </div>
 
         <!-- Client Info -->
@@ -353,10 +670,21 @@
             <label class="input-label">Client Address</label>
             <input type="text" id="in-client-addr" class="cyber-input" placeholder="456 Buyer Rd, Melbourne VIC">
           </div>
+          <div class="input-group">
+            <label class="input-label">Client Email</label>
+            <input type="email" id="in-client-email" class="cyber-input" placeholder="billing@acmecorp.com">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Client Phone</label>
+            <input type="text" id="in-client-phone" class="cyber-input" placeholder="+1 987 654 321">
+          </div>
         </div>
 
         <!-- Line Items -->
-        <div class="section-title">Line Items</div>
+        <div class="section-title" style="display: flex; justify-content: space-between; align-items: flex-end;">
+          Line Items
+          <span style="font-size: 0.7rem; color: var(--text-dim); text-transform: none; letter-spacing: 0; font-family: 'Inter', sans-serif;">Use **bold** and __underline__ and [[box]]</span>
+        </div>
         <div id="line-items-container">
           <!-- JS will inject rows here -->
         </div>
@@ -390,6 +718,11 @@
             <h2 id="out-comp-name">Your Company LLC</h2>
             <p style="margin: 0;" id="out-comp-tax">ABN 12 345 678 901</p>
             <p style="margin: 0;" id="out-comp-addr">123 Creator St, Sydney NSW</p>
+            <div class="inv-contact-row" id="out-comp-contact-row">
+              <span class="inv-contact-item" id="wrap-comp-email" style="display:none;">📧 <span id="out-comp-email"></span></span>
+              <span class="inv-contact-item" id="wrap-comp-phone" style="display:none;">📞 <span id="out-comp-phone"></span></span>
+              <span class="inv-contact-item" id="wrap-comp-web" style="display:none;">🌐 <span id="out-comp-web"></span></span>
+            </div>
           </div>
         </div>
 
@@ -397,12 +730,16 @@
           <div class="inv-bill-to">
             <h3>Billed To</h3>
             <p id="out-client-name">Acme Corp</p>
-            <p style="color: #555; font-weight: 400;" id="out-client-addr">456 Buyer Rd, Melbourne VIC</p>
+            <p style="color: #555; font-weight: 400; margin-bottom: 0.5rem;" id="out-client-addr">456 Buyer Rd, Melbourne VIC</p>
+            <div class="client-contact-row" id="out-client-contact-row">
+              <span class="inv-contact-item" id="wrap-client-email" style="display:none;">✉️ <span id="out-client-email"></span></span>
+              <span class="inv-contact-item" id="wrap-client-phone" style="display:none;">📞 <span id="out-client-phone"></span></span>
+            </div>
           </div>
           <div class="inv-details">
             <h1>INVOICE</h1>
-            <p>Invoice No: <span id="out-inv-num">INV-0001</span></p>
-            <p>Date: <span id="out-inv-date">Oct 24, 2026</span></p>
+            <p><span class="inv-label">Invoice No: </span><span id="out-inv-num">INV-0001</span></p>
+            <p><span class="inv-label">Date Issued: </span><span id="out-inv-date">Oct 24, 2026</span></p>
           </div>
         </div>
 
@@ -422,11 +759,11 @@
 
         <div class="inv-summary">
           <div class="inv-summary-row">
-            <span>Subtotal</span>
+            <span class="inv-label">Subtotal</span>
             <span id="out-subtotal">$0.00</span>
           </div>
           <div class="inv-summary-row">
-            <span id="out-tax-label">Tax (10%)</span>
+            <span class="inv-label" id="out-tax-label">Tax (10%)</span>
             <span id="out-tax">$0.00</span>
           </div>
           <div class="inv-summary-row total">
@@ -436,12 +773,13 @@
         </div>
 
         <div class="inv-footer">
-          <strong style="color: #333; display: block; margin-bottom: 0.25rem;">Payment Instructions:</strong>
+          <strong>Payment Instructions</strong>
           <div id="out-pay-details" style="white-space: pre-line;">BSB: 000-000
 ACC: 12345678
 Please pay within 14 days.</div>
         </div>
       </div>
+    </div>
   </div>
 
   <div id="perf-hud" aria-hidden="true">
@@ -449,81 +787,8 @@ Please pay within 14 days.</div>
     <span id="fps-counter">60 FPS</span>
   </div>
 
-  
-
   <script src="bg.js?v=16"></script>
-    <!-- Footer -->
-    <!-- Global Newsletter Section -->
-  <section class="newsletter-section" style="padding: 60px 20px; background: rgba(16, 185, 129, 0.05); border-top: 1px solid rgba(16, 185, 129, 0.1); border-bottom: 1px solid rgba(16, 185, 129, 0.1); text-align: center; position: relative; z-index: 10;">
-    <div class="container fluid" style="max-width: 600px; margin: 0 auto;">
-      <h2 style="font-size: 2rem; color: #fff; margin-bottom: 16px;">Join the Developer Collective</h2>
-      <p style="color: var(--text-dim); margin-bottom: 32px; font-size: 1.1rem;">Get notified when we launch new zero-server tools and pro-grade SaaS kits. No spam, ever.</p>
-      
-      <form class="newsletter-form" action="https://api.web3forms.com/submit" method="POST" style="display: flex; gap: 12px; flex-direction: column;">
-        <input type="hidden" name="access_key" value="f082846d-6298-49c4-9109-4bc3fa19884d">
-        <input type="hidden" name="subject" value="New Newsletter Subscriber!">
-        <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
-        
-        <div style="display: flex; gap: 8px; width: 100%;">
-          <input type="email" name="email" placeholder="enter_your_email@domain.com" required style="flex: 1; padding: 16px 20px; background: rgba(0,0,0,0.4); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; color: #fff; font-size: 1rem; outline: none; transition: border 0.2s;" onfocus="this.style.borderColor='#10B981'" onblur="this.style.borderColor='rgba(16,185,129,0.3)'">
-          <button type="submit" class="newsletter-submit-btn" style="padding: 0 32px; background: #10B981; color: #000; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 1rem;" onmouseover="this.style.background='#34d399'; this.style.transform='scale(1.02)';" onmouseout="this.style.background='#10B981'; this.style.transform='scale(1)';">SUBSCRIBE</button>
-        </div>
-        <div class="newsletter-success" style="color: #10B981; font-weight: 600; display: none; margin-top: 12px; font-size: 1.1rem;">? Transmission secured. Welcome to the collective.</div>
-      </form>
-    </div>
-  </section>
-  <footer class="footer" id="footer" style="position: relative; z-index: 10;">
-    <div class="container fluid">
-      <div class="footer-grid">
-        <div class="footer-brand">
-          <a href="index.html" class="nav-brand" aria-label="Riyo Studio home">
-            <svg class="nav-brand-icon-svg" viewBox="0 0 32 32" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6)); display: block;">
-  <rect width="32" height="32" rx="8" fill="rgba(16, 185, 129, 0.1)" stroke="#10B981" stroke-width="1.5"/>
-  <path d="M11 22V10H17C19.2091 10 21 11.7909 21 14C21 16.2091 19.2091 18 17 18H11" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M15 18L20 22" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
-            <div class="nav-brand-text">
-              <span class="nav-brand-name">Riyo Studio</span>
-              <span class="nav-brand-tag">SaaS Developer Studio</span>
-            </div>
-          </a>
-          <p>
-            A registered Australian business based in Western Australia. Building, shipping, and maintaining SaaS products end-to-end.
-          </p>
-        </div>
-
-        <div class="footer-col">
-          <h4>Tools</h4>
-          <a href="invoice.html">Invoice Maker</a>
-          <a href="qr.html">QR Hub</a>
-          <a href="scanner.html">AI Scanner</a>
-          <a href="forge.html">File Forge</a>
-            <a href="logo.html">Logo Maker <span style="font-size: 10px; background: rgba(16,185,129,0.1); color: #10B981; padding: 2px 6px; border-radius: 4px; margin-left: 4px; border: 1px solid rgba(16,185,129,0.2);">NEW</span></a>
-        </div>
-
-        <div class="footer-col">
-          <h4>Legal</h4>
-          <a href="privacy.html">Privacy Policy</a>
-          <a href="terms.html">Terms of Service</a>
-          <a href="disclaimer.html">Disclaimer</a>
-        </div>
-      </div>
-
-      <div class="footer-divider"></div>
-
-      <div class="footer-bottom">
-        <span class="footer-copy">© 2026 Riyo Studio. All rights reserved.</span>
-        <div class="footer-legal">
-          <span style="font-size: 12px; color: rgba(255,255,255,0.6);">Registered Business · Western Australia, Australia</span>
-        </div>
-      </div>
-    </div>
-  </footer>
   <script src="script.js?v=20"></script>
-  <script src="invoice.js?v=3"></script>
+  <script src="invoice.js?v=5"></script>
 </body>
 </html>
-
-
-
-

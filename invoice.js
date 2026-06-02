@@ -6,6 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
     compName: document.getElementById('in-comp-name'),
     compTax: document.getElementById('in-comp-tax'),
     compAddr: document.getElementById('in-comp-addr'),
+    compEmail: document.getElementById('in-comp-email'),
+    compPhone: document.getElementById('in-comp-phone'),
+    compWeb: document.getElementById('in-comp-web'),
     compLogo: document.getElementById('in-comp-logo'),
     payDetails: document.getElementById('in-pay-details'),
     
@@ -13,15 +16,25 @@ document.addEventListener('DOMContentLoaded', () => {
     invDate: document.getElementById('in-inv-date'),
     invTaxRate: document.getElementById('in-inv-taxrate'),
     invCur: document.getElementById('in-inv-cur'),
+    invColor: document.getElementById('in-inv-color'),
+    invDark: document.getElementById('in-inv-dark'),
     
     clientName: document.getElementById('in-client-name'),
     clientAddr: document.getElementById('in-client-addr'),
+    clientEmail: document.getElementById('in-client-email'),
+    clientPhone: document.getElementById('in-client-phone'),
   };
 
   const outputs = {
     compName: document.getElementById('out-comp-name'),
     compTax: document.getElementById('out-comp-tax'),
     compAddr: document.getElementById('out-comp-addr'),
+    wrapCompEmail: document.getElementById('wrap-comp-email'),
+    compEmail: document.getElementById('out-comp-email'),
+    wrapCompPhone: document.getElementById('wrap-comp-phone'),
+    compPhone: document.getElementById('out-comp-phone'),
+    wrapCompWeb: document.getElementById('wrap-comp-web'),
+    compWeb: document.getElementById('out-comp-web'),
     logo: document.getElementById('out-logo'),
     payDetails: document.getElementById('out-pay-details'),
     
@@ -30,6 +43,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     clientName: document.getElementById('out-client-name'),
     clientAddr: document.getElementById('out-client-addr'),
+    wrapClientEmail: document.getElementById('wrap-client-email'),
+    clientEmail: document.getElementById('out-client-email'),
+    wrapClientPhone: document.getElementById('wrap-client-phone'),
+    clientPhone: document.getElementById('out-client-phone'),
     
     tableBody: document.getElementById('out-table-body'),
     subtotal: document.getElementById('out-subtotal'),
@@ -53,6 +70,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (prefs.compName) inputs.compName.value = prefs.compName;
         if (prefs.compTax) inputs.compTax.value = prefs.compTax;
         if (prefs.compAddr) inputs.compAddr.value = prefs.compAddr;
+        if (prefs.compEmail) inputs.compEmail.value = prefs.compEmail;
+        if (prefs.compPhone) inputs.compPhone.value = prefs.compPhone;
+        if (prefs.compWeb) inputs.compWeb.value = prefs.compWeb;
+        if (prefs.invColor) inputs.invColor.value = prefs.invColor;
         if (prefs.payDetails) inputs.payDetails.value = prefs.payDetails;
         if (prefs.logo) {
           logoDataUrl = prefs.logo;
@@ -72,6 +93,10 @@ document.addEventListener('DOMContentLoaded', () => {
       compName: inputs.compName.value,
       compTax: inputs.compTax.value,
       compAddr: inputs.compAddr.value,
+      compEmail: inputs.compEmail.value,
+      compPhone: inputs.compPhone.value,
+      compWeb: inputs.compWeb.value,
+      invColor: inputs.invColor.value,
       payDetails: inputs.payDetails.value,
       logo: logoDataUrl
     };
@@ -138,9 +163,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnAddItem.addEventListener('click', addLineItem);
 
+  function parseMD(text) {
+    if (!text) return '';
+    return text
+      .replace(/</g, '&lt;').replace(/>/g, '&gt;') // escape html
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/__(.*?)__/g, '<u>$1</u>')
+      .replace(/\[\[(.*?)\]\]/g, '<span class="box">$1</span>')
+      .replace(/\n/g, '<br>');
+  }
+
   // 5. Core Math & Preview Update
   function updatePreview() {
     const cur = inputs.invCur.value || '$';
+    const paper = document.getElementById('a4-paper');
+    paper.style.setProperty('--inv-primary', inputs.invColor.value);
+    
+    const hex = inputs.invColor.value.replace('#', '');
+    const r = parseInt(hex.substring(0,2), 16) || 17;
+    const g = parseInt(hex.substring(2,4), 16) || 17;
+    const b = parseInt(hex.substring(4,6), 16) || 17;
+    paper.style.setProperty('--inv-primary-light', `rgba(${r}, ${g}, ${b}, 0.05)`);
+
+    // Dark mode toggle
+    if (inputs.invDark.checked) {
+      paper.classList.add('dark-invoice');
+    } else {
+      paper.classList.remove('dark-invoice');
+    }
     
     // Header & Meta
     outputs.compName.textContent = inputs.compName.value || 'Your Company LLC';
@@ -150,13 +200,25 @@ document.addEventListener('DOMContentLoaded', () => {
     outputs.clientAddr.textContent = inputs.clientAddr.value || 'Client Address';
     outputs.invNum.textContent = inputs.invNum.value || 'INV-0001';
     
+    outputs.compEmail.textContent = inputs.compEmail.value;
+    outputs.wrapCompEmail.style.display = inputs.compEmail.value ? 'inline-flex' : 'none';
+    outputs.compPhone.textContent = inputs.compPhone.value;
+    outputs.wrapCompPhone.style.display = inputs.compPhone.value ? 'inline-flex' : 'none';
+    outputs.compWeb.textContent = inputs.compWeb.value;
+    outputs.wrapCompWeb.style.display = inputs.compWeb.value ? 'inline-flex' : 'none';
+
+    outputs.clientEmail.textContent = inputs.clientEmail.value;
+    outputs.wrapClientEmail.style.display = inputs.clientEmail.value ? 'inline-flex' : 'none';
+    outputs.clientPhone.textContent = inputs.clientPhone.value;
+    outputs.wrapClientPhone.style.display = inputs.clientPhone.value ? 'inline-flex' : 'none';
+    
     // Date formatting
     if (inputs.invDate.value) {
       const d = new Date(inputs.invDate.value);
       outputs.invDate.textContent = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     }
     
-    outputs.payDetails.textContent = inputs.payDetails.value || 'Payment Instructions here...';
+    outputs.payDetails.innerHTML = parseMD(inputs.payDetails.value || 'Payment Instructions here...');
 
     // Math
     let subtotal = 0;
@@ -168,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${item.desc || 'Item'}</td>
+        <td class="rich-text">${parseMD(item.desc) || 'Item'}</td>
         <td class="right">${item.qty}</td>
         <td class="right">${cur}${item.price.toFixed(2)}</td>
         <td class="right">${cur}${amount.toFixed(2)}</td>
@@ -186,59 +248,101 @@ document.addEventListener('DOMContentLoaded', () => {
     outputs.total.textContent = `${cur}${total.toFixed(2)}`;
 
     savePrefs();
+    // Re-scale after content changes
+    requestAnimationFrame(() => { if (typeof resizePreview === 'function') resizePreview(); });
   }
 
   // 6. Bind Listeners to standard inputs
   const standardInputs = [
-    inputs.compName, inputs.compTax, inputs.compAddr, inputs.payDetails,
-    inputs.invNum, inputs.invDate, inputs.invTaxRate, inputs.invCur,
-    inputs.clientName, inputs.clientAddr
+    inputs.compName, inputs.compTax, inputs.compAddr, inputs.compEmail, inputs.compPhone, inputs.compWeb,
+    inputs.payDetails, inputs.invNum, inputs.invDate, inputs.invTaxRate, inputs.invCur, inputs.invColor,
+    inputs.clientName, inputs.clientAddr, inputs.clientEmail, inputs.clientPhone
   ];
 
   standardInputs.forEach(input => {
     input.addEventListener('input', updatePreview);
   });
 
+  // Dark mode toggle uses 'change' event
+  inputs.invDark.addEventListener('change', updatePreview);
+
+  // Dynamic scaling: fit the 210mm A4 paper into the available column width
+  function resizePreview() {
+    const wrapper = document.querySelector('.canvas-wrapper');
+    const paper = document.getElementById('a4-paper');
+    if (!wrapper || !paper) return;
+
+    const availableWidth = wrapper.clientWidth - 64; // 2rem padding each side
+    const paperNaturalWidth = 794; // 210mm ≈ 794px at 96dpi
+    const scale = Math.min(availableWidth / paperNaturalWidth, 1);
+
+    paper.style.transform = `scale(${scale})`;
+    // Collapse the dead space from scaling
+    const naturalHeight = paper.scrollHeight;
+    paper.style.marginBottom = `-${naturalHeight * (1 - scale)}px`;
+  }
+
+  window.addEventListener('resize', resizePreview);
+  const ro = new ResizeObserver(resizePreview);
+  const cw = document.querySelector('.canvas-wrapper');
+  if (cw) ro.observe(cw);
+  
+  // Initial scale after DOM settles
+  setTimeout(resizePreview, 50);
+
   // 7. PDF Export
-  btnExport.addEventListener('click', () => {
-    const originalElement = document.getElementById('a4-paper');
-    
-    // Clone the element to bypass all viewport and CSS scaling issues on mobile
-    const clone = originalElement.cloneNode(true);
-    clone.id = 'a4-paper-clone';
-    
-    // Force absolute positioning off-screen and enforce A4 dimensions
-    clone.style.position = 'absolute';
-    clone.style.top = '-9999px';
-    clone.style.left = '-9999px';
-    clone.style.margin = '0';
-    clone.style.boxShadow = 'none';
-    clone.style.transform = 'none';
-    clone.style.width = '210mm';
-    clone.style.minHeight = '297mm';
-    
-    // Append to body so html2canvas can access it
-    document.body.appendChild(clone);
-    
+  btnExport.addEventListener('click', async () => {
+    const btn = document.getElementById('btn-export-pdf');
+    const paper = document.getElementById('a4-paper');
+
+    // Disable button while exporting
+    btn.disabled = true;
+    btn.textContent = 'Generating PDF…';
+
+    // Save current transform state and temporarily reset it so html2canvas
+    // sees the element at its native 210mm × 297mm size (no scale distortion).
+    const savedTransform = paper.style.transform;
+    const savedMarginBottom = paper.style.marginBottom;
+    const savedPosition = paper.style.position;
+    const savedLeft = paper.style.left;
+    const savedTop = paper.style.top;
+    const savedZIndex = paper.style.zIndex;
+    const savedBoxShadow = paper.style.boxShadow;
+
+    paper.style.transform = 'none';
+    paper.style.marginBottom = '0';
+    // Keep it in-flow but visually hidden via opacity isn't needed;
+    // html2canvas works fine on visible elements. We just remove the scale.
+
     const filename = `${inputs.invNum.value || 'Invoice'}_${inputs.clientName.value || 'Client'}.pdf`;
 
     const opt = {
-      margin:       0,
-      filename:     filename.replace(/[^a-z0-9_-]/gi, '_').toLowerCase() + '.pdf',
-      image:        { type: 'jpeg', quality: 1.0 },
-      html2canvas:  { 
-        scale: 2, 
-        useCORS: true, 
+      margin:      0,
+      filename:    filename.replace(/[^a-z0-9_.-]/gi, '_').toLowerCase(),
+      image:       { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
         logging: false,
-        windowWidth: 800
+        backgroundColor: paper.classList.contains('dark-invoice') ? '#0f1219' : '#ffffff',
       },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    html2pdf().set(opt).from(clone).save().then(() => {
-      // Clean up the clone
-      document.body.removeChild(clone);
-    });
+    try {
+      await html2pdf().set(opt).from(paper).save();
+    } catch (err) {
+      console.error('PDF export failed:', err);
+      alert('PDF generation failed. Please try again.');
+    } finally {
+      // Restore transform so the preview looks correct again
+      paper.style.transform = savedTransform;
+      paper.style.marginBottom = savedMarginBottom;
+
+      btn.disabled = false;
+      btn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> DOWNLOAD PDF`;
+    }
   });
 
   // Init
