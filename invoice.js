@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const scale = Math.min(availableWidth / paperNaturalWidth, 1);
 
     paper.style.transform = `scale(${scale})`;
-    // Collapse the dead space from scaling
+    // Collapse the dead vertical space left below the scaled paper
     const naturalHeight = paper.scrollHeight;
     paper.style.marginBottom = `-${naturalHeight * (1 - scale)}px`;
   }

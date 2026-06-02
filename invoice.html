@@ -188,6 +188,7 @@
       overflow-y: auto;
       max-height: calc(100vh - 100px);
       gap: 2rem;
+      overflow-x: hidden;
     }
 
     /* Download button in the canvas area */
@@ -262,8 +263,9 @@
       color: var(--inv-text);
       font-family: 'Inter', sans-serif;
       box-sizing: border-box;
-      transform-origin: top left;
+      transform-origin: top center;
       transition: background 0.3s, color 0.3s;
+      flex-shrink: 0;
     }
 
     /* ── DARK THEME ── */
@@ -795,6 +797,6 @@ Please pay within 14 days.</div>
 
   <script src="bg.js?v=16"></script>
   <script src="script.js?v=20"></script>
-  <script src="invoice.js?v=5"></script>
+  <script src="invoice.js?v=6"></script>
 </body>
 </html>
