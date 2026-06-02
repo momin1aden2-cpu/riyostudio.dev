@@ -367,6 +367,14 @@
         <div class="input-group full" style="margin-bottom: 2rem;">
           <textarea id="in-pay-details" class="cyber-input" style="height: 80px; resize: vertical;" placeholder="BSB: 000-000&#10;ACC: 12345678&#10;Please pay within 14 days."></textarea>
         </div>
+
+        <!-- EXPORT DOCK -->
+        <div class="export-action-bar" style="position: relative; background: transparent; padding: 0; border: none; margin-top: 2rem;">
+          <button class="export-btn" id="btn-export-pdf" style="width: 100%;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            DOWNLOAD PDF
+          </button>
+        </div>
       </div>
     </div>
 
@@ -434,16 +442,6 @@ ACC: 12345678
 Please pay within 14 days.</div>
         </div>
       </div>
-
-      <!-- EXPORT DOCK -->
-      <div class="export-action-bar">
-        <button class="export-btn" id="btn-export-pdf">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          DOWNLOAD PDF
-        </button>
-      </div>
-
-    </div>
   </div>
 
   <div id="perf-hud" aria-hidden="true">
@@ -525,5 +523,7 @@ Please pay within 14 days.</div>
   <script src="invoice.js?v=3"></script>
 </body>
 </html>
+
+
 
 

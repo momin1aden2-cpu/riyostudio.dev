@@ -2152,3 +2152,12 @@ html.supernova body {
   }
 }
 
+
+
+.tool-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 4vw;
+  width: 100%;
+}
+
