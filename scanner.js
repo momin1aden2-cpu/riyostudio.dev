@@ -290,26 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return str.replace(/[&<>'"]/g, tag => ({'&': '&amp;','<': '&lt;','>': '&gt;',"'": '&#39;','"': '&quot;'}[tag] || tag));
   }
 
-  async function queryHuggingFaceAPI(text, retries = 1) {
-    const API_URL = "https://api-inference.huggingface.co/models/Hello-SimpleAI/chatgpt-detector-roberta";
-    const payload = { inputs: text.substring(0, 2000) };
 
-    for (let i = 0; i < retries; i++) {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const result = await response.json();
-      if (result.error && result.estimated_time) {
-        scanBtn.textContent = `[ WAKING UP ML SERVER... ]`;
-        await new Promise(r => setTimeout(r, 4000));
-        continue;
-      }
-      return result;
-    }
-    throw new Error("Model timeout");
-  }
 
   function detectPayloadType(text) {
     if (dropzone.querySelector('p').innerText.includes("Loaded:")) {
@@ -412,20 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let aiProbability = null;
     let fallbackScore = 0;
 
-    try {
-      const mlResponse = await queryHuggingFaceAPI(text);
-      if (Array.isArray(mlResponse) && mlResponse[0]) {
-        const chatGptScore = mlResponse[0].find(r => r.label === 'ChatGPT' || r.label === 'Fake');
-        if (chatGptScore) {
-          aiProbability = chatGptScore.score * 100;
-        } else {
-          const humanScore = mlResponse[0].find(r => r.label === 'Human' || r.label === 'Real');
-          if (humanScore) aiProbability = (1 - humanScore.score) * 100;
-        }
-      }
-    } catch (err) {
-      console.warn("ML API Blocked. Falling back to Aussie Heuristics.");
-    }
+
 
     const dialect = document.getElementById('dialect-selector') ? document.getElementById('dialect-selector').value : 'global';
     let totalIssues = 0;
