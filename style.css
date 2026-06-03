@@ -2135,20 +2135,31 @@ html.supernova body {
   box-shadow: 0 0 16px rgba(16, 185, 129, 0.4);
 }
 
+/* Shared Application Panel (like QR Hub) */
+.app-panel {
+  background: rgba(16, 20, 30, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 2rem;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+
 /* Logo Maker Grid */
 .logo-maker-grid {
   display: grid;
-  grid-template-columns: 360px 1fr 360px;
-  gap: 24px;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
   align-items: start;
-  max-width: 1800px;
-  margin: 0 auto;
-  width: 100%;
+  max-width: 100%;
+  margin: 120px auto 40px auto;
+  padding: 0 5%;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1000px) {
   .logo-maker-grid {
     grid-template-columns: 1fr;
+    padding: 0 1rem;
   }
 }
 

@@ -25,7 +25,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="apple-touch-icon" href="assets/icon.png">
-  <link rel="stylesheet" href="style.css?v=999">
+  <link rel="stylesheet" href="style.css?v=1001">
 
   <!-- html2pdf Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
@@ -34,31 +34,26 @@
     /* Custom Styling for the Invoice Generator Layout */
     .invoice-container {
       max-width: 100%;
-      margin: 100px auto 0 auto;
-      padding: 0;
+      margin: 120px auto 40px auto;
+      padding: 0 5%;
       display: grid;
-      grid-template-columns: 500px 1fr;
-      gap: 0;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
       align-items: start;
-      min-height: calc(100vh - 100px);
     }
 
     @media (max-width: 1000px) {
       .invoice-container {
         grid-template-columns: 1fr;
+        padding: 0 1rem;
       }
     }
 
     .tool-panel {
-      background: rgba(16, 20, 30, 0.85);
-      border-right: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 0;
-      padding: 2rem 2.5rem;
-      backdrop-filter: blur(20px);
-      max-height: calc(100vh - 100px);
+      max-height: calc(100vh - 160px);
       overflow-y: auto;
       position: sticky;
-      top: 100px;
+      top: 120px;
       scrollbar-width: thin;
       scrollbar-color: rgba(255,255,255,0.1) transparent;
     }
@@ -175,20 +170,23 @@
     .btn-add:hover { background: rgba(16,185,129,0.2); }
 
     .canvas-wrapper {
-      background: rgba(0,0,0,0.15);
-      border: none;
-      border-radius: 0;
-      padding: 2.5rem 2rem;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
       align-items: center;
-      position: sticky;
-      top: 100px;
-      overflow-y: auto;
-      max-height: calc(100vh - 100px);
-      gap: 2rem;
-      overflow-x: hidden;
+      position: relative;
+      overflow: hidden;
+      gap: 1.5rem;
+      padding-top: 0.5rem;
+    }
+
+    /* Scale the A4 paper to fit inside the panel */
+    .canvas-wrapper #a4-paper {
+      width: 100%;
+      max-width: 100%;
+      min-height: auto;
+      aspect-ratio: 210 / 297;
+      padding: 6% 7% 5% 7%;
     }
 
     /* Download button in the canvas area */
@@ -235,6 +233,9 @@
       }
       .tool-panel {
         padding: 1.5rem !important;
+        position: relative;
+        top: 0;
+        max-height: none;
       }
     }
 
@@ -259,13 +260,22 @@
       min-height: 297mm;
       padding: 24mm 26mm 20mm 26mm;
       box-shadow: 0 8px 40px rgba(0,0,0,0.45);
-      border-radius: 2px;
+      border-radius: 4px;
       color: var(--inv-text);
       font-family: 'Inter', sans-serif;
       box-sizing: border-box;
       transform-origin: top center;
       transition: background 0.3s, color 0.3s;
       flex-shrink: 0;
+    }
+
+    /* --- Responsive scale for the paper inside the panel --- */
+    @media (max-width: 1600px) {
+      .canvas-wrapper #a4-paper {
+        width: 100%;
+        min-height: auto;
+        padding: 6% 7% 5% 7%;
+      }
     }
 
     /* ── DARK THEME ── */
@@ -591,7 +601,7 @@
   <div class="invoice-container">
     
     <!-- LEFT PANEL: CONTROLS -->
-    <div class="tool-panel">
+    <div class="tool-panel app-panel">
       <div>
         <h1 class="invoice-header-title">📄 Frictionless Invoices</h1>
         <p class="invoice-header-subtitle">Generate pixel-perfect PDF receipts instantly. Your company details are silently saved offline in your browser memory for your next visit.</p>
@@ -709,7 +719,8 @@
     </div>
 
     <!-- RIGHT PANEL: PREVIEW -->
-    <div class="canvas-wrapper">
+    <div class="canvas-wrapper app-panel">
+      <h3 style="font-size: 1.1rem; color: #fff; margin-bottom: 1rem; text-align: center;">Live Preview</h3>
       <div id="a4-paper">
         <!-- INVOICE CONTENT -->
         <div class="inv-header">
