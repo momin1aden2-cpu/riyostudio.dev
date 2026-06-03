@@ -294,6 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
   btnExport.addEventListener('click', async () => {
     const btn = document.getElementById('btn-export-pdf');
     const paper = document.getElementById('a4-paper');
+    const wrapper = document.querySelector('.canvas-wrapper');
 
     btn.disabled = true;
     btn.textContent = 'Generating PDF…';
@@ -302,35 +303,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedPaper = {
       transform: paper.style.transform,
       marginBottom: paper.style.marginBottom,
-      boxShadow: paper.style.boxShadow,
-      transition: paper.style.transition,
-      position: paper.style.position,
-      top: paper.style.top,
-      left: paper.style.left,
-      zIndex: paper.style.zIndex
+      transition: paper.style.transition
     };
     
-    // Save scroll pos
-    const scrollPos = window.scrollY;
-
+    const savedWrapper = {
+      alignItems: wrapper.style.alignItems,
+      overflow: wrapper.style.overflow,
+      maxHeight: wrapper.style.maxHeight
+    };
+    
     // PREPARE FOR PERFECT CAPTURE:
-    // We forcibly pull the paper out of the document flow and pin it to the 
-    // exact top-left corner of the window. This bypasses ALL parent margins, 
-    // padding, and sticky navbars that were pushing the capture down.
-    paper.style.transition = 'none';
+    // 1. overflow: visible prevents the wrapper from clipping the unscaled paper (which caused blank PDFs)
+    // 2. align-items: flex-start prevents the huge paper from being centered and pushing its top into negative Y coordinates (which caused the top offset/empty space)
+    wrapper.style.overflow = 'visible';
+    wrapper.style.maxHeight = 'none';
+    wrapper.style.alignItems = 'flex-start';
+
+    // Expand the paper
+    paper.style.transition = 'none'; 
     paper.style.transform = 'none';
     paper.style.marginBottom = '0';
-    paper.style.boxShadow = 'none';
-    
-    paper.style.position = 'fixed';
-    paper.style.top = '0';
-    paper.style.left = '0';
-    paper.style.zIndex = '9999';
 
-    // Scroll to the absolute top so html2canvas coordinate mapping matches perfectly
-    window.scrollTo(0, 0);
+    // Scroll slightly to ensure the top of the wrapper is in view, but mostly the flex-start handles it
+    window.scrollTo(0, wrapper.offsetTop - 50 || 0);
 
-    // Give browser a moment to paint the huge uncentered layout
+    // Give browser a moment to paint
     await new Promise(r => setTimeout(r, 150));
 
     const filename = `${inputs.invNum.value || 'Invoice'}_${inputs.clientName.value || 'Client'}.pdf`;
@@ -354,17 +351,14 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('PDF export failed:', err);
       alert('PDF generation failed. Please try again.');
     } finally {
-      // RESTORE EVERYTHING EXACTLY AS IT WAS
-      paper.style.position = savedPaper.position;
-      paper.style.top = savedPaper.top;
-      paper.style.left = savedPaper.left;
-      paper.style.zIndex = savedPaper.zIndex;
+      // RESTORE EVERYTHING
+      wrapper.style.alignItems = savedWrapper.alignItems;
+      wrapper.style.overflow = savedWrapper.overflow;
+      wrapper.style.maxHeight = savedWrapper.maxHeight;
+
       paper.style.transition = savedPaper.transition;
       paper.style.transform = savedPaper.transform;
       paper.style.marginBottom = savedPaper.marginBottom;
-      paper.style.boxShadow = savedPaper.boxShadow;
-
-      window.scrollTo(0, scrollPos);
 
       btn.disabled = false;
       btn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> DOWNLOAD PDF`;
