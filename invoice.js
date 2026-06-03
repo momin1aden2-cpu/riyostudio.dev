@@ -314,28 +314,34 @@ document.addEventListener('DOMContentLoaded', () => {
         onclone: (clonedDoc) => {
           const clonedPaper = clonedDoc.getElementById('a4-paper');
           if (clonedPaper) {
-            // Remove the scale transform and force top-left alignment
+            // Remove the scale transform and any offsets
             clonedPaper.style.transform = 'none';
             clonedPaper.style.margin = '0';
+            clonedPaper.style.padding = '24mm 26mm 20mm 26mm';
             clonedPaper.style.boxShadow = 'none';
             clonedPaper.style.width = '210mm';
             clonedPaper.style.minHeight = '297mm';
-            clonedPaper.style.position = 'relative';
+            clonedPaper.style.position = 'absolute';
             clonedPaper.style.top = '0';
             clonedPaper.style.left = '0';
             
-            // Destroy all flexbox centering and offsets on parents so the capture starts exactly at the top edge of the invoice
-            let parent = clonedPaper.parentElement;
-            while (parent && parent !== clonedDoc.body) {
-              parent.style.display = 'block'; // Kills flexbox align-items: center
-              parent.style.position = 'static'; // Kills relative offsets
-              parent.style.overflow = 'visible';
-              parent.style.maxHeight = 'none';
-              parent.style.transform = 'none';
-              parent.style.margin = '0';
-              parent.style.padding = '0';
-              parent = parent.parentElement;
-            }
+            // The ultimate fix for layout interference: 
+            // Move the invoice directly to the body of the clone.
+            clonedDoc.body.appendChild(clonedPaper);
+            
+            // Hide everything else so it doesn't affect document size
+            Array.from(clonedDoc.body.children).forEach(child => {
+              if (child !== clonedPaper && child.tagName !== 'STYLE' && child.tagName !== 'LINK') {
+                child.style.display = 'none';
+              }
+            });
+            
+            // Reset body and html margins
+            clonedDoc.body.style.margin = '0';
+            clonedDoc.body.style.padding = '0';
+            clonedDoc.body.style.position = 'relative';
+            clonedDoc.documentElement.style.margin = '0';
+            clonedDoc.documentElement.style.padding = '0';
           }
         }
       },
