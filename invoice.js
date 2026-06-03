@@ -307,27 +307,39 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const savedWrapper = {
-      alignItems: wrapper.style.alignItems,
+      position: wrapper.style.position,
+      top: wrapper.style.top,
+      left: wrapper.style.left,
+      zIndex: wrapper.style.zIndex,
+      display: wrapper.style.display,
       overflow: wrapper.style.overflow,
+      padding: wrapper.style.padding,
       maxHeight: wrapper.style.maxHeight
     };
-    
-    // PREPARE FOR PERFECT CAPTURE:
-    // 1. overflow: visible prevents the wrapper from clipping the unscaled paper (which caused blank PDFs)
-    // 2. align-items: flex-start prevents the huge paper from being centered and pushing its top into negative Y coordinates (which caused the top offset/empty space)
-    wrapper.style.overflow = 'visible';
-    wrapper.style.maxHeight = 'none';
-    wrapper.style.alignItems = 'flex-start';
 
-    // Expand the paper
+    const originalScroll = window.scrollY;
+
+    // PREPARE LIVE DOM FOR PERFECT CAPTURE
+    // 1. Scroll to the absolute top to prevent html2canvas' scrollY offset bug (which caused the massive blank gap)
+    window.scrollTo(0, 0);
+
+    // 2. Rip the wrapper out of the grid layout using absolute positioning so it sits perfectly at 0,0 
+    // without inheriting any padding or margins from the header/main container.
+    wrapper.style.position = 'absolute';
+    wrapper.style.top = '0';
+    wrapper.style.left = '0';
+    wrapper.style.zIndex = '9999';
+    wrapper.style.display = 'block'; 
+    wrapper.style.overflow = 'visible';
+    wrapper.style.padding = '0';
+    wrapper.style.maxHeight = 'none';
+
+    // 3. Remove the scale from the paper so it's true 210x297mm
     paper.style.transition = 'none'; 
     paper.style.transform = 'none';
     paper.style.marginBottom = '0';
 
-    // Scroll slightly to ensure the top of the wrapper is in view, but mostly the flex-start handles it
-    window.scrollTo(0, wrapper.offsetTop - 50 || 0);
-
-    // Give browser a moment to paint
+    // Give browser a moment to paint the absolute layout
     await new Promise(r => setTimeout(r, 150));
 
     const filename = `${inputs.invNum.value || 'Invoice'}_${inputs.clientName.value || 'Client'}.pdf`;
@@ -341,6 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
         allowTaint: true,
         logging: false,
         backgroundColor: paper.classList.contains('dark-invoice') ? '#0f1219' : '#ffffff',
+        scrollY: 0 // explicit fail-safe against the scroll offset bug
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
@@ -352,13 +365,20 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('PDF generation failed. Please try again.');
     } finally {
       // RESTORE EVERYTHING
-      wrapper.style.alignItems = savedWrapper.alignItems;
+      wrapper.style.position = savedWrapper.position;
+      wrapper.style.top = savedWrapper.top;
+      wrapper.style.left = savedWrapper.left;
+      wrapper.style.zIndex = savedWrapper.zIndex;
+      wrapper.style.display = savedWrapper.display;
       wrapper.style.overflow = savedWrapper.overflow;
+      wrapper.style.padding = savedWrapper.padding;
       wrapper.style.maxHeight = savedWrapper.maxHeight;
 
       paper.style.transition = savedPaper.transition;
       paper.style.transform = savedPaper.transform;
       paper.style.marginBottom = savedPaper.marginBottom;
+
+      window.scrollTo(0, originalScroll);
 
       btn.disabled = false;
       btn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> DOWNLOAD PDF`;
