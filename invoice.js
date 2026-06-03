@@ -295,30 +295,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('btn-export-pdf');
     const paper = document.getElementById('a4-paper');
 
+    // Disable button while exporting
     btn.disabled = true;
     btn.textContent = 'Generating PDF…';
 
-    // Remember where the paper lives so we can put it back
-    const originalParent = paper.parentNode;
-    const originalNext = paper.nextSibling;
-
-    // Save inline styles that resizePreview() sets
+    // Save current transform state and temporarily reset it so html2canvas
+    // sees the element at its native 210mm × 297mm size (no scale distortion).
     const savedTransform = paper.style.transform;
     const savedMarginBottom = paper.style.marginBottom;
+    const savedPosition = paper.style.position;
+    const savedLeft = paper.style.left;
+    const savedTop = paper.style.top;
+    const savedZIndex = paper.style.zIndex;
+    const savedBoxShadow = paper.style.boxShadow;
 
-    // Move the paper out of the flex/grid layout and into <body> directly.
-    // This guarantees html2canvas sees a clean, un-clipped, un-transformed element.
     paper.style.transform = 'none';
     paper.style.marginBottom = '0';
-    paper.style.position = 'absolute';
-    paper.style.left = '0';
-    paper.style.top = '0';
-    paper.style.zIndex = '-1';
-    paper.style.boxShadow = 'none';
-    document.body.appendChild(paper);
-
-    // Let the browser reflow
-    await new Promise(r => setTimeout(r, 150));
+    // Keep it in-flow but visually hidden via opacity isn't needed;
+    // html2canvas works fine on visible elements. We just remove the scale.
 
     const filename = `${inputs.invNum.value || 'Invoice'}_${inputs.clientName.value || 'Client'}.pdf`;
 
@@ -327,14 +321,13 @@ document.addEventListener('DOMContentLoaded', () => {
       filename:    filename.replace(/[^a-z0-9_.-]/gi, '_').toLowerCase(),
       image:       { type: 'jpeg', quality: 0.98 },
       html2canvas: {
-        scale: 2,
+        scale: 3,
         useCORS: true,
         allowTaint: true,
         logging: false,
         backgroundColor: paper.classList.contains('dark-invoice') ? '#0f1219' : '#ffffff',
       },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['avoid-all'] }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
     try {
@@ -343,24 +336,9 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('PDF export failed:', err);
       alert('PDF generation failed. Please try again.');
     } finally {
-      // Move the paper back to its original position in the DOM
-      if (originalNext) {
-        originalParent.insertBefore(paper, originalNext);
-      } else {
-        originalParent.appendChild(paper);
-      }
-
-      // Restore inline styles
+      // Restore transform so the preview looks correct again
       paper.style.transform = savedTransform;
       paper.style.marginBottom = savedMarginBottom;
-      paper.style.position = '';
-      paper.style.left = '';
-      paper.style.top = '';
-      paper.style.zIndex = '';
-      paper.style.boxShadow = '';
-
-      // Re-run the scale to fix the preview
-      resizePreview();
 
       btn.disabled = false;
       btn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> DOWNLOAD PDF`;
