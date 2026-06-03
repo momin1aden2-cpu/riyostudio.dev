@@ -314,19 +314,26 @@ document.addEventListener('DOMContentLoaded', () => {
         onclone: (clonedDoc) => {
           const clonedPaper = clonedDoc.getElementById('a4-paper');
           if (clonedPaper) {
-            // Remove the scale transform
+            // Remove the scale transform and force top-left alignment
             clonedPaper.style.transform = 'none';
-            clonedPaper.style.marginBottom = '0';
+            clonedPaper.style.margin = '0';
             clonedPaper.style.boxShadow = 'none';
             clonedPaper.style.width = '210mm';
             clonedPaper.style.minHeight = '297mm';
+            clonedPaper.style.position = 'relative';
+            clonedPaper.style.top = '0';
+            clonedPaper.style.left = '0';
             
-            // Fix any parent containers that might clip the full size paper
+            // Destroy all flexbox centering and offsets on parents so the capture starts exactly at the top edge of the invoice
             let parent = clonedPaper.parentElement;
             while (parent && parent !== clonedDoc.body) {
+              parent.style.display = 'block'; // Kills flexbox align-items: center
+              parent.style.position = 'static'; // Kills relative offsets
               parent.style.overflow = 'visible';
               parent.style.maxHeight = 'none';
               parent.style.transform = 'none';
+              parent.style.margin = '0';
+              parent.style.padding = '0';
               parent = parent.parentElement;
             }
           }
