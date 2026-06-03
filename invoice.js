@@ -294,42 +294,31 @@ document.addEventListener('DOMContentLoaded', () => {
   btnExport.addEventListener('click', async () => {
     const btn = document.getElementById('btn-export-pdf');
     const paper = document.getElementById('a4-paper');
-    const wrapper = document.querySelector('.canvas-wrapper');
 
-    // Disable button while exporting
     btn.disabled = true;
     btn.textContent = 'Generating PDF…';
 
-    // Save current styles so we can restore after capture
-    const savedPaper = {
-      transform: paper.style.transform,
-      marginBottom: paper.style.marginBottom,
-      width: paper.style.width,
-      minHeight: paper.style.minHeight,
-      maxHeight: paper.style.maxHeight,
-      padding: paper.style.padding,
-      boxShadow: paper.style.boxShadow,
-    };
-    const savedWrapperOverflow = wrapper ? wrapper.style.overflow : '';
-    const savedWrapperMaxHeight = wrapper ? wrapper.style.maxHeight : '';
+    // Remember where the paper lives so we can put it back
+    const originalParent = paper.parentNode;
+    const originalNext = paper.nextSibling;
 
-    // Reset paper to its natural A4 dimensions for capture
+    // Save inline styles that resizePreview() sets
+    const savedTransform = paper.style.transform;
+    const savedMarginBottom = paper.style.marginBottom;
+
+    // Move the paper out of the flex/grid layout and into <body> directly.
+    // This guarantees html2canvas sees a clean, un-clipped, un-transformed element.
     paper.style.transform = 'none';
     paper.style.marginBottom = '0';
-    paper.style.width = '210mm';
-    paper.style.minHeight = '297mm';
-    paper.style.maxHeight = '297mm';
-    paper.style.padding = '24mm 26mm 20mm 26mm';
+    paper.style.position = 'absolute';
+    paper.style.left = '0';
+    paper.style.top = '0';
+    paper.style.zIndex = '-1';
     paper.style.boxShadow = 'none';
-
-    // Make wrapper show the full paper (not clipped)
-    if (wrapper) {
-      wrapper.style.overflow = 'visible';
-      wrapper.style.maxHeight = 'none';
-    }
+    document.body.appendChild(paper);
 
     // Let the browser reflow
-    await new Promise(r => setTimeout(r, 100));
+    await new Promise(r => setTimeout(r, 150));
 
     const filename = `${inputs.invNum.value || 'Invoice'}_${inputs.clientName.value || 'Client'}.pdf`;
 
@@ -342,8 +331,6 @@ document.addEventListener('DOMContentLoaded', () => {
         useCORS: true,
         allowTaint: true,
         logging: false,
-        width: 794,   // 210mm at 96dpi
-        height: 1123, // 297mm at 96dpi
         backgroundColor: paper.classList.contains('dark-invoice') ? '#0f1219' : '#ffffff',
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
@@ -356,19 +343,21 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('PDF export failed:', err);
       alert('PDF generation failed. Please try again.');
     } finally {
-      // Restore all styles
-      paper.style.transform = savedPaper.transform;
-      paper.style.marginBottom = savedPaper.marginBottom;
-      paper.style.width = savedPaper.width;
-      paper.style.minHeight = savedPaper.minHeight;
-      paper.style.maxHeight = savedPaper.maxHeight;
-      paper.style.padding = savedPaper.padding;
-      paper.style.boxShadow = savedPaper.boxShadow;
-
-      if (wrapper) {
-        wrapper.style.overflow = savedWrapperOverflow;
-        wrapper.style.maxHeight = savedWrapperMaxHeight;
+      // Move the paper back to its original position in the DOM
+      if (originalNext) {
+        originalParent.insertBefore(paper, originalNext);
+      } else {
+        originalParent.appendChild(paper);
       }
+
+      // Restore inline styles
+      paper.style.transform = savedTransform;
+      paper.style.marginBottom = savedMarginBottom;
+      paper.style.position = '';
+      paper.style.left = '';
+      paper.style.top = '';
+      paper.style.zIndex = '';
+      paper.style.boxShadow = '';
 
       // Re-run the scale to fix the preview
       resizePreview();
