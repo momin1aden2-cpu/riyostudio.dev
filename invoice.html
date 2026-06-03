@@ -180,15 +180,6 @@
       padding-top: 0.5rem;
     }
 
-    /* Scale the A4 paper to fit inside the panel */
-    .canvas-wrapper #a4-paper {
-      width: 100%;
-      max-width: 100%;
-      min-height: auto;
-      aspect-ratio: 210 / 297;
-      padding: 6% 7% 5% 7%;
-    }
-
     /* Download button in the canvas area */
     .canvas-download-btn {
       background: var(--brand-accent, #10B981);
@@ -269,14 +260,7 @@
       flex-shrink: 0;
     }
 
-    /* --- Responsive scale for the paper inside the panel --- */
-    @media (max-width: 1600px) {
-      .canvas-wrapper #a4-paper {
-        width: 100%;
-        min-height: auto;
-        padding: 6% 7% 5% 7%;
-      }
-    }
+
 
     /* ── DARK THEME ── */
     #a4-paper.dark-invoice {
