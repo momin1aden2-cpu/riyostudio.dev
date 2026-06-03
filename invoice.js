@@ -294,56 +294,62 @@ document.addEventListener('DOMContentLoaded', () => {
   btnExport.addEventListener('click', async () => {
     const btn = document.getElementById('btn-export-pdf');
     const paper = document.getElementById('a4-paper');
+    const wrapper = document.querySelector('.canvas-wrapper');
 
     btn.disabled = true;
     btn.textContent = 'Generating PDF…';
 
-    const filename = `${inputs.invNum.value || 'Invoice'}_${inputs.clientName.value || 'Client'}.pdf`;
+    // Save live state
+    const savedPaper = {
+      transform: paper.style.transform,
+      marginBottom: paper.style.marginBottom,
+      boxShadow: paper.style.boxShadow,
+      transition: paper.style.transition
+    };
+    
+    const savedWrapper = {
+      display: wrapper.style.display,
+      overflow: wrapper.style.overflow,
+      position: wrapper.style.position,
+      padding: wrapper.style.padding,
+      maxHeight: wrapper.style.maxHeight
+    };
+    
+    // Save scroll pos
+    const scrollPos = window.scrollY;
 
+    // PREPARE FOR PERFECT CAPTURE:
+    // Kill the wrapper's flexbox centering so the giant unscaled paper 
+    // doesn't push upwards off the screen out of html2canvas' reach!
+    wrapper.style.display = 'block'; 
+    wrapper.style.overflow = 'visible';
+    wrapper.style.position = 'static';
+    wrapper.style.padding = '0';
+    wrapper.style.maxHeight = 'none';
+
+    // Expand the paper
+    paper.style.transition = 'none'; // stop animation during export
+    paper.style.transform = 'none';
+    paper.style.marginBottom = '0';
+    paper.style.boxShadow = 'none';
+
+    // Scroll to the absolute top so html2canvas coordinate mapping matches perfectly
+    window.scrollTo(0, 0);
+
+    // Give browser a moment to paint the huge uncentered layout
+    await new Promise(r => setTimeout(r, 150));
+
+    const filename = `${inputs.invNum.value || 'Invoice'}_${inputs.clientName.value || 'Client'}.pdf`;
     const opt = {
       margin:      0,
       filename:    filename.replace(/[^a-z0-9_.-]/gi, '_').toLowerCase(),
       image:       { type: 'jpeg', quality: 0.98 },
       html2canvas: {
-        scale: 2, // 2 is enough for A4 print, 3 can sometimes cause memory issues on large canvases
+        scale: 2, 
         useCORS: true,
         allowTaint: true,
         logging: false,
         backgroundColor: paper.classList.contains('dark-invoice') ? '#0f1219' : '#ffffff',
-        // onclone lets us modify the cloned DOM before capture without affecting the live page
-        onclone: (clonedDoc) => {
-          const clonedPaper = clonedDoc.getElementById('a4-paper');
-          if (clonedPaper) {
-            // Remove the scale transform and any offsets
-            clonedPaper.style.transform = 'none';
-            clonedPaper.style.margin = '0';
-            clonedPaper.style.padding = '24mm 26mm 20mm 26mm';
-            clonedPaper.style.boxShadow = 'none';
-            clonedPaper.style.width = '210mm';
-            clonedPaper.style.minHeight = '297mm';
-            clonedPaper.style.position = 'absolute';
-            clonedPaper.style.top = '0';
-            clonedPaper.style.left = '0';
-            
-            // The ultimate fix for layout interference: 
-            // Move the invoice directly to the body of the clone.
-            clonedDoc.body.appendChild(clonedPaper);
-            
-            // Hide everything else so it doesn't affect document size
-            Array.from(clonedDoc.body.children).forEach(child => {
-              if (child !== clonedPaper && child.tagName !== 'STYLE' && child.tagName !== 'LINK') {
-                child.style.display = 'none';
-              }
-            });
-            
-            // Reset body and html margins
-            clonedDoc.body.style.margin = '0';
-            clonedDoc.body.style.padding = '0';
-            clonedDoc.body.style.position = 'relative';
-            clonedDoc.documentElement.style.margin = '0';
-            clonedDoc.documentElement.style.padding = '0';
-          }
-        }
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
@@ -354,6 +360,20 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('PDF export failed:', err);
       alert('PDF generation failed. Please try again.');
     } finally {
+      // RESTORE EVERYTHING EXACTLY AS IT WAS
+      wrapper.style.display = savedWrapper.display;
+      wrapper.style.overflow = savedWrapper.overflow;
+      wrapper.style.position = savedWrapper.position;
+      wrapper.style.padding = savedWrapper.padding;
+      wrapper.style.maxHeight = savedWrapper.maxHeight;
+
+      paper.style.transition = savedPaper.transition;
+      paper.style.transform = savedPaper.transform;
+      paper.style.marginBottom = savedPaper.marginBottom;
+      paper.style.boxShadow = savedPaper.boxShadow;
+
+      window.scrollTo(0, scrollPos);
+
       btn.disabled = false;
       btn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> DOWNLOAD PDF`;
     }
