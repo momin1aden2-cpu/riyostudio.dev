@@ -294,7 +294,6 @@ document.addEventListener('DOMContentLoaded', () => {
   btnExport.addEventListener('click', async () => {
     const btn = document.getElementById('btn-export-pdf');
     const paper = document.getElementById('a4-paper');
-    const wrapper = document.querySelector('.canvas-wrapper');
 
     btn.disabled = true;
     btn.textContent = 'Generating PDF…';
@@ -304,34 +303,29 @@ document.addEventListener('DOMContentLoaded', () => {
       transform: paper.style.transform,
       marginBottom: paper.style.marginBottom,
       boxShadow: paper.style.boxShadow,
-      transition: paper.style.transition
-    };
-    
-    const savedWrapper = {
-      display: wrapper.style.display,
-      overflow: wrapper.style.overflow,
-      position: wrapper.style.position,
-      padding: wrapper.style.padding,
-      maxHeight: wrapper.style.maxHeight
+      transition: paper.style.transition,
+      position: paper.style.position,
+      top: paper.style.top,
+      left: paper.style.left,
+      zIndex: paper.style.zIndex
     };
     
     // Save scroll pos
     const scrollPos = window.scrollY;
 
     // PREPARE FOR PERFECT CAPTURE:
-    // Kill the wrapper's flexbox centering so the giant unscaled paper 
-    // doesn't push upwards off the screen out of html2canvas' reach!
-    wrapper.style.display = 'block'; 
-    wrapper.style.overflow = 'visible';
-    wrapper.style.position = 'static';
-    wrapper.style.padding = '0';
-    wrapper.style.maxHeight = 'none';
-
-    // Expand the paper
-    paper.style.transition = 'none'; // stop animation during export
+    // We forcibly pull the paper out of the document flow and pin it to the 
+    // exact top-left corner of the window. This bypasses ALL parent margins, 
+    // padding, and sticky navbars that were pushing the capture down.
+    paper.style.transition = 'none';
     paper.style.transform = 'none';
     paper.style.marginBottom = '0';
     paper.style.boxShadow = 'none';
+    
+    paper.style.position = 'fixed';
+    paper.style.top = '0';
+    paper.style.left = '0';
+    paper.style.zIndex = '9999';
 
     // Scroll to the absolute top so html2canvas coordinate mapping matches perfectly
     window.scrollTo(0, 0);
@@ -361,12 +355,10 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('PDF generation failed. Please try again.');
     } finally {
       // RESTORE EVERYTHING EXACTLY AS IT WAS
-      wrapper.style.display = savedWrapper.display;
-      wrapper.style.overflow = savedWrapper.overflow;
-      wrapper.style.position = savedWrapper.position;
-      wrapper.style.padding = savedWrapper.padding;
-      wrapper.style.maxHeight = savedWrapper.maxHeight;
-
+      paper.style.position = savedPaper.position;
+      paper.style.top = savedPaper.top;
+      paper.style.left = savedPaper.left;
+      paper.style.zIndex = savedPaper.zIndex;
       paper.style.transition = savedPaper.transition;
       paper.style.transform = savedPaper.transform;
       paper.style.marginBottom = savedPaper.marginBottom;
