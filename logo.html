@@ -134,11 +134,43 @@
             </div>
 
             
+            <!-- SMART LAYOUTS PANEL -->
+            <div style="background: rgba(236, 72, 153, 0.05); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 12px; padding: 16px; margin-bottom: 8px;">
+                <label style="display: block; font-size: 1.05rem; color: #ec4899; margin-bottom: 12px; font-weight: bold;">📐 Smart Layouts</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                    <button id="layout-left-btn" style="padding: 10px 4px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; font-size: 0.85rem; font-weight: 500;">
+                        Left Align
+                    </button>
+                    <button id="layout-stack-btn" style="padding: 10px 4px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; font-size: 0.85rem; font-weight: 500;">
+                        Stacked
+                    </button>
+                    <button id="layout-badge-btn" style="padding: 10px 4px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; font-size: 0.85rem; font-weight: 500;">
+                        Badge
+                    </button>
+                </div>
+            </div>
+
+            <!-- LAYERS PANEL -->
+            <div style="background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 12px; padding: 16px; margin-bottom: 8px;">
+                <label style="display: block; font-size: 1.05rem; color: #3b82f6; margin-bottom: 12px; font-weight: bold;">📚 Layers</label>
+                <div id="layers-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 150px; overflow-y: auto; padding-right: 4px;">
+                    <!-- Layers will be populated dynamically -->
+                </div>
+            </div>
+            
             <!-- PROPERTIES CONTENT INJECTED HERE -->
             <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 16px; margin-bottom: 8px;">
                 <label style="display: block; font-size: 1.05rem; color: #10B981; margin-bottom: 16px; font-weight: bold;">⚙️ Workspace Controls</label>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
                 
+                <div style="grid-column: span 2; display: flex; gap: 8px;">
+                    <button id="undo-btn" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        ↩️ Undo
+                    </button>
+                    <button id="redo-btn" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        ↪️ Redo
+                    </button>
+                </div>
                 <button id="save-proj-btn" style="padding: 10px; background: rgba(59, 130, 246, 0.1); border: 1px dashed rgba(59, 130, 246, 0.5); border-radius: 8px; color: #3b82f6; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                     💾 Save Project
                 </button>
@@ -188,9 +220,15 @@
                   <input type="range" id="letter-spacing-slider" min="-200" max="800" value="0" style="width: 100%;">
                 </div>
                 <div style="margin-top: 12px;">
-                  <label style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Curve Text <span id="curve-val">0</span></label>
-                  <input type="range" id="text-curve-slider" min="-100" max="100" value="0" style="width: 100%;">
-                </div>
+                      <label style="display: block; font-size: 0.9rem; color: var(--text-dim); margin-bottom: 8px;">Curve Text (<span id="curve-val">0</span>)</label>
+                      <input type="range" id="text-curve-slider" min="-50" max="50" value="0" style="width: 100%;">
+                    </div>
+                    <div>
+                      <label style="display: block; font-size: 0.9rem; color: var(--text-dim); margin-bottom: 8px;">Advanced Effects</label>
+                      <button id="gradient-text-btn" style="width: 100%; padding: 8px; background: linear-gradient(135deg, #f97316, #db2777); border: none; border-radius: 6px; color: white; cursor: pointer; font-size: 0.85rem; font-weight: bold;">
+                          Apply Sunset Gradient
+                      </button>
+                    </div>
               </div>
               <div id="image-prop-group" class="form-group" style="display: none;">
                 <button id="remove-bg-btn" style="width: 100%; padding: 8px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; color: #10B981; cursor: pointer; font-size: 0.85rem;">✨ Remove Background (AI)</button>
@@ -243,9 +281,17 @@
 
             <!-- Export Button -->
             <div style="margin-top: 1rem; width: 100%; max-width: 480px; z-index: 1; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.5rem;">
-                <button id="logo-export-btn" class="nav-cta-btn" style="width: 100%; padding: 14px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; color: #10B981; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px rgba(16,185,129,0.2);">
-                    Download 4K PNG
+                <button id="logo-export-btn" class="nav-cta-btn" style="width: 100%; padding: 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; color: #10B981; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px rgba(16,185,129,0.2);">
+                    📥 Download 4K PNG
                 </button>
+                <div style="display: flex; gap: 8px;">
+                    <button id="logo-export-svg-btn" style="flex: 1; padding: 12px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; color: #3b82f6; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.2s;">
+                        💎 Export Vector SVG
+                    </button>
+                    <button id="logo-export-pdf-btn" style="flex: 1; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; color: #ef4444; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.2s;">
+                        📄 Export Print PDF
+                    </button>
+                </div>
                 <p style="text-align: center; font-size: 12px; color: var(--text-muted); margin: 0;">100% Private - Rendered locally</p>
             </div>
 
@@ -362,10 +408,10 @@
     <span>Ctrl K</span>
   </button>
 
-  <script src="bg.js?v=16"></script>
-  <script src="script.js?v=20"></script>
+  <script src="bg.js?v=18"></script>
+  <script src="script.js?v=22"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
-  <script src="logo.js?v=14"></script>
+  <script src="logo.js?v=17"></script>
 
     <!-- Mockup Modal -->
     <div id="mockup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">

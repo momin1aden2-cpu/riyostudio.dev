@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentTheme = 'dark';
 
   // Create a persistent background rectangle
-  const bgRect = new fabric.Rect({
+  let bgRect = new fabric.Rect({
     left: 0, top: 0, width: canvas.width, height: canvas.height,
     selectable: false, evented: false, excludeFromExport: false,
     fill: '#0a0a0a'
@@ -129,6 +129,310 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   updateBackground();
+
+  // --- Undo / Redo System ---
+  let historyState = [];
+  let historyIndex = -1;
+  let isHistoryProcessing = false;
+
+  function saveHistory() {
+    if (isHistoryProcessing) return;
+    const json = JSON.stringify(canvas.toJSON(['id', 'selectable', 'evented', 'shadow', 'name', 'origProps']));
+    
+    // If we're not at the end of history, truncate the future
+    if (historyIndex < historyState.length - 1) {
+      historyState = historyState.slice(0, historyIndex + 1);
+    }
+    
+    historyState.push(json);
+    // Keep max 30 states
+    if (historyState.length > 30) historyState.shift();
+    else historyIndex++;
+  }
+
+  function undo() {
+    if (historyIndex <= 0) return;
+    isHistoryProcessing = true;
+    historyIndex--;
+    canvas.loadFromJSON(historyState[historyIndex], () => {
+      bgRect = canvas.getObjects()[0]; // Re-attach reference
+      canvas.renderAll();
+      isHistoryProcessing = false;
+    });
+  }
+
+  function redo() {
+    if (historyIndex >= historyState.length - 1) return;
+    isHistoryProcessing = true;
+    historyIndex++;
+    canvas.loadFromJSON(historyState[historyIndex], () => {
+      bgRect = canvas.getObjects()[0]; // Re-attach reference
+      canvas.renderAll();
+      isHistoryProcessing = false;
+    });
+  }
+
+  // Hook into fabric events
+  canvas.on('object:modified', saveHistory);
+  canvas.on('object:added', (e) => {
+    if (e.target !== bgRect && !isHistoryProcessing) {
+      // Small timeout to allow object to fully initialize
+      setTimeout(saveHistory, 50);
+    }
+  });
+  canvas.on('object:removed', () => {
+    if (!isHistoryProcessing) saveHistory();
+  });
+
+  const undoBtn = document.getElementById('undo-btn');
+  const redoBtn = document.getElementById('redo-btn');
+
+  if (undoBtn) undoBtn.addEventListener('click', undo);
+  if (redoBtn) redoBtn.addEventListener('click', redo);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
+    if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redo(); }
+  });
+  // --- Center Snapping & Smart Guides ---
+  const snapZone = 15;
+  const guideLineColor = 'rgba(239, 68, 68, 0.8)';
+  const guideLineWidth = 2;
+  let vGuide = null;
+  let hGuide = null;
+
+  canvas.on('object:moving', (e) => {
+    const obj = e.target;
+    if (!obj) return;
+
+    // Objects in fabric have originX and originY as center for our app
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+    
+    let snapped = false;
+
+    // Check horizontal center
+    if (Math.abs(obj.left - canvasWidth / 2) < snapZone) {
+      obj.set({ left: canvasWidth / 2 }).setCoords();
+      if (!vGuide) {
+        vGuide = new fabric.Line([canvasWidth / 2, 0, canvasWidth / 2, canvasHeight], {
+          stroke: guideLineColor, strokeWidth: guideLineWidth,
+          selectable: false, evented: false, strokeDashArray: [5, 5]
+        });
+        canvas.add(vGuide);
+      }
+      snapped = true;
+    } else {
+      if (vGuide) { canvas.remove(vGuide); vGuide = null; }
+    }
+
+    // Check vertical center
+    if (Math.abs(obj.top - canvasHeight / 2) < snapZone) {
+      obj.set({ top: canvasHeight / 2 }).setCoords();
+      if (!hGuide) {
+        hGuide = new fabric.Line([0, canvasHeight / 2, canvasWidth, canvasHeight / 2], {
+          stroke: guideLineColor, strokeWidth: guideLineWidth,
+          selectable: false, evented: false, strokeDashArray: [5, 5]
+        });
+        canvas.add(hGuide);
+      }
+      snapped = true;
+    } else {
+      if (hGuide) { canvas.remove(hGuide); hGuide = null; }
+    }
+  });
+
+  canvas.on('mouse:up', () => {
+    if (vGuide) { canvas.remove(vGuide); vGuide = null; }
+    if (hGuide) { canvas.remove(hGuide); hGuide = null; }
+    canvas.renderAll();
+  });
+  // --------------------------
+
+  // --- Smart Layout Engine ---
+  const layoutLeftBtn = document.getElementById('layout-left-btn');
+  const layoutStackBtn = document.getElementById('layout-stack-btn');
+  const layoutBadgeBtn = document.getElementById('layout-badge-btn');
+
+  function getLayoutObjects() {
+    let objs = canvas.getActiveObjects();
+    if (objs.length === 0) {
+      objs = canvas.getObjects().filter(o => o !== bgRect);
+    }
+    return objs;
+  }
+
+  if (layoutLeftBtn) {
+    layoutLeftBtn.addEventListener('click', () => {
+      const objs = getLayoutObjects();
+      if (objs.length < 2) return;
+      
+      let icon = objs.find(o => o.type === 'path' || o.type === 'group' || o.type === 'image');
+      let texts = objs.filter(o => o.type === 'i-text' || o.type === 'text');
+      
+      if (!icon && texts.length >= 2) { icon = texts[0]; texts = texts.slice(1); }
+      if (!icon || texts.length === 0) return;
+
+      const mainText = texts[0];
+      const spacing = 40;
+      
+      const iconW = icon.getScaledWidth();
+      const textW = mainText.getScaledWidth();
+      const totalW = iconW + spacing + textW;
+      
+      const startX = (canvas.width - totalW) / 2;
+      const centerY = canvas.height / 2;
+      
+      icon.set({ originX: 'left', originY: 'center', left: startX, top: centerY });
+      mainText.set({ originX: 'left', originY: 'center', left: startX + iconW + spacing, top: centerY });
+      
+      if (texts.length > 1) {
+        const subText = texts[1];
+        subText.set({ originX: 'left', originY: 'top', left: startX + iconW + spacing, top: centerY + (mainText.getScaledHeight()/2) });
+      }
+      
+      objs.forEach(o => o.setCoords());
+      canvas.discardActiveObject();
+      canvas.renderAll();
+      saveHistory();
+    });
+  }
+
+  if (layoutStackBtn) {
+    layoutStackBtn.addEventListener('click', () => {
+      const objs = getLayoutObjects();
+      if (objs.length < 2) return;
+      
+      let icon = objs.find(o => o.type === 'path' || o.type === 'group' || o.type === 'image');
+      let texts = objs.filter(o => o.type === 'i-text' || o.type === 'text');
+      if (!icon && texts.length >= 2) { icon = texts[0]; texts = texts.slice(1); }
+      if (!icon || texts.length === 0) return;
+
+      const mainText = texts[0];
+      const spacing = 40;
+      
+      const iconH = icon.getScaledHeight();
+      const textH = mainText.getScaledHeight();
+      let totalH = iconH + spacing + textH;
+      if (texts.length > 1) totalH += 10 + texts[1].getScaledHeight();
+      
+      const startY = (canvas.height - totalH) / 2;
+      const centerX = canvas.width / 2;
+      
+      icon.set({ originX: 'center', originY: 'top', left: centerX, top: startY });
+      mainText.set({ originX: 'center', originY: 'top', left: centerX, top: startY + iconH + spacing });
+      
+      if (texts.length > 1) {
+        const subText = texts[1];
+        subText.set({ originX: 'center', originY: 'top', left: centerX, top: startY + iconH + spacing + textH + 10 });
+      }
+      
+      objs.forEach(o => o.setCoords());
+      canvas.discardActiveObject();
+      canvas.renderAll();
+      saveHistory();
+    });
+  }
+
+  if (layoutBadgeBtn) {
+    layoutBadgeBtn.addEventListener('click', () => {
+        layoutStackBtn.click(); // Stack them first
+        const objs = getLayoutObjects();
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        
+        let maxDim = 0;
+        objs.forEach(o => {
+            const d = Math.max(o.getScaledWidth(), o.getScaledHeight());
+            if (d > maxDim) maxDim = d;
+        });
+        
+        const circle = new fabric.Circle({
+            radius: (maxDim / 2) + 60,
+            fill: 'transparent',
+            stroke: '#ffffff',
+            strokeWidth: 4,
+            left: centerX,
+            top: centerY,
+            originX: 'center',
+            originY: 'center'
+        });
+        canvas.add(circle);
+        canvas.sendBackwards(circle);
+        saveHistory();
+    });
+  }
+  // --------------------------
+
+  // --- Layers Panel ---
+  const layersList = document.getElementById('layers-list');
+  
+  function updateLayersPanel() {
+      if (!layersList) return;
+      layersList.innerHTML = '';
+      
+      // Reverse to show top layer at the top of the list
+      const objs = canvas.getObjects().filter(o => o !== bgRect).reverse();
+      
+      objs.forEach((obj, index) => {
+          const div = document.createElement('div');
+          div.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 6px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; margin-bottom: 4px;';
+          
+          let name = 'Object';
+          if (obj.type === 'i-text' || obj.type === 'text') name = 'Text: ' + obj.text.substring(0, 8);
+          else if (obj.type === 'path' || obj.type === 'group') name = 'Vector Icon';
+          else if (obj.type === 'image') name = 'Image';
+          else if (obj.type === 'circle') name = 'Badge Circle';
+          
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = name;
+          nameSpan.style.color = '#fff';
+          nameSpan.style.fontSize = '0.85rem';
+          nameSpan.style.flex = '1';
+          nameSpan.style.cursor = 'pointer';
+          
+          nameSpan.addEventListener('click', () => {
+              canvas.setActiveObject(obj);
+              canvas.renderAll();
+          });
+          
+          const btnGroup = document.createElement('div');
+          btnGroup.style.display = 'flex';
+          btnGroup.style.gap = '4px';
+          
+          const upBtn = document.createElement('button');
+          upBtn.innerHTML = '↑';
+          upBtn.style.cssText = 'background: rgba(255,255,255,0.1); border: none; border-radius: 4px; color: #fff; cursor: pointer; padding: 2px 6px; font-size: 12px;';
+          upBtn.onclick = () => { canvas.bringForward(obj); updateLayersPanel(); saveHistory(); };
+          
+          const downBtn = document.createElement('button');
+          downBtn.innerHTML = '↓';
+          downBtn.style.cssText = 'background: rgba(255,255,255,0.1); border: none; border-radius: 4px; color: #fff; cursor: pointer; padding: 2px 6px; font-size: 12px;';
+          downBtn.onclick = () => { 
+              if (canvas.getObjects().indexOf(obj) > 1) { 
+                  canvas.sendBackwards(obj); updateLayersPanel(); saveHistory(); 
+              }
+          };
+          
+          const delBtn = document.createElement('button');
+          delBtn.innerHTML = '🗑️';
+          delBtn.style.cssText = 'background: rgba(239,68,68,0.2); border: none; border-radius: 4px; color: #ef4444; cursor: pointer; padding: 2px 6px; font-size: 12px;';
+          delBtn.onclick = () => { canvas.remove(obj); updateLayersPanel(); saveHistory(); };
+          
+          btnGroup.appendChild(upBtn);
+          btnGroup.appendChild(downBtn);
+          btnGroup.appendChild(delBtn);
+          
+          div.appendChild(nameSpan);
+          div.appendChild(btnGroup);
+          layersList.appendChild(div);
+      });
+  }
+  
+  canvas.on('object:added', updateLayersPanel);
+  canvas.on('object:removed', updateLayersPanel);
+  canvas.on('object:modified', updateLayersPanel);
+  // --------------------------
 
   fabric.Object.prototype.set({
     transparentCorners: false, cornerColor: '#10B981', cornerStrokeColor: '#000000',
@@ -486,6 +790,28 @@ document.addEventListener('DOMContentLoaded', () => {
                   activeObj.set({ path: path });
               }
               canvas.renderAll();
+              saveHistory();
+          }
+      });
+  }
+
+  const gradientTextBtn = document.getElementById('gradient-text-btn');
+  if (gradientTextBtn) {
+      gradientTextBtn.addEventListener('click', () => {
+          const activeObj = canvas.getActiveObject();
+          if (activeObj && (activeObj.type === 'i-text' || activeObj.type === 'text')) {
+              const gradient = new fabric.Gradient({
+                  type: 'linear',
+                  gradientUnits: 'pixels',
+                  coords: { x1: 0, y1: 0, x2: activeObj.width, y2: 0 },
+                  colorStops: [
+                      { offset: 0, color: '#f97316' },
+                      { offset: 1, color: '#db2777' }
+                  ]
+              });
+              activeObj.set('fill', gradient);
+              canvas.renderAll();
+              saveHistory();
           }
       });
   }
@@ -810,23 +1136,42 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  const svgExportBtn = document.getElementById('logo-export-svg-btn');
+  const pdfExportBtn = document.getElementById('logo-export-pdf-btn');
+
   exportBtn.addEventListener('click', () => {
     canvas.discardActiveObject(); canvas.renderAll();
-    
-    const exportFormat = confirm("Press OK for SVG (Vector) Export, or Cancel for High-Res PNG");
-    if (exportFormat) {
+    const dataURL = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 3 });
+    const link = document.createElement('a'); link.download = 'riyo-logo-export.png';
+    link.href = dataURL; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  });
+
+  if (svgExportBtn) {
+    svgExportBtn.addEventListener('click', () => {
+      canvas.discardActiveObject(); canvas.renderAll();
       const svg = canvas.toSVG();
       const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a'); link.download = 'riyo-logo-vector.svg';
       link.href = url; document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    } else {
-      const dataURL = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 3 });
-      const link = document.createElement('a'); link.download = 'riyo-logo-export.png';
-      link.href = dataURL; document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    }
+    });
+  }
 
-  });
+  if (pdfExportBtn) {
+    pdfExportBtn.addEventListener('click', () => {
+      // Very basic jsPDF implementation if loaded, otherwise fallback
+      if (typeof jspdf === 'undefined') {
+        alert('PDF library is not loaded. Please use SVG or PNG export.');
+        return;
+      }
+      canvas.discardActiveObject(); canvas.renderAll();
+      const dataURL = canvas.toDataURL({ format: 'jpeg', quality: 1, multiplier: 3 });
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width, canvas.height] });
+      pdf.addImage(dataURL, 'JPEG', 0, 0, canvas.width, canvas.height);
+      pdf.save('riyo-logo-print.pdf');
+    });
+  }
 
   document.fonts.ready.then(() => { addText(); });
 });
