@@ -299,20 +299,47 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.disabled = true;
     btn.textContent = 'Generating PDF…';
 
-    // Save current transform state and temporarily reset it so html2canvas
-    // sees the element at its native 210mm × 297mm size (no scale distortion).
-    const savedTransform = paper.style.transform;
-    const savedMarginBottom = paper.style.marginBottom;
-    const savedPosition = paper.style.position;
-    const savedLeft = paper.style.left;
-    const savedTop = paper.style.top;
-    const savedZIndex = paper.style.zIndex;
-    const savedBoxShadow = paper.style.boxShadow;
+    // Clone the paper and place it off-screen with exact A4 dimensions.
+    // This avoids all issues with transforms, responsive CSS, and layout
+    // interference from the flex/grid parent.
+    const clone = paper.cloneNode(true);
+    clone.id = 'a4-paper-export-clone';
+    clone.style.cssText = `
+      position: fixed;
+      left: -10000px;
+      top: 0;
+      width: 210mm;
+      min-height: 297mm;
+      padding: 24mm 26mm 20mm 26mm;
+      box-sizing: border-box;
+      transform: none;
+      margin: 0;
+      box-shadow: none;
+      border-radius: 0;
+      flex-shrink: 0;
+      background: ${paper.classList.contains('dark-invoice') ? '#0f1219' : '#ffffff'};
+      color: ${paper.classList.contains('dark-invoice') ? '#e5e7eb' : '#1a1a1a'};
+      font-family: 'Inter', sans-serif;
+    `;
 
-    paper.style.transform = 'none';
-    paper.style.marginBottom = '0';
-    // Keep it in-flow but visually hidden via opacity isn't needed;
-    // html2canvas works fine on visible elements. We just remove the scale.
+    // Copy CSS custom properties from the original paper
+    const computedStyle = getComputedStyle(paper);
+    const cssVars = ['--inv-primary', '--inv-primary-light', '--inv-bg', '--inv-text',
+      '--inv-text-muted', '--inv-text-secondary', '--inv-border', '--inv-border-strong',
+      '--inv-card-bg', '--inv-stripe'];
+    cssVars.forEach(v => {
+      clone.style.setProperty(v, computedStyle.getPropertyValue(v));
+    });
+
+    // If dark mode, add the class to the clone
+    if (paper.classList.contains('dark-invoice')) {
+      clone.classList.add('dark-invoice');
+    }
+
+    document.body.appendChild(clone);
+
+    // Brief pause for browser to lay out the clone
+    await new Promise(r => setTimeout(r, 100));
 
     const filename = `${inputs.invNum.value || 'Invoice'}_${inputs.clientName.value || 'Client'}.pdf`;
 
@@ -321,24 +348,24 @@ document.addEventListener('DOMContentLoaded', () => {
       filename:    filename.replace(/[^a-z0-9_.-]/gi, '_').toLowerCase(),
       image:       { type: 'jpeg', quality: 0.98 },
       html2canvas: {
-        scale: 3,
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         logging: false,
         backgroundColor: paper.classList.contains('dark-invoice') ? '#0f1219' : '#ffffff',
       },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all'] }
     };
 
     try {
-      await html2pdf().set(opt).from(paper).save();
+      await html2pdf().set(opt).from(clone).save();
     } catch (err) {
       console.error('PDF export failed:', err);
       alert('PDF generation failed. Please try again.');
     } finally {
-      // Restore transform so the preview looks correct again
-      paper.style.transform = savedTransform;
-      paper.style.marginBottom = savedMarginBottom;
+      // Remove the clone
+      if (clone.parentNode) clone.parentNode.removeChild(clone);
 
       btn.disabled = false;
       btn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> DOWNLOAD PDF`;
