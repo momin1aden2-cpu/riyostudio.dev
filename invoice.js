@@ -303,7 +303,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // This avoids all issues with transforms, responsive CSS, and layout
     // interference from the flex/grid parent.
     const clone = paper.cloneNode(true);
-    clone.id = 'a4-paper-export-clone';
     clone.style.cssText = `
       position: fixed;
       left: -10000px;
