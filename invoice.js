@@ -288,9 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cw) ro.observe(cw);
   
   // Initial scale after DOM settles
-  setTimeout(resizePreview, 50);
-
-  // 7. PDF Export
+  setTimeout(resizePreview, 50);  // 7. PDF Export
   btnExport.addEventListener('click', async () => {
     const btn = document.getElementById('btn-export-pdf');
     const paper = document.getElementById('a4-paper');
@@ -322,6 +320,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // PREPARE LIVE DOM FOR PERFECT CAPTURE
     window.scrollTo(0, 0);
 
+    // Physically remove the scale transform so html2canvas doesn't get confused on mobile
+    paper.style.transform = 'none';
+    paper.style.marginBottom = '0px';
+    paper.style.transition = 'none';
+
     // INJECT OVERRIDE STYLES (html2canvas clones style tags reliably, but fails on inline !important)
     const printStyle = document.createElement('style');
     printStyle.id = 'pdf-export-overrides';
@@ -337,6 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
         margin: 0 !important;
         max-height: none !important;
         height: auto !important;
+        width: 1024px !important; /* Force wrapper width to prevent mobile text wrapping */
         box-shadow: none !important;
         border: none !important;
       }
@@ -347,8 +351,10 @@ document.addEventListener('DOMContentLoaded', () => {
         left: 0 !important;
         top: 0 !important;
         width: 794px !important;
-        min-height: 1123px !important;
-        height: 1123px !important;
+        min-height: 1122px !important; /* 1122px exactly prevents the 2-page bug */
+        height: 1122px !important;
+        max-height: 1122px !important;
+        overflow: hidden !important;
         box-shadow: none !important;
         border: none !important;
         border-radius: 0 !important;
@@ -401,6 +407,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (injectedStyle) {
         injectedStyle.remove();
       }
+
+      // Restore inline styles
+      paper.style.transform = savedPaper.transform;
+      paper.style.marginBottom = savedPaper.marginBottom;
+      paper.style.transition = savedPaper.transition;
 
       window.scrollTo(0, originalScroll);
 
