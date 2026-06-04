@@ -208,7 +208,7 @@
 
   // -- Logic extensions --
   // Spotlight tracking
-  const cards = document.querySelectorAll('.product-card, .about-card');
+  const cards = document.querySelectorAll('.product-card, .about-card, .premium-card');
   cards.forEach(card => {
     card.addEventListener('mousemove', e => {
       const rect = card.getBoundingClientRect();
@@ -379,7 +379,7 @@
   let scrollVelocity = 0;
   
   // Cache cards to prevent massive DOM thrashing inside the scroll loop
-  const scrollCards = document.querySelectorAll('.product-card, .about-card');
+  const scrollCards = document.querySelectorAll('.product-card, .about-card, .premium-card');
   
   window.addEventListener('scroll', () => {
     if (window.innerWidth <= 768) return; // Disable on mobile to fix touch-inertia bugs
@@ -408,7 +408,7 @@
   window.addEventListener('scroll', () => {
     clearTimeout(scrollTimeout);
     scrollTimeout = setTimeout(() => {
-      const allCards = document.querySelectorAll('.product-card, .about-card');
+      const allCards = document.querySelectorAll('.product-card, .about-card, .premium-card');
       allCards.forEach(card => {
         if (!card.matches(':hover')) {
           card.style.transform = `skewY(0deg)`;

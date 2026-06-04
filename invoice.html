@@ -591,7 +591,8 @@
         <p class="invoice-header-subtitle">Generate pixel-perfect PDF receipts instantly. Your company details are silently saved offline in your browser memory for your next visit.</p>
 
         <!-- Company Info (Auto-Saved) -->
-        <div class="section-title">Your Company (Auto-Saved)</div>
+        <div class="tool-bento-panel tint-blue" style="margin-bottom: 16px;">
+          <div class="section-title" style="border: none; margin: 0 0 16px 0; font-size: 0.95rem; font-weight: bold;">Your Company (Auto-Saved)</div>
         <div class="input-grid">
           <div class="input-group">
             <label class="input-label">Business Name</label>
@@ -622,9 +623,11 @@
             <input type="file" id="in-comp-logo" class="cyber-input" accept="image/png, image/jpeg, image/svg+xml">
           </div>
         </div>
+        </div>
 
         <!-- Invoice Details -->
-        <div class="section-title">Invoice Details</div>
+        <div class="tool-bento-panel tint-emerald" style="margin-bottom: 16px;">
+          <div class="section-title" style="border: none; margin: 0 0 16px 0; font-size: 0.95rem; font-weight: bold;">Invoice Details</div>
         <div class="input-grid">
           <div class="input-group">
             <label class="input-label">Invoice Number</label>
@@ -659,10 +662,12 @@
               <span>Dark Mode PDF</span>
             </div>
           </div>
+          </div>
         </div>
 
         <!-- Client Info -->
-        <div class="section-title">Billed To (Client)</div>
+        <div class="tool-bento-panel tint-pink" style="margin-bottom: 16px;">
+          <div class="section-title" style="border: none; margin: 0 0 16px 0; font-size: 0.95rem; font-weight: bold;">Billed To (Client)</div>
         <div class="input-grid">
           <div class="input-group full">
             <label class="input-label">Client Name / Business</label>
@@ -681,21 +686,24 @@
             <input type="text" id="in-client-phone" class="cyber-input" placeholder="+1 987 654 321">
           </div>
         </div>
-
-        <!-- Line Items -->
-        <div class="section-title" style="display: flex; justify-content: space-between; align-items: flex-end;">
-          Line Items
-          <span style="font-size: 0.7rem; color: var(--text-dim); text-transform: none; letter-spacing: 0; font-family: 'Inter', sans-serif;">Use **bold** and __underline__ and [[box]]</span>
         </div>
+
+        <!-- Line Items & Payment -->
+        <div class="tool-bento-panel tint-purple" style="margin-bottom: 16px;">
+          <div class="section-title" style="border: none; margin: 0 0 16px 0; display: flex; justify-content: space-between; align-items: flex-end; font-size: 0.95rem; font-weight: bold;">
+            Line Items
+            <span style="font-size: 0.7rem; color: var(--text-dim); text-transform: none; letter-spacing: 0; font-family: 'Inter', sans-serif;">Use **bold** and __underline__ and [[box]]</span>
+          </div>
         <div id="line-items-container">
           <!-- JS will inject rows here -->
         </div>
         <button class="btn-add" id="btn-add-item">+ ADD LINE ITEM</button>
 
         <!-- Payment Details (Auto-Saved) -->
-        <div class="section-title" style="margin-top: 2rem;">Payment Instructions (Auto-Saved)</div>
-        <div class="input-group full" style="margin-bottom: 2rem;">
+        <div class="section-title" style="border: none; margin: 24px 0 16px 0; font-size: 0.95rem; font-weight: bold;">Payment Instructions (Auto-Saved)</div>
+        <div class="input-group full">
           <textarea id="in-pay-details" class="cyber-input" style="height: 80px; resize: vertical;" placeholder="BSB: 000-000&#10;ACC: 12345678&#10;Please pay within 14 days."></textarea>
+        </div>
         </div>
 
 

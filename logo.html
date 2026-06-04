@@ -84,7 +84,7 @@
           <div class="tool-panel app-panel" style="display: flex; flex-direction: column; gap: 28px; max-height: calc(100vh - 160px); overflow-y: auto; position: sticky; top: 120px; scrollbar-width: thin;">
             
             
-            <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 16px; margin-bottom: 8px;">
+            <div class="tool-bento-panel tint-purple" style="margin-bottom: 8px;">
                 <label style="display: block; font-size: 1.05rem; color: #a78bfa; margin-bottom: 12px; font-weight: bold;">🪄 AI Auto-Generator</label>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     <input type="text" id="magic-brand-input" placeholder="Enter Brand Name..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(139, 92, 246, 0.5); background: rgba(0,0,0,0.5); color: #fff; font-size: 1.0rem; box-sizing: border-box;">
@@ -135,7 +135,7 @@
 
             
             <!-- SMART LAYOUTS PANEL -->
-            <div style="background: rgba(236, 72, 153, 0.05); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 12px; padding: 16px; margin-bottom: 8px;">
+            <div class="tool-bento-panel tint-pink" style="margin-bottom: 8px;">
                 <label style="display: block; font-size: 1.05rem; color: #ec4899; margin-bottom: 12px; font-weight: bold;">📐 Smart Layouts</label>
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
                     <button id="layout-left-btn" style="padding: 10px 4px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; font-size: 0.85rem; font-weight: 500;">
@@ -151,7 +151,7 @@
             </div>
 
             <!-- LAYERS PANEL -->
-            <div style="background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 12px; padding: 16px; margin-bottom: 8px;">
+            <div class="tool-bento-panel tint-blue" style="margin-bottom: 8px;">
                 <label style="display: block; font-size: 1.05rem; color: #3b82f6; margin-bottom: 12px; font-weight: bold;">📚 Layers</label>
                 <div id="layers-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 150px; overflow-y: auto; padding-right: 4px;">
                     <!-- Layers will be populated dynamically -->
@@ -159,7 +159,7 @@
             </div>
             
             <!-- PROPERTIES CONTENT INJECTED HERE -->
-            <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 16px; margin-bottom: 8px;">
+            <div class="tool-bento-panel tint-emerald" style="margin-bottom: 8px;">
                 <label style="display: block; font-size: 1.05rem; color: #10B981; margin-bottom: 16px; font-weight: bold;">⚙️ Workspace Controls</label>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
                 
@@ -189,7 +189,7 @@
             
             </div>
 
-            <div id="object-properties" style="display: none; padding: 16px; background: rgba(0,0,0,0.3); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; flex-direction: column; gap: 16px;">
+            <div id="object-properties" class="tool-bento-panel tint-emerald" style="display: none; flex-direction: column; gap: 16px; margin-top: 8px;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 0.95rem; color: #10B981; font-family: 'JetBrains Mono'; text-transform: uppercase; font-weight: bold;">Selected Element</span>
                 <button id="delete-obj-btn" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1.4rem;" title="Delete Object">🗑️</button>
