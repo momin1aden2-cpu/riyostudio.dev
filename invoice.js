@@ -320,24 +320,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const originalScroll = window.scrollY;
 
     // PREPARE LIVE DOM FOR PERFECT CAPTURE
-    // 1. Scroll to the absolute top to prevent html2canvas' scrollY offset bug (which caused the massive blank gap)
     window.scrollTo(0, 0);
 
-    // 2. Rip the wrapper out of the grid layout using absolute positioning so it sits perfectly at 0,0 
-    // without inheriting any padding or margins from the header/main container.
-    wrapper.style.position = 'absolute';
-    wrapper.style.top = '0';
-    wrapper.style.left = '0';
-    wrapper.style.zIndex = '9999';
-    wrapper.style.display = 'block'; 
-    wrapper.style.overflow = 'visible';
-    wrapper.style.padding = '0';
-    wrapper.style.maxHeight = 'none';
-
-    // 3. Remove the scale from the paper so it's true 210x297mm
-    paper.style.transition = 'none'; 
-    paper.style.transform = 'none';
-    paper.style.marginBottom = '0';
+    // INJECT OVERRIDE STYLES (html2canvas clones style tags reliably, but fails on inline !important)
+    const printStyle = document.createElement('style');
+    printStyle.id = 'pdf-export-overrides';
+    printStyle.innerHTML = `
+      .invoice-container .canvas-wrapper {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        z-index: 9999 !important;
+        display: block !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-height: none !important;
+        height: auto !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      #a4-paper {
+        transition: none !important;
+        transform: none !important;
+        margin: 0 !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 794px !important;
+        min-height: 1123px !important;
+        height: 1123px !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        zoom: 1 !important;
+      }
+    `;
+    document.head.appendChild(printStyle);
 
     // Give browser a moment to paint the absolute layout
     await new Promise(r => setTimeout(r, 150));
@@ -353,30 +371,36 @@ document.addEventListener('DOMContentLoaded', () => {
         allowTaint: true,
         logging: false,
         backgroundColor: paper.classList.contains('dark-invoice') ? '#0f1219' : '#ffffff',
-        scrollY: 0 // explicit fail-safe against the scroll offset bug
+        scrollY: 0, // explicit fail-safe against the scroll offset bug
+        windowWidth: 1024 // Force desktop viewport to prevent mobile media queries from ruining PDF
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
     try {
-      await html2pdf().set(opt).from(paper).save();
+      const worker = html2pdf().set(opt).from(paper);
+      const pdfBlob = await worker.output('blob');
+      
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = opt.filename;
+      document.body.appendChild(link);
+      link.click();
+      
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      }, 200);
     } catch (err) {
       console.error('PDF export failed:', err);
       alert('PDF generation failed. Please try again.');
     } finally {
       // RESTORE EVERYTHING
-      wrapper.style.position = savedWrapper.position;
-      wrapper.style.top = savedWrapper.top;
-      wrapper.style.left = savedWrapper.left;
-      wrapper.style.zIndex = savedWrapper.zIndex;
-      wrapper.style.display = savedWrapper.display;
-      wrapper.style.overflow = savedWrapper.overflow;
-      wrapper.style.padding = savedWrapper.padding;
-      wrapper.style.maxHeight = savedWrapper.maxHeight;
-
-      paper.style.transition = savedPaper.transition;
-      paper.style.transform = savedPaper.transform;
-      paper.style.marginBottom = savedPaper.marginBottom;
+      const injectedStyle = document.getElementById('pdf-export-overrides');
+      if (injectedStyle) {
+        injectedStyle.remove();
+      }
 
       window.scrollTo(0, originalScroll);
 
