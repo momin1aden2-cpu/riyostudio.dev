@@ -92,44 +92,50 @@
                 </div>
             </div>
 
-            <div class="form-group" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
-              <button id="add-text-btn" class="nav-link" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 1.0rem;">
-                <span style="font-size: 1.3rem;">T</span> Text
-              </button>
-              <button id="add-shape-btn" class="nav-link" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 1.0rem;">
-                <span style="font-size: 1.3rem;">✨</span> Icon
-              </button>
-              <button id="add-image-btn" class="nav-link" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 1.0rem;">
-                <span style="font-size: 1.3rem;">🖼️</span> Image
-              </button>
-              <input type="file" id="image-upload-input" accept="image/*" style="display: none;">
-            </div>
-            
-            <div id="icon-library-panel" style="display: none; flex-direction: column; gap: 12px; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="icon-search-input" placeholder="Search icons (e.g. rocket, wolf)..." style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: rgba(0,0,0,0.5); color: #fff; font-size: 0.85rem;">
-                    <button id="icon-search-btn" style="padding: 8px 12px; background: #10B981; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">🔎</button>
+            <!-- ELEMENTS PANEL -->
+            <div class="tool-bento-panel tint-blue" style="margin-bottom: 8px;">
+                <label style="display: block; font-size: 1.05rem; color: #3b82f6; margin-bottom: 12px; font-weight: bold;">➕ Add Elements</label>
+                <div class="form-group" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                  <button id="add-text-btn" class="nav-link" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 1.0rem;">
+                    <span style="font-size: 1.3rem;">T</span> Text
+                  </button>
+                  <button id="add-shape-btn" class="nav-link" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 1.0rem;">
+                    <span style="font-size: 1.3rem;">✨</span> Icon
+                  </button>
+                  <button id="add-image-btn" class="nav-link" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 1.0rem;">
+                    <span style="font-size: 1.3rem;">🖼️</span> Image
+                  </button>
+                  <input type="file" id="image-upload-input" accept="image/*" style="display: none;">
                 </div>
-                <div id="icon-search-results" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-height: 200px; overflow-y: auto; padding-right: 4px;">
-                    <!-- Default state message -->
-                    <div style="grid-column: span 4; text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 20px 0;">
-                        Type a keyword and click search to fetch vectors from Iconify API.
+                
+                <div id="icon-library-panel" style="display: none; flex-direction: column; gap: 12px; margin-top: 12px; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="icon-search-input" placeholder="Search icons (e.g. rocket, wolf)..." style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: rgba(0,0,0,0.5); color: #fff; font-size: 0.85rem;">
+                        <button id="icon-search-btn" style="padding: 8px 12px; background: #10B981; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">🔎</button>
+                    </div>
+                    <div id="icon-search-results" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-height: 200px; overflow-y: auto; padding-right: 4px;">
+                        <!-- Default state message -->
+                        <div style="grid-column: span 4; text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 20px 0;">
+                            Type a keyword and click search to fetch vectors from Iconify API.
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Dynamic Properties Panel (Hidden by default, shows when object is selected) -->
-            <div class="form-group">
-              <label style="display: block; font-size: 1.0rem; color: var(--text-dim); margin-bottom: 8px;">Background Theme</label>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <button class="theme-btn active" data-theme="dark" style="padding: 10px; background: #111; border: 1px solid var(--border); border-radius: 8px; color: #fff; cursor: pointer; font-size: 0.8rem;">Dark</button>
-                <button class="theme-btn" data-theme="light" style="padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 8px; color: #000; cursor: pointer; font-size: 0.8rem;">Light</button>
-                <button class="theme-btn" data-theme="cyber" style="padding: 10px; background: #0a0a0a; border: 1px solid #10B981; border-radius: 8px; color: #10B981; cursor: pointer; font-size: 0.8rem;">Cyber</button>
-                <button class="theme-btn" data-theme="midnight" style="padding: 10px; background: linear-gradient(135deg, #1e1b4b, #312e81); border: 1px solid #4338ca; border-radius: 8px; color: #fff; cursor: pointer; font-size: 0.8rem;">Midnight</button>
-                <button class="theme-btn" data-theme="sunset" style="padding: 10px; background: linear-gradient(135deg, #f97316, #db2777); border: 1px solid #f43f5e; border-radius: 8px; color: #fff; cursor: pointer; font-size: 0.8rem;">Sunset</button>
-                <button class="theme-btn" data-theme="holographic" style="padding: 10px; background: linear-gradient(135deg, #e0e7ff, #f3e8ff); border: 1px solid #c7d2fe; border-radius: 8px; color: #333; cursor: pointer; font-size: 0.8rem;">Holo</button>
-                <button class="theme-btn" data-theme="grid" style="padding: 10px; background: #111; background-image: radial-gradient(rgba(255,255,255,0.2) 1px, transparent 1px); background-size: 10px 10px; border: 1px solid var(--border); border-radius: 8px; color: #fff; cursor: pointer; font-size: 0.8rem;">Grid</button>
-                <button class="theme-btn" data-theme="transparent" style="padding: 10px; background: transparent; border: 1px dashed var(--text-muted); border-radius: 8px; color: var(--text-muted); cursor: pointer; font-size: 0.8rem;">Transparent</button>
+            <!-- BACKGROUND THEME PANEL -->
+            <div class="tool-bento-panel tint-emerald" style="margin-bottom: 8px;">
+              <label style="display: block; font-size: 1.05rem; color: #10B981; margin-bottom: 12px; font-weight: bold;">🎨 Background Theme</label>
+              <div class="form-group" style="margin-bottom: 0;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                  <button class="theme-btn active" data-theme="dark" style="padding: 10px; background: #111; border: 1px solid var(--border); border-radius: 8px; color: #fff; cursor: pointer; font-size: 0.8rem;">Dark</button>
+                  <button class="theme-btn" data-theme="light" style="padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 8px; color: #000; cursor: pointer; font-size: 0.8rem;">Light</button>
+                  <button class="theme-btn" data-theme="cyber" style="padding: 10px; background: #0a0a0a; border: 1px solid #10B981; border-radius: 8px; color: #10B981; cursor: pointer; font-size: 0.8rem;">Cyber</button>
+                  <button class="theme-btn" data-theme="midnight" style="padding: 10px; background: linear-gradient(135deg, #1e1b4b, #312e81); border: 1px solid #4338ca; border-radius: 8px; color: #fff; cursor: pointer; font-size: 0.8rem;">Midnight</button>
+                  <button class="theme-btn" data-theme="sunset" style="padding: 10px; background: linear-gradient(135deg, #f97316, #db2777); border: 1px solid #f43f5e; border-radius: 8px; color: #fff; cursor: pointer; font-size: 0.8rem;">Sunset</button>
+                  <button class="theme-btn" data-theme="holographic" style="padding: 10px; background: linear-gradient(135deg, #e0e7ff, #f3e8ff); border: 1px solid #c7d2fe; border-radius: 8px; color: #333; cursor: pointer; font-size: 0.8rem;">Holo</button>
+                  <button class="theme-btn" data-theme="grid" style="padding: 10px; background: #111; background-image: radial-gradient(rgba(255,255,255,0.2) 1px, transparent 1px); background-size: 10px 10px; border: 1px solid var(--border); border-radius: 8px; color: #fff; cursor: pointer; font-size: 0.8rem;">Grid</button>
+                  <button class="theme-btn" data-theme="transparent" style="padding: 10px; background: transparent; border: 1px dashed var(--text-muted); border-radius: 8px; color: var(--text-muted); cursor: pointer; font-size: 0.8rem;">Transparent</button>
+                </div>
               </div>
             </div>
 
