@@ -351,10 +351,10 @@ document.addEventListener('DOMContentLoaded', () => {
         left: 0 !important;
         top: 0 !important;
         width: 794px !important;
-        min-height: 1122px !important; /* 1122px exactly prevents the 2-page bug */
-        height: 1122px !important;
-        max-height: 1122px !important;
-        overflow: hidden !important;
+        min-height: 1122px !important; /* Prevents 2-page bug for short invoices */
+        height: auto !important; /* Allows multiple pages if content grows */
+        max-height: none !important;
+        overflow: visible !important;
         box-shadow: none !important;
         border: none !important;
         border-radius: 0 !important;
