@@ -329,21 +329,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const printStyle = document.createElement('style');
     printStyle.id = 'pdf-export-overrides';
     printStyle.innerHTML = `
-      .invoice-container .canvas-wrapper {
-        position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
-        z-index: 9999 !important;
-        display: block !important;
-        overflow: visible !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        max-height: none !important;
-        height: auto !important;
-        width: 1024px !important; /* Force wrapper width to prevent mobile text wrapping */
-        box-shadow: none !important;
-        border: none !important;
-      }
       #a4-paper {
         transition: none !important;
         transform: none !important;
@@ -377,8 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
         allowTaint: true,
         logging: false,
         backgroundColor: paper.classList.contains('dark-invoice') ? '#0f1219' : '#ffffff',
-        scrollY: 0, // explicit fail-safe against the scroll offset bug
-        windowWidth: 1024 // Force desktop viewport to prevent mobile media queries from ruining PDF
+        scrollY: 0 // explicit fail-safe against the scroll offset bug
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
