@@ -242,6 +242,41 @@
     });
   });
 
+  // Mobile Bottom Nav "More" Drawer Logic
+  const moreBtn = document.getElementById('mobile-more-btn');
+  const moreOverlay = document.getElementById('mobile-more-overlay');
+  const moreDrawer = document.querySelector('.mobile-more-drawer');
+
+  if (moreBtn && moreOverlay) {
+    moreBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      moreOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden'; // prevent background scrolling
+    });
+
+    moreOverlay.addEventListener('click', function(e) {
+      // Close if clicking outside the drawer
+      if (e.target === moreOverlay) {
+        moreOverlay.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    });
+
+    // Optional: Add swipe down to close
+    let touchStartY = 0;
+    if (moreDrawer) {
+      moreDrawer.addEventListener('touchstart', e => {
+        touchStartY = e.changedTouches[0].screenY;
+      }, {passive: true});
+      moreDrawer.addEventListener('touchend', e => {
+        const touchEndY = e.changedTouches[0].screenY;
+        if (touchEndY - touchStartY > 50) { // Swipe down threshold
+          moreOverlay.classList.remove('open');
+          document.body.style.overflow = '';
+        }
+      }, {passive: true});
+    }
+  }
 
 
   // Command palette logic

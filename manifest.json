@@ -23,5 +23,31 @@
       "sizes": "512x512",
       "type": "image/png"
     }
+  ],
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "categories": ["productivity", "utilities", "business"],
+  "shortcuts": [
+    {
+      "name": "Invoice Maker",
+      "short_name": "Invoice",
+      "description": "Generate sleek PDF invoices",
+      "url": "/invoice.html",
+      "icons": [{ "src": "assets/icon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Logo Maker",
+      "short_name": "Logo",
+      "description": "Design premium logos",
+      "url": "/logo.html",
+      "icons": [{ "src": "assets/icon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "QR Hub",
+      "short_name": "QR Hub",
+      "description": "Create custom QR codes",
+      "url": "/qr.html",
+      "icons": [{ "src": "assets/icon.png", "sizes": "192x192" }]
+    }
   ]
 }
