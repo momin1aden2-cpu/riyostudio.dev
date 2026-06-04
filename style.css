@@ -774,6 +774,7 @@ section {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   z-index: 1;
+  flex-shrink: 0;
 }
 
 .tool-bento-panel.tint-purple {
