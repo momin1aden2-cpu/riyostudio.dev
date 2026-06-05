@@ -65,9 +65,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let uploadedLogo = null;
 
   // 2. Initialize QR Code Styling Instance
+  const qrSize = window.innerWidth <= 900 ? 180 : 300;
   const qrCode = new QRCodeStyling({
-    width: 300,
-    height: 300,
+    width: qrSize,
+    height: qrSize,
     type: "svg",
     data: "https://riyostudio.dev",
     image: "",
