@@ -2327,11 +2327,9 @@ html.supernova body {
   right: 0;
   height: 64px;
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  background: rgba(6, 11, 20, 0.92);
-  backdrop-filter: blur(24px) saturate(1.4);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+  background: rgb(6, 11, 20); /* Fully opaque — no see-through */
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.8);
   z-index: 9999;
   justify-content: space-around;
   align-items: center;
@@ -2669,7 +2667,108 @@ html.supernova body {
   body {
     padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
   }
+  /* Keep the nav visible in standalone but make it solid & compact */
   .nav {
-    display: none;
+    display: flex !important;
+    background: rgb(6, 11, 20) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: none !important;
   }
+  /* Hide marketing links from nav in app mode — bottom bar handles navigation */
+  .nav .nav-links {
+    display: none !important;
+  }
+}
+
+/* --- Mobile: Always solid nav bar (no transparency on mobile) --- */
+@media (max-width: 768px) {
+  .nav {
+    background: rgb(6, 11, 20) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+/* --- PWA Install Banner --- */
+#pwa-install-banner {
+  display: none;
+  position: fixed;
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 12px);
+  left: 12px;
+  right: 12px;
+  background: rgb(14, 20, 32);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 16px;
+  padding: 16px 18px;
+  z-index: 9998;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(16,185,129,0.15);
+  animation: bannerSlideUp 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+#pwa-install-banner.visible {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+@keyframes bannerSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+#pwa-install-banner .pwa-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+#pwa-install-banner .pwa-text {
+  flex: 1;
+}
+
+#pwa-install-banner .pwa-text strong {
+  display: block;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 2px;
+}
+
+#pwa-install-banner .pwa-text span {
+  color: rgba(255,255,255,0.55);
+  font-size: 0.78rem;
+  font-family: 'Inter', sans-serif;
+}
+
+#pwa-install-btn {
+  background: #10B981;
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+#pwa-install-btn:active {
+  background: #34d399;
+}
+
+#pwa-dismiss-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.35);
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  flex-shrink: 0;
 }

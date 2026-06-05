@@ -17,6 +17,85 @@
     });
   }
 
+  // ── PWA Install Prompt ──────────────────────────────────────────
+  let _deferredInstallPrompt = null;
+
+  // Detect iOS Safari (no beforeinstallprompt support)
+  const isIos = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+  const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches
+    || navigator.standalone === true;
+
+  function showInstallBanner(mode) {
+    // mode: 'android' = native prompt available, 'ios' = manual instructions
+    if (isInStandaloneMode) return; // already installed
+    if (sessionStorage.getItem('pwa-banner-dismissed')) return;
+    if (document.getElementById('pwa-install-banner')) return;
+    if (window.innerWidth > 900) return; // desktop only needs web
+
+    const banner = document.createElement('div');
+    banner.id = 'pwa-install-banner';
+
+    if (mode === 'ios') {
+      banner.innerHTML = `
+        <img src="assets/icon.png" class="pwa-icon" alt="Riyo Studio">
+        <div class="pwa-text">
+          <strong>Add to Home Screen</strong>
+          <span>Tap <b style="color:#10B981">Share ↑</b> then "Add to Home Screen"</span>
+        </div>
+        <button id="pwa-dismiss-btn" aria-label="Dismiss">✕</button>
+      `;
+    } else {
+      banner.innerHTML = `
+        <img src="assets/icon.png" class="pwa-icon" alt="Riyo Studio">
+        <div class="pwa-text">
+          <strong>Add Riyo Studio to Home Screen</strong>
+          <span>Instant access · Works offline · No app store</span>
+        </div>
+        <button id="pwa-install-btn">Install</button>
+        <button id="pwa-dismiss-btn" aria-label="Dismiss">✕</button>
+      `;
+    }
+
+    document.body.appendChild(banner);
+    setTimeout(() => banner.classList.add('visible'), 1500);
+
+    const dismissBtn = document.getElementById('pwa-dismiss-btn');
+    if (dismissBtn) {
+      dismissBtn.addEventListener('click', () => {
+        banner.classList.remove('visible');
+        sessionStorage.setItem('pwa-banner-dismissed', '1');
+        setTimeout(() => banner.remove(), 400);
+      });
+    }
+
+    const installBtn = document.getElementById('pwa-install-btn');
+    if (installBtn && _deferredInstallPrompt) {
+      installBtn.addEventListener('click', () => {
+        banner.classList.remove('visible');
+        _deferredInstallPrompt.prompt();
+        _deferredInstallPrompt.userChoice.then(() => {
+          _deferredInstallPrompt = null;
+        });
+      });
+    }
+  }
+
+  // Android / Chrome — intercept the native prompt
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    _deferredInstallPrompt = e;
+    showInstallBanner('android');
+  });
+
+  // iOS Safari — show manual instructions
+  if (isIos && !isInStandaloneMode) {
+    // Delay so page is visually settled
+    window.addEventListener('load', () => {
+      setTimeout(() => showInstallBanner('ios'), 2000);
+    });
+  }
+  // ───────────────────────────────────────────────────────────────
+
   // Global Error Tracker for Diagnostics
   window._sysErrors = [];
   window.addEventListener('error', (e) => { window._sysErrors.push(e.message || 'Unknown Error'); });
