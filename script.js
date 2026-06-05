@@ -84,12 +84,20 @@
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     _deferredInstallPrompt = e;
+    window._pwaPrompt = e; // also store globally for early capture
     showInstallBanner('android');
+  });
+
+  // Fallback: event may have fired before this script loaded (captured early in <head>)
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window._pwaPrompt && !_deferredInstallPrompt) {
+      _deferredInstallPrompt = window._pwaPrompt;
+      showInstallBanner('android');
+    }
   });
 
   // iOS Safari — show manual instructions
   if (isIos && !isInStandaloneMode) {
-    // Delay so page is visually settled
     window.addEventListener('load', () => {
       setTimeout(() => showInstallBanner('ios'), 2000);
     });

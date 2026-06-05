@@ -23,6 +23,8 @@
 </script>
 
   <style>body { background-color: #060B14 !important; }</style>
+  <!-- PWA: Capture install event as early as possible before any other scripts -->
+  <script>window._pwaPrompt=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window._pwaPrompt=e;});</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Footprint Scanner — Riyo Studio</title>
