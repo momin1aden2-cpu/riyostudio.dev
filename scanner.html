@@ -28,7 +28,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>AI Footprint Scanner — Riyo Studio</title>
-  <meta name="description" content="Free AI Footprint Scanner by Riyo Studio. Detect ChatGPT buzzwords, vibe-coded artifacts, and AI signatures in your code, resumes, and docs.">
+  <meta name="description" content="Wrap your screenshots in beautiful device frames (iOS, macOS) with premium mesh gradients instantly. 100% offline Mockup Studio by Riyo.">
   <meta name="robots" content="index, follow">
 
   <!-- Theme -->
@@ -47,7 +47,7 @@
   <link rel="stylesheet" href="style.css?v=1780779141">
   <link rel="stylesheet" href="scanner.css">
 </head>
-<body>
+<body class="tool-page-clean">
 
   <!-- Interactive Background Canvas -->
   <canvas id="quantum-field"></canvas>
@@ -67,7 +67,7 @@
         <a href="index.html" class="nav-link">Home</a>
         <a href="invoice.html" class="nav-link">Invoice Maker</a>
         <a href="qr.html" class="nav-link">QR Hub</a>
-        <a href="scanner.html" class="nav-link">AI Scanner</a>
+        <a href="scanner.html" class="nav-link">Mockup Studio</a>
         <a href="forge.html" class="nav-link">File Forge</a>
           <a href="logo.html" class="nav-link">Logo Maker</a>
         <a href="index.html#about" class="nav-link">About Us</a>
@@ -77,87 +77,88 @@
     </div>
   </nav>
 
-  <main class="scanner-main" style="padding-top: 140px; padding-bottom: 80px; min-height: calc(100vh - 300px); position: relative; z-index: 10;">
-    <div class="tool-container">
-      <div class="scanner-header reveal">
-        <div class="eyebrow">Zero-Cost Client-Side Tool</div>
-        <h1 style="font-size: 3rem; margin-top: 1rem; margin-bottom: 1rem;">AI Footprint <span class="accent">Scanner</span></h1>
-        <p class="scanner-subtitle" style="font-size: 1.1rem; line-height: 1.6; max-width: 700px; margin: 0 auto; color: var(--text-dim);">
-          Don't get caught pushing ChatGPT slop to prod. Whether it's a vibe-coded script, a cover letter, or client docs, paste it below to see if it passes the pub test. We scan for lazy buzzwords and AI giveaways right here in your browser.
-        </p>
-      </div>
+    <main class="mockup-main" style="padding-top: 100px; padding-bottom: 80px; min-height: calc(100vh - 100px); position: relative; z-index: 10;">
+    <div class="container fluid">
+      <div class="mockup-workspace reveal reveal-delay-1" style="margin-top: 2rem; max-width: 1200px; margin-left: auto; margin-right: auto; display: flex; gap: 32px; flex-wrap: wrap;">
 
-      <div class="scanner-workspace reveal reveal-delay-1" style="margin-top: 3rem; max-width: 100%; margin-left: auto; margin-right: auto;">
-        
-        <div class="scanner-input-section">
-          <div class="cyber-group">
-            <label class="cyber-label"><span class="accent">></span> Payload Input</label>
-            
-            <div id="dropzone" class="scanner-dropzone">
-              <input type="file" id="file-input" accept=".txt,.md,.js,.py,.html,.css,.json,.csv,.ts,.jsx,.tsx" style="display: none;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="dropzone-icon">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              <p>Drag & Drop a code/text file here</p>
-              <span style="font-size: 0.8rem; color: var(--text-dim);">or click to browse. Max 5MB. PDFs not supported.</span>
-            </div>
-
-            <div class="cyber-input-wrap" style="margin-top: 1rem;">
-              <textarea id="scanner-input" class="cyber-input scanner-textarea" placeholder="_ or paste your code, cover letter, or documentation here..." spellcheck="false" style="min-height: 250px; font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; line-height: 1.5; resize: vertical;"></textarea>
-              <div class="cyber-border"></div>
-            </div>
-
-            <div style="margin-top: 1.5rem;">
-              <label class="cyber-label"><span class="accent">></span> Human Alternative Dialect</label>
-              <select id="dialect-selector" class="cyber-input" style="width: 100%; margin-top: 0.5rem; cursor: pointer;">
-                <option value="au">Australian (Aussie Slang)</option>
-                <option value="uk">British English</option>
-                <option value="us">US English</option>
-                <option value="global" selected>Global / Standard</option>
-              </select>
+        <!-- Left: Controls -->
+        <div class="mockup-controls-section" style="width: 380px; max-width: 100%; background: #0A0F1A; border: 1px solid rgba(16,185,129,0.2); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 24px;">
+          
+          
+          <!-- Header -->
+          <div style="margin-bottom: 8px;">
+            <h1 style="font-size: 1.6rem; margin: 0 0 8px 0; color: #fff;">🎨 Mockup <span class="accent" style="color: #10B981;">Studio</span></h1>
+            <p style="font-size: 0.95rem; line-height: 1.5; color: var(--text-dim); margin: 0;">
+              Wrap screenshots in beautiful device frames. 100% offline, zero servers.
+            </p>
+          </div>
+<!-- Frame Type -->
+          <div>
+            <label class="cyber-label"><span class="accent">></span> Frame Style</label>
+            <div class="frame-selector" style="display: flex; gap: 8px; margin-top: 8px;">
+              <button class="frame-btn active" data-frame="browser" style="flex: 1; padding: 12px; background: rgba(16,185,129,0.1); border: 1px solid #10B981; color: #fff; border-radius: 8px; cursor: pointer; font-weight: 600;">Browser</button>
+              <button class="frame-btn" data-frame="mobile" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); border-radius: 8px; cursor: pointer; font-weight: 600;">iPhone</button>
+              <button class="frame-btn" data-frame="none" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); border-radius: 8px; cursor: pointer; font-weight: 600;">None</button>
             </div>
           </div>
+
+          <!-- Backgrounds -->
+          <div>
+            <label class="cyber-label"><span class="accent">></span> Background</label>
+            <div class="bg-selector" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px;">
+              <div class="bg-btn active" data-bg="gradient-1" style="aspect-ratio: 1; border-radius: 50%; cursor: pointer; background: linear-gradient(135deg, #FF6B6B, #4ECDC4); border: 2px solid #10B981;"></div>
+              <div class="bg-btn" data-bg="gradient-2" style="aspect-ratio: 1; border-radius: 50%; cursor: pointer; background: linear-gradient(135deg, #A8FF78, #78FFD6); border: 2px solid transparent;"></div>
+              <div class="bg-btn" data-bg="gradient-3" style="aspect-ratio: 1; border-radius: 50%; cursor: pointer; background: linear-gradient(135deg, #4facfe, #00f2fe); border: 2px solid transparent;"></div>
+              <div class="bg-btn" data-bg="gradient-4" style="aspect-ratio: 1; border-radius: 50%; cursor: pointer; background: linear-gradient(135deg, #fa709a, #fee140); border: 2px solid transparent;"></div>
+              <div class="bg-btn" data-bg="gradient-5" style="aspect-ratio: 1; border-radius: 50%; cursor: pointer; background: linear-gradient(135deg, #30cfd0, #330867); border: 2px solid transparent;"></div>
+              <div class="bg-btn" data-bg="gradient-6" style="aspect-ratio: 1; border-radius: 50%; cursor: pointer; background: linear-gradient(135deg, #09203f, #537895); border: 2px solid transparent;"></div>
+              <div class="bg-btn" data-bg="transparent" style="aspect-ratio: 1; border-radius: 50%; cursor: pointer; background: repeating-conic-gradient(#333 0% 25%, transparent 0% 50%) 50% / 20px 20px; border: 2px solid transparent;" title="Transparent"></div>
+              <div class="bg-btn" data-bg="solid" style="aspect-ratio: 1; border-radius: 50%; cursor: pointer; background: #060B14; border: 2px solid transparent;" title="Solid Dark"></div>
+            </div>
+          </div>
+
+          <!-- Sliders -->
+          <div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <label class="cyber-label" style="margin:0;"><span class="accent">></span> Padding</label>
+              <span id="padding-val" style="color: #fff; font-family: monospace;">64px</span>
+            </div>
+            <input type="range" id="padding-slider" min="0" max="120" value="64" style="width: 100%; accent-color: #10B981;">
+          </div>
+
+          <div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <label class="cyber-label" style="margin:0;"><span class="accent">></span> Drop Shadow</label>
+              <span id="shadow-val" style="color: #fff; font-family: monospace;">40%</span>
+            </div>
+            <input type="range" id="shadow-slider" min="0" max="100" value="40" style="width: 100%; accent-color: #10B981;">
+          </div>
           
-          <button id="scan-btn" class="cyber-submit-btn scanner-btn" style="width: 100%; margin-top: 1.5rem;">
-            [ INITIATE SCAN ]
+          <div style="flex-grow: 1;"></div>
+
+          <button id="export-btn" class="cyber-submit-btn" style="width: 100%; padding: 16px; font-size: 1.1rem; opacity: 0.5; pointer-events: none;">
+            [ EXPORT HIGH-RES ]
           </button>
         </div>
 
-        <div class="scanner-results-section" id="scanner-results" style="display: none; margin-top: 3rem;">
-          <div class="results-dashboard">
-            <div class="score-card">
-              <div class="score-label">AI SUSPICION SCORE</div>
-              <div class="score-value" id="score-value">0%</div>
-              <div class="score-bar-bg">
-                <div class="score-bar-fill" id="score-bar"></div>
-              </div>
-            </div>
-            
-            <div class="issues-card">
-              <div class="issues-label">FOOTPRINTS DETECTED</div>
-              <div class="issues-value" id="issues-count">0</div>
-              <div class="issues-breakdown" id="issues-breakdown">
-                <!-- Injected via JS -->
-              </div>
-            </div>
+        <!-- Right: Preview Canvas -->
+        <div class="mockup-preview-section" style="flex: 1; min-width: 300px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+          
+          <div id="mockup-dropzone" class="scanner-dropzone" style="width: 100%; height: 300px; border: 2px dashed rgba(16,185,129,0.3); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;">
+            <input type="file" id="mockup-file-input" accept="image/png, image/jpeg, image/webp" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" width="48" height="48" style="margin-bottom: 16px;">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <p style="color: #fff; font-weight: 600;">Drag & Drop Screenshot</p>
+            <span style="font-size: 0.85rem; color: var(--text-dim); margin-top: 8px;">PNG, JPG, WEBP (Local only)</span>
           </div>
 
-          <div class="cyber-group mt-4">
-            <label class="cyber-label"><span class="accent">></span> Analysis Report</label>
-            <div class="report-wrap" id="analysis-report">
-              <!-- Report injected via JS -->
-            </div>
+          <div id="mockup-canvas-container" style="display: none; width: 100%; max-width: 100%; overflow: hidden; position: relative; justify-content: center; align-items: center;">
+            <!-- Canvas is responsive but maintains aspect ratio inside this flex container -->
+            <canvas id="mockup-canvas" style="max-width: 100%; max-height: 70vh; width: auto; height: auto; border-radius: 8px; box-shadow: 0 12px 48px rgba(0,0,0,0.5);"></canvas>
+            <button id="reset-img-btn" class="cmd-shortcut" style="position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px 12px; border-radius: 6px; cursor: pointer;">Change Image</button>
           </div>
-
-          <div class="cyber-group mt-4">
-            <label class="cyber-label"><span class="accent">></span> Highlighted Output</label>
-            <div class="cyber-input-wrap output-wrap">
-              <div id="scanner-output" class="scanner-output-content">
-                <!-- Highlighted text goes here -->
-              </div>
-              <div class="cyber-border"></div>
-            </div>
-          </div>
+          
         </div>
       </div>
     </div>
@@ -203,7 +204,7 @@
           <h4>Tools</h4>
           <a href="invoice.html">Invoice Maker</a>
           <a href="qr.html">QR Hub</a>
-          <a href="scanner.html">AI Scanner</a>
+          <a href="scanner.html">Mockup Studio</a>
           <a href="forge.html">File Forge</a>
             <a href="logo.html">Logo Maker <span style="font-size: 10px; background: rgba(16,185,129,0.1); color: #10B981; padding: 2px 6px; border-radius: 4px; margin-left: 4px; border: 1px solid rgba(16,185,129,0.2);">NEW</span></a>
         </div>
@@ -297,7 +298,7 @@
     <div class="mobile-more-drawer">
       <div class="mobile-more-handle"></div>
       <h4>More Tools</h4>
-      <a href="scanner.html" class="mobile-more-link"><span class="more-icon">🔍</span> AI Scanner</a>
+      <a href="scanner.html" class="mobile-more-link"><span class="more-icon">🎨</span> Mockup Studio</a>
       <a href="forge.html" class="mobile-more-link"><span class="more-icon">🔧</span> File Forge</a>
       <div class="mobile-more-divider"></div>
       <h4>Company</h4>
