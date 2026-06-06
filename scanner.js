@@ -4,11 +4,12 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- UI Elements ---
+    // UI Elements
     const canvas = document.getElementById('mockup-canvas');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const wrapper = document.getElementById('canvas-wrapper');
     const presetSelect = document.getElementById('preset-size-select');
+    const screensSelect = document.getElementById('screens-count-select');
     
     // Panels
     const propsCanvas = document.getElementById('canvas-props');
@@ -53,8 +54,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Editor State ---
+    let baseWidth = 1242;
+    let screenCount = 1;
     let targetWidth = 1242;
-    let targetHeight = 2688; 
+    let targetHeight = 2688;
     
     let bgType = 'gradient';
     let bgColor1 = '#FF6B6B';
@@ -106,7 +109,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Canvas Sizing ---
     function updateCanvasSize() {
         const [w, h] = presetSelect.value.split('x').map(Number);
-        targetWidth = w;
+        baseWidth = w;
+        screenCount = parseInt(screensSelect.value);
+        targetWidth = baseWidth * screenCount;
         targetHeight = h;
         
         canvas.width = targetWidth;
@@ -120,6 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     presetSelect.addEventListener('change', updateCanvasSize);
+    if(screensSelect) screensSelect.addEventListener('change', updateCanvasSize);
 
     function scaleWrapperToFit() {
         const container = document.getElementById('canvas-container');
@@ -281,6 +287,21 @@ document.addEventListener('DOMContentLoaded', () => {
         tCtx.save();
         tCtx.translate(offsetX, offsetY);
         tCtx.scale(layoutScale, layoutScale);
+
+        // Draw Seams (Grid lines for Panoramic Mode)
+        if (screenCount > 1 && drawHandles) {
+            tCtx.save();
+            tCtx.strokeStyle = 'rgba(255,255,255,0.4)';
+            tCtx.lineWidth = 4 / layoutScale;
+            tCtx.setLineDash([15 / layoutScale, 15 / layoutScale]);
+            for (let i = 1; i < screenCount; i++) {
+                tCtx.beginPath();
+                tCtx.moveTo(baseWidth * i, 0);
+                tCtx.lineTo(baseWidth * i, targetHeight);
+                tCtx.stroke();
+            }
+            tCtx.restore();
+        }
 
         // 3. Draw Layers
         layers.forEach(layer => {
@@ -838,20 +859,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 tempCanvas.width = fmt.w;
                 tempCanvas.height = fmt.h;
                 
-                // Calculate scale to "Cover" the target format based on current master targetWidth/Height
-                const scale = Math.max(fmt.w / targetWidth, fmt.h / targetHeight);
+                const scale = Math.max(fmt.w / baseWidth, fmt.h / targetHeight);
                 
-                // Calculate translation to center it
-                const actualW = targetWidth * scale;
-                const actualH = targetHeight * scale;
-                const offsetX = (fmt.w - actualW) / 2;
-                const offsetY = (fmt.h - actualH) / 2;
+                for (let i = 0; i < screenCount; i++) {
+                    const actualBaseW = baseWidth * scale;
+                    const actualH = targetHeight * scale;
+                    
+                    const offsetY = (fmt.h - actualH) / 2;
+                    const offsetX = ((fmt.w - actualBaseW) / 2) - (actualBaseW * i);
 
-                renderSceneToContext(tempCtx, fmt.w, fmt.h, false, scale, offsetX, offsetY);
-                
-                const dataUrl = tempCanvas.toDataURL('image/png', 1.0);
-                const blob = base64ToBlob(dataUrl);
-                zip.file(`${fmt.name}.png`, blob);
+                    renderSceneToContext(tempCtx, fmt.w, fmt.h, false, scale, offsetX, offsetY);
+                    
+                    const dataUrl = tempCanvas.toDataURL('image/png', 1.0);
+                    const blob = base64ToBlob(dataUrl);
+                    
+                    if (screenCount === 1) {
+                        zip.file(`${fmt.name}.png`, blob);
+                    } else {
+                        zip.file(`Panoramic_${fmt.name}/Screen_${i + 1}.png`, blob);
+                    }
+                }
             }
 
             selectedLayerId = prevSelected;

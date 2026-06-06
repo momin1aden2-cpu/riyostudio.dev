@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'riyo-studio-v13';
+﻿const CACHE_NAME = 'riyo-studio-v14';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -70,6 +70,7 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
+
 
 
 
