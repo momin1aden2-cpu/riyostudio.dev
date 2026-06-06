@@ -83,12 +83,24 @@
           <button id="add-text-btn" class="cyber-button" style="padding: 8px 16px; font-size: 0.9rem;">+ Text</button>
           
           <div class="dropdown" style="position: relative; display: inline-block;">
+            <button id="add-shape-menu-btn" class="cyber-button" style="padding: 8px 16px; font-size: 0.9rem;">+ Shape ▾</button>
+            <div id="shape-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: #111; border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 8px; z-index: 100; min-width: 120px; flex-direction: column; gap: 4px; margin-top: 4px;">
+              <button class="cyber-button shape-btn" data-shape="rectangle" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Rectangle</button>
+              <button class="cyber-button shape-btn" data-shape="circle" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Circle</button>
+            </div>
+          </div>
+          
+          <div class="dropdown" style="position: relative; display: inline-block;">
             <button id="add-sticker-menu-btn" class="cyber-button" style="padding: 8px 16px; font-size: 0.9rem;">+ Sticker ▾</button>
             <div id="sticker-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: #111; border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 8px; z-index: 100; min-width: 150px; flex-direction: column; gap: 4px; margin-top: 4px;">
               <button class="cyber-button sticker-btn" data-sticker="apple" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">App Store Badge</button>
               <button class="cyber-button sticker-btn" data-sticker="google" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Google Play Badge</button>
               <button class="cyber-button sticker-btn" data-sticker="stars" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">⭐⭐⭐⭐⭐</button>
               <button class="cyber-button sticker-btn" data-sticker="cursor" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Cursor Arrow</button>
+              <button class="cyber-button sticker-btn" data-sticker="ph" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Product Hunt</button>
+              <button class="cyber-button sticker-btn" data-sticker="ribbon" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Top Rated Ribbon</button>
+              <button class="cyber-button sticker-btn" data-sticker="arrow" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Drawn Arrow</button>
+              <button class="cyber-button sticker-btn" data-sticker="starburst" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Starburst</button>
             </div>
           </div>
           
@@ -154,10 +166,52 @@
               <div class="bg-btn" data-bg="gradient-2" style="aspect-ratio: 1; border-radius: 50%; cursor: pointer; background: linear-gradient(135deg, #A8FF78, #78FFD6); border: 2px solid transparent;"></div>
               <div class="bg-btn" data-bg="gradient-3" style="aspect-ratio: 1; border-radius: 50%; cursor: pointer; background: linear-gradient(135deg, #667EEA, #764BA2); border: 2px solid transparent;"></div>
               <div class="bg-btn" data-bg="gradient-4" style="aspect-ratio: 1; border-radius: 50%; cursor: pointer; background: linear-gradient(135deg, #FF9A9E, #FECFEF); border: 2px solid transparent;"></div>
+              <div class="bg-btn" data-bg="gradient-5" style="aspect-ratio: 1; border-radius: 50%; cursor: pointer; background: linear-gradient(135deg, #fceabb, #f8b500); border: 2px solid transparent;"></div>
+              <div class="bg-btn" data-bg="gradient-6" style="aspect-ratio: 1; border-radius: 50%; cursor: pointer; background: linear-gradient(135deg, #8A2387, #F27121); border: 2px solid transparent;"></div>
+              <div class="bg-btn" data-bg="gradient-7" style="aspect-ratio: 1; border-radius: 50%; cursor: pointer; background: linear-gradient(135deg, #093028, #237A57); border: 2px solid transparent;"></div>
+              <div class="bg-btn" data-bg="gradient-8" style="aspect-ratio: 1; border-radius: 50%; cursor: pointer; background: #000; border: 2px solid transparent;"></div>
               <div class="bg-btn" data-bg="solid-dark" style="aspect-ratio: 1; border-radius: 50%; cursor: pointer; background: #111; border: 2px solid transparent;"></div>
               <div class="bg-btn" data-bg="solid-light" style="aspect-ratio: 1; border-radius: 50%; cursor: pointer; background: #f8f9fa; border: 2px solid transparent;"></div>
               <div class="bg-btn" data-bg="transparent" style="aspect-ratio: 1; border-radius: 50%; cursor: pointer; background: repeating-conic-gradient(#333 0% 25%, #222 0% 50%) 50% / 20px 20px; border: 2px solid transparent;"></div>
             </div>
+          </div>
+
+          <!-- Shape Properties -->
+          <div id="shape-props" style="display: none; flex-direction: column; gap: 16px;">
+            <label class="cyber-label">Shape Options</label>
+            <select id="shape-type-select" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none;">
+              <option value="rectangle">Rectangle</option>
+              <option value="circle">Circle</option>
+            </select>
+            
+            <label class="cyber-label">Fill Color</label>
+            <input type="color" id="shape-color-input" value="#38bdf8" style="width: 100%; height: 40px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
+            
+            <div style="margin-top: 8px;">
+              <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 50px;">Width</span>
+                 <input type="range" id="shape-width-input" min="50" max="4000" value="1242" style="flex: 1;">
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
+                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 50px;">Height</span>
+                 <input type="range" id="shape-height-input" min="50" max="4000" value="2688" style="flex: 1;">
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
+                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 50px;">Radius</span>
+                 <input type="range" id="shape-radius-input" min="0" max="500" value="0" style="flex: 1;">
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
+                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 50px;">Rotate</span>
+                 <input type="range" id="shape-rotate-input" min="-180" max="180" value="0" style="flex: 1;">
+              </div>
+            </div>
+            
+            <div style="display: flex; gap: 8px; margin-top: 8px;">
+              <button id="shape-bring-forward-btn" class="cyber-button" style="flex: 1; font-size: 0.8rem; padding: 6px;">Forward</button>
+              <button id="shape-send-backward-btn" class="cyber-button" style="flex: 1; font-size: 0.8rem; padding: 6px;">Backward</button>
+            </div>
+
+            <button id="delete-shape-btn" class="cyber-button" style="margin-top: 16px; border-color: #ef4444; color: #ef4444;">Delete Layer</button>
           </div>
 
           <!-- Text Properties -->
@@ -169,10 +223,30 @@
               <option value="Times New Roman">Times New Roman (Serif)</option>
               <option value="Arial">Arial (Standard)</option>
             </select>
+            <select id="text-weight-select" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none; margin-bottom: -8px;">
+              <option value="400">Normal</option>
+              <option value="600">Semi-Bold</option>
+              <option value="800">Extra Bold</option>
+            </select>
             <textarea id="text-content-input" style="width: 100%; height: 80px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 12px; border-radius: 6px; outline: none; resize: none;"></textarea>
+            
+            <div id="text-align-group" style="display: flex; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; overflow: hidden; margin-top: 4px;">
+               <button data-align="left" style="flex: 1; padding: 8px; background: transparent; border: none; color: #fff; cursor: pointer; border-right: 1px solid rgba(255,255,255,0.2);">Left</button>
+               <button data-align="center" style="flex: 1; padding: 8px; background: transparent; border: none; color: #fff; cursor: pointer; border-right: 1px solid rgba(255,255,255,0.2);">Center</button>
+               <button data-align="right" style="flex: 1; padding: 8px; background: transparent; border: none; color: #fff; cursor: pointer;">Right</button>
+            </div>
             
             <label class="cyber-label">Color</label>
             <input type="color" id="text-color-input" value="#ffffff" style="width: 100%; height: 40px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
+            
+            <div style="margin-top: 8px;">
+              <label class="cyber-label">Effects</label>
+              <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Glow</span>
+                 <input type="color" id="text-shadow-color" value="#000000" style="width: 30px; height: 30px; border: none; border-radius: 4px; cursor: pointer; background: transparent;">
+                 <input type="range" id="text-shadow-blur" min="0" max="100" value="0" style="flex: 1;">
+              </div>
+            </div>
             
             <div style="margin-top: 8px;">
               <label class="cyber-label">Rotation</label>
@@ -180,6 +254,11 @@
                  <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Rotate</span>
                  <input type="range" id="text-rotate-input" min="-180" max="180" value="0" style="flex: 1;">
               </div>
+            </div>
+            
+            <div style="display: flex; gap: 8px; margin-top: 8px;">
+              <button id="text-bring-forward-btn" class="cyber-button" style="flex: 1; font-size: 0.8rem; padding: 6px;">Forward</button>
+              <button id="text-send-backward-btn" class="cyber-button" style="flex: 1; font-size: 0.8rem; padding: 6px;">Backward</button>
             </div>
             
             <button id="delete-text-btn" class="cyber-button" style="margin-top: 16px; border-color: #ef4444; color: #ef4444;">Delete Layer</button>
@@ -292,6 +371,6 @@
 
   <script src="bg.js?v=16"></script>
   <script src="script.js?v=20"></script>
-  <script src="scanner.js?v=6"></script>
+  <script src="scanner.js?v=7"></script>
 </body>
 </html>
