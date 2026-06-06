@@ -1,6 +1,6 @@
 /**
- * Riyo Studio - Mockup Studio V3 (Premium Object-Based Canvas Editor)
- * 100% Offline, Native HTML5 Canvas
+ * Riyo Studio - Mockup Studio V4 (Ultra Premium Canvas Editor)
+ * Features: 3D Tilt, Glare, Floor Shadows, Android/Clay frames, JSZip Bulk Export Kit, Smart Stickers
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const textInput = document.getElementById('text-content-input');
     const colorInput = document.getElementById('text-color-input');
     const fontSelect = document.getElementById('text-font-select');
+    const textRotateInput = document.getElementById('text-rotate-input');
     const frameSelect = document.getElementById('frame-style-select');
     const imageUpload = document.getElementById('image-upload-input');
     
@@ -28,15 +29,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const bgUploadInput = document.getElementById('bg-upload-input');
     const bgBlurInput = document.getElementById('bg-blur-input');
     
-    // Premium Image Transforms
+    // Premium Image Transforms & Realism
     const rotateInput = document.getElementById('img-rotate-input');
     const tiltYInput = document.getElementById('img-tilt-y-input');
     const shadowBlurInput = document.getElementById('img-shadow-blur-input');
     const shadowOpInput = document.getElementById('img-shadow-op-input');
+    const glareToggle = document.getElementById('img-glare-toggle');
+    const floorShadowToggle = document.getElementById('img-floor-shadow-toggle');
+
+    // Sticker Menu Dropdown Toggle
+    const stickerMenuBtn = document.getElementById('add-sticker-menu-btn');
+    const stickerDropdown = document.getElementById('sticker-dropdown');
+    if (stickerMenuBtn && stickerDropdown) {
+        stickerMenuBtn.addEventListener('click', () => {
+            const isBlock = stickerDropdown.style.display === 'flex';
+            stickerDropdown.style.display = isBlock ? 'none' : 'flex';
+        });
+        document.addEventListener('click', (e) => {
+            if (!stickerMenuBtn.contains(e.target) && !stickerDropdown.contains(e.target)) {
+                stickerDropdown.style.display = 'none';
+            }
+        });
+    }
 
     // --- Editor State ---
     let targetWidth = 1242;
-    let targetHeight = 2688; // Default to App Store 6.5"
+    let targetHeight = 2688; 
     
     let bgType = 'gradient';
     let bgColor1 = '#FF6B6B';
@@ -44,10 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let bgImgObj = null;
     let bgBlur = 0;
 
-    let layers = []; // { id, type: 'text'|'image', x, y, scale, ... }
+    let layers = []; // { id, type: 'text'|'image'|'sticker', x, y, scale, ... }
     let selectedLayerId = null;
 
-    // Interaction State
     let isDragging = false;
     let isScaling = false;
     let dragStartX = 0;
@@ -55,11 +72,27 @@ document.addEventListener('DOMContentLoaded', () => {
     let originalLayerX = 0;
     let originalLayerY = 0;
     let originalScale = 1;
-    let scaleCorner = null;
 
     // Device Frame Assets
     const notchImg = new Image();
     notchImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 30"><path d="M0 0C10 0 15 5 15 15C15 25 25 30 35 30H125C135 30 145 25 145 15C145 5 150 0 160 0H0Z" fill="%23000000"/></svg>';
+    
+    const punchHoleImg = new Image();
+    punchHoleImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="%23000000"/></svg>';
+
+    // Smart Sticker Assets
+    const stickers = {
+        'apple': new Image(),
+        'google': new Image(),
+        'stars': new Image(),
+        'cursor': new Image()
+    };
+    
+    // Very simple SVG placeholders for demonstration
+    stickers['apple'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="240" height="80" viewBox="0 0 240 80"><rect width="240" height="80" rx="16" fill="%23000"/><text x="120" y="45" font-family="Arial" font-weight="bold" font-size="24" fill="%23FFF" text-anchor="middle">Download on the</text><text x="120" y="70" font-family="Arial" font-weight="bold" font-size="28" fill="%23FFF" text-anchor="middle">App Store</text></svg>';
+    stickers['google'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="240" height="80" viewBox="0 0 240 80"><rect width="240" height="80" rx="16" fill="%23000"/><text x="120" y="45" font-family="Arial" font-weight="bold" font-size="24" fill="%23FFF" text-anchor="middle">GET IT ON</text><text x="120" y="70" font-family="Arial" font-weight="bold" font-size="28" fill="%23FFF" text-anchor="middle">Google Play</text></svg>';
+    stickers['stars'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="250" height="50" viewBox="0 0 250 50"><text x="125" y="40" font-family="Arial" font-size="50" fill="%23FFD700" text-anchor="middle">★★★★★</text></svg>';
+    stickers['cursor'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="50" height="70" viewBox="0 0 50 70"><path d="M0,0 L0,70 L15,55 L30,85 L45,75 L30,45 L50,45 Z" fill="%23FFF" stroke="%23000" stroke-width="4"/></svg>';
 
     // --- Initialization ---
     function init() {
@@ -68,9 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         render();
     }
 
-    function generateId() {
-        return Math.random().toString(36).substr(2, 9);
-    }
+    function generateId() { return Math.random().toString(36).substr(2, 9); }
 
     // --- Canvas Sizing ---
     function updateCanvasSize() {
@@ -114,8 +145,9 @@ document.addEventListener('DOMContentLoaded', () => {
             x: targetWidth / 2,
             y: 300,
             scale: 1,
-            fontSize: 120, // base size
-            width: 0, // Calculated on render
+            rotation: 0,
+            fontSize: 120, 
+            width: 0, 
             height: 120
         });
         selectedLayerId = layers[layers.length - 1].id;
@@ -123,48 +155,74 @@ document.addEventListener('DOMContentLoaded', () => {
         render();
     }
 
-    function addImageLayer(imgObj) {
-        // Calculate initial scale to fit reasonably
+    function addImageLayer(imgObj, offset = 0) {
         const initialScale = Math.min(1, (targetHeight * 0.6) / imgObj.height);
-        
         layers.push({
             id: generateId(),
             type: 'image',
             img: imgObj,
-            frameStyle: 'iphone', // default
-            x: targetWidth / 2,
-            y: targetHeight / 2,
+            frameStyle: 'iphone',
+            x: (targetWidth / 2) + (offset * 80),
+            y: (targetHeight / 2) + (offset * 80),
             scale: initialScale,
             width: imgObj.width,
             height: imgObj.height,
             rotation: 0,
             tiltY: 0,
             shadowBlur: 80,
-            shadowOp: 50
+            shadowOp: 50,
+            hasGlare: false,
+            hasFloorShadow: false
         });
         selectedLayerId = layers[layers.length - 1].id;
         updatePropsPanel();
         render();
     }
 
-    // Button Listeners
+    function addStickerLayer(stickerId) {
+        const imgObj = stickers[stickerId];
+        layers.push({
+            id: generateId(),
+            type: 'sticker',
+            stickerId: stickerId,
+            img: imgObj,
+            x: targetWidth / 2,
+            y: targetHeight / 2,
+            scale: 2.0, // Scale up tiny SVG badges
+            width: imgObj.width || 240,
+            height: imgObj.height || 80,
+            rotation: 0,
+            tiltY: 0,
+            shadowBlur: 40,
+            shadowOp: 30
+        });
+        selectedLayerId = layers[layers.length - 1].id;
+        if(stickerDropdown) stickerDropdown.style.display = 'none';
+        updatePropsPanel();
+        render();
+    }
+
     document.getElementById('add-text-btn').addEventListener('click', addTextLayer);
-    
-    document.getElementById('add-device-btn').addEventListener('click', () => {
-        imageUpload.click();
+    document.getElementById('add-device-btn').addEventListener('click', () => imageUpload.click());
+
+    document.querySelectorAll('.sticker-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const sId = e.target.dataset.sticker;
+            if (sId) addStickerLayer(sId);
+        });
     });
 
     imageUpload.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const url = URL.createObjectURL(file);
-        const img = new Image();
-        img.onload = () => {
-            addImageLayer(img);
-            URL.revokeObjectURL(url);
-        };
-        img.src = url;
-        e.target.value = ''; // Reset
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+        
+        files.forEach((file, index) => {
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = () => { addImageLayer(img, index); URL.revokeObjectURL(url); };
+            img.src = url;
+        });
+        e.target.value = ''; 
     });
     
     // Bg Upload
@@ -185,210 +243,284 @@ document.addEventListener('DOMContentLoaded', () => {
         e.target.value = '';
     });
     
-    bgBlurInput.addEventListener('input', (e) => {
-        bgBlur = parseInt(e.target.value);
-        render();
-    });
+    bgBlurInput.addEventListener('input', (e) => { bgBlur = parseInt(e.target.value); render(); });
 
-    // --- Rendering ---
+    // --- Rendering Core ---
     function render() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.filter = 'none'; // reset filter
+        renderSceneToContext(ctx, targetWidth, targetHeight, true);
+    }
+
+    function renderSceneToContext(tCtx, w, h, drawHandles = false, layoutScale = 1, offsetX = 0, offsetY = 0) {
+        tCtx.clearRect(0, 0, w, h);
+        tCtx.filter = 'none';
         
         // 1. Draw Background
         if (bgType === 'gradient') {
-            const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            const grad = tCtx.createLinearGradient(0, 0, w, h);
             grad.addColorStop(0, bgColor1);
             grad.addColorStop(1, bgColor2);
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            tCtx.fillStyle = grad;
+            tCtx.fillRect(0, 0, w, h);
         } else if (bgType === 'solid') {
-            ctx.fillStyle = bgColor1;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            tCtx.fillStyle = bgColor1;
+            tCtx.fillRect(0, 0, w, h);
         } else if (bgType === 'image' && bgImgObj) {
-            // Fill mode: Cover
-            const scale = Math.max(canvas.width / bgImgObj.width, canvas.height / bgImgObj.height);
-            const w = bgImgObj.width * scale;
-            const h = bgImgObj.height * scale;
-            const x = (canvas.width - w) / 2;
-            const y = (canvas.height - h) / 2;
-            
-            ctx.save();
-            if (bgBlur > 0) ctx.filter = `blur(${bgBlur}px)`;
-            ctx.drawImage(bgImgObj, x, y, w, h);
-            ctx.restore();
-            ctx.filter = 'none'; // reset filter just in case
-        } else if (bgType === 'transparent') {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const scale = Math.max(w / bgImgObj.width, h / bgImgObj.height);
+            const imgW = bgImgObj.width * scale;
+            const imgH = bgImgObj.height * scale;
+            const x = (w - imgW) / 2;
+            const y = (h - imgH) / 2;
+            tCtx.save();
+            if (bgBlur > 0) tCtx.filter = `blur(${bgBlur}px)`;
+            tCtx.drawImage(bgImgObj, x, y, imgW, imgH);
+            tCtx.restore();
+            tCtx.filter = 'none';
         }
 
-        // 2. Draw Layers
+        // 2. Apply Master Export Scaling if needed
+        tCtx.save();
+        tCtx.translate(offsetX, offsetY);
+        tCtx.scale(layoutScale, layoutScale);
+
+        // 3. Draw Layers
         layers.forEach(layer => {
-            ctx.save();
-            ctx.translate(layer.x, layer.y);
+            tCtx.save();
+            tCtx.translate(layer.x, layer.y);
             
-            // 3D Tilt Transformations (Only for images)
-            if (layer.type === 'image') {
-                const r = (layer.rotation || 0) * Math.PI / 180;
-                const ty = (layer.tiltY || 0) * Math.PI / 180;
-                // Skew transform to simulate isometric projection
-                ctx.transform(1, ty, 0, 1, 0, 0);
-                ctx.rotate(r);
+            const r = (layer.rotation || 0) * Math.PI / 180;
+            const ty = (layer.tiltY || 0) * Math.PI / 180;
+            
+            if (layer.type === 'image' || layer.type === 'sticker') {
+                // Floor Shadow (Draw BEFORE transform if we want it detached)
+                if (layer.hasFloorShadow) {
+                    tCtx.save();
+                    const sBlur = layer.shadowBlur !== undefined ? layer.shadowBlur : 80;
+                    const sOp = layer.shadowOp !== undefined ? layer.shadowOp : 50;
+                    tCtx.shadowColor = `rgba(0,0,0,${sOp/100})`;
+                    tCtx.shadowBlur = sBlur;
+                    tCtx.shadowOffsetY = layer.height * layer.scale * 0.45;
+                    tCtx.fillStyle = '#000';
+                    tCtx.beginPath();
+                    // Draw a squashed ellipse for the floor shadow
+                    tCtx.ellipse(0, 0, (layer.width * layer.scale)/2, (layer.width * layer.scale)*0.1, 0, 0, Math.PI*2);
+                    tCtx.fill();
+                    tCtx.restore();
+                }
             }
+
+            // Apply Tilt & Rotation to ALL layers
+            tCtx.transform(1, ty, 0, 1, 0, 0);
+            tCtx.rotate(r);
             
-            ctx.scale(layer.scale, layer.scale);
+            tCtx.scale(layer.scale, layer.scale);
 
             if (layer.type === 'image') {
-                drawImageLayer(layer);
+                drawImageLayer(tCtx, layer);
             } else if (layer.type === 'text') {
-                drawTextLayer(layer);
+                drawTextLayer(tCtx, layer);
+            } else if (layer.type === 'sticker') {
+                drawStickerLayer(tCtx, layer);
             }
 
-            ctx.restore();
+            tCtx.restore();
         });
 
-        // 3. Draw UI Handles for Selected Layer
-        if (selectedLayerId) {
+        // 4. Draw UI Handles
+        if (drawHandles && selectedLayerId) {
             const layer = layers.find(l => l.id === selectedLayerId);
-            if (layer) drawSelectionBox(layer);
+            if (layer) drawSelectionBox(tCtx, layer);
         }
+
+        tCtx.restore();
     }
 
-    function drawImageLayer(layer) {
+    function drawStickerLayer(tCtx, layer) {
         const w = layer.width;
         const h = layer.height;
-        ctx.translate(-w/2, -h/2);
+        tCtx.translate(-w/2, -h/2);
+
+        const sBlur = layer.shadowBlur !== undefined ? layer.shadowBlur : 40;
+        const sOp = layer.shadowOp !== undefined ? layer.shadowOp : 30;
+
+        tCtx.shadowColor = `rgba(0,0,0,${sOp/100})`;
+        tCtx.shadowBlur = sBlur;
+        tCtx.shadowOffsetY = sBlur / 2;
+
+        if (layer.img.complete) {
+            tCtx.drawImage(layer.img, 0, 0, w, h);
+        }
+        tCtx.shadowColor = 'transparent';
+    }
+
+    function drawImageLayer(tCtx, layer) {
+        const w = layer.width;
+        const h = layer.height;
+        tCtx.translate(-w/2, -h/2);
 
         const sBlur = layer.shadowBlur !== undefined ? layer.shadowBlur : 80;
         const sOp = layer.shadowOp !== undefined ? layer.shadowOp : 50;
-        const shadowColor = `rgba(0,0,0,${sOp/100})`;
+        const shadowColor = layer.hasFloorShadow ? 'transparent' : `rgba(0,0,0,${sOp/100})`;
 
-        if (layer.frameStyle === 'iphone') {
-            ctx.shadowColor = shadowColor;
-            ctx.shadowBlur = sBlur;
-            ctx.shadowOffsetY = sBlur / 2;
+        tCtx.shadowColor = shadowColor;
+        tCtx.shadowBlur = sBlur;
+        tCtx.shadowOffsetY = sBlur / 2;
 
+        if (layer.frameStyle === 'iphone' || layer.frameStyle === 'android' || layer.frameStyle === 'clay') {
             const rad = Math.min(w, h) * 0.1;
-            ctx.beginPath();
-            ctx.roundRect(0, 0, w, h, rad);
-            ctx.closePath();
             
-            ctx.fillStyle = '#000';
-            ctx.fill();
-            ctx.shadowColor = 'transparent';
+            tCtx.beginPath();
+            tCtx.roundRect(0, 0, w, h, rad);
+            tCtx.closePath();
+            
+            tCtx.fillStyle = layer.frameStyle === 'clay' ? '#f8f9fa' : '#000';
+            tCtx.fill();
+            tCtx.shadowColor = 'transparent';
 
-            ctx.save();
-            ctx.clip();
-            ctx.drawImage(layer.img, 0, 0, w, h);
-            ctx.restore();
+            tCtx.save();
+            if (layer.frameStyle === 'clay') {
+                // Clay frames have massive bezels and crop the image
+                const pad = w * 0.06;
+                tCtx.beginPath();
+                tCtx.roundRect(pad, pad, w - pad*2, h - pad*2, rad*0.8);
+                tCtx.clip();
+                tCtx.drawImage(layer.img, pad, pad, w - pad*2, h - pad*2);
+            } else {
+                tCtx.clip();
+                tCtx.drawImage(layer.img, 0, 0, w, h);
+            }
+            tCtx.restore();
 
-            const notchW = w * 0.4;
-            const notchH = notchW * 0.2;
-            if (notchImg.complete) {
-                ctx.drawImage(notchImg, (w - notchW)/2, 0, notchW, notchH);
+            // Notches & Cameras
+            if (layer.frameStyle === 'iphone') {
+                const notchW = w * 0.4;
+                const notchH = notchW * 0.2;
+                if (notchImg.complete) {
+                    tCtx.drawImage(notchImg, (w - notchW)/2, 0, notchW, notchH);
+                }
+            } else if (layer.frameStyle === 'android') {
+                const punchW = w * 0.05;
+                if (punchHoleImg.complete) {
+                    tCtx.drawImage(punchHoleImg, w/2 - punchW/2, h * 0.03, punchW, punchW);
+                }
             }
             
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = w * 0.02;
-            ctx.stroke();
+            // Outer stroke for definition
+            if (layer.frameStyle !== 'clay') {
+                tCtx.strokeStyle = '#000';
+                tCtx.lineWidth = w * 0.02;
+                tCtx.stroke();
+            } else {
+                tCtx.strokeStyle = 'rgba(0,0,0,0.1)';
+                tCtx.lineWidth = w * 0.01;
+                tCtx.stroke();
+            }
 
         } else if (layer.frameStyle === 'ipad') {
-            const padW = w * 0.05; // Bezel thickness
+            const padW = w * 0.05; 
             const rad = Math.min(w, h) * 0.05;
             
-            ctx.shadowColor = shadowColor;
-            ctx.shadowBlur = sBlur;
-            ctx.shadowOffsetY = sBlur / 2;
+            tCtx.beginPath();
+            tCtx.roundRect(-padW, -padW, w + padW*2, h + padW*2, rad + padW);
+            tCtx.closePath();
+            tCtx.fillStyle = '#111';
+            tCtx.fill();
+            tCtx.shadowColor = 'transparent';
 
-            // Draw outer black bezel
-            ctx.beginPath();
-            ctx.roundRect(-padW, -padW, w + padW*2, h + padW*2, rad + padW);
-            ctx.closePath();
-            ctx.fillStyle = '#111';
-            ctx.fill();
-            ctx.shadowColor = 'transparent';
-
-            // Draw Image
-            ctx.drawImage(layer.img, 0, 0, w, h);
-
-            // Draw inner stroke
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(0, 0, w, h);
+            tCtx.drawImage(layer.img, 0, 0, w, h);
+            tCtx.strokeStyle = '#000';
+            tCtx.lineWidth = 2;
+            tCtx.strokeRect(0, 0, w, h);
 
         } else if (layer.frameStyle === 'macbook') {
             const padW = w * 0.02;
             const topBar = h * 0.05;
             const bottomLip = h * 0.12;
             
-            ctx.shadowColor = shadowColor;
-            ctx.shadowBlur = sBlur;
-            ctx.shadowOffsetY = sBlur / 2;
-            
-            // Draw Top Bezel (Black)
-            ctx.beginPath();
-            ctx.roundRect(-padW, -padW - topBar, w + padW*2, h + padW*2 + topBar + bottomLip, [16,16,0,0]);
-            ctx.closePath();
-            ctx.fillStyle = '#111';
-            ctx.fill();
-            ctx.shadowColor = 'transparent';
+            // Top Bezel
+            tCtx.beginPath();
+            tCtx.roundRect(-padW, -padW - topBar, w + padW*2, h + padW*2 + topBar + bottomLip, [16,16,0,0]);
+            tCtx.closePath();
+            tCtx.fillStyle = '#111';
+            tCtx.fill();
+            tCtx.shadowColor = 'transparent';
 
-            // Draw Bottom Lip (Silver)
-            ctx.fillStyle = '#9ca3af';
-            ctx.beginPath();
-            ctx.roundRect(-padW, h + padW, w + padW*2, bottomLip, [0,0,16,16]);
-            ctx.fill();
+            // Bottom Lip
+            tCtx.fillStyle = '#9ca3af';
+            tCtx.beginPath();
+            tCtx.roundRect(-padW, h + padW, w + padW*2, bottomLip, [0,0,16,16]);
+            tCtx.fill();
 
-            // Screen Image
-            ctx.drawImage(layer.img, 0, 0, w, h);
+            tCtx.drawImage(layer.img, 0, 0, w, h);
 
         } else if (layer.frameStyle === 'browser') {
             const topBar = 60;
             const totalH = h + topBar;
             
-            ctx.shadowColor = shadowColor;
-            ctx.shadowBlur = sBlur;
-            ctx.shadowOffsetY = sBlur / 2;
-            
-            ctx.beginPath();
-            ctx.roundRect(0, 0, w, totalH, 16);
-            ctx.closePath();
-            ctx.fillStyle = '#2d2d2d';
-            ctx.fill();
-            ctx.shadowColor = 'transparent';
+            tCtx.beginPath();
+            tCtx.roundRect(0, 0, w, totalH, 16);
+            tCtx.closePath();
+            tCtx.fillStyle = '#2d2d2d';
+            tCtx.fill();
+            tCtx.shadowColor = 'transparent';
 
-            // Mac buttons
-            ctx.fillStyle = '#ff5f56';
-            ctx.beginPath(); ctx.arc(24, topBar/2, 8, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#ffbd2e';
-            ctx.beginPath(); ctx.arc(52, topBar/2, 8, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#27c93f';
-            ctx.beginPath(); ctx.arc(80, topBar/2, 8, 0, Math.PI*2); ctx.fill();
+            tCtx.fillStyle = '#ff5f56';
+            tCtx.beginPath(); tCtx.arc(24, topBar/2, 8, 0, Math.PI*2); tCtx.fill();
+            tCtx.fillStyle = '#ffbd2e';
+            tCtx.beginPath(); tCtx.arc(52, topBar/2, 8, 0, Math.PI*2); tCtx.fill();
+            tCtx.fillStyle = '#27c93f';
+            tCtx.beginPath(); tCtx.arc(80, topBar/2, 8, 0, Math.PI*2); tCtx.fill();
 
-            ctx.save();
-            ctx.beginPath();
-            ctx.roundRect(0, topBar, w, h, [0,0,16,16]);
-            ctx.clip();
-            ctx.drawImage(layer.img, 0, topBar, w, h);
-            ctx.restore();
-
+            tCtx.save();
+            tCtx.beginPath();
+            tCtx.roundRect(0, topBar, w, h, [0,0,16,16]);
+            tCtx.clip();
+            tCtx.drawImage(layer.img, 0, topBar, w, h);
+            tCtx.restore();
             layer.renderHeight = totalH;
 
         } else {
-            // No frame
-            ctx.shadowColor = shadowColor;
-            ctx.shadowBlur = sBlur;
-            ctx.shadowOffsetY = sBlur / 2;
-            ctx.drawImage(layer.img, 0, 0, w, h);
-            ctx.shadowColor = 'transparent';
+            tCtx.drawImage(layer.img, 0, 0, w, h);
+            tCtx.shadowColor = 'transparent';
+        }
+
+        // Apply Premium Glass Glare Overlay
+        if (layer.hasGlare) {
+            tCtx.save();
+            let renderH = layer.renderHeight || h;
+            
+            // Re-clip to frame boundaries so glare doesn't bleed out
+            if (layer.frameStyle === 'iphone' || layer.frameStyle === 'android' || layer.frameStyle === 'clay') {
+                tCtx.beginPath(); tCtx.roundRect(0, 0, w, h, Math.min(w, h) * 0.1); tCtx.clip();
+            } else if (layer.frameStyle === 'browser') {
+                tCtx.beginPath(); tCtx.roundRect(0, 0, w, renderH, 16); tCtx.clip();
+            } else if (layer.frameStyle === 'ipad') {
+                tCtx.beginPath(); tCtx.roundRect(-w*0.05, -w*0.05, w*1.1, h + w*0.1, Math.min(w, h)*0.05 + w*0.05); tCtx.clip();
+            } else if (layer.frameStyle === 'macbook') {
+                tCtx.beginPath(); tCtx.roundRect(-w*0.02, -h*0.05, w*1.04, h*1.17, 16); tCtx.clip();
+            }
+
+            const grad = tCtx.createLinearGradient(0, 0, w, renderH);
+            grad.addColorStop(0, 'rgba(255,255,255,0.4)');
+            grad.addColorStop(0.3, 'rgba(255,255,255,0.05)');
+            grad.addColorStop(0.301, 'rgba(255,255,255,0)');
+            grad.addColorStop(1, 'rgba(255,255,255,0)');
+            
+            tCtx.fillStyle = grad;
+            tCtx.beginPath();
+            tCtx.moveTo(0, 0);
+            tCtx.lineTo(w, 0);
+            tCtx.lineTo(0, renderH);
+            tCtx.closePath();
+            tCtx.fill();
+            tCtx.restore();
         }
     }
 
-    function drawTextLayer(layer) {
-        ctx.font = `800 ${layer.fontSize}px ${layer.fontFamily || 'Inter'}, sans-serif`;
-        ctx.fillStyle = layer.color;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+    function drawTextLayer(tCtx, layer) {
+        tCtx.font = `800 ${layer.fontSize}px "${layer.fontFamily || 'Inter'}", sans-serif`;
+        tCtx.fillStyle = layer.color;
+        tCtx.textAlign = 'center';
+        tCtx.textBaseline = 'middle';
         
         const lines = layer.content.split('\n');
         const lineH = layer.fontSize * 1.2;
@@ -396,51 +528,47 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let maxW = 0;
         lines.forEach((line, i) => {
-            const m = ctx.measureText(line);
+            const m = tCtx.measureText(line);
             if (m.width > maxW) maxW = m.width;
-            
             const offY = (i - (lines.length-1)/2) * lineH;
-            ctx.fillText(line, 0, offY);
+            tCtx.fillText(line, 0, offY);
         });
         
         layer.width = maxW;
     }
 
-    function drawSelectionBox(layer) {
-        ctx.save();
-        ctx.translate(layer.x, layer.y);
+    function drawSelectionBox(tCtx, layer) {
+        tCtx.save();
+        tCtx.translate(layer.x, layer.y);
         
-        if (layer.type === 'image') {
-            const r = (layer.rotation || 0) * Math.PI / 180;
-            const ty = (layer.tiltY || 0) * Math.PI / 180;
-            ctx.transform(1, ty, 0, 1, 0, 0);
-            ctx.rotate(r);
-        }
+        const r = (layer.rotation || 0) * Math.PI / 180;
+        const ty = (layer.tiltY || 0) * Math.PI / 180;
+        tCtx.transform(1, ty, 0, 1, 0, 0);
+        tCtx.rotate(r);
         
         let w = layer.width * layer.scale;
         let h = (layer.renderHeight || layer.height) * layer.scale;
         
-        // Compensate for pad if ipad/macbook
         if (layer.frameStyle === 'ipad' || layer.frameStyle === 'macbook') {
             w += (layer.width * 0.1) * layer.scale;
             h += (layer.height * 0.1) * layer.scale;
         }
         
-        ctx.strokeStyle = '#00e5ff';
-        ctx.lineWidth = 4 / getWrapperScale();
-        ctx.setLineDash([10 / getWrapperScale(), 10 / getWrapperScale()]);
-        ctx.strokeRect(-w/2, -h/2, w, h);
+        tCtx.strokeStyle = '#00e5ff';
+        tCtx.lineWidth = 4 / getWrapperScale();
+        tCtx.setLineDash([10 / getWrapperScale(), 10 / getWrapperScale()]);
+        tCtx.strokeRect(-w/2, -h/2, w, h);
 
-        ctx.fillStyle = '#00e5ff';
-        ctx.setLineDash([]);
+        tCtx.fillStyle = '#00e5ff';
+        tCtx.setLineDash([]);
         const hs = 20 / getWrapperScale(); 
         
-        ctx.fillRect(-w/2 - hs/2, -h/2 - hs/2, hs, hs); 
-        ctx.fillRect(w/2 - hs/2, -h/2 - hs/2, hs, hs); 
-        ctx.fillRect(-w/2 - hs/2, h/2 - hs/2, hs, hs); 
-        ctx.fillRect(w/2 - hs/2, h/2 - hs/2, hs, hs); 
+        tCtx.fillRect(-w/2 - hs/2, -h/2 - hs/2, hs, hs); 
+        tCtx.fillRect(w/2 - hs/2, -h/2 - hs/2, hs, hs); 
+        tCtx.fillRect(-w/2 - hs/2, h/2 - hs/2, hs, hs); 
+        tCtx.fillRect(w/2 - hs/2, h/2 - hs/2, hs, hs); 
         
-        ctx.restore();
+        tCtx.restore();
     }
 
     // --- Interaction Engine ---
@@ -459,28 +587,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function isPointInTransformedRect(px, py, cx, cy, w, h, scale, rotation, tiltY) {
-        // Reverse translate
         let tx = px - cx;
         let ty = py - cy;
-
-        // Reverse tiltY (skewY)
-        // transform matrix was: 1, tiltY, 0, 1
-        // inverse: 1, -tiltY, 0, 1
         let tiltY_rad = (tiltY || 0) * Math.PI / 180;
         let sx = tx;
         let sy = -tx * tiltY_rad + ty;
-
-        // Reverse rotate
         let r = -(rotation || 0) * Math.PI / 180;
         let cosR = Math.cos(r);
         let sinR = Math.sin(r);
         let rx = sx * cosR - sy * sinR;
         let ry = sx * sinR + sy * cosR;
-
-        // Reverse scale
         let lx = rx / scale;
         let ly = ry / scale;
-
         return (lx >= -w/2 && lx <= w/2 && ly >= -h/2 && ly <= h/2);
     }
 
@@ -493,52 +611,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 w += layer.width * 0.1;
                 h += layer.height * 0.1;
             }
-            const hit = isPointInTransformedRect(
-                x, y, layer.x, layer.y, 
-                w, h, 
-                layer.scale, layer.rotation, layer.tiltY
-            );
+            const hit = isPointInTransformedRect(x, y, layer.x, layer.y, w, h, layer.scale, layer.rotation, layer.tiltY);
             if (hit) return layer.id;
         }
         return null;
     }
 
-    function checkHandleHit(x, y, layer) {
-        let w = layer.width;
-        let h = layer.renderHeight || layer.height;
-        if (layer.frameStyle === 'ipad' || layer.frameStyle === 'macbook') {
-            w += layer.width * 0.1;
-            h += layer.height * 0.1;
-        }
-
-        const hit = isPointInTransformedRect(
-            x, y, layer.x, layer.y, 
-            w + 100, h + 100, 
-            layer.scale, layer.rotation, layer.tiltY
-        );
-        if (hit) return 'handle'; 
-        return null;
-    }
-
     wrapper.addEventListener('mousedown', (e) => {
         const { x, y } = getMouseCoords(e);
-
         if (selectedLayerId) {
             const layer = layers.find(l => l.id === selectedLayerId);
             if (layer) {
                 let w = layer.width;
                 let h = layer.renderHeight || layer.height;
-                if (layer.frameStyle === 'ipad' || layer.frameStyle === 'macbook') {
-                    w += layer.width * 0.1;
-                    h += layer.height * 0.1;
-                }
-
-                const innerHit = isPointInTransformedRect(
-                    x, y, layer.x, layer.y, 
-                    w, h, 
-                    layer.scale, layer.rotation, layer.tiltY
-                );
-                const handleHit = checkHandleHit(x, y, layer);
+                if (layer.frameStyle === 'ipad' || layer.frameStyle === 'macbook') { w += layer.width * 0.1; h += layer.height * 0.1; }
+                const innerHit = isPointInTransformedRect(x, y, layer.x, layer.y, w, h, layer.scale, layer.rotation, layer.tiltY);
+                const handleHit = isPointInTransformedRect(x, y, layer.x, layer.y, w + 100, h + 100, layer.scale, layer.rotation, layer.tiltY);
                 
                 if (!innerHit && handleHit) {
                     isScaling = true;
@@ -571,7 +659,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('mousemove', (e) => {
         if (!isDragging && !isScaling) return;
-        
         const { x, y } = getMouseCoords(e);
         const layer = layers.find(l => l.id === selectedLayerId);
         if (!layer) return;
@@ -589,82 +676,76 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    window.addEventListener('mouseup', () => {
-        isDragging = false;
-        isScaling = false;
-    });
+    window.addEventListener('mouseup', () => { isDragging = false; isScaling = false; });
 
     // --- Properties Panel Sync ---
     function updatePropsPanel() {
         if (!selectedLayerId) {
-            propsCanvas.style.display = 'block';
-            propsText.style.display = 'none';
-            propsImage.style.display = 'none';
-            noSelectionMsg.style.display = 'block';
-            bgBlurInput.value = bgBlur;
+            if(propsCanvas) propsCanvas.style.display = 'block';
+            if(propsText) propsText.style.display = 'none';
+            if(propsImage) propsImage.style.display = 'none';
+            if(noSelectionMsg) noSelectionMsg.style.display = 'block';
+            if(bgBlurInput) bgBlurInput.value = bgBlur;
             return;
         }
 
-        noSelectionMsg.style.display = 'none';
-        propsCanvas.style.display = 'none';
+        if(noSelectionMsg) noSelectionMsg.style.display = 'none';
+        if(propsCanvas) propsCanvas.style.display = 'none';
         
         const layer = layers.find(l => l.id === selectedLayerId);
+        if (!layer) return;
+
         if (layer.type === 'text') {
-            propsText.style.display = 'flex';
-            propsImage.style.display = 'none';
-            textInput.value = layer.content;
-            colorInput.value = layer.color;
-            fontSelect.value = layer.fontFamily || 'Inter';
-        } else if (layer.type === 'image') {
-            propsText.style.display = 'none';
-            propsImage.style.display = 'flex';
-            frameSelect.value = layer.frameStyle;
-            rotateInput.value = layer.rotation || 0;
-            tiltYInput.value = layer.tiltY || 0;
-            shadowBlurInput.value = layer.shadowBlur !== undefined ? layer.shadowBlur : 80;
-            shadowOpInput.value = layer.shadowOp !== undefined ? layer.shadowOp : 50;
+            if(document.getElementById('text-props')) document.getElementById('text-props').style.display = 'flex';
+            if(document.getElementById('image-props')) document.getElementById('image-props').style.display = 'none';
+            if(document.getElementById('text-content-input')) document.getElementById('text-content-input').value = layer.content;
+            if(document.getElementById('text-color-input')) document.getElementById('text-color-input').value = layer.color;
+            if(document.getElementById('text-font-select')) document.getElementById('text-font-select').value = layer.fontFamily || 'Inter';
+            if(textRotateInput) textRotateInput.value = layer.rotation || 0;
+        } else if (layer.type === 'image' || layer.type === 'sticker') {
+            if(document.getElementById('text-props')) document.getElementById('text-props').style.display = 'none';
+            if(document.getElementById('image-props')) document.getElementById('image-props').style.display = 'flex';
+            
+            if(document.getElementById('img-rotate-input')) document.getElementById('img-rotate-input').value = layer.rotation || 0;
+            if(document.getElementById('img-shadow-blur-input')) document.getElementById('img-shadow-blur-input').value = layer.shadowBlur !== undefined ? layer.shadowBlur : 80;
+            if(document.getElementById('img-shadow-op-input')) document.getElementById('img-shadow-op-input').value = layer.shadowOp !== undefined ? layer.shadowOp : 50;
+            
+            if (layer.type === 'image') {
+                if(document.getElementById('frame-style-container')) document.getElementById('frame-style-container').style.display = 'block';
+                if(document.getElementById('glare-shadow-toggles')) document.getElementById('glare-shadow-toggles').style.display = 'flex';
+                if(document.getElementById('frame-style-select')) document.getElementById('frame-style-select').value = layer.frameStyle;
+                if(document.getElementById('img-tilt-y-input') && document.getElementById('img-tilt-y-input').parentElement) document.getElementById('img-tilt-y-input').parentElement.style.display = 'flex';
+                if(document.getElementById('img-tilt-y-input')) document.getElementById('img-tilt-y-input').value = layer.tiltY || 0;
+                if(document.getElementById('img-glare-toggle')) document.getElementById('img-glare-toggle').checked = layer.hasGlare || false;
+                if(document.getElementById('img-floor-shadow-toggle')) document.getElementById('img-floor-shadow-toggle').checked = layer.hasFloorShadow || false;
+            } else {
+                if(document.getElementById('frame-style-container')) document.getElementById('frame-style-container').style.display = 'none';
+                if(document.getElementById('glare-shadow-toggles')) document.getElementById('glare-shadow-toggles').style.display = 'none';
+                if(document.getElementById('img-tilt-y-input') && document.getElementById('img-tilt-y-input').parentElement) document.getElementById('img-tilt-y-input').parentElement.style.display = 'none';
+            }
         }
     }
 
-    // Property Inputs Listeners
-    textInput.addEventListener('input', (e) => {
-        const layer = layers.find(l => l?.id === selectedLayerId);
-        if (layer) { layer.content = e.target.value; render(); }
-    });
-    colorInput.addEventListener('input', (e) => {
-        const layer = layers.find(l => l?.id === selectedLayerId);
-        if (layer) { layer.color = e.target.value; render(); }
-    });
-    fontSelect.addEventListener('change', (e) => {
-        const layer = layers.find(l => l?.id === selectedLayerId);
-        if (layer) { layer.fontFamily = e.target.value; render(); }
-    });
-    frameSelect.addEventListener('change', (e) => {
-        const layer = layers.find(l => l?.id === selectedLayerId);
-        if (layer) { layer.frameStyle = e.target.value; render(); }
-    });
-    rotateInput.addEventListener('input', (e) => {
-        const layer = layers.find(l => l?.id === selectedLayerId);
-        if (layer) { layer.rotation = parseInt(e.target.value); render(); }
-    });
-    tiltYInput.addEventListener('input', (e) => {
-        const layer = layers.find(l => l?.id === selectedLayerId);
-        if (layer) { layer.tiltY = parseInt(e.target.value); render(); }
-    });
-    shadowBlurInput.addEventListener('input', (e) => {
-        const layer = layers.find(l => l?.id === selectedLayerId);
-        if (layer) { layer.shadowBlur = parseInt(e.target.value); render(); }
-    });
-    shadowOpInput.addEventListener('input', (e) => {
-        const layer = layers.find(l => l?.id === selectedLayerId);
-        if (layer) { layer.shadowOp = parseInt(e.target.value); render(); }
-    });
+    // Property Listeners
+    if(textInput) textInput.addEventListener('input', (e) => { const l = layers.find(x => x?.id === selectedLayerId); if (l) { l.content = e.target.value; render(); } });
+    if(colorInput) colorInput.addEventListener('input', (e) => { const l = layers.find(x => x?.id === selectedLayerId); if (l) { l.color = e.target.value; render(); } });
+    if(fontSelect) fontSelect.addEventListener('change', (e) => { const l = layers.find(x => x?.id === selectedLayerId); if (l) { l.fontFamily = e.target.value; render(); } });
+    if(textRotateInput) textRotateInput.addEventListener('input', (e) => { const l = layers.find(x => x?.id === selectedLayerId); if (l) { l.rotation = parseInt(e.target.value); render(); } });
+    if(frameSelect) frameSelect.addEventListener('change', (e) => { const l = layers.find(x => x?.id === selectedLayerId); if (l) { l.frameStyle = e.target.value; render(); } });
+    if(rotateInput) rotateInput.addEventListener('input', (e) => { const l = layers.find(x => x?.id === selectedLayerId); if (l) { l.rotation = parseInt(e.target.value); render(); } });
+    if(tiltYInput) tiltYInput.addEventListener('input', (e) => { const l = layers.find(x => x?.id === selectedLayerId); if (l) { l.tiltY = parseInt(e.target.value); render(); } });
+    if(shadowBlurInput) shadowBlurInput.addEventListener('input', (e) => { const l = layers.find(x => x?.id === selectedLayerId); if (l) { l.shadowBlur = parseInt(e.target.value); render(); } });
+    if(shadowOpInput) shadowOpInput.addEventListener('input', (e) => { const l = layers.find(x => x?.id === selectedLayerId); if (l) { l.shadowOp = parseInt(e.target.value); render(); } });
+    if(glareToggle) glareToggle.addEventListener('change', (e) => { const l = layers.find(x => x?.id === selectedLayerId); if (l) { l.hasGlare = e.target.checked; render(); } });
+    if(floorShadowToggle) floorShadowToggle.addEventListener('change', (e) => { const l = layers.find(x => x?.id === selectedLayerId); if (l) { l.hasFloorShadow = e.target.checked; render(); } });
 
-    document.getElementById('delete-text-btn').addEventListener('click', deleteSelected);
-    document.getElementById('delete-image-btn').addEventListener('click', deleteSelected);
+    const deleteTextBtn = document.getElementById('delete-text-btn');
+    const deleteImageBtn = document.getElementById('delete-image-btn');
+    if(deleteTextBtn) deleteTextBtn.addEventListener('click', deleteSelected);
+    if(deleteImageBtn) deleteImageBtn.addEventListener('click', deleteSelected);
+
     window.addEventListener('keydown', (e) => {
-        if ((e.key === 'Delete' || e.key === 'Backspace') && selectedLayerId) {
-            if (document.activeElement === textInput) return;
+        if ((e.key === 'Delete' || e.key === 'Backspace') && selectedLayerId && document.activeElement !== textInput) {
             deleteSelected();
         }
     });
@@ -677,7 +758,8 @@ document.addEventListener('DOMContentLoaded', () => {
         render();
     }
 
-    document.getElementById('bring-forward-btn').addEventListener('click', () => {
+    const bringForwardBtn = document.getElementById('bring-forward-btn');
+    if(bringForwardBtn) bringForwardBtn.addEventListener('click', () => {
         if (!selectedLayerId) return;
         const idx = layers.findIndex(l => l.id === selectedLayerId);
         if (idx < layers.length - 1) {
@@ -688,7 +770,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.getElementById('send-backward-btn').addEventListener('click', () => {
+    const sendBackwardBtn = document.getElementById('send-backward-btn');
+    if(sendBackwardBtn) sendBackwardBtn.addEventListener('click', () => {
         if (!selectedLayerId) return;
         const idx = layers.findIndex(l => l.id === selectedLayerId);
         if (idx > 0) {
@@ -703,7 +786,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', (e) => {
             document.querySelectorAll('.bg-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
-
             const bg = e.target.dataset.bg;
             bgType = 'gradient';
             if (bg === 'gradient-1') { bgColor1 = '#FF6B6B'; bgColor2 = '#4ECDC4'; }
@@ -713,26 +795,95 @@ document.addEventListener('DOMContentLoaded', () => {
             if (bg === 'solid-dark') { bgType = 'solid'; bgColor1 = '#111'; }
             if (bg === 'solid-light') { bgType = 'solid'; bgColor1 = '#ffffff'; }
             if (bg === 'transparent') { bgType = 'transparent'; }
-            
             render();
         });
     });
 
-    document.getElementById('export-png-btn').addEventListener('click', () => {
-        const prevSelected = selectedLayerId;
-        selectedLayerId = null;
-        render();
+    // --- Bulk Export Kit ---
+    function base64ToBlob(base64) {
+        const parts = base64.split(';base64,');
+        const contentType = parts[0].split(':')[1];
+        const raw = window.atob(parts[1]);
+        const uInt8Array = new Uint8Array(raw.length);
+        for (let i = 0; i < raw.length; ++i) uInt8Array[i] = raw.charCodeAt(i);
+        return new Blob([uInt8Array], { type: contentType });
+    }
 
-        const dataURL = canvas.toDataURL('image/png', 1.0);
-        
-        selectedLayerId = prevSelected;
-        render();
+    const exportZipBtn = document.getElementById('export-zip-btn');
+    if (exportZipBtn) {
+        exportZipBtn.addEventListener('click', async () => {
+            if (!window.JSZip) {
+                alert("JSZip library is still loading. Please try again in a second.");
+                return;
+            }
+            
+            exportZipBtn.innerText = "GENERATING...";
+            const prevSelected = selectedLayerId;
+            selectedLayerId = null; // Hide handles
 
-        const link = document.createElement('a');
-        link.download = `mockup-studio-${targetWidth}x${targetHeight}.png`;
-        link.href = dataURL;
-        link.click();
-    });
+            const zip = new JSZip();
+            
+            // Required App Store & Google Play Sizes
+            const formats = [
+                { name: "Apple_6.5_inch", w: 1284, h: 2778 },
+                { name: "Apple_5.5_inch", w: 1242, h: 2208 },
+                { name: "Google_Play", w: 1080, h: 1920 }
+            ];
+
+            // Render to a temporary offscreen canvas for each format
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+
+            for (let fmt of formats) {
+                tempCanvas.width = fmt.w;
+                tempCanvas.height = fmt.h;
+                
+                // Calculate scale to "Cover" the target format based on current master targetWidth/Height
+                const scale = Math.max(fmt.w / targetWidth, fmt.h / targetHeight);
+                
+                // Calculate translation to center it
+                const actualW = targetWidth * scale;
+                const actualH = targetHeight * scale;
+                const offsetX = (fmt.w - actualW) / 2;
+                const offsetY = (fmt.h - actualH) / 2;
+
+                renderSceneToContext(tempCtx, fmt.w, fmt.h, false, scale, offsetX, offsetY);
+                
+                const dataUrl = tempCanvas.toDataURL('image/png', 1.0);
+                const blob = base64ToBlob(dataUrl);
+                zip.file(`${fmt.name}.png`, blob);
+            }
+
+            selectedLayerId = prevSelected;
+            render(); // Restore main canvas
+
+            const zipBlob = await zip.generateAsync({ type: "blob" });
+            const link = document.createElement('a');
+            link.download = `AppStore_Kit.zip`;
+            link.href = URL.createObjectURL(zipBlob);
+            link.click();
+            exportZipBtn.innerText = "EXPORT KIT (.ZIP)";
+        });
+    }
+
+    const exportPngBtn = document.getElementById('export-png-btn');
+    if (exportPngBtn) {
+        exportPngBtn.addEventListener('click', () => {
+            const prevSelected = selectedLayerId;
+            selectedLayerId = null;
+            render();
+
+            const dataURL = canvas.toDataURL('image/png', 1.0);
+            
+            selectedLayerId = prevSelected;
+            render();
+
+            const link = document.createElement('a');
+            link.download = `mockup-${targetWidth}x${targetHeight}.png`;
+            link.href = dataURL;
+            link.click();
+        });
+    }
 
     init();
 });
