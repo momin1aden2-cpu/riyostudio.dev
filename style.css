@@ -2332,7 +2332,7 @@ html.supernova body {
   box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.8);
   z-index: 9999;
   justify-content: space-around;
-  align-items: center;
+  align-items: stretch;
 }
 
 @media (max-width: 768px) {
@@ -2353,9 +2353,9 @@ html.supernova body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 4px;
   flex: 1;
-  padding: 6px 0;
+  height: 100%;
   text-decoration: none;
   color: rgba(255, 255, 255, 0.4);
   font-size: 0.65rem;
@@ -2363,9 +2363,11 @@ html.supernova body {
   letter-spacing: 0.03em;
   transition: color 0.2s, transform 0.15s;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
   cursor: pointer;
   background: none;
   border: none;
+  position: relative;
 }
 
 .mobile-tab-icon {
@@ -2396,16 +2398,12 @@ html.supernova body {
 .mobile-tab.active::after {
   content: '';
   position: absolute;
-  bottom: 4px;
+  bottom: 8px;
   width: 4px;
   height: 4px;
   border-radius: 50%;
   background: #10B981;
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
-}
-
-.mobile-tab {
-  position: relative;
 }
 
 /* --- More Drawer (Slide-up) --- */
@@ -2557,6 +2555,13 @@ html.supernova body {
     position: relative;
     width: 100%;
   }
+
+  /* Hide footer and collective on clean tool pages (e.g. Logo, QR) to give true native app feel */
+  body.tool-page-clean .newsletter-section,
+  body.tool-page-clean .footer {
+    display: none !important;
+  }
+
 
   /* Unstick tool panels on mobile */
   .tool-panel {
