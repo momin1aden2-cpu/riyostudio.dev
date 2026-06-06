@@ -1,5 +1,5 @@
 /**
- * Riyo Studio - Mockup Studio V2 (Object-Based Canvas Editor)
+ * Riyo Studio - Mockup Studio V3 (Premium Object-Based Canvas Editor)
  * 100% Offline, Native HTML5 Canvas
  */
 
@@ -19,16 +19,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inputs
     const textInput = document.getElementById('text-content-input');
     const colorInput = document.getElementById('text-color-input');
+    const fontSelect = document.getElementById('text-font-select');
     const frameSelect = document.getElementById('frame-style-select');
     const imageUpload = document.getElementById('image-upload-input');
+    
+    // Premium Background Inputs
+    const bgUploadBtn = document.getElementById('upload-bg-btn');
+    const bgUploadInput = document.getElementById('bg-upload-input');
+    const bgBlurInput = document.getElementById('bg-blur-input');
+    
+    // Premium Image Transforms
+    const rotateInput = document.getElementById('img-rotate-input');
+    const tiltYInput = document.getElementById('img-tilt-y-input');
+    const shadowBlurInput = document.getElementById('img-shadow-blur-input');
+    const shadowOpInput = document.getElementById('img-shadow-op-input');
 
     // --- Editor State ---
     let targetWidth = 1242;
     let targetHeight = 2688; // Default to App Store 6.5"
-    let currentBg = 'linear-gradient(135deg, #FF6B6B, #4ECDC4)'; // Fallback JS parse
+    
     let bgType = 'gradient';
     let bgColor1 = '#FF6B6B';
     let bgColor2 = '#4ECDC4';
+    let bgImgObj = null;
+    let bgBlur = 0;
 
     let layers = []; // { id, type: 'text'|'image', x, y, scale, ... }
     let selectedLayerId = null;
@@ -41,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let originalLayerX = 0;
     let originalLayerY = 0;
     let originalScale = 1;
-    let scaleCorner = null; // 'tl', 'tr', 'bl', 'br'
+    let scaleCorner = null;
 
     // Device Frame Assets
     const notchImg = new Image();
@@ -96,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
             type: 'text',
             content: 'HEADING TITLE',
             color: '#ffffff',
+            fontFamily: 'Inter',
             x: targetWidth / 2,
             y: 300,
             scale: 1,
@@ -109,6 +124,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function addImageLayer(imgObj) {
+        // Calculate initial scale to fit reasonably
+        const initialScale = Math.min(1, (targetHeight * 0.6) / imgObj.height);
+        
         layers.push({
             id: generateId(),
             type: 'image',
@@ -116,9 +134,13 @@ document.addEventListener('DOMContentLoaded', () => {
             frameStyle: 'iphone', // default
             x: targetWidth / 2,
             y: targetHeight / 2,
-            scale: 1,
+            scale: initialScale,
             width: imgObj.width,
-            height: imgObj.height
+            height: imgObj.height,
+            rotation: 0,
+            tiltY: 0,
+            shadowBlur: 80,
+            shadowOp: 50
         });
         selectedLayerId = layers[layers.length - 1].id;
         updatePropsPanel();
@@ -144,10 +166,34 @@ document.addEventListener('DOMContentLoaded', () => {
         img.src = url;
         e.target.value = ''; // Reset
     });
+    
+    // Bg Upload
+    bgUploadBtn.addEventListener('click', () => bgUploadInput.click());
+    bgUploadInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+            bgType = 'image';
+            bgImgObj = img;
+            document.querySelectorAll('.bg-btn').forEach(b => b.classList.remove('active'));
+            render();
+            URL.revokeObjectURL(url);
+        };
+        img.src = url;
+        e.target.value = '';
+    });
+    
+    bgBlurInput.addEventListener('input', (e) => {
+        bgBlur = parseInt(e.target.value);
+        render();
+    });
 
     // --- Rendering ---
     function render() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.filter = 'none'; // reset filter
         
         // 1. Draw Background
         if (bgType === 'gradient') {
@@ -159,9 +205,20 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (bgType === 'solid') {
             ctx.fillStyle = bgColor1;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+        } else if (bgType === 'image' && bgImgObj) {
+            // Fill mode: Cover
+            const scale = Math.max(canvas.width / bgImgObj.width, canvas.height / bgImgObj.height);
+            const w = bgImgObj.width * scale;
+            const h = bgImgObj.height * scale;
+            const x = (canvas.width - w) / 2;
+            const y = (canvas.height - h) / 2;
+            
+            ctx.save();
+            if (bgBlur > 0) ctx.filter = `blur(${bgBlur}px)`;
+            ctx.drawImage(bgImgObj, x, y, w, h);
+            ctx.restore();
+            ctx.filter = 'none'; // reset filter just in case
         } else if (bgType === 'transparent') {
-            // Draw checkerboard for dev, but transparent for export
-            // Actually, keep it transparent to allow true PNG export
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
@@ -169,6 +226,16 @@ document.addEventListener('DOMContentLoaded', () => {
         layers.forEach(layer => {
             ctx.save();
             ctx.translate(layer.x, layer.y);
+            
+            // 3D Tilt Transformations (Only for images)
+            if (layer.type === 'image') {
+                const r = (layer.rotation || 0) * Math.PI / 180;
+                const ty = (layer.tiltY || 0) * Math.PI / 180;
+                // Skew transform to simulate isometric projection
+                ctx.transform(1, ty, 0, 1, 0, 0);
+                ctx.rotate(r);
+            }
+            
             ctx.scale(layer.scale, layer.scale);
 
             if (layer.type === 'image') {
@@ -190,17 +257,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function drawImageLayer(layer) {
         const w = layer.width;
         const h = layer.height;
-        // Center the drawing point
         ctx.translate(-w/2, -h/2);
 
-        // Apply Frame
-        if (layer.frameStyle === 'iphone') {
-            // Shadow
-            ctx.shadowColor = 'rgba(0,0,0,0.5)';
-            ctx.shadowBlur = 80;
-            ctx.shadowOffsetY = 40;
+        const sBlur = layer.shadowBlur !== undefined ? layer.shadowBlur : 80;
+        const sOp = layer.shadowOp !== undefined ? layer.shadowOp : 50;
+        const shadowColor = `rgba(0,0,0,${sOp/100})`;
 
-            // Clip for rounded corners
+        if (layer.frameStyle === 'iphone') {
+            ctx.shadowColor = shadowColor;
+            ctx.shadowBlur = sBlur;
+            ctx.shadowOffsetY = sBlur / 2;
+
             const rad = Math.min(w, h) * 0.1;
             ctx.beginPath();
             ctx.roundRect(0, 0, w, h, rad);
@@ -208,33 +275,80 @@ document.addEventListener('DOMContentLoaded', () => {
             
             ctx.fillStyle = '#000';
             ctx.fill();
-            ctx.shadowColor = 'transparent'; // reset shadow
+            ctx.shadowColor = 'transparent';
 
             ctx.save();
             ctx.clip();
             ctx.drawImage(layer.img, 0, 0, w, h);
             ctx.restore();
 
-            // Draw Notch
             const notchW = w * 0.4;
             const notchH = notchW * 0.2;
             if (notchImg.complete) {
                 ctx.drawImage(notchImg, (w - notchW)/2, 0, notchW, notchH);
             }
             
-            // Draw Bezel
             ctx.strokeStyle = '#000';
             ctx.lineWidth = w * 0.02;
             ctx.stroke();
+
+        } else if (layer.frameStyle === 'ipad') {
+            const padW = w * 0.05; // Bezel thickness
+            const rad = Math.min(w, h) * 0.05;
+            
+            ctx.shadowColor = shadowColor;
+            ctx.shadowBlur = sBlur;
+            ctx.shadowOffsetY = sBlur / 2;
+
+            // Draw outer black bezel
+            ctx.beginPath();
+            ctx.roundRect(-padW, -padW, w + padW*2, h + padW*2, rad + padW);
+            ctx.closePath();
+            ctx.fillStyle = '#111';
+            ctx.fill();
+            ctx.shadowColor = 'transparent';
+
+            // Draw Image
+            ctx.drawImage(layer.img, 0, 0, w, h);
+
+            // Draw inner stroke
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, 0, w, h);
+
+        } else if (layer.frameStyle === 'macbook') {
+            const padW = w * 0.02;
+            const topBar = h * 0.05;
+            const bottomLip = h * 0.12;
+            
+            ctx.shadowColor = shadowColor;
+            ctx.shadowBlur = sBlur;
+            ctx.shadowOffsetY = sBlur / 2;
+            
+            // Draw Top Bezel (Black)
+            ctx.beginPath();
+            ctx.roundRect(-padW, -padW - topBar, w + padW*2, h + padW*2 + topBar + bottomLip, [16,16,0,0]);
+            ctx.closePath();
+            ctx.fillStyle = '#111';
+            ctx.fill();
+            ctx.shadowColor = 'transparent';
+
+            // Draw Bottom Lip (Silver)
+            ctx.fillStyle = '#9ca3af';
+            ctx.beginPath();
+            ctx.roundRect(-padW, h + padW, w + padW*2, bottomLip, [0,0,16,16]);
+            ctx.fill();
+
+            // Screen Image
+            ctx.drawImage(layer.img, 0, 0, w, h);
 
         } else if (layer.frameStyle === 'browser') {
             const topBar = 60;
             const totalH = h + topBar;
             
-            // Shadow
-            ctx.shadowColor = 'rgba(0,0,0,0.4)';
-            ctx.shadowBlur = 60;
-            ctx.shadowOffsetY = 30;
+            ctx.shadowColor = shadowColor;
+            ctx.shadowBlur = sBlur;
+            ctx.shadowOffsetY = sBlur / 2;
             
             ctx.beginPath();
             ctx.roundRect(0, 0, w, totalH, 16);
@@ -251,7 +365,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.fillStyle = '#27c93f';
             ctx.beginPath(); ctx.arc(80, topBar/2, 8, 0, Math.PI*2); ctx.fill();
 
-            // Image
             ctx.save();
             ctx.beginPath();
             ctx.roundRect(0, topBar, w, h, [0,0,16,16]);
@@ -259,26 +372,24 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.drawImage(layer.img, 0, topBar, w, h);
             ctx.restore();
 
-            // Override layer height to include toolbar for hit detection
             layer.renderHeight = totalH;
 
         } else {
             // No frame
-            ctx.shadowColor = 'rgba(0,0,0,0.3)';
-            ctx.shadowBlur = 40;
-            ctx.shadowOffsetY = 20;
+            ctx.shadowColor = shadowColor;
+            ctx.shadowBlur = sBlur;
+            ctx.shadowOffsetY = sBlur / 2;
             ctx.drawImage(layer.img, 0, 0, w, h);
             ctx.shadowColor = 'transparent';
         }
     }
 
     function drawTextLayer(layer) {
-        ctx.font = `800 ${layer.fontSize}px Inter, sans-serif`;
+        ctx.font = `800 ${layer.fontSize}px ${layer.fontFamily || 'Inter'}, sans-serif`;
         ctx.fillStyle = layer.color;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        // Split by newlines
         const lines = layer.content.split('\n');
         const lineH = layer.fontSize * 1.2;
         layer.height = lines.length * lineH;
@@ -299,23 +410,35 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.save();
         ctx.translate(layer.x, layer.y);
         
-        const w = layer.width * layer.scale;
-        const h = (layer.renderHeight || layer.height) * layer.scale;
+        if (layer.type === 'image') {
+            const r = (layer.rotation || 0) * Math.PI / 180;
+            const ty = (layer.tiltY || 0) * Math.PI / 180;
+            ctx.transform(1, ty, 0, 1, 0, 0);
+            ctx.rotate(r);
+        }
+        
+        let w = layer.width * layer.scale;
+        let h = (layer.renderHeight || layer.height) * layer.scale;
+        
+        // Compensate for pad if ipad/macbook
+        if (layer.frameStyle === 'ipad' || layer.frameStyle === 'macbook') {
+            w += (layer.width * 0.1) * layer.scale;
+            h += (layer.height * 0.1) * layer.scale;
+        }
         
         ctx.strokeStyle = '#00e5ff';
         ctx.lineWidth = 4 / getWrapperScale();
         ctx.setLineDash([10 / getWrapperScale(), 10 / getWrapperScale()]);
         ctx.strokeRect(-w/2, -h/2, w, h);
 
-        // Handles
         ctx.fillStyle = '#00e5ff';
         ctx.setLineDash([]);
-        const hs = 20 / getWrapperScale(); // handle size
+        const hs = 20 / getWrapperScale(); 
         
-        ctx.fillRect(-w/2 - hs/2, -h/2 - hs/2, hs, hs); // tl
-        ctx.fillRect(w/2 - hs/2, -h/2 - hs/2, hs, hs); // tr
-        ctx.fillRect(-w/2 - hs/2, h/2 - hs/2, hs, hs); // bl
-        ctx.fillRect(w/2 - hs/2, h/2 - hs/2, hs, hs); // br
+        ctx.fillRect(-w/2 - hs/2, -h/2 - hs/2, hs, hs); 
+        ctx.fillRect(w/2 - hs/2, -h/2 - hs/2, hs, hs); 
+        ctx.fillRect(-w/2 - hs/2, h/2 - hs/2, hs, hs); 
+        ctx.fillRect(w/2 - hs/2, h/2 - hs/2, hs, hs); 
         
         ctx.restore();
     }
@@ -335,54 +458,90 @@ document.addEventListener('DOMContentLoaded', () => {
         return { x, y };
     }
 
+    function isPointInTransformedRect(px, py, cx, cy, w, h, scale, rotation, tiltY) {
+        // Reverse translate
+        let tx = px - cx;
+        let ty = py - cy;
+
+        // Reverse tiltY (skewY)
+        // transform matrix was: 1, tiltY, 0, 1
+        // inverse: 1, -tiltY, 0, 1
+        let tiltY_rad = (tiltY || 0) * Math.PI / 180;
+        let sx = tx;
+        let sy = -tx * tiltY_rad + ty;
+
+        // Reverse rotate
+        let r = -(rotation || 0) * Math.PI / 180;
+        let cosR = Math.cos(r);
+        let sinR = Math.sin(r);
+        let rx = sx * cosR - sy * sinR;
+        let ry = sx * sinR + sy * cosR;
+
+        // Reverse scale
+        let lx = rx / scale;
+        let ly = ry / scale;
+
+        return (lx >= -w/2 && lx <= w/2 && ly >= -h/2 && ly <= h/2);
+    }
+
     function checkHit(x, y) {
-        // Reverse order to pick top-most layer
         for (let i = layers.length - 1; i >= 0; i--) {
             const layer = layers[i];
-            const w = layer.width * layer.scale;
-            const h = (layer.renderHeight || layer.height) * layer.scale;
-            
-            const left = layer.x - w/2;
-            const right = layer.x + w/2;
-            const top = layer.y - h/2;
-            const bottom = layer.y + h/2;
-
-            if (x >= left && x <= right && y >= top && y <= bottom) {
-                return layer.id;
+            let w = layer.width;
+            let h = layer.renderHeight || layer.height;
+            if (layer.frameStyle === 'ipad' || layer.frameStyle === 'macbook') {
+                w += layer.width * 0.1;
+                h += layer.height * 0.1;
             }
+            const hit = isPointInTransformedRect(
+                x, y, layer.x, layer.y, 
+                w, h, 
+                layer.scale, layer.rotation, layer.tiltY
+            );
+            if (hit) return layer.id;
         }
         return null;
     }
 
     function checkHandleHit(x, y, layer) {
-        const w = layer.width * layer.scale;
-        const h = (layer.renderHeight || layer.height) * layer.scale;
-        const hs = 30 / getWrapperScale(); // Hit tolerance
+        let w = layer.width;
+        let h = layer.renderHeight || layer.height;
+        if (layer.frameStyle === 'ipad' || layer.frameStyle === 'macbook') {
+            w += layer.width * 0.1;
+            h += layer.height * 0.1;
+        }
 
-        const left = layer.x - w/2;
-        const right = layer.x + w/2;
-        const top = layer.y - h/2;
-        const bottom = layer.y + h/2;
-
-        if (Math.abs(x - left) < hs && Math.abs(y - top) < hs) return 'tl';
-        if (Math.abs(x - right) < hs && Math.abs(y - top) < hs) return 'tr';
-        if (Math.abs(x - left) < hs && Math.abs(y - bottom) < hs) return 'bl';
-        if (Math.abs(x - right) < hs && Math.abs(y - bottom) < hs) return 'br';
-
+        const hit = isPointInTransformedRect(
+            x, y, layer.x, layer.y, 
+            w + 100, h + 100, 
+            layer.scale, layer.rotation, layer.tiltY
+        );
+        if (hit) return 'handle'; 
         return null;
     }
 
     wrapper.addEventListener('mousedown', (e) => {
         const { x, y } = getMouseCoords(e);
 
-        // 1. Check if clicking handle of selected layer
         if (selectedLayerId) {
             const layer = layers.find(l => l.id === selectedLayerId);
             if (layer) {
-                const handle = checkHandleHit(x, y, layer);
-                if (handle) {
+                let w = layer.width;
+                let h = layer.renderHeight || layer.height;
+                if (layer.frameStyle === 'ipad' || layer.frameStyle === 'macbook') {
+                    w += layer.width * 0.1;
+                    h += layer.height * 0.1;
+                }
+
+                const innerHit = isPointInTransformedRect(
+                    x, y, layer.x, layer.y, 
+                    w, h, 
+                    layer.scale, layer.rotation, layer.tiltY
+                );
+                const handleHit = checkHandleHit(x, y, layer);
+                
+                if (!innerHit && handleHit) {
                     isScaling = true;
-                    scaleCorner = handle;
                     dragStartX = x;
                     dragStartY = y;
                     originalScale = layer.scale;
@@ -391,7 +550,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // 2. Check if clicking any layer
         const hitId = checkHit(x, y);
         if (hitId) {
             selectedLayerId = hitId;
@@ -406,7 +564,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // 3. Clicked empty space
         selectedLayerId = null;
         updatePropsPanel();
         render();
@@ -420,19 +577,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!layer) return;
 
         if (isDragging) {
-            const dx = x - dragStartX;
-            const dy = y - dragStartY;
-            layer.x = originalLayerX + dx;
-            layer.y = originalLayerY + dy;
+            layer.x = originalLayerX + (x - dragStartX);
+            layer.y = originalLayerY + (y - dragStartY);
             render();
         } else if (isScaling) {
-            // Simple proportional scaling based on mouse distance from center
             const distStart = Math.hypot(dragStartX - layer.x, dragStartY - layer.y);
             const distCurrent = Math.hypot(x - layer.x, y - layer.y);
             const scaleFactor = distCurrent / distStart;
-            
-            // Prevent inverted or 0 scale
-            layer.scale = Math.max(0.1, originalScale * scaleFactor);
+            layer.scale = Math.max(0.05, originalScale * scaleFactor);
             render();
         }
     });
@@ -440,7 +592,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('mouseup', () => {
         isDragging = false;
         isScaling = false;
-        scaleCorner = null;
     });
 
     // --- Properties Panel Sync ---
@@ -450,6 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
             propsText.style.display = 'none';
             propsImage.style.display = 'none';
             noSelectionMsg.style.display = 'block';
+            bgBlurInput.value = bgBlur;
             return;
         }
 
@@ -462,43 +614,56 @@ document.addEventListener('DOMContentLoaded', () => {
             propsImage.style.display = 'none';
             textInput.value = layer.content;
             colorInput.value = layer.color;
+            fontSelect.value = layer.fontFamily || 'Inter';
         } else if (layer.type === 'image') {
             propsText.style.display = 'none';
             propsImage.style.display = 'flex';
             frameSelect.value = layer.frameStyle;
+            rotateInput.value = layer.rotation || 0;
+            tiltYInput.value = layer.tiltY || 0;
+            shadowBlurInput.value = layer.shadowBlur !== undefined ? layer.shadowBlur : 80;
+            shadowOpInput.value = layer.shadowOp !== undefined ? layer.shadowOp : 50;
         }
     }
 
     // Property Inputs Listeners
     textInput.addEventListener('input', (e) => {
-        if (!selectedLayerId) return;
-        const layer = layers.find(l => l.id === selectedLayerId);
-        if (layer) layer.content = e.target.value;
-        render();
+        const layer = layers.find(l => l?.id === selectedLayerId);
+        if (layer) { layer.content = e.target.value; render(); }
     });
-
     colorInput.addEventListener('input', (e) => {
-        if (!selectedLayerId) return;
-        const layer = layers.find(l => l.id === selectedLayerId);
-        if (layer) layer.color = e.target.value;
-        render();
+        const layer = layers.find(l => l?.id === selectedLayerId);
+        if (layer) { layer.color = e.target.value; render(); }
     });
-
+    fontSelect.addEventListener('change', (e) => {
+        const layer = layers.find(l => l?.id === selectedLayerId);
+        if (layer) { layer.fontFamily = e.target.value; render(); }
+    });
     frameSelect.addEventListener('change', (e) => {
-        if (!selectedLayerId) return;
-        const layer = layers.find(l => l.id === selectedLayerId);
-        if (layer) layer.frameStyle = e.target.value;
-        render();
+        const layer = layers.find(l => l?.id === selectedLayerId);
+        if (layer) { layer.frameStyle = e.target.value; render(); }
+    });
+    rotateInput.addEventListener('input', (e) => {
+        const layer = layers.find(l => l?.id === selectedLayerId);
+        if (layer) { layer.rotation = parseInt(e.target.value); render(); }
+    });
+    tiltYInput.addEventListener('input', (e) => {
+        const layer = layers.find(l => l?.id === selectedLayerId);
+        if (layer) { layer.tiltY = parseInt(e.target.value); render(); }
+    });
+    shadowBlurInput.addEventListener('input', (e) => {
+        const layer = layers.find(l => l?.id === selectedLayerId);
+        if (layer) { layer.shadowBlur = parseInt(e.target.value); render(); }
+    });
+    shadowOpInput.addEventListener('input', (e) => {
+        const layer = layers.find(l => l?.id === selectedLayerId);
+        if (layer) { layer.shadowOp = parseInt(e.target.value); render(); }
     });
 
-    // Delete Handlers
     document.getElementById('delete-text-btn').addEventListener('click', deleteSelected);
     document.getElementById('delete-image-btn').addEventListener('click', deleteSelected);
-    
-    // Keyboard delete
     window.addEventListener('keydown', (e) => {
         if ((e.key === 'Delete' || e.key === 'Backspace') && selectedLayerId) {
-            // Prevent if editing text
             if (document.activeElement === textInput) return;
             deleteSelected();
         }
@@ -512,7 +677,6 @@ document.addEventListener('DOMContentLoaded', () => {
         render();
     }
 
-    // Z-Index Adjustments
     document.getElementById('bring-forward-btn').addEventListener('click', () => {
         if (!selectedLayerId) return;
         const idx = layers.findIndex(l => l.id === selectedLayerId);
@@ -535,7 +699,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Background Controls
     document.querySelectorAll('.bg-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             document.querySelectorAll('.bg-btn').forEach(b => b.classList.remove('active'));
@@ -555,16 +718,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Export PNG
     document.getElementById('export-png-btn').addEventListener('click', () => {
-        // Temporarily deselect to hide handles
         const prevSelected = selectedLayerId;
         selectedLayerId = null;
         render();
 
         const dataURL = canvas.toDataURL('image/png', 1.0);
         
-        // Restore selection
         selectedLayerId = prevSelected;
         render();
 
