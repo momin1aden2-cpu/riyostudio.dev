@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head><title>Icon Generator</title></head>
+<body style="background:#000;display:flex;flex-direction:column;align-items:center;gap:20px;padding:40px">
+<p style="color:#fff;font-family:sans-serif">Right-click each image → Save As to download</p>
+
+<svg id="src-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="512" height="512" style="display:none">
+  <rect width="32" height="32" rx="8" fill="rgba(16,185,129,0.1)" stroke="#10B981" stroke-width="1.5"/>
+  <path d="M11 22V10H17C19.2091 10 21 11.7909 21 14C21 16.2091 19.2091 18 17 18H11" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M15 18L20 22" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
+<!-- render 512 -->
+<canvas id="c512" width="512" height="512" style="border:1px solid #333"></canvas>
+<!-- render 192 -->
+<canvas id="c192" width="192" height="192" style="border:1px solid #333"></canvas>
+
+<p id="links" style="color:#10B981;font-family:sans-serif"></p>
+
+<script>
+const svg = document.getElementById('src-svg');
+const xml = new XMLSerializer().serializeToString(svg);
+const blob = new Blob([xml], {type:'image/svg+xml'});
+const url = URL.createObjectURL(blob);
+const img = new Image();
+img.onload = () => {
+  // 512
+  const c512 = document.getElementById('c512');
+  const ctx512 = c512.getContext('2d');
+  ctx512.fillStyle = '#060B14';
+  ctx512.fillRect(0,0,512,512);
+  ctx512.drawImage(img, 0, 0, 512, 512);
+
+  // 192
+  const c192 = document.getElementById('c192');
+  const ctx192 = c192.getContext('2d');
+  ctx192.fillStyle = '#060B14';
+  ctx192.fillRect(0,0,192,192);
+  ctx192.drawImage(img, 0, 0, 192, 192);
+
+  // Download links
+  const a512 = document.createElement('a');
+  a512.href = c512.toDataURL('image/png');
+  a512.download = 'icon-512.png';
+  a512.textContent = '⬇ Download icon-512.png';
+  a512.style.cssText = 'display:block;color:#10B981;font-family:sans-serif;font-size:1.2rem';
+  
+  const a192 = document.createElement('a');
+  a192.href = c192.toDataURL('image/png');
+  a192.download = 'icon-192.png';
+  a192.textContent = '⬇ Download icon-192.png';
+  a192.style.cssText = 'display:block;color:#10B981;font-family:sans-serif;font-size:1.2rem;margin-top:8px';
+
+  document.getElementById('links').replaceWith(a512);
+  document.body.appendChild(a192);
+
+  URL.revokeObjectURL(url);
+};
+img.src = url;
+</script>
+</body>
+</html>
