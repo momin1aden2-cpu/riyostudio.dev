@@ -68,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     setupDropdown('add-sticker-menu-btn', 'sticker-dropdown');
     setupDropdown('add-shape-menu-btn', 'shape-dropdown');
+    setupDropdown('add-template-menu-btn', 'template-dropdown');
 
     // --- Editor State ---
     let baseWidth = 1242;
@@ -206,11 +207,86 @@ document.addEventListener('DOMContentLoaded', () => {
         render();
     }
 
+    function loadTemplate(type) {
+        layers = [];
+        selectedLayerId = null;
+
+        if (type === 'promo-macbook') {
+            presetSelect.value = '1920x1080';
+            screensSelect.value = '1';
+            updateCanvasSize();
+            
+            bgType = 'gradient'; bgColor1 = '#8A2387'; bgColor2 = '#F27121'; // Cyberpunk
+            
+            layers.push({ id: generateId(), type: 'text', content: 'FEATURE LAUNCH', color: '#ffffff', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: '#000000', shadowBlur: 20, x: targetWidth/2, y: 150, scale: 1, rotation: 0, fontSize: 100, width: 900, height: 120 });
+            layers.push({ id: generateId(), type: 'text', content: 'Introducing the ultimate developer toolkit.', color: '#fcd34d', fontFamily: 'JetBrains Mono', fontWeight: '400', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: targetWidth/2, y: 260, scale: 1, rotation: 0, fontSize: 40, width: 800, height: 60 });
+            
+            const placeholder = new Image();
+            placeholder.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800"><rect width="1200" height="800" fill="%23222"/><text x="600" y="400" font-family="Arial" font-size="40" fill="%23555" text-anchor="middle">Your App Screenshot Here</text></svg>';
+            layers.push({ id: generateId(), type: 'image', img: placeholder, frameStyle: 'macbook', x: targetWidth/2, y: 650, scale: 0.6, width: 1200, height: 800, rotation: 0, tiltY: 0, shadowBlur: 100, shadowOp: 60, hasGlare: true, hasFloorShadow: true });
+        }
+        else if (type === 'app-store-split') {
+            presetSelect.value = '1242x2688';
+            screensSelect.value = '5';
+            updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#1a1a2e'; bgColor2 = '#16213e';
+            
+            const tOpt = { color: '#ffffff', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 80, width: 1000, height: 200, y: 350 };
+            
+            layers.push({ id: generateId(), type: 'text', content: 'YOUR APP\nBUT CINEMATIC', x: baseWidth/2, ...tOpt });
+            layers.push({ id: generateId(), type: 'text', content: 'FILM PERFECTION\nIN ONE TAP', x: baseWidth * 1.5, ...tOpt });
+            layers.push({ id: generateId(), type: 'text', content: 'CAPTURE\nLIKE A PRO', x: baseWidth * 2.5, ...tOpt });
+            layers.push({ id: generateId(), type: 'text', content: 'COLLAGE YOUR\nBEST MOMENTS', x: baseWidth * 3.5, ...tOpt });
+            layers.push({ id: generateId(), type: 'text', content: 'PRESETS FOR\nEVERY MOOD', x: baseWidth * 4.5, ...tOpt });
+
+            const ph = new Image(); ph.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="2340"><rect width="1080" height="2340" fill="%23222"/><text x="540" y="1170" font-family="Arial" font-size="50" fill="%23555" text-anchor="middle">App Screen</text></svg>';
+            const dOpt = { type: 'image', img: ph, frameStyle: 'iphone', scale: 0.95, width: 1080, height: 2340, rotation: 0, shadowBlur: 100, shadowOp: 60, hasGlare: true, hasFloorShadow: false, y: 1900 };
+
+            layers.push({ id: generateId(), x: baseWidth/2, tiltY: 0, ...dOpt }); // Screen 1 Straight
+            layers.push({ id: generateId(), x: baseWidth * 1.5, tiltY: 0, ...dOpt }); // Screen 2 Straight
+            layers.push({ id: generateId(), x: baseWidth * 2.5, tiltY: -12, ...dOpt, frameStyle: 'clay' }); // Screen 3 Tilted
+            layers.push({ id: generateId(), x: baseWidth * 3.5, tiltY: 0, ...dOpt }); // Screen 4 Straight
+            layers.push({ id: generateId(), x: baseWidth * 4.5, tiltY: 12, ...dOpt }); // Screen 5 Tilted
+            
+            layers.push({ id: generateId(), type: 'sticker', stickerId: 'apple', img: stickers['apple'], x: baseWidth/2, y: 700, scale: 1.5, width: 240, height: 80, rotation: 0 });
+        }
+        else if (type === 'play-store-split') {
+            presetSelect.value = '1080x1920';
+            screensSelect.value = '5';
+            updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#064e3b'; bgColor2 = '#022c22';
+            
+            const tOpt = { color: '#ffffff', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 60, width: 900, height: 150, y: 250 };
+            
+            layers.push({ id: generateId(), type: 'text', content: 'YOUR APP\nBUT CINEMATIC', x: baseWidth/2, ...tOpt });
+            layers.push({ id: generateId(), type: 'text', content: 'FILM PERFECTION\nIN ONE TAP', x: baseWidth * 1.5, ...tOpt });
+            layers.push({ id: generateId(), type: 'text', content: 'CAPTURE\nLIKE A PRO', x: baseWidth * 2.5, ...tOpt });
+            layers.push({ id: generateId(), type: 'text', content: 'COLLAGE YOUR\nBEST MOMENTS', x: baseWidth * 3.5, ...tOpt });
+            layers.push({ id: generateId(), type: 'text', content: 'PRESETS FOR\nEVERY MOOD', x: baseWidth * 4.5, ...tOpt });
+
+            const ph = new Image(); ph.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="2340"><rect width="1080" height="2340" fill="%23222"/><text x="540" y="1170" font-family="Arial" font-size="50" fill="%23555" text-anchor="middle">Android Screen</text></svg>';
+            const dOpt = { type: 'image', img: ph, frameStyle: 'android', scale: 0.7, width: 1080, height: 2340, rotation: 0, shadowBlur: 100, shadowOp: 60, hasGlare: true, hasFloorShadow: false, y: 1350 };
+
+            layers.push({ id: generateId(), x: baseWidth/2, tiltY: 0, ...dOpt }); 
+            layers.push({ id: generateId(), x: baseWidth * 1.5, tiltY: 0, ...dOpt }); 
+            layers.push({ id: generateId(), x: baseWidth * 2.5, tiltY: -12, ...dOpt, frameStyle: 'clay' }); 
+            layers.push({ id: generateId(), x: baseWidth * 3.5, tiltY: 0, ...dOpt }); 
+            layers.push({ id: generateId(), x: baseWidth * 4.5, tiltY: 12, ...dOpt }); 
+
+            layers.push({ id: generateId(), type: 'sticker', stickerId: 'google', img: stickers['google'], x: baseWidth/2, y: 500, scale: 1.2, width: 240, height: 80, rotation: 0 });
+        }
+        
+        document.getElementById('template-dropdown').style.display = 'none';
+        updatePropsPanel();
+        render();
+    }
+
     document.getElementById('add-text-btn').addEventListener('click', addTextLayer);
     document.getElementById('add-device-btn').addEventListener('click', () => imageUpload.click());
 
     document.querySelectorAll('.sticker-btn').forEach(btn => btn.addEventListener('click', (e) => addStickerLayer(e.target.dataset.sticker)));
     document.querySelectorAll('.shape-btn').forEach(btn => btn.addEventListener('click', (e) => addShapeLayer(e.target.dataset.shape)));
+    document.querySelectorAll('.template-btn').forEach(btn => btn.addEventListener('click', (e) => loadTemplate(e.target.dataset.template)));
 
     imageUpload.addEventListener('change', (e) => {
         const files = Array.from(e.target.files);

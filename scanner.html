@@ -104,6 +104,15 @@
             </div>
           </div>
           
+          <div class="dropdown" style="position: relative; display: inline-block;">
+            <button id="add-template-menu-btn" class="cyber-button" style="padding: 8px 16px; font-size: 0.9rem; border-color: #6366f1; color: #6366f1;">+ Templates ▾</button>
+            <div id="template-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: #111; border: 1px solid rgba(99,102,241,0.5); border-radius: 8px; padding: 8px; z-index: 100; min-width: 220px; flex-direction: column; gap: 4px; margin-top: 4px;">
+              <button class="cyber-button template-btn" data-template="promo-macbook" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Social Promo (MacBook)</button>
+              <button class="cyber-button template-btn" data-template="app-store-split" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">App Store 5-Screen Split</button>
+              <button class="cyber-button template-btn" data-template="play-store-split" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Google Play 5-Screen Split</button>
+            </div>
+          </div>
+          
           <input type="file" id="image-upload-input" accept="image/png, image/jpeg, image/webp" multiple style="display: none;">
           <button id="add-device-btn" class="cyber-button" style="padding: 8px 16px; font-size: 0.9rem;">+ Image/Device</button>
           
@@ -120,6 +129,7 @@
             <option value="3">3 Screens (Panorama)</option>
             <option value="4">4 Screens (Panorama)</option>
             <option value="5">5 Screens (Panorama)</option>
+            <option value="6">6 Screens (Panorama)</option>
           </select>
         </div>
         
