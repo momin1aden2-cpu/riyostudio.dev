@@ -37,6 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Inputs (Image)
     const frameSelect = document.getElementById('frame-style-select');
+    const frameColorInput = document.getElementById('frame-color-input');
+    const frameColorContainer = document.getElementById('frame-color-container');
     const imageUpload = document.getElementById('image-upload-input');
     
     // Premium Background Inputs
@@ -47,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Premium Image Transforms & Realism
     const rotateInput = document.getElementById('img-rotate-input');
     const tiltYInput = document.getElementById('img-tilt-y-input');
+    const tiltXInput = document.getElementById('img-tilt-x-input');
     const shadowBlurInput = document.getElementById('img-shadow-blur-input');
     const shadowOpInput = document.getElementById('img-shadow-op-input');
     const glareToggle = document.getElementById('img-glare-toggle');
@@ -602,6 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const r = (layer.rotation || 0) * Math.PI / 180;
             const ty = (layer.tiltY || 0) * Math.PI / 180;
+            const tx = (layer.tiltX || 0) * Math.PI / 180;
             
             if (layer.type === 'image' || layer.type === 'sticker') {
                 if (layer.hasFloorShadow) {
@@ -620,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Apply Tilt & Rotation to ALL layers
-            tCtx.transform(1, ty, 0, 1, 0, 0);
+            tCtx.transform(1, ty, tx, 1, 0, 0);
             tCtx.rotate(r);
             tCtx.scale(layer.scale, layer.scale);
 
@@ -688,7 +692,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (layer.frameStyle === 'iphone' || layer.frameStyle === 'android' || layer.frameStyle === 'clay') {
             const rad = Math.min(w, h) * 0.1;
             tCtx.beginPath(); tCtx.roundRect(0, 0, w, h, rad); tCtx.closePath();
-            tCtx.fillStyle = layer.frameStyle === 'clay' ? '#f8f9fa' : '#000';
+            tCtx.fillStyle = layer.frameStyle === 'clay' ? (layer.frameColor || '#f8f9fa') : '#000';
             tCtx.fill(); tCtx.shadowColor = 'transparent';
 
             tCtx.save();
@@ -951,15 +955,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (layer.type === 'image') {
                 if(document.getElementById('frame-style-container')) document.getElementById('frame-style-container').style.display = 'block';
                 if(document.getElementById('glare-shadow-toggles')) document.getElementById('glare-shadow-toggles').style.display = 'flex';
-                if(frameSelect) frameSelect.value = layer.frameStyle;
+                if(frameSelect) {
+                    frameSelect.value = layer.frameStyle;
+                    if(layer.frameStyle === 'clay' && frameColorContainer) frameColorContainer.style.display = 'block';
+                    else if(frameColorContainer) frameColorContainer.style.display = 'none';
+                }
+                if(frameColorInput) frameColorInput.value = layer.frameColor || '#f8f9fa';
                 if(tiltYInput && tiltYInput.parentElement) tiltYInput.parentElement.style.display = 'flex';
                 if(tiltYInput) tiltYInput.value = layer.tiltY || 0;
+                if(tiltXInput && tiltXInput.parentElement) tiltXInput.parentElement.style.display = 'flex';
+                if(tiltXInput) tiltXInput.value = layer.tiltX || 0;
                 if(glareToggle) glareToggle.checked = layer.hasGlare || false;
                 if(floorShadowToggle) floorShadowToggle.checked = layer.hasFloorShadow || false;
             } else {
                 if(document.getElementById('frame-style-container')) document.getElementById('frame-style-container').style.display = 'none';
                 if(document.getElementById('glare-shadow-toggles')) document.getElementById('glare-shadow-toggles').style.display = 'none';
                 if(tiltYInput && tiltYInput.parentElement) tiltYInput.parentElement.style.display = 'none';
+                if(tiltXInput && tiltXInput.parentElement) tiltXInput.parentElement.style.display = 'none';
             }
         }
     }
@@ -989,8 +1001,15 @@ document.addEventListener('DOMContentLoaded', () => {
     bindLayerSync(shapeHeightInput, 'height', true);
 
     bindLayerSync(frameSelect, 'frameStyle');
+    if (frameSelect && frameColorContainer) {
+        frameSelect.addEventListener('input', (e) => {
+            frameColorContainer.style.display = e.target.value === 'clay' ? 'block' : 'none';
+        });
+    }
+    bindLayerSync(frameColorInput, 'frameColor');
     bindLayerSync(rotateInput, 'rotation', true);
     bindLayerSync(tiltYInput, 'tiltY', true);
+    bindLayerSync(tiltXInput, 'tiltX', true);
     bindLayerSync(shadowBlurInput, 'shadowBlur', true);
     bindLayerSync(shadowOpInput, 'shadowOp', true);
     
