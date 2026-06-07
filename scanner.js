@@ -52,6 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const tiltXInput = document.getElementById('img-tilt-x-input');
     const shadowBlurInput = document.getElementById('img-shadow-blur-input');
     const shadowOpInput = document.getElementById('img-shadow-op-input');
+    const shadowAngleInput = document.getElementById('img-shadow-angle-input');
+    const shadowDistInput = document.getElementById('img-shadow-dist-input');
     const glareToggle = document.getElementById('img-glare-toggle');
     const floorShadowToggle = document.getElementById('img-floor-shadow-toggle');
 
@@ -683,11 +685,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const sBlur = layer.shadowBlur !== undefined ? layer.shadowBlur : 80;
         const sOp = layer.shadowOp !== undefined ? layer.shadowOp : 50;
+        const sAngle = layer.shadowAngle !== undefined ? layer.shadowAngle : 90;
+        const sDist = layer.shadowDistance !== undefined ? layer.shadowDistance : (sBlur / 2);
         const shadowColor = layer.hasFloorShadow ? 'transparent' : `rgba(0,0,0,${sOp/100})`;
+
+        const sRad = sAngle * Math.PI / 180;
 
         tCtx.shadowColor = shadowColor;
         tCtx.shadowBlur = sBlur;
-        tCtx.shadowOffsetY = sBlur / 2;
+        tCtx.shadowOffsetX = Math.cos(sRad) * sDist;
+        tCtx.shadowOffsetY = Math.sin(sRad) * sDist;
 
         if (layer.frameStyle === 'iphone' || layer.frameStyle === 'android' || layer.frameStyle === 'clay') {
             const rad = Math.min(w, h) * 0.1;
@@ -951,6 +958,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if(rotateInput) rotateInput.value = layer.rotation || 0;
             if(shadowBlurInput) shadowBlurInput.value = layer.shadowBlur !== undefined ? layer.shadowBlur : 80;
             if(shadowOpInput) shadowOpInput.value = layer.shadowOp !== undefined ? layer.shadowOp : 50;
+            if(shadowAngleInput) shadowAngleInput.value = layer.shadowAngle !== undefined ? layer.shadowAngle : 90;
+            if(shadowDistInput) shadowDistInput.value = layer.shadowDistance !== undefined ? layer.shadowDistance : (layer.shadowBlur !== undefined ? layer.shadowBlur/2 : 40);
             
             if (layer.type === 'image') {
                 if(document.getElementById('frame-style-container')) document.getElementById('frame-style-container').style.display = 'block';
@@ -1012,6 +1021,8 @@ document.addEventListener('DOMContentLoaded', () => {
     bindLayerSync(tiltXInput, 'tiltX', true);
     bindLayerSync(shadowBlurInput, 'shadowBlur', true);
     bindLayerSync(shadowOpInput, 'shadowOp', true);
+    bindLayerSync(shadowAngleInput, 'shadowAngle', true);
+    bindLayerSync(shadowDistInput, 'shadowDistance', true);
     
     if(alignGroup) alignGroup.addEventListener('click', (e) => {
         if(e.target.tagName !== 'BUTTON') return;
