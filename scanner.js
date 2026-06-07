@@ -137,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function generateId() { return Math.random().toString(36).substr(2, 9); }
 
     // --- Canvas Sizing ---
+    let canvasInitialized = false;
     function updateCanvasSize() {
         const [w, h] = presetSelect.value.split('x').map(Number);
         baseWidth = w;
@@ -149,6 +150,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         wrapper.style.width = `${targetWidth}px`;
         wrapper.style.height = `${targetHeight}px`;
+
+        if (canvasInitialized) {
+            // Removed aggressive auto-centering so users can manually position things
+            updatePropsPanel();
+        }
+        canvasInitialized = true;
         
         scaleWrapperToFit();
         render();
@@ -186,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function addImageLayer(imgObj, offset = 0) {
         const w = imgObj.videoWidth || imgObj.width || 800;
         const h = imgObj.videoHeight || imgObj.height || 800;
-        const initialScale = Math.min(1, (targetHeight * 0.6) / h);
+        const initialScale = Math.min(1.5, (targetHeight * 0.85) / h);
         layers.push({
             id: generateId(), type: 'image', img: imgObj, frameStyle: 'iphone',
             x: (targetWidth / 2) + (offset * 80), y: (targetHeight / 2) + (offset * 80),
@@ -587,6 +594,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const audioUploadInput = document.getElementById('audio-upload-input');
     const audioTrackName = document.getElementById('audio-track-name');
     const autoRotateToggle = document.getElementById('auto-rotate-toggle');
+    const ambientGlowToggle = document.getElementById('ambient-glow-toggle');
+    let ambientGlowEnabled = true;
+
+    if (ambientGlowToggle) {
+        ambientGlowToggle.addEventListener('change', (e) => {
+            ambientGlowEnabled = e.target.checked;
+            render();
+        });
+    }
 
     if (audioUploadBtn) {
         audioUploadBtn.addEventListener('click', () => audioUploadInput.click());
@@ -831,6 +847,25 @@ document.addEventListener('DOMContentLoaded', () => {
             tCtx.drawImage(bgImgObj, x, y, imgW, imgH);
             tCtx.restore();
             tCtx.filter = 'none';
+        }
+
+        // 1.5 Draw Ambient Video Glow
+        if (ambientGlowEnabled) {
+            const videoLayer = layers.find(l => l.img instanceof HTMLVideoElement);
+            if (videoLayer) {
+                tCtx.save();
+                const scale = Math.max(w / videoLayer.width, h / videoLayer.height) * 1.2; // slight zoom
+                const imgW = videoLayer.width * scale;
+                const imgH = videoLayer.height * scale;
+                const x = (w - imgW) / 2;
+                const y = (h - imgH) / 2;
+                
+                tCtx.filter = 'blur(100px) brightness(0.8)';
+                tCtx.globalAlpha = 0.6; // Blend with background
+                tCtx.drawImage(videoLayer.img, x, y, imgW, imgH);
+                tCtx.restore();
+                tCtx.filter = 'none';
+            }
         }
 
         // 2. Apply Master Export Scaling if needed
