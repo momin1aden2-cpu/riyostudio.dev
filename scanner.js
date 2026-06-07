@@ -618,8 +618,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             bgAudioElement.play().catch(e => console.warn('Audio play failed', e));
-            audioTrackName.style.display = 'block';
-            audioTrackName.innerText = 'Track: ' + file.name;
+            if (audioTrackName) {
+                audioTrackName.style.display = 'block';
+                audioTrackName.innerText = "Audio: " + file.name;
+            }
             e.target.value = '';
             
             if (!isAnimating) {
@@ -628,6 +630,112 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // ElevenLabs Voiceover Logic
+    const voiceoverBtn = document.getElementById('generate-voiceover-btn');
+    const voiceoverSettingsBtn = document.getElementById('elevenlabs-settings-btn');
+    const voiceoverTextInput = document.getElementById('voiceover-text-input');
+    const voiceoverVoiceSelect = document.getElementById('voiceover-voice-select');
+    
+    const apiKeyModal = document.getElementById('api-key-modal');
+    const apiKeyInput = document.getElementById('api-key-input');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const saveKeyBtn = document.getElementById('save-key-btn');
+
+    let elevenLabsApiKey = localStorage.getItem('elevenlabs_api_key') || '';
+    if (elevenLabsApiKey && apiKeyInput) apiKeyInput.value = elevenLabsApiKey;
+
+    function showApiKeyModal() { if (apiKeyModal) apiKeyModal.style.display = 'flex'; }
+    function hideApiKeyModal() { if (apiKeyModal) apiKeyModal.style.display = 'none'; }
+
+    if (voiceoverSettingsBtn) voiceoverSettingsBtn.addEventListener('click', showApiKeyModal);
+    if (closeModalBtn) closeModalBtn.addEventListener('click', hideApiKeyModal);
+    
+    if (saveKeyBtn) {
+        saveKeyBtn.addEventListener('click', () => {
+            elevenLabsApiKey = apiKeyInput.value.trim();
+            localStorage.setItem('elevenlabs_api_key', elevenLabsApiKey);
+            hideApiKeyModal();
+            if (voiceoverTextInput && voiceoverTextInput.value.trim()) generateVoiceover();
+        });
+    }
+
+    async function generateVoiceover() {
+        const text = voiceoverTextInput.value.trim();
+        if (!text) return alert("Please enter a script for the voiceover.");
+        if (!elevenLabsApiKey) { showApiKeyModal(); return; }
+
+        const voiceId = voiceoverVoiceSelect.value;
+        const originalBtnText = voiceoverBtn.innerText;
+        voiceoverBtn.innerText = "Generating...";
+        voiceoverBtn.disabled = true;
+
+        try {
+            const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'audio/mpeg',
+                    'Content-Type': 'application/json',
+                    'xi-api-key': elevenLabsApiKey
+                },
+                body: JSON.stringify({
+                    text: text,
+                    model_id: "eleven_monolingual_v1",
+                    voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+                })
+            });
+
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error("ElevenLabs API Error: " + err);
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            
+            if (!audioContext) {
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    audioDestination = audioContext.createMediaStreamDestination();
+                } catch(err) { console.warn('AudioContext not supported'); }
+            }
+
+            if (bgAudioElement) {
+                bgAudioElement.pause();
+                bgAudioElement.src = '';
+            }
+            bgAudioElement = new Audio(url);
+            bgAudioElement.loop = false; // Voiceovers don't loop by default
+            
+            if (audioContext) {
+                try {
+                    const source = audioContext.createMediaElementSource(bgAudioElement);
+                    source.connect(audioContext.destination);
+                    source.connect(audioDestination);
+                } catch(err) { console.warn('Audio context error for voiceover', err); }
+            }
+
+            bgAudioElement.play().catch(e => console.warn('Audio play failed', e));
+            if (audioTrackName) {
+                audioTrackName.style.display = 'block';
+                audioTrackName.innerText = "Audio: AI Voiceover";
+            }
+            
+            if (!isAnimating) {
+                isAnimating = true;
+                render();
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Failed to generate voiceover. Check your API key or network connection.\n\nDetails: " + e.message);
+            if (e.message.includes("api_key") || e.message.includes("Unauthorized")) showApiKeyModal();
+        } finally {
+            voiceoverBtn.innerText = originalBtnText;
+            voiceoverBtn.disabled = false;
+        }
+    }
+
+    if (voiceoverBtn) voiceoverBtn.addEventListener('click', generateVoiceover);
 
     if (autoRotateToggle) {
         autoRotateToggle.addEventListener('change', (e) => {
