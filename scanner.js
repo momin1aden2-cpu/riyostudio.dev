@@ -318,6 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // ==========================================
         // GOOGLE PLAY (1080x1920)
         // ==========================================
+        
         else if (type === 'play-store-cinematic') {
             presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#064e3b'; bgColor2 = '#022c22';
