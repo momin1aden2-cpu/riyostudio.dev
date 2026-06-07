@@ -872,9 +872,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (exportPngBtn) {
         exportPngBtn.addEventListener('click', () => {
             const prevSelected = selectedLayerId; selectedLayerId = null; render();
-            const link = document.createElement('a');
-            link.download = `mockup-${targetWidth}x${targetHeight}.png`; link.href = canvas.toDataURL('image/png', 1.0);
-            link.click();
+            
+            if (screenCount > 1) {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = baseWidth;
+                tempCanvas.height = targetHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+                
+                for (let i = 0; i < screenCount; i++) {
+                    tempCtx.clearRect(0, 0, baseWidth, targetHeight);
+                    tempCtx.drawImage(canvas, -i * baseWidth, 0);
+                    const link = document.createElement('a');
+                    link.download = `mockup-screen-${i + 1}-${baseWidth}x${targetHeight}.png`;
+                    link.href = tempCanvas.toDataURL('image/png', 1.0);
+                    link.click();
+                }
+            } else {
+                const link = document.createElement('a');
+                link.download = `mockup-${targetWidth}x${targetHeight}.png`; link.href = canvas.toDataURL('image/png', 1.0);
+                link.click();
+            }
+            
             selectedLayerId = prevSelected; render();
         });
     }

@@ -74,12 +74,12 @@
     <div class="container fluid" style="flex: 1; display: flex; flex-direction: column;">
       
       <!-- Top Toolbar -->
-      <div class="editor-toolbar" style="background: rgba(10, 15, 26, 0.9); border: 1px solid rgba(16,185,129,0.2); border-radius: 12px; padding: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-        <div style="display: flex; gap: 12px; align-items: center;">
+      <div class="editor-toolbar" style="background: rgba(10, 15, 26, 0.9); border: 1px solid rgba(16,185,129,0.2); border-radius: 12px; padding: 16px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
+        <div style="display: flex; gap: 12px; align-items: center; margin-right: auto;">
           <h1 style="font-size: 1.4rem; margin: 0; color: #fff;">🎨 Mockup <span class="accent" style="color: #10B981;">Studio</span></h1>
         </div>
         
-        <div style="display: flex; gap: 12px; align-items: center;">
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center;">
           <button id="add-text-btn" class="cyber-button" style="padding: 8px 16px; font-size: 0.9rem;">+ Text</button>
           
           <div class="dropdown" style="position: relative; display: inline-block;">
@@ -129,11 +129,10 @@
             <option value="3">3 Screens (Panorama)</option>
             <option value="4">4 Screens (Panorama)</option>
             <option value="5">5 Screens (Panorama)</option>
-            <option value="6">6 Screens (Panorama)</option>
           </select>
         </div>
         
-        <div>
+        <div style="margin-left: auto;">
           <div style="display: flex; gap: 12px;">
             <button id="export-zip-btn" class="cyber-button" style="background: #6366f1; color: #fff; font-weight: 700; border: none; padding: 8px 16px; font-size: 0.9rem;">EXPORT KIT (.ZIP)</button>
             <button id="export-png-btn" class="cyber-button" style="background: #10B981; color: #000; font-weight: 700; border: none; padding: 8px 24px;">EXPORT HIGH-RES</button>
@@ -381,6 +380,6 @@
 
   <script src="bg.js?v=16"></script>
   <script src="script.js?v=20"></script>
-  <script src="scanner.js?v=7"></script>
+  <script src="scanner.js?v=8"></script>
 </body>
 </html>
