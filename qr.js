@@ -2,24 +2,39 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   // 1. DOM Elements
+  // Visible tabs (top row)
   const tabs = {
     url: document.getElementById('tab-url'),
-    vcard: document.getElementById('tab-vcard'),
     wifi: document.getElementById('tab-wifi'),
-    email: document.getElementById('tab-email'),
-    sms: document.getElementById('tab-sms'),
-    crypto: document.getElementById('tab-crypto'),
-    app: document.getElementById('tab-app')
+    vcard: document.getElementById('tab-vcard'),
+    menu: document.getElementById('tab-menu'),
+    email: document.getElementById('tab-email')
   };
 
+  // "More" dropdown
+  const moreBtn = document.getElementById('tab-more');
+  const moreMenu = document.getElementById('mode-more-menu');
+  const moreLabels = {
+    sms: '💬 SMS', phone: '📞 Phone', whatsapp: '🟢 WhatsApp', location: '📍 Location',
+    event: '📅 Event', paypal: '💵 PayPal', crypto: '₿ Crypto', app: '📱 App', text: '📝 Text'
+  };
+
+  // All field panels (visible + dropdown)
   const fields = {
     url: document.getElementById('url-fields'),
     vcard: document.getElementById('vcard-fields'),
     wifi: document.getElementById('wifi-fields'),
+    menu: document.getElementById('menu-fields'),
     email: document.getElementById('email-fields'),
     sms: document.getElementById('sms-fields'),
+    phone: document.getElementById('phone-fields'),
+    whatsapp: document.getElementById('whatsapp-fields'),
+    location: document.getElementById('location-fields'),
+    event: document.getElementById('event-fields'),
+    paypal: document.getElementById('paypal-fields'),
     crypto: document.getElementById('crypto-fields'),
-    app: document.getElementById('app-fields')
+    app: document.getElementById('app-fields'),
+    text: document.getElementById('text-fields')
   };
   
   // URL Inputs
@@ -55,6 +70,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const appStoreType = document.getElementById('app-store-type');
   const appUrl = document.getElementById('app-url');
 
+  // New type inputs
+  const qrMenu = document.getElementById('qr-menu');
+  const qrText = document.getElementById('qr-text');
+  const qrPhone = document.getElementById('qr-phone');
+  const waNumber = document.getElementById('wa-number');
+  const waMsg = document.getElementById('wa-msg');
+  const qrLocation = document.getElementById('qr-location');
+  const evTitle = document.getElementById('ev-title');
+  const evLoc = document.getElementById('ev-loc');
+  const evStart = document.getElementById('ev-start');
+  const evEnd = document.getElementById('ev-end');
+  const ppUser = document.getElementById('pp-user');
+  const ppAmount = document.getElementById('pp-amount');
+
   // Style Inputs
   const colorDots = document.getElementById('color-dots');
   const colorDotsHex = document.getElementById('color-dots-hex');
@@ -62,6 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const colorBgHex = document.getElementById('color-bg-hex');
   const styleDots = document.getElementById('style-dots');
   const styleCorners = document.getElementById('style-corners');
+  const styleCornerDot = document.getElementById('style-corner-dot');
+  const gradToggle = document.getElementById('grad-toggle');
+  const colorDots2 = document.getElementById('color-dots-2');
   const logoUpload = document.getElementById('logo-upload');
 
   const btnDlSvg = document.getElementById('btn-dl-svg');
@@ -80,6 +112,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (prefs.colorBg) colorBg.value = prefs.colorBg;
         if (prefs.styleDots) styleDots.value = prefs.styleDots;
         if (prefs.styleCorners) styleCorners.value = prefs.styleCorners;
+        if (prefs.styleCornerDot) styleCornerDot.value = prefs.styleCornerDot;
+        if (prefs.colorDots2) colorDots2.value = prefs.colorDots2;
+        if (typeof prefs.grad === 'boolean') gradToggle.checked = prefs.grad;
         if (prefs.appStore) appStoreType.value = prefs.appStore;
         if (prefs.appUrl) appUrl.value = prefs.appUrl;
         if (prefs.logo) uploadedLogo = prefs.logo;
@@ -94,6 +129,9 @@ document.addEventListener('DOMContentLoaded', () => {
       colorBg: colorBg.value,
       styleDots: styleDots.value,
       styleCorners: styleCorners.value,
+      styleCornerDot: styleCornerDot.value,
+      colorDots2: colorDots2.value,
+      grad: gradToggle.checked,
       appStore: appStoreType.value,
       appUrl: appUrl.value,
       logo: uploadedLogo
@@ -130,20 +168,42 @@ document.addEventListener('DOMContentLoaded', () => {
   // Append to DOM
   qrCode.append(document.getElementById("canvas-container"));
 
-  // 3. Tab Switching Logic
+  // 3. Mode Switching Logic
+  const gridModes = ['vcard', 'wifi', 'email', 'sms', 'crypto', 'app', 'whatsapp', 'event', 'paypal'];
+
   function switchMode(mode) {
     currentMode = mode;
-    Object.keys(tabs).forEach(k => {
-      tabs[k].classList.remove('active');
-      fields[k].style.display = 'none';
-    });
-    tabs[mode].classList.add('active');
-    fields[mode].style.display = mode === 'vcard' || mode === 'wifi' || mode === 'email' || mode === 'sms' || mode === 'crypto' || mode === 'app' ? 'grid' : 'block';
+    Object.values(fields).forEach(f => { if (f) f.style.display = 'none'; });
+    Object.values(tabs).forEach(t => t.classList.remove('active'));
+    moreBtn.classList.remove('active');
+
+    if (fields[mode]) fields[mode].style.display = gridModes.includes(mode) ? 'grid' : 'block';
+
+    if (tabs[mode]) {
+      tabs[mode].classList.add('active');
+      moreBtn.textContent = 'More ▾';
+    } else {
+      moreBtn.classList.add('active');
+      moreBtn.textContent = (moreLabels[mode] || 'More') + ' ▾';
+    }
+    moreMenu.classList.remove('open');
     updateQR();
   }
 
   Object.keys(tabs).forEach(mode => {
     tabs[mode].addEventListener('click', () => switchMode(mode));
+  });
+
+  // "More" dropdown
+  moreBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    moreMenu.classList.toggle('open');
+  });
+  document.querySelectorAll('.mode-more-item').forEach(item => {
+    item.addEventListener('click', () => switchMode(item.dataset.mode));
+  });
+  document.addEventListener('click', (e) => {
+    if (!moreMenu.contains(e.target) && e.target !== moreBtn) moreMenu.classList.remove('open');
   });
 
   // 4. Payload Builders
@@ -204,6 +264,38 @@ document.addEventListener('DOMContentLoaded', () => {
     return uri;
   }
 
+  function buildWhatsApp() {
+    const num = waNumber.value.replace(/[^0-9]/g, '');
+    if (!num) return 'https://wa.me/';
+    const msg = waMsg.value.trim();
+    return msg ? `https://wa.me/${num}?text=${encodeURIComponent(msg)}` : `https://wa.me/${num}`;
+  }
+
+  function buildLocation() {
+    const q = qrLocation.value.trim();
+    if (!q) return 'https://maps.google.com';
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+  }
+
+  function buildPayPal() {
+    const user = ppUser.value.trim().replace(/^@/, '');
+    if (!user) return 'https://paypal.me';
+    const amt = ppAmount.value.trim();
+    return amt ? `https://www.paypal.com/paypalme/${user}/${amt}` : `https://www.paypal.com/paypalme/${user}`;
+  }
+
+  function buildEvent() {
+    const fmt = (v) => v ? v.replace(/[-:]/g, '') + '00' : '';
+    const esc = (s) => s.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+    let v = 'BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n';
+    if (evTitle.value.trim()) v += `SUMMARY:${esc(evTitle.value.trim())}\n`;
+    if (evLoc.value.trim()) v += `LOCATION:${esc(evLoc.value.trim())}\n`;
+    if (evStart.value) v += `DTSTART:${fmt(evStart.value)}\n`;
+    if (evEnd.value) v += `DTEND:${fmt(evEnd.value)}\n`;
+    v += 'END:VEVENT\nEND:VCALENDAR';
+    return v;
+  }
+
   // 5. Core Update Function
   function updateQR() {
     let dataPayload = "https://riyostudio.dev";
@@ -211,10 +303,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentMode === 'url') dataPayload = qrUrlInput.value.trim() || "https://riyostudio.dev";
     else if (currentMode === 'vcard') dataPayload = buildVCard();
     else if (currentMode === 'wifi') dataPayload = buildWiFi();
+    else if (currentMode === 'menu') dataPayload = qrMenu.value.trim() || "https://riyostudio.dev";
     else if (currentMode === 'email') dataPayload = buildEmail();
     else if (currentMode === 'sms') dataPayload = buildSMS();
+    else if (currentMode === 'phone') dataPayload = 'tel:' + (qrPhone.value.trim() || '+61400000000');
+    else if (currentMode === 'whatsapp') dataPayload = buildWhatsApp();
+    else if (currentMode === 'location') dataPayload = buildLocation();
+    else if (currentMode === 'event') dataPayload = buildEvent();
+    else if (currentMode === 'paypal') dataPayload = buildPayPal();
     else if (currentMode === 'crypto') dataPayload = buildCrypto();
     else if (currentMode === 'app') dataPayload = appUrl.value.trim() || "https://riyostudio.dev";
+    else if (currentMode === 'text') dataPayload = qrText.value || "Hello from Riyo Studio";
 
     colorDotsHex.textContent = colorDots.value.toUpperCase();
     colorBgHex.textContent = colorBg.value.toUpperCase();
@@ -228,20 +327,21 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // Solid colour or 2-colour gradient fill
+    const fill = gradToggle.checked
+      ? { gradient: { type: 'linear', rotation: 0.79, colorStops: [{ offset: 0, color: colorDots.value }, { offset: 1, color: colorDots2.value }] } }
+      : { color: colorDots.value };
+
     // Trigger Library Update
     qrCode.update({
       data: dataPayload,
       image: finalLogo,
-      dotsOptions: {
-        color: colorDots.value,
-        type: styleDots.value
-      },
+      dotsOptions: Object.assign({ type: styleDots.value }, fill),
       backgroundOptions: {
         color: colorBg.value
       },
-      cornersSquareOptions: {
-        type: styleCorners.value
-      }
+      cornersSquareOptions: Object.assign({ type: styleCorners.value }, fill),
+      cornersDotOptions: Object.assign({ type: styleCornerDot.value }, fill)
     });
     savePrefs();
   }
@@ -254,12 +354,15 @@ document.addEventListener('DOMContentLoaded', () => {
     smsTo, smsBody,
     cryptoType, cryptoAddr, cryptoAmount,
     appStoreType, appUrl,
-    colorDots, colorBg, styleDots, styleCorners
+    qrMenu, qrText, qrPhone, waNumber, waMsg, qrLocation,
+    evTitle, evLoc, evStart, evEnd, ppUser, ppAmount,
+    colorDots, colorBg, colorDots2, styleDots, styleCorners, styleCornerDot
   ];
 
   inputsToWatch.forEach(input => {
     input.addEventListener('input', updateQR);
   });
+  gradToggle.addEventListener('change', updateQR);
 
   // 7. Logo Upload Logic
   logoUpload.addEventListener('change', (e) => {

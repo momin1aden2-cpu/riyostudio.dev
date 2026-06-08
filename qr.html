@@ -51,7 +51,7 @@
         padding: 1.5rem !important;
       }
       .mode-tabs {
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
       }
       .style-grid {
         grid-template-columns: 1fr !important;
@@ -114,21 +114,10 @@
       margin-bottom: 2rem;
       border-bottom: 1px solid rgba(255,255,255,0.1);
       padding-bottom: 1rem;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      overflow-y: hidden;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(16,185,129,0.4) transparent;
-      -webkit-overflow-scrolling: touch;
+      flex-wrap: wrap;
+      align-items: center;
+      position: relative;
     }
-
-    .mode-tabs::-webkit-scrollbar { height: 6px; }
-    .mode-tabs::-webkit-scrollbar-track { background: transparent; }
-    .mode-tabs::-webkit-scrollbar-thumb {
-      background: rgba(16,185,129,0.35);
-      border-radius: 6px;
-    }
-    .mode-tabs::-webkit-scrollbar-thumb:hover { background: rgba(16,185,129,0.6); }
 
     .mode-tab {
       flex: 0 0 auto;
@@ -157,6 +146,43 @@
       border-color: rgba(16,185,129,0.6);
       box-shadow: 0 4px 14px rgba(16,185,129,0.3);
     }
+
+    /* "More" dropdown for the long-tail QR types */
+    .mode-more { flex: 0 0 auto; }
+    .mode-more-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      min-width: 210px;
+      background: rgba(10, 15, 26, 0.98);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 12px;
+      padding: 6px;
+      flex-direction: column;
+      gap: 2px;
+      z-index: 200;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(16px);
+      max-height: 340px;
+      overflow-y: auto;
+    }
+    .mode-more-menu.open { display: flex; }
+    .mode-more-item {
+      text-align: left;
+      background: transparent;
+      border: none;
+      color: var(--text-faint);
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 9px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+    .mode-more-item:hover { background: rgba(16, 185, 129, 0.1); color: #fff; }
 
     .style-grid {
       display: grid;
@@ -303,12 +329,24 @@
 
       <div class="mode-tabs">
         <button class="mode-tab active" id="tab-url">🔗 URL</button>
-        <button class="mode-tab" id="tab-vcard">📇 vCard</button>
         <button class="mode-tab" id="tab-wifi">📶 WiFi</button>
+        <button class="mode-tab" id="tab-vcard">📇 vCard</button>
+        <button class="mode-tab" id="tab-menu">🍽️ Menu</button>
         <button class="mode-tab" id="tab-email">✉️ Email</button>
-        <button class="mode-tab" id="tab-sms">💬 SMS</button>
-        <button class="mode-tab" id="tab-crypto">₿ Crypto</button>
-        <button class="mode-tab" id="tab-app">📱 App</button>
+        <div class="mode-more">
+          <button class="mode-tab mode-more-btn" id="tab-more" type="button">More ▾</button>
+          <div class="mode-more-menu" id="mode-more-menu">
+            <button class="mode-more-item" data-mode="sms">💬 SMS</button>
+            <button class="mode-more-item" data-mode="phone">📞 Phone Call</button>
+            <button class="mode-more-item" data-mode="whatsapp">🟢 WhatsApp</button>
+            <button class="mode-more-item" data-mode="location">📍 Location</button>
+            <button class="mode-more-item" data-mode="event">📅 Event</button>
+            <button class="mode-more-item" data-mode="paypal">💵 PayPal</button>
+            <button class="mode-more-item" data-mode="crypto">₿ Crypto</button>
+            <button class="mode-more-item" data-mode="app">📱 App Store</button>
+            <button class="mode-more-item" data-mode="text">📝 Plain Text</button>
+          </div>
+        </div>
       </div>
 
       <!-- URL INPUT -->
@@ -426,6 +464,77 @@
         </div>
       </div>
 
+      <!-- MENU INPUT -->
+      <div id="menu-fields" class="input-group" style="display: none;">
+        <label class="input-label">Menu / PDF Link</label>
+        <input type="url" id="qr-menu" class="cyber-input" style="width: 100%" placeholder="https://yoursite.com/menu.pdf">
+        <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">Host your menu (PDF or page) anywhere and paste the link — scans open it instantly. Perfect for tables, windows &amp; signage.</p>
+      </div>
+
+      <!-- PHONE INPUT -->
+      <div id="phone-fields" class="input-group" style="display: none;">
+        <label class="input-label">Phone Number</label>
+        <input type="tel" id="qr-phone" class="cyber-input" style="width: 100%" placeholder="+61 400 000 000">
+        <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">Scanning starts a call to this number.</p>
+      </div>
+
+      <!-- WHATSAPP INPUT -->
+      <div id="whatsapp-fields" class="input-group" style="display: none;">
+        <div style="grid-column: span 2;">
+          <label class="input-label">WhatsApp Number (with country code, no +)</label>
+          <input type="tel" id="wa-number" class="cyber-input" style="width: 100%" placeholder="61400000000">
+        </div>
+        <div style="grid-column: span 2;">
+          <label class="input-label">Pre-filled Message (Optional)</label>
+          <textarea id="wa-msg" class="cyber-input" style="width: 100%; height: 70px;" placeholder="Hi! I'd like to ask about..."></textarea>
+        </div>
+      </div>
+
+      <!-- LOCATION INPUT -->
+      <div id="location-fields" class="input-group" style="display: none;">
+        <label class="input-label">Address or Place</label>
+        <input type="text" id="qr-location" class="cyber-input" style="width: 100%" placeholder="123 Main St, Perth WA">
+        <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">Opens directly in Google Maps.</p>
+      </div>
+
+      <!-- EVENT INPUT -->
+      <div id="event-fields" class="input-group" style="display: none;">
+        <div style="grid-column: span 2;">
+          <label class="input-label">Event Title</label>
+          <input type="text" id="ev-title" class="cyber-input" style="width: 100%" placeholder="Product Launch">
+        </div>
+        <div style="grid-column: span 2;">
+          <label class="input-label">Location</label>
+          <input type="text" id="ev-loc" class="cyber-input" style="width: 100%" placeholder="Online / Venue name">
+        </div>
+        <div>
+          <label class="input-label">Starts</label>
+          <input type="datetime-local" id="ev-start" class="cyber-input" style="width: 100%">
+        </div>
+        <div>
+          <label class="input-label">Ends</label>
+          <input type="datetime-local" id="ev-end" class="cyber-input" style="width: 100%">
+        </div>
+      </div>
+
+      <!-- PAYPAL INPUT -->
+      <div id="paypal-fields" class="input-group" style="display: none;">
+        <div>
+          <label class="input-label">PayPal.Me Username</label>
+          <input type="text" id="pp-user" class="cyber-input" style="width: 100%" placeholder="yourname">
+        </div>
+        <div>
+          <label class="input-label">Amount (Optional)</label>
+          <input type="number" id="pp-amount" class="cyber-input" style="width: 100%" placeholder="25.00">
+        </div>
+      </div>
+
+      <!-- TEXT INPUT -->
+      <div id="text-fields" class="input-group" style="display: none;">
+        <label class="input-label">Plain Text</label>
+        <textarea id="qr-text" class="cyber-input" style="width: 100%; height: 100px;" placeholder="Any text — a note, a code, a message..."></textarea>
+      </div>
+
       <hr style="border: none; border-top: 1px dashed rgba(255,255,255,0.1); margin: 2rem 0;">
 
       <!-- STYLING OPTIONS -->
@@ -454,17 +563,36 @@
             <option value="square">Standard Squares</option>
             <option value="dots">Rounded Dots</option>
             <option value="rounded">Smooth Rounded</option>
-            <option value="classy">Classy Curves</option>
+            <option value="extra-rounded">Extra Rounded</option>
+            <option value="classy">Classy</option>
+            <option value="classy-rounded">Classy Rounded</option>
           </select>
         </div>
 
         <div class="input-group">
-          <label class="input-label">Corner Style</label>
+          <label class="input-label">Corner Frame</label>
           <select id="style-corners" class="cyber-input" style="width: 100%">
-            <option value="square">Standard Squares</option>
-            <option value="dot">Circular Dots</option>
+            <option value="square">Square</option>
+            <option value="dot">Circular</option>
             <option value="extra-rounded">Extra Rounded</option>
           </select>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">Corner Dot</label>
+          <select id="style-corner-dot" class="cyber-input" style="width: 100%">
+            <option value="square">Square</option>
+            <option value="dot">Circular</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">Gradient Fill</label>
+          <div class="color-picker-wrap">
+            <input type="checkbox" id="grad-toggle" style="width: 18px; height: 18px; accent-color: #10B981; cursor: pointer;">
+            <input type="color" id="color-dots-2" value="#10B981" title="Second colour">
+            <span style="font-size: 0.75rem; color: var(--text-dim);">2nd colour</span>
+          </div>
         </div>
       </div>
 
@@ -600,7 +728,7 @@
     </div>
   </div>
 
-  <script src="qr.js?v=2"></script>
+  <script src="qr.js?v=3"></script>
 </body>
 </html>
 
