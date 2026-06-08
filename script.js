@@ -214,51 +214,19 @@
     });
   });
 
-  // Contact form handling
-  const contactForm = document.getElementById('contact-form');
-  const submitBtn = document.getElementById('form-submit-btn');
-  const successMsg = document.getElementById('form-success');
-
-  if (contactForm) {
-    contactForm.addEventListener('submit', function (e) {
-      e.preventDefault();
-
-      const formData = new FormData(contactForm);
-      submitBtn.textContent = '[ SENDING... ]';
-      submitBtn.disabled = true;
-      submitBtn.style.opacity = '0.6';
-
-      fetch(contactForm.action, {
-        method: 'POST',
-        body: formData,
-        headers: { Accept: 'application/json' },
-      })
-        .then(function (response) {
-          if (response.ok) {
-            contactForm.reset();
-            contactForm.style.display = 'none';
-            successMsg.classList.add('show');
-          } else {
-            throw new Error('Form submission failed');
-          }
-        })
-        .catch(function () {
-          // Fallback: open mailto
-          const name = formData.get('name') || '';
-          const email = formData.get('email') || '';
-          const message = formData.get('message') || '';
-          const subject = encodeURIComponent('Contact from ' + name);
-          const body = encodeURIComponent(
-            'From: ' + name + ' (' + email + ')\n\n' + message
-          );
-          window.location.href =
-            'mailto:info@riyostudio.dev?subject=' + subject + '&body=' + body;
-        })
-        .finally(function () {
-          submitBtn.textContent = '[ SEND MESSAGE ]';
-          submitBtn.disabled = false;
-          submitBtn.style.opacity = '1';
-        });
+  // Contact — copy email address to clipboard
+  const copyEmailBtn = document.getElementById('copy-email-btn');
+  if (copyEmailBtn) {
+    copyEmailBtn.addEventListener('click', function () {
+      const email = copyEmailBtn.dataset.email || '';
+      const done = function () {
+        const original = copyEmailBtn.textContent;
+        copyEmailBtn.textContent = 'Copied ✓';
+        setTimeout(function () { copyEmailBtn.textContent = original; }, 1800);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(email).then(done).catch(function () {});
+      }
     });
   }
 
