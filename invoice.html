@@ -489,6 +489,52 @@
       font-weight: 600;
     }
 
+    /* =========================================================
+       INVOICE STYLE SKINS (same markup, different look)
+       Default (no class) = "Modern". Respects the colour picker.
+       ========================================================= */
+
+    /* ── CLASSIC: formal, serif, ruled, no cards ── */
+    #a4-paper.style-classic { font-family: Georgia, 'Times New Roman', serif; }
+    #a4-paper.style-classic .inv-header { border-bottom: 1px solid var(--inv-border-strong); align-items: flex-end; }
+    #a4-paper.style-classic .inv-company-details h2 { color: var(--inv-text); letter-spacing: 0; }
+    #a4-paper.style-classic .inv-meta-grid { gap: 2rem; }
+    #a4-paper.style-classic .inv-bill-to,
+    #a4-paper.style-classic .inv-details { background: transparent; border: none; border-radius: 0; padding: 0; }
+    #a4-paper.style-classic .inv-bill-to h3 { font-family: Georgia, serif; font-style: italic; text-transform: none; letter-spacing: 0; font-size: 0.9rem; }
+    #a4-paper.style-classic .inv-details h1 { letter-spacing: 1px; }
+    #a4-paper.style-classic .inv-table { border: none; border-radius: 0; }
+    #a4-paper.style-classic .inv-table th { background: transparent; color: var(--inv-text); border-bottom: 2px solid var(--inv-text); font-family: Georgia, serif; letter-spacing: 1px; }
+    #a4-paper.style-classic .inv-table tbody tr:nth-child(even) td { background: transparent; }
+    #a4-paper.style-classic .inv-summary { background: transparent; border: none; border-radius: 0; padding: 0; }
+    #a4-paper.style-classic .inv-label { font-family: Georgia, serif; }
+
+    /* ── MINIMAL: airy, thin, borderless, monochrome ── */
+    #a4-paper.style-minimal .inv-header { border-bottom: none; margin-bottom: 3.5rem; }
+    #a4-paper.style-minimal .inv-company-details h2 { font-weight: 600; font-size: 1.25rem; color: var(--inv-text); }
+    #a4-paper.style-minimal .inv-meta-grid { gap: 2.5rem; margin-bottom: 3rem; }
+    #a4-paper.style-minimal .inv-bill-to,
+    #a4-paper.style-minimal .inv-details { background: transparent; border: none; border-radius: 0; padding: 0; }
+    #a4-paper.style-minimal .inv-details h1 { font-weight: 300; letter-spacing: 5px; color: var(--inv-text); font-size: 2rem; }
+    #a4-paper.style-minimal .inv-table { border: none; border-radius: 0; }
+    #a4-paper.style-minimal .inv-table th { background: transparent; color: var(--inv-text-muted); border-bottom: 1px solid var(--inv-border); padding-left: 0; }
+    #a4-paper.style-minimal .inv-table td { padding-left: 0; border-bottom: 1px solid var(--inv-border); }
+    #a4-paper.style-minimal .inv-table th.right,
+    #a4-paper.style-minimal .inv-table td.right { padding-right: 0; }
+    #a4-paper.style-minimal .inv-table tbody tr:nth-child(even) td { background: transparent; }
+    #a4-paper.style-minimal .inv-summary { background: transparent; border: none; border-radius: 0; padding: 0; }
+
+    /* ── BOLD: full-width colour header band ── */
+    #a4-paper.style-bold .inv-header {
+      background: var(--inv-primary);
+      margin: -24mm -26mm 2.5rem -26mm;
+      padding: 24mm 26mm 2rem 26mm;
+      border-bottom: none;
+      align-items: center;
+    }
+    #a4-paper.style-bold .inv-company-details { color: rgba(255,255,255,0.92); }
+    #a4-paper.style-bold .inv-company-details h2 { color: #ffffff; }
+
     /* ── DARK MODE TOGGLE ── */
     .dark-toggle-wrap {
       display: flex;
@@ -614,6 +660,15 @@
         <div class="tool-bento-panel tint-emerald" style="margin-bottom: 16px;">
           <div class="section-title" style="border: none; margin: 0 0 16px 0; font-size: 0.95rem; font-weight: bold;">Invoice Details</div>
         <div class="input-grid">
+          <div class="input-group full">
+            <label class="input-label">Invoice Style</label>
+            <select id="in-inv-style" class="cyber-input">
+              <option value="modern">Modern (default)</option>
+              <option value="classic">Classic</option>
+              <option value="minimal">Minimal</option>
+              <option value="bold">Bold</option>
+            </select>
+          </div>
           <div class="input-group">
             <label class="input-label">Invoice Number</label>
             <input type="text" id="in-inv-num" class="cyber-input" placeholder="INV-0001">
@@ -832,6 +887,6 @@ Please pay within 14 days.</div>
     </div>
   </div>
 
-  <script src="invoice.js?v=19"></script>
+  <script src="invoice.js?v=20"></script>
 </body>
 </html>
