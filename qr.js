@@ -148,14 +148,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 4. Payload Builders
   function buildVCard() {
-    const fn = vcFname.value.trim();
-    const ln = vcLname.value.trim();
-    const org = vcCompany.value.trim();
-    const tel = vcPhone.value.trim();
-    const email = vcEmail.value.trim();
+    // vCard 3.0 text values must escape backslash, newline, comma and semicolon
+    const esc = (s) => s.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+    const fn = esc(vcFname.value.trim());
+    const ln = esc(vcLname.value.trim());
+    const org = esc(vcCompany.value.trim());
+    const tel = esc(vcPhone.value.trim());
+    const email = esc(vcEmail.value.trim());
 
     let vcf = "BEGIN:VCARD\nVERSION:3.0\n";
-    if (fn || ln) vcf += `N:${ln};${fn};;;\nFN:${fn} ${ln}\n`;
+    if (fn || ln) {
+      const full = [fn, ln].filter(Boolean).join(' ');
+      vcf += `N:${ln};${fn};;;\nFN:${full}\n`;
+    }
     if (org) vcf += `ORG:${org}\n`;
     if (tel) vcf += `TEL;TYPE=CELL:${tel}\n`;
     if (email) vcf += `EMAIL;TYPE=WORK,INTERNET:${email}\n`;
@@ -164,11 +169,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function buildWiFi() {
-    const ssid = wifiSsid.value.trim();
-    const pass = wifiPass.value.trim();
+    // WiFi QR spec: escape \ ; , : and " with a backslash
+    const esc = (s) => s.replace(/([\\;,:"])/g, '\\$1');
+    const ssid = esc(wifiSsid.value.trim());
+    const pass = esc(wifiPass.value.trim());
     const sec = wifiSec.value;
-    const hidden = false;
-    return `WIFI:T:${sec};S:${ssid};P:${pass};H:${hidden};;`;
+    if (!ssid) return '';
+    // Open network (no security or no password) omits the password field entirely
+    if (sec === 'nopass' || !pass) {
+      return `WIFI:T:nopass;S:${ssid};;`;
+    }
+    return `WIFI:T:${sec};S:${ssid};P:${pass};;`;
   }
 
   function buildEmail() {
