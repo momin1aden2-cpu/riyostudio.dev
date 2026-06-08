@@ -38,11 +38,12 @@ html {
   --bg-surface-hover: rgba(255, 255, 255, 0.06);
   --bg-card: rgba(255, 255, 255, 0.02);
 
-  /* Accent */
-  --accent: #e5e5e5;
-  --accent-dim: #a3a3a3;
-  --accent-glow: rgba(255, 255, 255, 0.05);
-  --accent-soft: rgba(255, 255, 255, 0.03);
+  /* Accent — emerald brand (single source of truth) */
+  --accent: #10B981;
+  --accent-dim: #059669;
+  --accent-bright: #34D399;
+  --accent-glow: rgba(16, 185, 129, 0.25);
+  --accent-soft: rgba(16, 185, 129, 0.06);
 
   /* Text */
   --text: #FFFFFF;
@@ -114,10 +115,10 @@ body::after {
   position: fixed;
   inset: -15%;
   background:
-    radial-gradient(800px circle at 15% 10%, rgba(59, 130, 246, 0.08) 0%, transparent 55%),
+    radial-gradient(800px circle at 15% 10%, rgba(16, 185, 129, 0.08) 0%, transparent 55%),
     radial-gradient(600px circle at 85% 30%, rgba(27, 80, 200, 0.05) 0%, transparent 50%),
     radial-gradient(700px circle at 50% 80%, rgba(34, 197, 94, 0.03) 0%, transparent 55%),
-    radial-gradient(500px circle at 90% 85%, rgba(59, 130, 246, 0.04) 0%, transparent 50%);
+    radial-gradient(500px circle at 90% 85%, rgba(16, 185, 129, 0.04) 0%, transparent 50%);
   pointer-events: none;
   z-index: -1;
   animation: ambient-drift 30s ease-in-out infinite alternate;
@@ -275,11 +276,11 @@ section {
   object-fit: contain;
   border-radius: 8px;
   transition: filter 0.35s var(--ease), transform 0.35s var(--ease);
-  filter: drop-shadow(0 2px 8px rgba(59, 130, 246, 0.25));
+  filter: drop-shadow(0 2px 8px rgba(16, 185, 129, 0.25));
 }
 
 .nav-brand:hover .nav-brand-icon-img {
-  filter: drop-shadow(0 4px 16px rgba(59, 130, 246, 0.4)) brightness(1.1);
+  filter: drop-shadow(0 4px 16px rgba(16, 185, 129, 0.4)) brightness(1.1);
   transform: scale(1.06);
 }
 
@@ -367,7 +368,7 @@ section {
   border-radius: var(--radius-pill);
   transition: transform 0.2s, box-shadow 0.25s;
   box-shadow: 0 4px 16px var(--accent-glow);
-  border: 1px solid rgba(59, 130, 246, 0.5);
+  border: 1px solid rgba(16, 185, 129, 0.5);
   flex-shrink: 0;
 }
 
@@ -453,14 +454,14 @@ section {
 
 .nav-dropdown .nav-cta-btn {
   margin-top: 8px;
-  background: linear-gradient(135deg, var(--accent) 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, #059669 100%);
   color: #fff;
   justify-content: center;
   font-weight: 600;
 }
 
 .nav-dropdown .nav-cta-btn:hover {
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
   transform: translateY(-1px);
 }
 
@@ -587,7 +588,7 @@ section {
   font-family: 'JetBrains Mono', monospace;
   font-size: 28px;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--accent) 0%, #a78bfa 40%, #ffffff 50%, #a78bfa 60%, var(--accent) 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, #34D399 40%, #ffffff 50%, #34D399 60%, var(--accent) 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -845,8 +846,8 @@ section {
 }
 
 .tool-bento-panel.tint-blue {
-  background: rgba(59, 130, 246, 0.05);
-  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.25), 0 8px 24px rgba(0, 0, 0, 0.3);
+  background: rgba(16, 185, 129, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.25), 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .tool-bento-panel.tint-emerald {
@@ -1032,7 +1033,7 @@ section {
 
 .about {
   padding: 100px 0;
-  background: linear-gradient(180deg, transparent 0%, rgba(59, 130, 246, 0.03) 50%, transparent 100%);
+  background: linear-gradient(180deg, transparent 0%, rgba(16, 185, 129, 0.03) 50%, transparent 100%);
 }
 
 .about-grid {
@@ -1158,7 +1159,7 @@ section {
   padding: 6px 10px;
   border-radius: 4px;
   background: rgba(10, 15, 26, 0.7);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(16, 185, 129, 0.3);
   color: var(--accent);
   box-shadow: 0 2px 8px rgba(0,0,0,0.2) inset;
 }
@@ -1222,7 +1223,7 @@ section {
 .process-step:hover {
   transform: translateY(-6px);
   border-color: var(--border-accent);
-  box-shadow: 0 20px 50px rgba(59, 130, 246, 0.12);
+  box-shadow: 0 20px 50px rgba(16, 185, 129, 0.12);
 }
 
 .step-num {
@@ -1261,7 +1262,7 @@ section {
 
 .contact {
   padding: 100px 0;
-  background: linear-gradient(180deg, transparent 0%, rgba(59, 130, 246, 0.03) 100%);
+  background: linear-gradient(180deg, transparent 0%, rgba(16, 185, 129, 0.03) 100%);
 }
 
 .contact-grid {
@@ -1350,7 +1351,7 @@ section {
   overflow: hidden;
   border-radius: 4px;
   background: rgba(6, 11, 20, 0.5);
-  border: 1px solid rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.15);
   transition: border-color 0.3s;
 }
 
@@ -1393,8 +1394,8 @@ select.cyber-input option {
 
 /* Animate border on focus */
 .cyber-input-wrap:focus-within {
-  border-color: rgba(59, 130, 246, 0.4);
-  background: rgba(59, 130, 246, 0.05);
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.05);
 }
 
 .cyber-input-wrap:focus-within .cyber-border {
@@ -1403,7 +1404,7 @@ select.cyber-input option {
 
 .cyber-submit-btn {
   width: 100%;
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(16, 185, 129, 0.1);
   border: 1px dashed var(--accent);
   color: var(--accent);
   font-family: 'JetBrains Mono', monospace;
@@ -2573,7 +2574,7 @@ html.supernova body {
 }
 
 .mobile-tool-fab.fab-invoice {
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  background: linear-gradient(135deg, #059669, #10B981);
 }
 .mobile-tool-fab.fab-logo {
   background: linear-gradient(135deg, #8b5cf6, #a855f7);
