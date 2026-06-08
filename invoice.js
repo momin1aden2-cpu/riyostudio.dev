@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     invCur: document.getElementById('in-inv-cur'),
     invColor: document.getElementById('in-inv-color'),
     invDark: document.getElementById('in-inv-dark'),
+    invStyle: document.getElementById('in-inv-style'),
     
     clientName: document.getElementById('in-client-name'),
     clientAddr: document.getElementById('in-client-addr'),
@@ -74,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (prefs.compPhone) inputs.compPhone.value = prefs.compPhone;
         if (prefs.compWeb) inputs.compWeb.value = prefs.compWeb;
         if (prefs.invColor) inputs.invColor.value = prefs.invColor;
+        if (prefs.invStyle) inputs.invStyle.value = prefs.invStyle;
         if (prefs.payDetails) inputs.payDetails.value = prefs.payDetails;
         if (prefs.logo) {
           logoDataUrl = prefs.logo;
@@ -97,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
       compPhone: inputs.compPhone.value,
       compWeb: inputs.compWeb.value,
       invColor: inputs.invColor.value,
+      invStyle: inputs.invStyle.value,
       payDetails: inputs.payDetails.value,
       logo: logoDataUrl
     };
@@ -191,6 +194,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       paper.classList.remove('dark-invoice');
     }
+
+    // Invoice style skin
+    paper.classList.remove('style-modern', 'style-classic', 'style-minimal', 'style-bold');
+    paper.classList.add('style-' + (inputs.invStyle.value || 'modern'));
     
     // Header & Meta
     outputs.compName.textContent = inputs.compName.value || 'Your Company LLC';
@@ -265,6 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Dark mode toggle uses 'change' event
   inputs.invDark.addEventListener('change', updatePreview);
+  inputs.invStyle.addEventListener('change', updatePreview);
 
   // Dynamic scaling: fit the 210mm A4 paper into the available column width
   function resizePreview() {
