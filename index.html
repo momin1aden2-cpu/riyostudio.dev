@@ -97,7 +97,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="apple-touch-icon" href="assets/icon.png">
-  <link rel="stylesheet" href="style.css?v=20260608g">
+  <link rel="stylesheet" href="style.css?v=20260608h">
 <body>
   <!-- Interactive Background Canvas -->
   <canvas id="quantum-field"></canvas>
@@ -300,69 +300,38 @@
       <div class="contact-grid">
         <div class="contact-text">
           <div class="eyebrow reveal">Get in Touch</div>
-          <h2 class="reveal reveal-delay-1">Have a question or want to connect?</h2>
+          <h2 class="reveal reveal-delay-1">Got a question, idea, or bug?</h2>
           <p class="reveal reveal-delay-2">
-            Whether it's about one of the products, a potential collaboration, or just to say hello — I'd love to hear from you. Drop a message and I'll get back to you.
+            I'm a solo indie dev — your message lands straight in my inbox. No support tickets, no bots. I read every one and usually get back within a day or two.
           </p>
 
           <div class="contact-info reveal reveal-delay-3">
             <div class="contact-info-item">
               <div class="contact-info-icon">📍</div>
-              <span>Western Australia, Australia</span>
+              <span>Based in Western Australia</span>
             </div>
             <div class="contact-info-item">
-              <div class="contact-info-icon">🏢</div>
-              <span>Riyo Studio — Registered Australian Business</span>
+              <div class="contact-info-icon">⚡</div>
+              <span>Usually replies within 48 hours</span>
             </div>
             <div class="contact-info-item">
               <div class="contact-info-icon">🌐</div>
               <div>
-                <a href="https://shiftcore.com.au" target="_blank" rel="noopener" style="color: var(--accent); font-weight: 600;">shiftcore.com.au</a> (Premium Project)
+                Also building <a href="https://shiftcore.com.au" target="_blank" rel="noopener" style="color: var(--accent); font-weight: 600;">shiftcore.com.au</a>
               </div>
             </div>
           </div>
         </div>
 
         <div class="contact-form-wrap reveal reveal-delay-2">
-          <form id="contact-form" action="https://api.web3forms.com/submit" method="POST" class="cyber-form">
-            <input type="hidden" name="access_key" value="f082846d-6298-49c4-9109-4bc3fa19884d">
-            <input type="hidden" name="subject" value="New Contact from RiyoStudio.dev">
-            <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
-
-            <div class="cyber-group">
-              <label class="cyber-label"><span class="accent">></span> Name</label>
-              <div class="cyber-input-wrap">
-                <input type="text" name="name" class="cyber-input" placeholder="_ type your name" required autocomplete="off">
-                <div class="cyber-border"></div>
-              </div>
+          <div class="email-card">
+            <div class="email-card-eyebrow">&gt; Drop me a line</div>
+            <a href="mailto:support@riyostudio.dev" class="email-address">support@riyostudio.dev</a>
+            <div class="email-card-actions">
+              <a href="mailto:support@riyostudio.dev" class="btn-primary">Send email <span>→</span></a>
+              <button type="button" class="btn-ghost" id="copy-email-btn" data-email="support@riyostudio.dev">Copy address</button>
             </div>
-
-            <div class="cyber-group">
-              <label class="cyber-label"><span class="accent">></span> Email Address</label>
-              <div class="cyber-input-wrap">
-                <input type="email" name="email" class="cyber-input" placeholder="_ type your email" required autocomplete="off">
-                <div class="cyber-border"></div>
-              </div>
-            </div>
-
-            <div class="cyber-group">
-              <label class="cyber-label"><span class="accent">></span> Message</label>
-              <div class="cyber-input-wrap">
-                <textarea name="message" class="cyber-input" placeholder="_ type your message" required autocomplete="off"></textarea>
-                <div class="cyber-border"></div>
-              </div>
-            </div>
-
-            <button type="submit" class="cyber-submit-btn" id="form-submit-btn">
-              [ SEND MESSAGE ]
-            </button>
-          </form>
-
-          <div class="form-success" id="form-success">
-            <div class="terminal-success">
-              <span class="status-code">[200 OK]</span> Payload delivered successfully.<br>
-              <span class="status-msg">> System will respond shortly.</span><span class="cursor">_</span>
-            </div>
+            <p class="email-card-note">No forms, no third parties, no tracking — your message goes straight to my inbox.</p>
           </div>
         </div>
       </div>
@@ -495,7 +464,7 @@
 
   <!-- Scripts -->
   <script src="bg.js?v=16"></script>
-  <script src="script.js?v=20"></script>
+  <script src="script.js?v=21"></script>
 </body>
 </html>
 
