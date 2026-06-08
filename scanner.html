@@ -36,8 +36,8 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="apple-touch-icon" href="assets/icon.png">
-  <link rel="stylesheet" href="style.css?v=20260608e">
-  <link rel="stylesheet" href="scanner.css?v=4">
+  <link rel="stylesheet" href="style.css?v=20260608f">
+  <link rel="stylesheet" href="scanner.css?v=5">
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
@@ -72,14 +72,16 @@
 
   <main class="mockup-main" style="padding-top: 100px; padding-bottom: 80px; min-height: calc(100vh - 100px); position: relative; z-index: 10; display: flex; flex-direction: column;">
     <div class="container fluid editor-fluid" style="flex: 1; display: flex; flex-direction: column;">
-      
+
+      <!-- Page Header -->
+      <div class="tool-header">
+        <h1 class="tool-header-title">🎨 Mockup <span class="accent">Studio</span></h1>
+        <p class="tool-header-subtitle">Wrap your screenshots in premium device frames and mesh-gradient backgrounds, then export a full App Store &amp; Play Store kit — entirely in your browser.</p>
+      </div>
+
       <!-- Top Toolbar -->
-      <div class="editor-toolbar" style="background: rgba(10, 15, 26, 0.9); border: 1px solid rgba(16,185,129,0.2); border-radius: 12px; padding: 16px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
-        <div style="display: flex; gap: 12px; align-items: center; margin-right: auto;">
-          <h1 style="font-size: 1.4rem; margin: 0; color: #fff;">🎨 Mockup <span class="accent" style="color: #10B981;">Studio</span></h1>
-        </div>
-        
-        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center;">
+      <div class="editor-toolbar" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; position: relative; z-index: 50; backdrop-filter: blur(16px); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), 0 8px 32px rgba(0,0,0,0.3);">
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: flex-start; margin-right: auto;">
           <button id="add-text-btn" class="cyber-button" style="padding: 8px 16px; font-size: 0.9rem;">+ Text</button>
           
           <div class="dropdown" style="position: relative; display: inline-block;">
@@ -112,11 +114,16 @@
               <div class="template-category">
                 <button class="cyber-button template-category-btn" style="width: 100%; padding: 8px; font-size: 0.85rem; border: none; background: rgba(255,255,255,0.05); text-align: left; color: #10B981; font-weight: bold; border-radius: 4px; display: flex; justify-content: space-between;">App Store (6.5") <span>▾</span></button>
                 <div class="template-category-content" style="display: none; flex-direction: column; gap: 2px; padding-left: 8px; margin-top: 4px; margin-bottom: 8px;">
-                  <button class="cyber-button template-btn" data-template="app-store-minimalist" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">1. Apple Minimalist (5 Screens)</button>
-                  <button class="cyber-button template-btn" data-template="app-store-3d" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">2. Floating 3D Overlap (5 Screens)</button>
-                  <button class="cyber-button template-btn" data-template="app-store-frost" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">3. Frost Glass (5 Screens)</button>
-                  <button class="cyber-button template-btn" data-template="app-store-curve" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">4. Dramatic Curve (5 Screens)</button>
-                  <button class="cyber-button template-btn" data-template="app-store-stagger" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">5. Dynamic Stagger (5 Screens)</button>
+                  <button class="cyber-button template-btn" data-template="apple-minimal" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">1. Minimal Light</button>
+                  <button class="cyber-button template-btn" data-template="apple-gradient" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">2. Bold Gradient Hero</button>
+                  <button class="cyber-button template-btn" data-template="apple-darkpro" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">3. Dark Pro (Neon)</button>
+                  <button class="cyber-button template-btn" data-template="apple-panorama" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">4. Big-Word Panorama</button>
+                  <button class="cyber-button template-btn" data-template="apple-lean" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">5. Leaning Duo</button>
+                  <button class="cyber-button template-btn" data-template="apple-spotlight" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">6. Center Spotlight</button>
+                  <button class="cyber-button template-btn" data-template="apple-sport" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">7. Sport Energy</button>
+                  <button class="cyber-button template-btn" data-template="apple-business" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">8. Corporate Clean</button>
+                  <button class="cyber-button template-btn" data-template="apple-reviews" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">9. 5-Star Social Proof</button>
+                  <button class="cyber-button template-btn" data-template="apple-handheld" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">10. Held Angle</button>
                 </div>
               </div>
 
@@ -124,11 +131,16 @@
               <div class="template-category">
                 <button class="cyber-button template-category-btn" style="width: 100%; padding: 8px; font-size: 0.85rem; border: none; background: rgba(255,255,255,0.05); text-align: left; color: #10B981; font-weight: bold; border-radius: 4px; display: flex; justify-content: space-between;">Google Play <span>▾</span></button>
                 <div class="template-category-content" style="display: none; flex-direction: column; gap: 2px; padding-left: 8px; margin-top: 4px; margin-bottom: 8px;">
-                  <button class="cyber-button template-btn" data-template="play-store-cinematic" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">1. Classic Cinematic (5 Screens)</button>
-                  <button class="cyber-button template-btn" data-template="play-store-cascade" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">2. Clay Cascade (5 Screens)</button>
-                  <button class="cyber-button template-btn" data-template="play-store-cyberpunk" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">3. Neon Cyberpunk (5 Screens)</button>
-                  <button class="cyber-button template-btn" data-template="play-store-glass" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">4. Clean Glassmorphism (5 Screens)</button>
-                  <button class="cyber-button template-btn" data-template="play-store-spotlight" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">5. Centerpiece Spotlight (5 Screens)</button>
+                  <button class="cyber-button template-btn" data-template="gplay-clean" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">1. Material Clean</button>
+                  <button class="cyber-button template-btn" data-template="gplay-cinematic" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">2. Cinematic Dark</button>
+                  <button class="cyber-button template-btn" data-template="gplay-material" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">3. Material You (Pastel)</button>
+                  <button class="cyber-button template-btn" data-template="gplay-benefit" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">4. Benefit Bold</button>
+                  <button class="cyber-button template-btn" data-template="gplay-cascade" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">5. Clay Cascade (Leaning)</button>
+                  <button class="cyber-button template-btn" data-template="gplay-neon" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">6. Neon Gaming</button>
+                  <button class="cyber-button template-btn" data-template="gplay-spotlight" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">7. Center Spotlight</button>
+                  <button class="cyber-button template-btn" data-template="gplay-sport" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">8. Sport Energy</button>
+                  <button class="cyber-button template-btn" data-template="gplay-reviews" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">9. 5-Star Social Proof</button>
+                  <button class="cyber-button template-btn" data-template="gplay-handheld" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">10. Held Angle</button>
                 </div>
               </div>
 
@@ -178,20 +190,18 @@
           </select>
         </div>
         
-        <div style="margin-left: auto;">
-          <div style="display: flex; gap: 12px;">
-            <button id="export-zip-btn" class="cyber-button" style="background: #10B981; color: #fff; font-weight: 700; border: none; padding: 8px 16px; font-size: 0.9rem;">EXPORT KIT (.ZIP)</button>
-            <button id="export-png-btn" class="cyber-button" style="background: #10B981; color: #000; font-weight: 700; border: none; padding: 8px 24px;">EXPORT HIGH-RES</button>
-            <button id="export-video-btn" class="cyber-button" style="background: #f43f5e; color: #fff; font-weight: 700; border: none; padding: 8px 24px;">RECORD VIDEO</button>
-          </div>
+        <div style="display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap;">
+          <button id="export-zip-btn" class="cyber-button" style="background: #10B981; color: #04140d; font-weight: 700; border: none; padding: 8px 14px; font-size: 0.85rem; white-space: nowrap;">⬇ Kit .zip</button>
+          <button id="export-png-btn" class="cyber-button" style="background: #10B981; color: #04140d; font-weight: 700; border: none; padding: 8px 14px; font-size: 0.85rem; white-space: nowrap;">⬇ PNG</button>
+          <button id="export-video-btn" class="cyber-button" style="background: #f43f5e; color: #fff; font-weight: 700; border: none; padding: 8px 14px; font-size: 0.85rem; white-space: nowrap;">● Record</button>
         </div>
       </div>
 
       <!-- Editor Workspace -->
-      <div class="editor-workspace" style="display: flex; gap: 24px; height: calc(100vh - 250px); min-height: 500px;">
+      <div class="editor-workspace" style="display: flex; gap: 24px; height: calc(100vh - 300px); min-height: 480px;">
         
         <!-- Center Canvas Area -->
-        <div class="canvas-container" id="canvas-container" style="flex: 1; min-width: 0; min-height: 0; background: rgba(0,0,0,0.3); border: 1px dashed rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+        <div class="canvas-container" id="canvas-container" style="flex: 1; min-width: 0; min-height: 0; background: radial-gradient(120% 120% at 50% 0%, rgba(16,185,129,0.06), transparent 60%), rgba(0,0,0,0.3); border: 1px dashed rgba(16,185,129,0.25); border-radius: 16px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
           <!-- Wrapper scaled by JS to fit screen but holds actual preset dimensions -->
           <div id="canvas-wrapper" style="position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.5); transform-origin: center center;">
             <canvas id="mockup-canvas" style="display: block; cursor: default;"></canvas>
@@ -199,7 +209,7 @@
         </div>
 
         <!-- Right Context Panel (Properties) -->
-        <div class="properties-panel" id="properties-panel" style="width: 320px; background: #0A0F1A; border: 1px solid rgba(16,185,129,0.2); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 24px;">
+        <div class="properties-panel" id="properties-panel" style="width: 320px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 24px; backdrop-filter: blur(16px); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), 0 8px 32px rgba(0,0,0,0.25);">
           
           <div id="no-selection-msg" style="color: var(--text-dim); text-align: center; margin-top: 40px; display: none;">
             Click on an element on the canvas to edit its properties.
@@ -505,6 +515,6 @@
 
   <script src="bg.js?v=16"></script>
   <script src="script.js?v=20"></script>
-  <script src="scanner.js?v=29"></script>
+  <script src="scanner.js?v=30"></script>
 </body>
 </html>

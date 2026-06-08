@@ -767,9 +767,10 @@ section {
 }
 
 /* --- PREMIUM BENTO GRID SYSTEM --- */
-/* Full-bleed opt-out for in-browser tool editors (e.g. Mockup Studio) */
+/* Wider, still-bounded column for canvas editors that need room
+   (e.g. Mockup Studio's up-to-5-screen panoramas) — centered, never full-bleed */
 .container.fluid.editor-fluid {
-  max-width: 100%;
+  max-width: 1600px;
 }
 
 .bento-master-grid {
@@ -1478,6 +1479,31 @@ section {
 .cyber-group {
   margin-bottom: 24px;
   position: relative;
+}
+
+/* Editor toolbar / utility button (Mockup Studio, etc.) */
+.cyber-button {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s var(--ease);
+}
+
+.cyber-button:hover {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.cyber-button:active {
+  transform: translateY(0);
 }
 
 .cyber-label {
