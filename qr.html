@@ -293,6 +293,7 @@
         <button class="mode-tab" id="tab-email">✉️ Email</button>
         <button class="mode-tab" id="tab-sms">💬 SMS</button>
         <button class="mode-tab" id="tab-crypto">₿ Crypto</button>
+        <button class="mode-tab" id="tab-app">📱 App</button>
       </div>
 
       <!-- URL INPUT -->
@@ -391,6 +392,22 @@
         <div>
           <label class="input-label">Amount (Optional)</label>
           <input type="number" id="crypto-amount" class="cyber-input" style="width: 100%" placeholder="0.5">
+        </div>
+      </div>
+
+      <!-- APP INPUT -->
+      <div id="app-fields" class="input-group" style="display: none;">
+        <div>
+          <label class="input-label">Store Logo</label>
+          <select id="app-store-type" class="cyber-input" style="width: 100%">
+            <option value="none">None</option>
+            <option value="apple">Apple App Store</option>
+            <option value="google">Google Play</option>
+          </select>
+        </div>
+        <div style="grid-column: span 2;">
+          <label class="input-label">App Link</label>
+          <input type="url" id="app-url" class="cyber-input" style="width: 100%" placeholder="https://apps.apple.com/...">
         </div>
       </div>
 

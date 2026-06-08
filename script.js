@@ -705,7 +705,7 @@
           break;
         case 'projects':
           printLine('ACTIVE DEPLOYMENTS:');
-          printLine(' - RenterIQ: Live app for Australian renters');
+          printLine(' - ShiftCore: Roster management platform');
           printLine(' - ShiftCore: FIFO worker management app');
           break;
         case 'diagnostics':

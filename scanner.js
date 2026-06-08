@@ -127,8 +127,36 @@ document.addEventListener('DOMContentLoaded', () => {
     stickers['arrow'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M20,80 Q50,20 80,40 M70,25 L85,42 L65,55" fill="none" stroke="%23EF4444" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     stickers['starburst'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M50,0 L60,40 L100,50 L60,60 L50,100 L40,60 L0,50 L40,40 Z" fill="%23FBBF24"/></svg>';
 
+    // --- LocalStorage Auto-Save System ---
+    function loadPrefs() {
+        try {
+            const prefs = JSON.parse(localStorage.getItem('riyo_mockup_prefs'));
+            if (prefs) {
+                if (prefs.frameStyle) frameSelect.value = prefs.frameStyle;
+                if (prefs.bgType) bgType = prefs.bgType;
+                if (prefs.bgColor1) bgColor1 = prefs.bgColor1;
+                if (prefs.bgColor2) bgColor2 = prefs.bgColor2;
+                if (prefs.preset) presetSelect.value = prefs.preset;
+                if (prefs.screens) screensSelect.value = prefs.screens;
+            }
+        } catch(e) { console.error('Failed to load Mockup prefs', e); }
+    }
+
+    function savePrefs() {
+        const prefs = {
+            frameStyle: frameSelect.value,
+            bgType: bgType,
+            bgColor1: bgColor1,
+            bgColor2: bgColor2,
+            preset: presetSelect.value,
+            screens: screensSelect.value
+        };
+        localStorage.setItem('riyo_mockup_prefs', JSON.stringify(prefs));
+    }
+
     // --- Initialization ---
     function init() {
+        loadPrefs();
         updateCanvasSize();
         window.addEventListener('resize', scaleWrapperToFit);
         render();
@@ -933,6 +961,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         tCtx.restore();
+        savePrefs();
     }
 
     function drawShapeLayer(tCtx, layer) {

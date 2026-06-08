@@ -8,7 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     wifi: document.getElementById('tab-wifi'),
     email: document.getElementById('tab-email'),
     sms: document.getElementById('tab-sms'),
-    crypto: document.getElementById('tab-crypto')
+    crypto: document.getElementById('tab-crypto'),
+    app: document.getElementById('tab-app')
   };
 
   const fields = {
@@ -17,7 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
     wifi: document.getElementById('wifi-fields'),
     email: document.getElementById('email-fields'),
     sms: document.getElementById('sms-fields'),
-    crypto: document.getElementById('crypto-fields')
+    crypto: document.getElementById('crypto-fields'),
+    app: document.getElementById('app-fields')
   };
   
   // URL Inputs
@@ -49,6 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const cryptoAddr = document.getElementById('crypto-addr');
   const cryptoAmount = document.getElementById('crypto-amount');
 
+  // App Inputs
+  const appStoreType = document.getElementById('app-store-type');
+  const appUrl = document.getElementById('app-url');
+
   // Style Inputs
   const colorDots = document.getElementById('color-dots');
   const colorDotsHex = document.getElementById('color-dots-hex');
@@ -63,6 +69,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let currentMode = 'url';
   let uploadedLogo = null;
+
+  // LocalStorage Auto-Save System
+  function loadPrefs() {
+    try {
+      const prefs = JSON.parse(localStorage.getItem('riyo_qr_prefs'));
+      if (prefs) {
+        if (prefs.qrUrl) qrUrlInput.value = prefs.qrUrl;
+        if (prefs.colorDots) colorDots.value = prefs.colorDots;
+        if (prefs.colorBg) colorBg.value = prefs.colorBg;
+        if (prefs.styleDots) styleDots.value = prefs.styleDots;
+        if (prefs.styleCorners) styleCorners.value = prefs.styleCorners;
+        if (prefs.appStore) appStoreType.value = prefs.appStore;
+        if (prefs.appUrl) appUrl.value = prefs.appUrl;
+        if (prefs.logo) uploadedLogo = prefs.logo;
+      }
+    } catch (e) { console.error('Failed to load QR prefs', e); }
+  }
+
+  function savePrefs() {
+    const prefs = {
+      qrUrl: qrUrlInput.value,
+      colorDots: colorDots.value,
+      colorBg: colorBg.value,
+      styleDots: styleDots.value,
+      styleCorners: styleCorners.value,
+      appStore: appStoreType.value,
+      appUrl: appUrl.value,
+      logo: uploadedLogo
+    };
+    localStorage.setItem('riyo_qr_prefs', JSON.stringify(prefs));
+  }
+
+  loadPrefs();
 
   // 2. Initialize QR Code Styling Instance
   const qrSize = window.innerWidth <= 900 ? 180 : 300;
@@ -99,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
       fields[k].style.display = 'none';
     });
     tabs[mode].classList.add('active');
-    fields[mode].style.display = mode === 'vcard' || mode === 'wifi' || mode === 'email' || mode === 'sms' || mode === 'crypto' ? 'grid' : 'block';
+    fields[mode].style.display = mode === 'vcard' || mode === 'wifi' || mode === 'email' || mode === 'sms' || mode === 'crypto' || mode === 'app' ? 'grid' : 'block';
     updateQR();
   }
 
@@ -164,14 +203,24 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (currentMode === 'email') dataPayload = buildEmail();
     else if (currentMode === 'sms') dataPayload = buildSMS();
     else if (currentMode === 'crypto') dataPayload = buildCrypto();
+    else if (currentMode === 'app') dataPayload = appUrl.value.trim() || "https://riyostudio.dev";
 
     colorDotsHex.textContent = colorDots.value.toUpperCase();
     colorBgHex.textContent = colorBg.value.toUpperCase();
 
+    let finalLogo = uploadedLogo || "";
+    if (currentMode === 'app' && !uploadedLogo) {
+      if (appStoreType.value === 'apple') {
+        finalLogo = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="%23000000"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>';
+      } else if (appStoreType.value === 'google') {
+        finalLogo = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="%233DDC84"><path d="M420.55,301.93a24,24,0,1,1,24-24,24,24,0,0,1-24,24m-265.1,0a24,24,0,1,1,24-24,24,24,0,0,1-24,24m273.7-144.48,47.94-83a10,10,0,1,0-17.27-10h0l-48.54,84.07a301.25,301.25,0,0,0-246.56,0L116.18,64.45a10,10,0,1,0-17.27,10h0l48,83.24C53.92,208.16,0,301.36,0,416h576c0-114.64-53.92-207.84-146.85-258.55"/></svg>';
+      }
+    }
+
     // Trigger Library Update
     qrCode.update({
       data: dataPayload,
-      image: uploadedLogo || "",
+      image: finalLogo,
       dotsOptions: {
         color: colorDots.value,
         type: styleDots.value
@@ -183,6 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
         type: styleCorners.value
       }
     });
+    savePrefs();
   }
 
   // 6. Listeners for live updates
@@ -192,6 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     emTo, emSub, emBody,
     smsTo, smsBody,
     cryptoType, cryptoAddr, cryptoAmount,
+    appStoreType, appUrl,
     colorDots, colorBg, styleDots, styleCorners
   ];
 

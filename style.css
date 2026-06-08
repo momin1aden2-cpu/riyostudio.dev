@@ -56,8 +56,7 @@ html {
   --border-accent: rgba(255, 255, 255, 0.2);
 
   /* Brand colors */
-  --renteriq: #1B50C8;
-  --renteriq-glow: rgba(27, 80, 200, 0.15);
+
   --shiftcore: #22C55E;
   --shiftcore-glow: rgba(34, 197, 94, 0.15);
 
@@ -849,16 +848,6 @@ section {
 .product-card:hover {
   transform: translateY(-6px);
 }
-
-/* RenterIQ card */
-.product-card.renteriq::before {
-  background: radial-gradient(circle at 50% 0%, var(--renteriq-glow) 0%, transparent 60%);
-}
-.product-card.renteriq:hover {
-  border-color: rgba(27, 80, 200, 0.35);
-  box-shadow: 0 24px 60px rgba(27, 80, 200, 0.15);
-}
-.product-card.renteriq:hover::before { opacity: 1; }
 
 /* ShiftCore card */
 .product-card.shiftcore::before {
