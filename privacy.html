@@ -25,7 +25,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="apple-touch-icon" href="assets/icon.png">
-  <link rel="stylesheet" href="style.css?v=20260608c">
+  <link rel="stylesheet" href="style.css?v=20260608d">
 
   <style>
     .legal-content h1 { color: var(--text-main); margin-bottom: 0.5rem; font-size: 2.5rem; }
@@ -60,7 +60,7 @@
         <a href="forge.html" class="nav-link">File Forge</a>
           <a href="logo.html" class="nav-link">Logo Maker</a>
         <a href="index.html#about" class="nav-link">About Us</a>
-          <a href="index.html#contact" class="nav-cta-btn" style="padding: 8px 16px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #10B981; font-weight: 500; transition: all 0.2s; margin-left: 12px; text-decoration: none;">Get in Touch</a>
+          <a href="index.html#contact" class="nav-cta-btn">Get in Touch</a>
         </div>
       </div>
     </div>
@@ -70,10 +70,10 @@
     <div class="container legal-content" style="max-width: 800px; margin: 0 auto; background: rgba(16, 20, 30, 0.6); padding: 3rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(20px);">
 
       <h1>Privacy Policy</h1>
-      <p style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--brand-accent);">Last Updated: May 2026</p>
-      
+      <p style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--brand-accent);">Last Updated: June 2026</p>
+
       <div class="highlight-box">
-        <strong>The TL;DR on Zero-Server Privacy:</strong> The tools on Riyo Studio (File Forge, Mockup Studio, QR Hub, Invoice Maker) are designed to run <strong>entirely in your web browser</strong>. We do not upload, process, or store your JSON data, PDF documents, cover letters, invoices, or QR code payloads on any remote servers. Your data never leaves your device.
+        <strong>The TL;DR on Zero-Server Privacy:</strong> The tools on Riyo Studio (File Forge, Mockup Studio, QR Hub, Invoice Maker, Logo Maker) are designed to run <strong>entirely in your web browser</strong>. We do not upload, process, or store your files, PDF documents, screenshots, logos, invoices, or QR code payloads on any remote servers — that content never leaves your device. For full transparency, the website itself does use a few standard third-party services (analytics, fonts, hosting); these are detailed in Section&nbsp;3 below.
       </div>
 
       <h2>1. Introduction</h2>
@@ -83,20 +83,25 @@
       <p>Because our core tools are built with a "client-side first" architecture, we fundamentally do not have access to the data you process using them. Specifically:</p>
       <ul>
         <li><strong>File Forge:</strong> JSON data, CSV data, JWT tokens, and images processed in the forge are handled strictly by your local browser memory.</li>
-        <li><strong>Mockup Studio:</strong> The text, resumes, and documentation you paste for analysis are scanned locally.</li>
+        <li><strong>Mockup Studio:</strong> The screenshots, images, and text you add to your device mockups are rendered entirely in your browser.</li>
+        <li><strong>Logo Maker:</strong> The logos, brand text, icons, and saved projects you create stay in your browser's local storage on your device.</li>
         <li><strong>QR Hub:</strong> The URLs, vCard details, WiFi passwords, and Crypto addresses used to generate QR codes are processed locally.</li>
         <li><strong>Invoice Maker:</strong> Client details, financial data, and business logos reside in your browser and are generated into a PDF on your device.</li>
       </ul>
 
-      <h2>3. The Data We May Collect</h2>
-      <p>We only collect data when you actively provide it to us outside of the client-side tools, or through standard web infrastructure:</p>
+      <h2>3. Analytics &amp; Third-Party Services</h2>
+      <p>To understand how the site is used and to keep it running, we rely on a small number of third-party services. These operate at the website level and are separate from the client-side tools described above — none of them receive the content you process in the tools:</p>
       <ul>
-        <li><strong>Contact Forms:</strong> If you use the "Get in Touch" form, we collect your name, email address, and message in order to respond to your inquiry.</li>
-        <li><strong>Analytics & Logging:</strong> Like most websites, our hosting provider automatically logs standard connection data such as IP addresses, browser types, and access times for security and performance monitoring.</li>
+        <li><strong>Google Analytics:</strong> Every page on this site (including this one) loads Google Analytics — measurement ID <code>G-6P5C0ZYLE0</code>, provided by Google LLC. It collects standard, largely aggregated usage data such as pages visited, approximate location derived from your IP address, device and browser type, and the link that referred you, and it sets first-party analytics cookies (e.g. <code>_ga</code>). You can opt out across all sites with the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener" style="color: var(--accent);">Google Analytics Opt-out Browser Add-on</a>.</li>
+        <li><strong>Google Fonts:</strong> Pages load typefaces from Google Fonts (<code>fonts.googleapis.com</code> / <code>fonts.gstatic.com</code>). As a result, Google receives your IP address when the fonts are fetched.</li>
+        <li><strong>Contact form (Web3Forms):</strong> When you submit the "Get in Touch" form, your name, email address, and message are delivered to us through Web3Forms (<code>api.web3forms.com</code>), which processes the submission and forwards it to us by email. We use this only to respond to your inquiry.</li>
+        <li><strong>Hosting (Cloudflare):</strong> The site is hosted on Cloudflare Pages. Like any web host, Cloudflare automatically logs standard connection data such as IP addresses, request times, and user-agent strings for security and performance.</li>
+        <li><strong>Content delivery networks:</strong> Some tools download open-source libraries and AI models from public CDNs (such as jsDelivr, cdnjs, unpkg, and esm.sh). Your browser contacts these CDNs directly, so they may see your IP address. The downloaded code and models then run locally on your device.</li>
       </ul>
 
       <h2>4. Cookies and Local Storage</h2>
-      <p>We do not use tracking cookies for targeted advertising. We may use your browser's <code>localStorage</code> or <code>sessionStorage</code> to save your UI preferences (like the dark mode toggle or command palette history). This data remains on your device.</p>
+      <p>We do not use cookies for advertising or to build cross-site profiles of you. The only cookies set are the first-party Google Analytics cookies described in Section&nbsp;3. You can block or delete these at any time through your browser settings or the Google opt-out add-on.</p>
+      <p>We also use your browser's <code>localStorage</code> to save your own work and preferences — for example saved invoice and company details, Logo Maker projects, and UI settings. This data stays on your device and is never transmitted to us.</p>
 
       <h2>5. Sharing Your Information</h2>
       <p>We do not sell, trade, or rent your personal information to third parties. We will only disclose information if required to do so by Australian law (e.g., via a court order).</p>
