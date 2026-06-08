@@ -733,6 +733,124 @@ document.addEventListener('DOMContentLoaded', () => {
             layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'mac-browser', x: baseWidth * 1.5 - 200, y: 650, scale: 0.6, width: 1200, height: 800, rotation: 0, tiltY: 0, shadowBlur: 150, shadowOp: 80, shadowColor: '#3b82f6', hasGlare: false, hasFloorShadow: true });
         }
         
+        // ==========================================
+        // SQUARE POST — Premium Set (1080x1080)
+        // ==========================================
+        else if (type === 'sq-announce') {
+            presetSelect.value = '1080x1080'; screensSelect.value = '1'; updateCanvasSize();
+            bgType = 'color'; bgColor1 = '#0052ff';
+            layers.push({ id: generateId(), type: 'text', content: 'NEW', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 300, scale: 1, rotation: 0, fontSize: 300, width: 1000, height: 380 });
+            layers.push({ id: generateId(), type: 'text', content: 'Big feature, zero effort.', color: '#ffffff', fontFamily: 'Inter', fontWeight: '700', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 560, scale: 1, rotation: 0, fontSize: 62, width: 900, height: 160 });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'clay', x: baseWidth/2, y: 880, scale: 0.44, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 120, shadowOp: 50, shadowColor: '#000000', hasGlare: false, hasFloorShadow: true });
+        }
+        else if (type === 'sq-feature') {
+            presetSelect.value = '1080x1080'; screensSelect.value = '1'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#6a11cb'; bgColor2 = '#2575fc';
+            layers.push({ id: generateId(), type: 'text', content: 'One tap. Done.', color: '#ffffff', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'rgba(0,0,0,0.25)', shadowBlur: 15, x: baseWidth/2, y: 250, scale: 1, rotation: 0, fontSize: 80, width: 950, height: 180 });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: baseWidth/2, y: 720, scale: 0.5, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 130, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+        }
+        else if (type === 'sq-quote') {
+            presetSelect.value = '1080x1080'; screensSelect.value = '1'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#0f2027'; bgColor2 = '#203a43';
+            layers.push({ id: generateId(), type: 'shape', shapeType: 'circle', color: '#f5af19', x: 250, y: 540, width: 600, height: 600, scale: 1, rotation: 0, shadowBlur: 200, shadowColor: '#f12711', opacity: 30 });
+            layers.push({ id: generateId(), type: 'text', content: '"This app completely\nchanged how I work."', color: '#ffffff', fontFamily: 'Inter', fontWeight: '600', textAlign: 'left', shadowColor: 'transparent', shadowBlur: 0, x: 110, y: 380, scale: 1, rotation: 0, fontSize: 48, width: 560, height: 300 });
+            layers.push({ id: generateId(), type: 'text', content: '★★★★★', color: '#f5af19', fontFamily: 'Inter', fontWeight: '900', textAlign: 'left', shadowColor: 'transparent', shadowBlur: 0, x: 110, y: 640, scale: 1, rotation: 0, fontSize: 60, width: 400, height: 100 });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: 820, y: 600, scale: 0.45, width: 1080, height: 2340, rotation: 0, tiltY: 15, shadowBlur: 100, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+        }
+        else if (type === 'sq-compare') {
+            presetSelect.value = '1080x1080'; screensSelect.value = '2'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#ffffff'; bgColor2 = '#111111';
+            layers.push({ id: generateId(), type: 'text', content: 'BEFORE', color: '#000000', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 200, scale: 1, rotation: 0, fontSize: 70, width: 500, height: 120 });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: baseWidth/2, y: 660, scale: 0.42, width: 1080, height: 2340, rotation: 0, tiltY: -10, shadowBlur: 80, shadowOp: 30, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false });
+            layers.push({ id: generateId(), type: 'text', content: 'AFTER', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth*1.5, y: 200, scale: 1, rotation: 0, fontSize: 70, width: 500, height: 120 });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: baseWidth*1.5, y: 660, scale: 0.42, width: 1080, height: 2340, rotation: 0, tiltY: 10, shadowBlur: 80, shadowOp: 80, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false });
+        }
+        else if (type === 'sq-promo') {
+            presetSelect.value = '1080x1080'; screensSelect.value = '1'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#f12711'; bgColor2 = '#f5af19';
+            layers.push({ id: generateId(), type: 'text', content: 'LAUNCH WEEK', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'rgba(0,0,0,0.25)', shadowBlur: 15, x: baseWidth/2, y: 230, scale: 1, rotation: 0, fontSize: 92, width: 1000, height: 160 });
+            layers.push({ id: generateId(), type: 'text', content: 'Limited-time offer inside.', color: '#ffffff', fontFamily: 'Inter', fontWeight: '600', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 370, scale: 1, rotation: 0, fontSize: 42, width: 900, height: 100 });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: baseWidth/2, y: 760, scale: 0.48, width: 1080, height: 2340, rotation: 0, tiltY: -8, shadowBlur: 130, shadowOp: 55, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+        }
+        else if (type === 'sq-minimal') {
+            presetSelect.value = '1080x1080'; screensSelect.value = '1'; updateCanvasSize();
+            bgType = 'color'; bgColor1 = '#f5f5f7';
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'clay', x: baseWidth/2, y: 470, scale: 0.5, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 90, shadowOp: 18, shadowColor: '#000000', hasGlare: false, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'text', content: 'Designed for you.', color: '#1d1d1f', fontFamily: 'Inter', fontWeight: '600', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 940, scale: 1, rotation: 0, fontSize: 46, width: 800, height: 100 });
+        }
+        else if (type === 'sq-gradient') {
+            presetSelect.value = '1080x1080'; screensSelect.value = '1'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#ff9a9e'; bgColor2 = '#fecfef';
+            layers.push({ id: generateId(), type: 'text', content: 'Made to delight.', color: '#4a154b', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 240, scale: 1, rotation: 0, fontSize: 76, width: 900, height: 160 });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: baseWidth/2, y: 720, scale: 0.48, width: 1080, height: 2340, rotation: -8, tiltY: 18, shadowBlur: 120, shadowOp: 40, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+        }
+        else if (type === 'sq-stat') {
+            presetSelect.value = '1080x1080'; screensSelect.value = '1'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#11998e'; bgColor2 = '#38ef7d';
+            layers.push({ id: generateId(), type: 'text', content: '1M+', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'rgba(0,0,0,0.2)', shadowBlur: 15, x: baseWidth/2, y: 300, scale: 1, rotation: 0, fontSize: 260, width: 1000, height: 320 });
+            layers.push({ id: generateId(), type: 'text', content: 'downloads and counting', color: '#ffffff', fontFamily: 'Inter', fontWeight: '600', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 560, scale: 1, rotation: 0, fontSize: 48, width: 900, height: 100 });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'clay', x: baseWidth/2, y: 870, scale: 0.4, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 110, shadowOp: 45, shadowColor: '#000000', hasGlare: false, hasFloorShadow: true });
+        }
+
+        // ==========================================
+        // LANDSCAPE — Premium Set (1920x1080)
+        // ==========================================
+        else if (type === 'ls-hero') {
+            presetSelect.value = '1920x1080'; screensSelect.value = '1'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#ffffff'; bgColor2 = '#f1f5f9';
+            layers.push({ id: generateId(), type: 'shape', shapeType: 'rectangle', color: '#0f172a', x: 480, y: 540, width: 960, height: 1080, scale: 1, rotation: 0, shadowBlur: 0, shadowColor: '#000000', opacity: 100 });
+            layers.push({ id: generateId(), type: 'text', content: 'Transform your\nworkflow.', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'left', shadowColor: 'transparent', shadowBlur: 0, x: 200, y: 380, scale: 1, rotation: 0, fontSize: 78, width: 700, height: 300 });
+            layers.push({ id: generateId(), type: 'text', content: 'The fastest way to build and ship.', color: '#94a3b8', fontFamily: 'Inter', fontWeight: '400', textAlign: 'left', shadowColor: 'transparent', shadowBlur: 0, x: 200, y: 660, scale: 1, rotation: 0, fontSize: 34, width: 600, height: 120 });
+            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'macbook', x: 1320, y: 550, scale: 0.72, width: 1200, height: 800, rotation: 0, tiltY: -15, shadowBlur: 120, shadowOp: 45, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+        }
+        else if (type === 'ls-macbook') {
+            presetSelect.value = '1920x1080'; screensSelect.value = '1'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#0f172a'; bgColor2 = '#1e1b4b';
+            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'macbook', x: baseWidth/2, y: 580, scale: 0.92, width: 1200, height: 800, rotation: 0, tiltY: 0, shadowBlur: 150, shadowOp: 70, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+        }
+        else if (type === 'ls-ecosystem') {
+            presetSelect.value = '1920x1080'; screensSelect.value = '1'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#f8fafc'; bgColor2 = '#e2e8f0';
+            layers.push({ id: generateId(), type: 'text', content: 'WORKS EVERYWHERE', color: '#0f172a', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 160, scale: 1, rotation: 0, fontSize: 70, width: 1200, height: 120 });
+            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'macbook', x: baseWidth/2, y: 620, scale: 0.62, width: 1200, height: 800, rotation: 0, tiltY: 0, shadowBlur: 100, shadowOp: 40, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: 430, y: 600, scale: 0.5, width: 1080, height: 2340, rotation: 0, tiltY: -15, shadowBlur: 80, shadowOp: 30, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: 1490, y: 600, scale: 0.5, width: 1080, height: 2340, rotation: 0, tiltY: 15, shadowBlur: 80, shadowOp: 30, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+        }
+        else if (type === 'ls-cascade') {
+            presetSelect.value = '1920x1080'; screensSelect.value = '1'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#c31432'; bgColor2 = '#240b36';
+            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'browser', x: 620, y: 560, scale: 0.6, width: 1200, height: 800, rotation: 0, tiltY: 25, shadowBlur: 120, shadowOp: 70, shadowColor: '#000000', hasGlare: false, hasFloorShadow: false });
+            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'browser', x: 960, y: 560, scale: 0.6, width: 1200, height: 800, rotation: 0, tiltY: 25, shadowBlur: 120, shadowOp: 70, shadowColor: '#000000', hasGlare: false, hasFloorShadow: false });
+            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'browser', x: 1300, y: 560, scale: 0.6, width: 1200, height: 800, rotation: 0, tiltY: 25, shadowBlur: 120, shadowOp: 70, shadowColor: '#000000', hasGlare: false, hasFloorShadow: false });
+            layers.push({ id: generateId(), type: 'text', content: 'POWERFUL WEB APPS', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 150, scale: 1, rotation: 0, fontSize: 80, width: 1400, height: 120 });
+        }
+        else if (type === 'ls-banner') {
+            presetSelect.value = '1920x1080'; screensSelect.value = '1'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#6a11cb'; bgColor2 = '#2575fc';
+            layers.push({ id: generateId(), type: 'text', content: 'The all-in-one platform.', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'rgba(0,0,0,0.25)', shadowBlur: 20, x: baseWidth/2, y: 230, scale: 1, rotation: 0, fontSize: 92, width: 1600, height: 160 });
+            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'macbook', x: baseWidth/2, y: 760, scale: 0.72, width: 1200, height: 800, rotation: 0, tiltY: 0, shadowBlur: 130, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+        }
+        else if (type === 'ls-darkglow') {
+            presetSelect.value = '1920x1080'; screensSelect.value = '1'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#020617'; bgColor2 = '#0b1020';
+            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'browser', x: baseWidth/2, y: 560, scale: 0.88, width: 1200, height: 800, rotation: 0, tiltY: 0, shadowBlur: 180, shadowOp: 80, shadowColor: '#34d399', hasGlare: true, hasFloorShadow: false });
+        }
+        else if (type === 'ls-trio') {
+            presetSelect.value = '1920x1080'; screensSelect.value = '1'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#1e293b'; bgColor2 = '#020617';
+            layers.push({ id: generateId(), type: 'text', content: 'YOUR APP, EVERYWHERE', color: '#ffffff', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 150, scale: 1, rotation: 0, fontSize: 70, width: 1400, height: 120 });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: 560, y: 640, scale: 0.5, width: 1080, height: 2340, rotation: 0, tiltY: 18, shadowBlur: 100, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: 1360, y: 640, scale: 0.5, width: 1080, height: 2340, rotation: 0, tiltY: -18, shadowBlur: 100, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: baseWidth/2, y: 600, scale: 0.6, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 140, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+        }
+        else if (type === 'ls-feature') {
+            presetSelect.value = '1920x1080'; screensSelect.value = '1'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#0f172a'; bgColor2 = '#111827';
+            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'macbook', x: 600, y: 560, scale: 0.66, width: 1200, height: 800, rotation: 0, tiltY: 12, shadowBlur: 130, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'text', content: 'Built for teams.', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'left', shadowColor: 'transparent', shadowBlur: 0, x: 1180, y: 300, scale: 1, rotation: 0, fontSize: 72, width: 680, height: 160 });
+            layers.push({ id: generateId(), type: 'text', content: 'Real-time sync\nGranular permissions\nAudit logs & SSO', color: '#94a3b8', fontFamily: 'Inter', fontWeight: '500', textAlign: 'left', shadowColor: 'transparent', shadowBlur: 0, x: 1180, y: 560, scale: 1, rotation: 0, fontSize: 40, width: 680, height: 280 });
+        }
+
         document.getElementById('template-dropdown').style.display = 'none';
         updatePropsPanel();
         render();
