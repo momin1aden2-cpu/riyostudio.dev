@@ -363,9 +363,205 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // ==========================================
-        // GOOGLE PLAY (1080x1920)
+        // APPLE APP STORE — Premium Set (1242x2688)
         // ==========================================
-        
+        else if (type === 'apple-minimal') {
+            presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'color'; bgColor1 = '#f5f5f7';
+            const tOpt = { type: 'text', color: '#1d1d1f', fontFamily: 'Inter', fontWeight: '600', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 78, width: 1050, height: 240, y: 360 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.92, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 90, shadowOp: 18, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1620 };
+            const t = ['Everything in one place.', 'Beautifully simple.', 'Designed for focus.', 'Private by default.', 'Get started free.'];
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
+        }
+        else if (type === 'apple-gradient') {
+            presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#6a11cb'; bgColor2 = '#2575fc';
+            const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'rgba(0,0,0,0.25)', shadowBlur: 20, scale: 1, rotation: 0, fontSize: 90, width: 1050, height: 280, y: 380 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.9, width: 1080, height: 2340, rotation: 0, tiltY: 12, shadowBlur: 140, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1650 };
+            const t = ['Power in your pocket.', 'Faster than ever.', 'Made to move.', 'Insights that matter.', 'Start today.'];
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
+        }
+        else if (type === 'apple-darkpro') {
+            presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#0b0f17'; bgColor2 = '#020409';
+            const tOpt = { type: 'text', color: '#34d399', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: '#34d399', shadowBlur: 30, scale: 1, rotation: 0, fontSize: 80, width: 1050, height: 240, y: 360 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.9, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 160, shadowOp: 70, shadowColor: '#34d399', hasGlare: true, hasFloorShadow: false, y: 1640 };
+            const t = ['Precision, engineered.', 'Real-time control.', 'Bank-grade security.', 'Built to scale.', 'Upgrade to Pro.'];
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
+        }
+        else if (type === 'apple-panorama') {
+            presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#111827'; bgColor2 = '#0b1220';
+            layers.push({ id: generateId(), type: 'text', content: 'GO FURTHER', color: 'rgba(255,255,255,0.06)', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 520, width: 9000, height: 700, x: targetWidth/2, y: 1344 });
+            const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'Inter', fontWeight: '700', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 54, width: 1000, height: 160, y: 320 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.82, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 120, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1750 };
+            const t = ['Set your goals', 'Track progress', 'Stay consistent', 'Crush milestones', 'Go further'];
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
+        }
+        else if (type === 'apple-lean') {
+            presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#ff9a9e'; bgColor2 = '#fecfef';
+            const tOpt = { type: 'text', color: '#4a154b', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 74, width: 1050, height: 240, y: 400 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.85, width: 1080, height: 2340, rotation: 0, shadowBlur: 120, shadowOp: 35, shadowColor: '#000000', hasGlare: false, hasFloorShadow: false, y: 1620 };
+            const t = ['Share the moment.', 'Connect instantly.', 'Your story, yours.', 'Find your people.', 'Join the fun.'];
+            const tilts = [15, -15, 15, -15, 15];
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt, tiltY: tilts[i] });
+        }
+        else if (type === 'apple-spotlight') {
+            presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#1f2937'; bgColor2 = '#000000';
+            const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'Inter', fontWeight: '300', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 62, width: 1050, height: 200, y: 2350 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.95, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 180, shadowOp: 70, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true, y: 1450 };
+            const t = ['Introducing.', 'Crafted to perfection.', 'Every detail counts.', 'Simply powerful.', 'Experience it.'];
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
+        }
+        else if (type === 'apple-sport') {
+            presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#f12711'; bgColor2 = '#f5af19';
+            const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'rgba(0,0,0,0.3)', shadowBlur: 15, scale: 1, rotation: -6, fontSize: 92, width: 1100, height: 300, y: 380 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.88, width: 1080, height: 2340, rotation: -8, tiltY: 10, shadowBlur: 130, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1680 };
+            const t = ['GO HARDER.', 'TRACK EVERY REP.', 'BEAT YOUR BEST.', 'TRAIN SMARTER.', 'WIN THE DAY.'];
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
+        }
+        else if (type === 'apple-business') {
+            presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#1e3c72'; bgColor2 = '#2a5298';
+            const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'Inter', fontWeight: '700', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 68, width: 1050, height: 240, y: 350 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.9, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 100, shadowOp: 40, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1640 };
+            const t = ['Run your business better.', 'Insights in real time.', 'Collaborate seamlessly.', 'Secure and compliant.', 'Scale with confidence.'];
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
+        }
+        else if (type === 'apple-reviews') {
+            presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'color'; bgColor1 = '#fafafa';
+            const tOpt = { type: 'text', color: '#111827', fontFamily: 'Inter', fontWeight: '600', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 56, width: 1050, height: 240, y: 520 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.82, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 90, shadowOp: 20, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1720 };
+            const q = ['"Changed how I work."', '"A daily essential."', '"Worth every penny."', '"Simply the best."', '"Five stars, easily."'];
+            for (let i = 0; i < 5; i++) {
+                layers.push({ id: generateId(), type: 'sticker', stickerId: 'stars', img: stickers['stars'], x: baseWidth*(i+0.5), y: 280, scale: 1.4, width: 250, height: 50, rotation: 0 });
+                layers.push({ id: generateId(), content: q[i], x: baseWidth*(i+0.5), ...tOpt });
+                layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
+            }
+        }
+        else if (type === 'apple-handheld') {
+            presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#c9d6ff'; bgColor2 = '#e2e2e2';
+            const tOpt = { type: 'text', color: '#1f2937', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 76, width: 1050, height: 240, y: 360 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.95, width: 1080, height: 2340, rotation: -6, tiltY: 24, shadowBlur: 150, shadowOp: 45, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true, y: 1680 };
+            const t = ['Right at your fingertips.', 'Take it anywhere.', 'Tap. Done.', 'On the go.', 'Try it now.'];
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
+        }
+
+        // ==========================================
+        // GOOGLE PLAY — Premium Set (1080x1920)
+        // ==========================================
+        else if (type === 'gplay-clean') {
+            presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'color'; bgColor1 = '#f1f3f4';
+            const tOpt = { type: 'text', color: '#202124', fontFamily: 'Inter', fontWeight: '700', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 64, width: 950, height: 220, y: 280 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.72, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 90, shadowOp: 20, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1350 };
+            const t = ['Simple. Powerful.', 'All your tools.', 'Work anywhere.', 'Stay in sync.', 'Free to start.'];
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
+        }
+        else if (type === 'gplay-cinematic') {
+            presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#0f2027'; bgColor2 = '#203a43';
+            const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 58, width: 950, height: 240, y: 250 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.72, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 120, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1380 };
+            const t = ['Cinematic by\ndefault', 'Capture every\nmoment', 'Edit like\na pro', 'Share\ninstantly', 'Go further'];
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
+        }
+        else if (type === 'gplay-material') {
+            presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#d7e3ff'; bgColor2 = '#e8def8';
+            const tOpt = { type: 'text', color: '#1b1b1f', fontFamily: 'Inter', fontWeight: '700', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 60, width: 950, height: 220, y: 300 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'clay', scale: 0.72, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 80, shadowOp: 18, shadowColor: '#000000', hasGlare: false, hasFloorShadow: true, y: 1380 };
+            const t = ['Made for you.', 'Personal & private.', 'Smooth & fast.', 'Beautifully native.', 'Get it on Play.'];
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
+        }
+        else if (type === 'gplay-benefit') {
+            presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#11998e'; bgColor2 = '#38ef7d';
+            const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'rgba(0,0,0,0.2)', shadowBlur: 12, scale: 1, rotation: 0, fontSize: 64, width: 950, height: 240, y: 300 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.72, width: 1080, height: 2340, rotation: 0, tiltY: 8, shadowBlur: 120, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1380 };
+            const t = ['Save hours daily.', 'Automate the boring.', 'See it all at once.', 'Built for teams.', 'Try it free.'];
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
+        }
+        else if (type === 'gplay-cascade') {
+            presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#fbc2eb'; bgColor2 = '#a6c1ee';
+            const tOpt = { type: 'text', color: '#1e293b', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 60, width: 950, height: 220, y: 280 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'clay', scale: 0.66, width: 1080, height: 2340, rotation: 0, shadowBlur: 120, shadowOp: 30, shadowColor: '#000000', hasGlare: false, hasFloorShadow: false, y: 1320 };
+            const t = ['Beautiful design', 'Intuitive flow', 'Powerful tools', 'Seamless sync', 'Download today'];
+            const tilts = [15, -15, 15, -15, 15];
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt, tiltY: tilts[i] });
+        }
+        else if (type === 'gplay-neon') {
+            presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#3a1c71'; bgColor2 = '#d76d77';
+            const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'JetBrains Mono', fontWeight: '800', textAlign: 'center', shadowColor: '#000000', shadowBlur: 15, scale: 1, rotation: 0, fontSize: 68, width: 950, height: 200, y: 250 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.72, width: 1080, height: 2340, rotation: 8, tiltY: 12, shadowBlur: 150, shadowOp: 80, shadowColor: '#d76d77', hasGlare: true, hasFloorShadow: false, y: 1380 };
+            const t = ['LEVEL UP', 'NO LIMITS', 'PLAY FREE', 'JOIN GUILDS', 'WIN BIG'];
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
+        }
+        else if (type === 'gplay-spotlight') {
+            presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#1e293b'; bgColor2 = '#020617';
+            const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'Inter', fontWeight: '300', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 54, width: 950, height: 180, y: 1720 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.75, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 180, shadowOp: 70, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true, y: 1150 };
+            const t = ['Introducing.', 'Refined.', 'Powerful.', 'Effortless.', 'Yours.'];
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
+        }
+        else if (type === 'gplay-sport') {
+            presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#f12711'; bgColor2 = '#f5af19';
+            const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'rgba(0,0,0,0.3)', shadowBlur: 15, scale: 1, rotation: -6, fontSize: 70, width: 980, height: 260, y: 280 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.7, width: 1080, height: 2340, rotation: -8, tiltY: 10, shadowBlur: 130, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1400 };
+            const t = ['GO HARDER.', 'TRACK IT ALL.', 'BEAT YOUR BEST.', 'TRAIN SMART.', 'WIN TODAY.'];
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
+        }
+        else if (type === 'gplay-reviews') {
+            presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'color'; bgColor1 = '#fafafa';
+            const tOpt = { type: 'text', color: '#202124', fontFamily: 'Inter', fontWeight: '600', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 50, width: 950, height: 200, y: 420 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.64, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 90, shadowOp: 20, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1450 };
+            const q = ['"Love this app!"', '"Use it every day."', '"Best in class."', '"Highly recommend."', '"Five stars."'];
+            for (let i = 0; i < 5; i++) {
+                layers.push({ id: generateId(), type: 'sticker', stickerId: 'stars', img: stickers['stars'], x: baseWidth*(i+0.5), y: 220, scale: 1.4, width: 250, height: 50, rotation: 0 });
+                layers.push({ id: generateId(), content: q[i], x: baseWidth*(i+0.5), ...tOpt });
+                layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
+            }
+        }
+        else if (type === 'gplay-handheld') {
+            presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
+            bgType = 'gradient'; bgColor1 = '#c9d6ff'; bgColor2 = '#e2e2e2';
+            const tOpt = { type: 'text', color: '#1f2937', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 64, width: 950, height: 220, y: 300 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.74, width: 1080, height: 2340, rotation: -6, tiltY: 22, shadowBlur: 150, shadowOp: 45, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true, y: 1420 };
+            const t = ['In your hand.', 'On the go.', 'Tap. Done.', 'Anywhere.', 'Try it now.'];
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
+        }
+
+        // ==========================================
+        // GOOGLE PLAY (legacy)
+        // ==========================================
         else if (type === 'play-store-cinematic') {
             presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#064e3b'; bgColor2 = '#022c22';
