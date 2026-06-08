@@ -325,6 +325,14 @@ document.addEventListener('DOMContentLoaded', () => {
     paper.style.marginBottom = '0px';
     paper.style.transition = 'none';
 
+    // Flatten the preview frame so its sticky positioning / overflow:hidden
+    // can't clip the full-height paper during capture (otherwise only the
+    // visible portion is rendered — the "half page" bug)
+    wrapper.style.position = 'static';
+    wrapper.style.overflow = 'visible';
+    wrapper.style.maxHeight = 'none';
+    wrapper.style.height = 'auto';
+
     // INJECT OVERRIDE STYLES (html2canvas clones style tags reliably, but fails on inline !important)
     const printStyle = document.createElement('style');
     printStyle.id = 'pdf-export-overrides';
@@ -396,6 +404,12 @@ document.addEventListener('DOMContentLoaded', () => {
       paper.style.transform = savedPaper.transform;
       paper.style.marginBottom = savedPaper.marginBottom;
       paper.style.transition = savedPaper.transition;
+
+      // Restore the preview frame
+      wrapper.style.position = savedWrapper.position;
+      wrapper.style.overflow = savedWrapper.overflow;
+      wrapper.style.maxHeight = savedWrapper.maxHeight;
+      wrapper.style.height = '';
 
       window.scrollTo(0, originalScroll);
 
