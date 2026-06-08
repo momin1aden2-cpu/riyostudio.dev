@@ -38,7 +38,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="apple-touch-icon" href="assets/icon.png">
-  <link rel="stylesheet" href="style.css?v=20260608f">
+  <link rel="stylesheet" href="style.css?v=20260608g">
   <link rel="stylesheet" href="scanner.css">
 
   <!-- Logo Maker Dependencies -->
@@ -328,7 +328,7 @@
                 object-fit: contain;
             }
           </style>
-          <div class="canvas-container tool-bento-panel tint-purple" style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; position: relative; gap: 1rem; padding: 24px;">
+          <div class="canvas-container tool-bento-panel tint-purple" style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; position: sticky; top: 120px; gap: 1rem; padding: 24px;">
             <h3 style="font-size: 1.1rem; color: #fff; margin-bottom: 0.5rem; text-align: center; z-index: 1;">Live Canvas</h3>
             <div style="position: relative; width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
                 <!-- Checkerboard background pattern for transparency visualization -->
@@ -342,14 +342,14 @@
 
             <!-- Export Button -->
             <div style="margin-top: 1rem; width: 100%; max-width: 480px; z-index: 1; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.5rem;">
-                <button id="logo-export-btn" class="nav-cta-btn" style="width: 100%; padding: 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; color: #10B981; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px rgba(16,185,129,0.2);">
+                <button id="logo-export-btn" class="nav-cta-btn" style="width: 100%; padding: 13px; background: linear-gradient(135deg, #34D399, #10B981); border: 1px solid rgba(16, 185, 129, 0.6); border-radius: 10px; color: #04140d; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 8px 24px rgba(16,185,129,0.35);">
                     📥 Download 4K PNG
                 </button>
                 <div style="display: flex; gap: 8px;">
-                    <button id="logo-export-svg-btn" style="flex: 1; padding: 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; color: #10B981; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.2s;">
+                    <button id="logo-export-svg-btn" style="flex: 1; padding: 12px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; color: #10B981; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.2s;">
                         💎 Export Vector SVG
                     </button>
-                    <button id="logo-export-pdf-btn" style="flex: 1; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; color: #ef4444; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.2s;">
+                    <button id="logo-export-pdf-btn" style="flex: 1; padding: 12px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; color: #10B981; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.2s;">
                         📄 Export Print PDF
                     </button>
                 </div>
