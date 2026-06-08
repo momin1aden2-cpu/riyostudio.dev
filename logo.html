@@ -38,7 +38,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="apple-touch-icon" href="assets/icon.png">
-  <link rel="stylesheet" href="style.css?v=20260608">
+  <link rel="stylesheet" href="style.css?v=20260608b">
   <link rel="stylesheet" href="scanner.css">
 
   <!-- Logo Maker Dependencies -->
@@ -111,7 +111,7 @@
         <img src="assets/icon.png" alt="Riyo Studio Logo" class="nav-brand-icon-img" width="32" height="32" style="border-radius: 8px; display: block; object-fit: contain;">
         <div class="nav-brand-text">
           <span class="nav-brand-name">Riyo Studio</span>
-          <span class="nav-brand-tag">SaaS Developer Studio</span>
+          <span class="nav-brand-tag">Local Developer Tools</span>
         </div>
       </a>
 
@@ -138,7 +138,7 @@
             
             
             <div class="tool-bento-panel tint-purple" style="margin-bottom: 8px;">
-                <label style="display: block; font-size: 1.05rem; color: #a78bfa; margin-bottom: 12px; font-weight: bold;">🪄 AI Auto-Generator</label>
+                <label style="display: block; font-size: 1.05rem; color: #10B981; margin-bottom: 12px; font-weight: bold;">🪄 AI Auto-Generator</label>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     <input type="text" id="magic-brand-input" placeholder="Enter Brand Name..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(139, 92, 246, 0.5); background: rgba(0,0,0,0.5); color: #fff; font-size: 1.0rem; box-sizing: border-box;">
                     <button id="magic-generate-btn" style="width: 100%; padding: 14px 20px; background: #8b5cf6; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.0rem; white-space: nowrap; box-sizing: border-box;">✨ Auto-Build Logo</button>
@@ -147,7 +147,7 @@
 
             <!-- ELEMENTS PANEL -->
             <div class="tool-bento-panel tint-blue" style="margin-bottom: 8px;">
-                <label style="display: block; font-size: 1.05rem; color: #3b82f6; margin-bottom: 12px; font-weight: bold;">➕ Add Elements</label>
+                <label style="display: block; font-size: 1.05rem; color: #10B981; margin-bottom: 12px; font-weight: bold;">➕ Add Elements</label>
                 <div class="form-group" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
                   <button id="add-text-btn" class="nav-link" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 1.0rem;">
                     <span style="font-size: 1.3rem;">T</span> Text
@@ -211,7 +211,7 @@
 
             <!-- LAYERS PANEL -->
             <div class="tool-bento-panel tint-blue" style="margin-bottom: 8px;">
-                <label style="display: block; font-size: 1.05rem; color: #3b82f6; margin-bottom: 12px; font-weight: bold;">📚 Layers</label>
+                <label style="display: block; font-size: 1.05rem; color: #10B981; margin-bottom: 12px; font-weight: bold;">📚 Layers</label>
                 <div id="layers-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 150px; overflow-y: auto; padding-right: 4px;">
                     <!-- Layers will be populated dynamically -->
                 </div>
@@ -230,10 +230,10 @@
                         ↪️ Redo
                     </button>
                 </div>
-                <button id="save-proj-btn" style="padding: 10px; background: rgba(59, 130, 246, 0.1); border: 1px dashed rgba(59, 130, 246, 0.5); border-radius: 8px; color: #3b82f6; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <button id="save-proj-btn" style="padding: 10px; background: rgba(16, 185, 129, 0.1); border: 1px dashed rgba(16, 185, 129, 0.5); border-radius: 8px; color: #10B981; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                     💾 Save Project
                 </button>
-                <button id="load-proj-btn" style="padding: 10px; background: rgba(59, 130, 246, 0.1); border: 1px dashed rgba(59, 130, 246, 0.5); border-radius: 8px; color: #3b82f6; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <button id="load-proj-btn" style="padding: 10px; background: rgba(16, 185, 129, 0.1); border: 1px dashed rgba(16, 185, 129, 0.5); border-radius: 8px; color: #10B981; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                     📂 Load Project
                 </button>
 
@@ -344,7 +344,7 @@
                     📥 Download 4K PNG
                 </button>
                 <div style="display: flex; gap: 8px;">
-                    <button id="logo-export-svg-btn" style="flex: 1; padding: 12px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; color: #3b82f6; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.2s;">
+                    <button id="logo-export-svg-btn" style="flex: 1; padding: 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; color: #10B981; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.2s;">
                         💎 Export Vector SVG
                     </button>
                     <button id="logo-export-pdf-btn" style="flex: 1; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; color: #ef4444; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.2s;">
@@ -372,7 +372,7 @@
             <img src="assets/icon.png" alt="Riyo Studio Logo" class="nav-brand-icon-img" width="32" height="32" style="border-radius: 8px; display: block; object-fit: contain;">
             <div class="nav-brand-text">
               <span class="nav-brand-name">Riyo Studio</span>
-              <span class="nav-brand-tag">SaaS Developer Studio</span>
+              <span class="nav-brand-tag">Local Developer Tools</span>
             </div>
           </a>
           <p>
