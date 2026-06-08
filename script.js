@@ -35,7 +35,7 @@
 
     if (mode === 'ios') {
       banner.innerHTML = `
-        <img src="assets/icon.png" class="pwa-icon" alt="Riyo Studio">
+        <img src="assets/icon.svg" class="pwa-icon" alt="Riyo Studio">
         <div class="pwa-text">
           <strong>Add to Home Screen</strong>
           <span>Tap <b style="color:#10B981">Share ↑</b> then "Add to Home Screen"</span>
@@ -44,7 +44,7 @@
       `;
     } else {
       banner.innerHTML = `
-        <img src="assets/icon.png" class="pwa-icon" alt="Riyo Studio">
+        <img src="assets/icon.svg" class="pwa-icon" alt="Riyo Studio">
         <div class="pwa-text">
           <strong>Add Riyo Studio to Home Screen</strong>
           <span>Instant access · Works offline · No app store</span>
