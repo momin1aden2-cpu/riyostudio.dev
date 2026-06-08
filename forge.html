@@ -40,7 +40,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="apple-touch-icon" href="assets/icon.png">
-  <link rel="stylesheet" href="style.css?v=20260608b">
+  <link rel="stylesheet" href="style.css?v=20260608c">
   <link rel="stylesheet" href="scanner.css">
 
   <script src="papaparse.min.js" defer></script>
@@ -77,7 +77,11 @@
 
   <main class="scanner-main" style="padding-top: 100px; padding-bottom: 40px; min-height: calc(100vh - 300px); position: relative; z-index: 10;">
     <div class="container">
-      <div class="forge-dashboard" style="margin-top: 2rem;">
+      <div class="tool-header" style="margin-top: 2rem;">
+        <h1 class="tool-header-title">⚒️ File <span class="accent">Forge</span></h1>
+        <p class="tool-header-subtitle">A 12-in-1 toolkit — convert media, compress images, merge &amp; sign PDFs, decode JWTs, scrub EXIF, run OCR and transcribe audio. Every byte stays in your browser.</p>
+      </div>
+      <div class="forge-dashboard">
         <div class="forge-sidebar">
           <button class="forge-tab-btn active" data-target="view-converter">
             <div class="btn-title">🔄 Media Converter</div>
@@ -575,7 +579,7 @@
           <div class="bento-card-body">
             <div id="ocr-dropzone" class="scanner-dropzone">
               <input type="file" id="ocr-input" accept="image/jpeg, image/png, image/webp, audio/*, video/*" style="display: none;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="dropzone-icon" style="color: #A78BFA; width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.8;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="dropzone-icon" style="color: #10B981; width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.8;">
                 <path d="M4 7V4h16v3M9 20h6M12 4v16"/>
               </svg>
               <p>Drag & Drop an Image, Audio, or Video file</p>
@@ -584,7 +588,7 @@
             <!-- Sleek Progress UI -->
             <div id="ocr-progress-container" style="display: none; margin-top: 1rem;">
               <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-family: 'JetBrains Mono'; font-size: 0.8rem;">
-                <span id="ocr-status-text" style="color: #A78BFA;">Initializing Engine...</span>
+                <span id="ocr-status-text" style="color: #10B981;">Initializing Engine...</span>
                 <span id="ocr-percentage" style="color: var(--text-main);">0%</span>
               </div>
               <div class="ocr-progress-track">

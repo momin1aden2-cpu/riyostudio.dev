@@ -835,24 +835,46 @@ section {
   flex-shrink: 0;
 }
 
-.tool-bento-panel.tint-purple {
-  background: rgba(139, 92, 246, 0.05);
-  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.25), 0 8px 24px rgba(0, 0, 0, 0.3);
-}
-
-.tool-bento-panel.tint-pink {
-  background: rgba(236, 72, 153, 0.05);
-  box-shadow: inset 0 0 0 1px rgba(236, 72, 153, 0.25), 0 8px 24px rgba(0, 0, 0, 0.3);
-}
-
-.tool-bento-panel.tint-blue {
-  background: rgba(16, 185, 129, 0.05);
-  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.25), 0 8px 24px rgba(0, 0, 0, 0.3);
-}
-
+/* All panel tints resolve to the emerald master theme.
+   Legacy tint-* class names are kept so existing markup stays valid. */
+.tool-bento-panel.tint-purple,
+.tool-bento-panel.tint-pink,
+.tool-bento-panel.tint-blue,
 .tool-bento-panel.tint-emerald {
   background: rgba(16, 185, 129, 0.05);
   box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.25), 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* ==== Unified tool page header ==== */
+.tool-header {
+  margin-bottom: 28px;
+}
+
+.tool-header-title {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 10px;
+  background: linear-gradient(180deg, #ffffff 30%, rgba(255, 255, 255, 0.7) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.tool-header-title .accent,
+.tool-header-title em {
+  -webkit-text-fill-color: var(--accent);
+  color: var(--accent);
+  font-style: normal;
+}
+
+.tool-header-subtitle {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--text-muted);
+  max-width: 560px;
+  margin: 0 0 24px;
 }
 
 /* Products Grid Fallback (Deprecated, migrating to Bento) */
@@ -2078,7 +2100,7 @@ html.supernova body {
 .ocr-progress-fill {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, #A78BFA, #C084FC);
+  background: linear-gradient(90deg, #10B981, #34D399);
   border-radius: 4px;
   transition: width 0.2s ease-out;
   box-shadow: 0 0 10px rgba(167, 139, 250, 0.5);
@@ -2577,7 +2599,7 @@ html.supernova body {
   background: linear-gradient(135deg, #059669, #10B981);
 }
 .mobile-tool-fab.fab-logo {
-  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  background: linear-gradient(135deg, #059669, #10B981);
 }
 .mobile-tool-fab.fab-qr {
   background: linear-gradient(135deg, #10B981, #14b8a6);
@@ -2699,8 +2721,8 @@ html.supernova body {
   }
 
   /* Hide headers on mobile to save space */
-  .invoice-header-title,
-  .invoice-header-subtitle,
+  .invoice-container .tool-header-title,
+  .invoice-container .tool-header-subtitle,
   .invoice-container .canvas-wrapper > div:not(#a4-paper) {
     display: none !important;
   }
