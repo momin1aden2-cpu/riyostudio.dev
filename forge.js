@@ -46,11 +46,11 @@ function initUniversalConverter() {
   let ffmpegInstance = null;
 
   dropzone.addEventListener('click', () => fileInput.click());
-  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#F59E0B'; });
-  dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(245,158,11,0.3)');
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#34D399'; });
+  dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)');
   dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropzone.style.borderColor = 'rgba(245,158,11,0.3)';
+    dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)';
     if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
   });
   fileInput.addEventListener('change', (e) => {
@@ -59,7 +59,7 @@ function initUniversalConverter() {
 
   function handleFile(file) {
     currentFile = file;
-    dropzone.querySelector('p').innerHTML = `Loaded: <span style="color: #F59E0B;">${file.name}</span> (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+    dropzone.querySelector('p').innerHTML = `Loaded: <span style="color: #10B981;">${file.name}</span> (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
     
     formatOptions.innerHTML = '';
     forgeBtn.textContent = '[ SELECT A FORMAT ]';
@@ -113,8 +113,8 @@ function initUniversalConverter() {
           c.style.borderColor = 'rgba(255,255,255,0.2)';
           c.style.color = 'var(--text-main)';
         });
-        btn.style.borderColor = '#F59E0B';
-        btn.style.color = '#F59E0B';
+        btn.style.borderColor = '#10B981';
+        btn.style.color = '#10B981';
         
         targetFormat = fmt;
         forgeBtn.textContent = `[ CONVERT TO ${fmt.toUpperCase()} ]`;
@@ -345,11 +345,11 @@ function initHeicDecoder() {
   let currentFile = null;
 
   dropzone.addEventListener('click', () => fileInput.click());
-  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#4ADE80'; });
-  dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(74,222,128,0.3)');
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#34D399'; });
+  dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)');
   dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropzone.style.borderColor = 'rgba(74,222,128,0.3)';
+    dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)';
     if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
   });
   fileInput.addEventListener('change', (e) => {
@@ -362,7 +362,7 @@ function initHeicDecoder() {
       return;
     }
     currentFile = file;
-    dropzone.querySelector('p').innerHTML = `Loaded: <span style="color: #4ADE80;">${file.name}</span>`;
+    dropzone.querySelector('p').innerHTML = `Loaded: <span style="color: #10B981;">${file.name}</span>`;
     controls.style.display = 'block';
     status.textContent = '';
   }
@@ -412,11 +412,11 @@ function initTargetCompressor() {
   let currentFile = null;
 
   dropzone.addEventListener('click', () => fileInput.click());
-  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#5B8DEF'; });
-  dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(91,141,239,0.3)');
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#34D399'; });
+  dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)');
   dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropzone.style.borderColor = 'rgba(91,141,239,0.3)';
+    dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)';
     if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
   });
   fileInput.addEventListener('change', (e) => {
@@ -430,7 +430,7 @@ function initTargetCompressor() {
     }
     currentFile = file;
     const mbSize = (file.size / 1024 / 1024).toFixed(2);
-    dropzone.querySelector('p').innerHTML = `Loaded: <span style="color: #5B8DEF;">${file.name}</span>`;
+    dropzone.querySelector('p').innerHTML = `Loaded: <span style="color: #10B981;">${file.name}</span>`;
     fileInfo.textContent = `Current Size: ${mbSize} MB`;
     targetInput.value = (Math.max(0.1, mbSize * 0.5)).toFixed(2); // Default to half size
     controls.style.display = 'block';
@@ -445,14 +445,14 @@ function initTargetCompressor() {
     const currentMB = currentFile.size / 1024 / 1024;
     if (targetMB >= currentMB) {
       status.textContent = `Error: The image is already smaller than ${targetMB} MB!`;
-      status.style.color = '#F59E0B';
+      status.style.color = '#10B981';
       return;
     }
 
     btn.disabled = true;
     btn.textContent = '[ COMPRESSING... ]';
     status.textContent = 'Compressing via Web Worker...';
-    status.style.color = '#5B8DEF';
+    status.style.color = '#10B981';
     
     try {
       const options = {
@@ -521,11 +521,11 @@ function initPdfSigner() {
   }
 
   dropzone.addEventListener('click', () => fileInput.click());
-  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#10B981'; });
-  dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(16,185,129,0.3)');
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#34D399'; });
+  dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)');
   dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropzone.style.borderColor = 'rgba(16,185,129,0.3)';
+    dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)';
     if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
   });
   fileInput.addEventListener('change', (e) => {
@@ -792,11 +792,11 @@ function initExpenseFlattener() {
   let files = [];
 
   dropzone.addEventListener('click', () => fileInput.click());
-  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#F87171'; });
-  dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(248,113,113,0.3)');
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#34D399'; });
+  dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)');
   dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropzone.style.borderColor = 'rgba(248,113,113,0.3)';
+    dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)';
     handleFiles(e.dataTransfer.files);
   });
   fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
@@ -1172,16 +1172,16 @@ function initTextExtractor() {
   
   dropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
-    dropzone.style.borderColor = '#A78BFA';
+    dropzone.style.borderColor = '#34D399';
   });
   
   dropzone.addEventListener('dragleave', () => {
-    dropzone.style.borderColor = 'rgba(167,139,250,0.3)';
+    dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)';
   });
   
   dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropzone.style.borderColor = 'rgba(167,139,250,0.3)';
+    dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)';
     if (e.dataTransfer.files.length > 0) {
       handleOcrFile(e.dataTransfer.files[0]);
     }
@@ -1364,7 +1364,7 @@ function initGhostMaker() {
   });
   dropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
-    dropzone.style.borderColor = '#10B981';
+    dropzone.style.borderColor = '#34D399';
     dropzone.style.background = 'rgba(16, 185, 129, 0.1)';
   });
   dropzone.addEventListener('dragleave', (e) => {
@@ -1746,11 +1746,11 @@ function initDataConverter() {
 
   // --- File Drop Logic ---
   dropzone.addEventListener('click', () => fileInput.click());
-  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#5B8DEF'; });
-  dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(91,141,239,0.3)');
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#34D399'; });
+  dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)');
   dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropzone.style.borderColor = 'rgba(91,141,239,0.3)';
+    dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)';
     if (e.dataTransfer.files.length > 0) processFile(e.dataTransfer.files[0]);
   });
   fileInput.addEventListener('change', (e) => {
@@ -1924,18 +1924,18 @@ function initBulkOptimizer() {
 
   dropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
-    dropzone.style.borderColor = '#6366F1';
+    dropzone.style.borderColor = '#34D399';
     dropzone.style.background = 'rgba(99, 102, 241, 0.1)';
   });
 
   dropzone.addEventListener('dragleave', () => {
-    dropzone.style.borderColor = 'rgba(99, 102, 241, 0.3)';
+    dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)';
     dropzone.style.background = 'rgba(99, 102, 241, 0.02)';
   });
 
   dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropzone.style.borderColor = 'rgba(99, 102, 241, 0.3)';
+    dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)';
     dropzone.style.background = 'rgba(99, 102, 241, 0.02)';
     if (e.dataTransfer.files.length > 0) handleBulkFiles(e.dataTransfer.files);
   });
@@ -2227,18 +2227,18 @@ function initBackgroundRemover() {
 
   dropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
-    dropzone.style.borderColor = '#EC4899';
+    dropzone.style.borderColor = '#34D399';
     dropzone.style.background = 'rgba(236, 72, 153, 0.1)';
   });
 
   dropzone.addEventListener('dragleave', () => {
-    dropzone.style.borderColor = 'rgba(236, 72, 153, 0.3)';
+    dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)';
     dropzone.style.background = 'rgba(236, 72, 153, 0.02)';
   });
 
   dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropzone.style.borderColor = 'rgba(236, 72, 153, 0.3)';
+    dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)';
     dropzone.style.background = 'rgba(236, 72, 153, 0.02)';
     if (e.dataTransfer.files.length > 0) processBgImage(e.dataTransfer.files[0]);
   });
