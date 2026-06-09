@@ -6,14 +6,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const playBtn = document.getElementById('vs-play');
   const timeLabel = document.getElementById('vs-time');
   const track = document.getElementById('vs-track');
-  const region = document.getElementById('vs-region');
   const playhead = document.getElementById('vs-playhead');
-  const inSlider = document.getElementById('vs-in');
-  const outSlider = document.getElementById('vs-out');
-  const setInBtn = document.getElementById('vs-set-in');
-  const setOutBtn = document.getElementById('vs-set-out');
-  const rangeLabel = document.getElementById('vs-range-label');
-  const addSegBtn = document.getElementById('vs-add-segment');
+  const keepLeftEl = document.getElementById('vs-keep-left');
+  const cutBandEl = document.getElementById('vs-cut-band');
+  const keepRightEl = document.getElementById('vs-keep-right');
+  const handleLEl = document.getElementById('vs-handle-l');
+  const handleREl = document.getElementById('vs-handle-r');
+  const cutMidBtn = document.getElementById('vs-cut-mid-btn');
+  const keepWholeBtn = document.getElementById('vs-keep-whole');
   const sourcesEl = document.getElementById('vs-sources');
   const addMoreBtn = document.getElementById('vs-add-more');
   const segmentsEl = document.getElementById('vs-segments');
@@ -34,11 +34,11 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   let sources = [];
-  let segments = [];
   let activeId = null;
   let uid = 0;
   let ffmpegInstance = null;
   let overallBase = 0, overallTotal = 1, exportStart = 0;
+  let fontLoaded = {};
 
   const fmtTime = (s) => {
     if (!isFinite(s) || s < 0) s = 0;
@@ -53,7 +53,16 @@ document.addEventListener('DOMContentLoaded', () => {
     return new Promise((resolve) => {
       const v = document.createElement('video');
       v.preload = 'metadata';
-      v.onloadedmetadata = () => resolve({ duration: v.duration || 0, w: v.videoWidth, h: v.videoHeight });
+      const done = (d) => resolve({ duration: (isFinite(d) && d > 0) ? d : 0, w: v.videoWidth, h: v.videoHeight });
+      v.onloadedmetadata = () => {
+        if (v.duration === Infinity || isNaN(v.duration)) {
+          // Some WebM / recorded files report Infinity until seeked — force a real duration
+          v.ontimeupdate = () => { v.ontimeupdate = null; const d = v.duration; v.currentTime = 0; done(d); };
+          v.currentTime = 1e7;
+        } else {
+          done(v.duration);
+        }
+      };
       v.onerror = () => resolve({ duration: 0, w: 0, h: 0 });
       v.src = url;
     });
@@ -65,7 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
     for (const file of files) {
       const url = URL.createObjectURL(file);
       const meta = await getDuration(url);
-      sources.push({ id: ++uid, file, url, name: file.name, duration: meta.duration, w: meta.w, h: meta.h });
+      const src = { id: ++uid, file, url, name: file.name, duration: meta.duration, w: meta.w, h: meta.h, cutStart: meta.duration, cutEnd: meta.duration };
+      sources.push(src);
     }
     dropzone.style.display = 'none';
     editor.style.display = 'block';
@@ -79,10 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!s) return;
     video.src = s.url;
     video.currentTime = 0;
-    inSlider.min = 0; inSlider.max = s.duration; inSlider.step = 0.01; inSlider.value = 0;
-    outSlider.min = 0; outSlider.max = s.duration; outSlider.step = 0.01; outSlider.value = s.duration;
-    updateRange();
     renderSources();
+    renderTimeline();
   }
 
   function renderSources() {
@@ -98,18 +106,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function inVal() { return Math.min(parseFloat(inSlider.value), parseFloat(outSlider.value) - 0.1); }
-  function outVal() { return Math.max(parseFloat(outSlider.value), parseFloat(inSlider.value) + 0.1); }
-
-  function updateRange() {
-    const s = activeSource();
-    if (!s || !s.duration) return;
-    const i = inVal(), o = outVal();
-    inSlider.value = i; outSlider.value = o;
-    region.style.left = (i / s.duration * 100) + '%';
-    region.style.width = ((o - i) / s.duration * 100) + '%';
-    rangeLabel.textContent = `In ${fmtTime(i)} · Out ${fmtTime(o)} · ${fmtTime(o - i)} kept`;
-  }
+  const clampTime = (t, dur) => Math.min(dur, Math.max(0, t));
+  const hasCut = (s) => s && s.cutStart < s.cutEnd - 0.05;
 
   function updatePlayhead() {
     const s = activeSource();
@@ -118,63 +116,96 @@ document.addEventListener('DOMContentLoaded', () => {
     timeLabel.textContent = `${fmtTime(video.currentTime)} / ${fmtTime(s.duration)}`;
   }
 
+  // ── Timeline: keep green start + end, remove red middle ───────────
+  function renderTimeline() {
+    const s = activeSource();
+    if (!s || !s.duration) return;
+    const d = s.duration, cut = hasCut(s);
+    const a = cut ? s.cutStart : 0, b = cut ? s.cutEnd : d;
+    if (keepLeftEl) { keepLeftEl.style.left = '0%'; keepLeftEl.style.width = (cut ? a / d * 100 : 100) + '%'; }
+    if (cutBandEl) { cutBandEl.style.display = cut ? 'block' : 'none'; cutBandEl.style.left = (a / d * 100) + '%'; cutBandEl.style.width = ((b - a) / d * 100) + '%'; }
+    if (keepRightEl) { keepRightEl.style.display = cut ? 'block' : 'none'; keepRightEl.style.left = (b / d * 100) + '%'; keepRightEl.style.width = ((d - b) / d * 100) + '%'; }
+    if (handleLEl) { handleLEl.classList.toggle('hidden', !cut); handleLEl.style.left = (a / d * 100) + '%'; }
+    if (handleREl) { handleREl.classList.toggle('hidden', !cut); handleREl.style.left = (b / d * 100) + '%'; }
+    updatePlayhead();
+    renderSummary();
+  }
+
+  function renderSummary() {
+    if (!segmentsEl) return;
+    const s = activeSource();
+    if (!s) { segmentsEl.innerHTML = ''; return; }
+    if (hasCut(s)) {
+      segmentsEl.innerHTML = `<div class="vs-segment"><div class="vs-name">Keeping 0:00–${fmtTime(s.cutStart)} + ${fmtTime(s.cutEnd)}–${fmtTime(s.duration)}</div></div>`;
+      if (timelineDur) timelineDur.textContent = `−${fmtTime(s.cutEnd - s.cutStart)} removed`;
+    } else {
+      segmentsEl.innerHTML = `<div class="vs-segment"><div class="vs-name">Whole video kept (${fmtTime(s.duration)})</div></div>`;
+      if (timelineDur) timelineDur.textContent = '';
+    }
+  }
+
+  function startMiddleCut() {
+    const s = activeSource();
+    if (!s) return;
+    s.cutStart = s.duration * 0.4;
+    s.cutEnd = s.duration * 0.6;
+    renderTimeline();
+  }
+
+  function keepWhole() {
+    const s = activeSource();
+    if (!s) return;
+    s.cutStart = s.duration; s.cutEnd = s.duration;
+    renderTimeline();
+  }
+
+  function dragHandle(which) {
+    return (e) => {
+      e.preventDefault();
+      const s = activeSource();
+      if (!s) return;
+      const rect = track.getBoundingClientRect();
+      const move = (ev) => {
+        const t = clampTime(((ev.clientX - rect.left) / rect.width) * s.duration, s.duration);
+        if (which === 'L') s.cutStart = Math.min(t, s.cutEnd);
+        else s.cutEnd = Math.max(t, s.cutStart);
+        const seekT = clampTime(which === 'L' ? s.cutStart : s.cutEnd, s.duration);
+        if (isFinite(seekT)) video.currentTime = seekT;
+        renderTimeline();
+      };
+      const up = () => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); };
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', up);
+    };
+  }
+
   // ── Playback ──────────────────────────────────────────────────────
   playBtn.addEventListener('click', () => { if (video.paused) video.play(); else video.pause(); });
   video.addEventListener('play', () => { playBtn.textContent = '❚❚'; });
   video.addEventListener('pause', () => { playBtn.textContent = '▶'; });
-  video.addEventListener('timeupdate', updatePlayhead);
-  video.addEventListener('loadedmetadata', updatePlayhead);
+  video.addEventListener('timeupdate', () => {
+    const s = activeSource();
+    if (hasCut(s)) {
+      const t = video.currentTime;
+      if (t >= s.cutStart - 0.05 && t < s.cutEnd) video.currentTime = s.cutEnd;
+    }
+    updatePlayhead();
+  });
+  video.addEventListener('loadedmetadata', renderTimeline);
 
   track.addEventListener('click', (e) => {
     const s = activeSource();
-    if (!s || !s.duration) return;
+    if (!s || !isFinite(s.duration) || !s.duration || e.target === handleLEl || e.target === handleREl) return;
     const rect = track.getBoundingClientRect();
     const frac = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-    video.currentTime = frac * s.duration;
+    const t = frac * s.duration;
+    if (isFinite(t)) video.currentTime = t;
   });
 
-  inSlider.addEventListener('input', () => { updateRange(); video.currentTime = inVal(); });
-  outSlider.addEventListener('input', () => { updateRange(); video.currentTime = outVal(); });
-  setInBtn.addEventListener('click', () => { inSlider.value = video.currentTime; updateRange(); });
-  setOutBtn.addEventListener('click', () => { outSlider.value = video.currentTime; updateRange(); });
-
-  // ── Segments ──────────────────────────────────────────────────────
-  addSegBtn.addEventListener('click', () => {
-    const s = activeSource();
-    if (!s) return;
-    segments.push({ id: ++uid, sourceId: s.id, in: inVal(), out: outVal() });
-    renderSegments();
-  });
-
-  function moveSegment(idx, dir) {
-    const j = idx + dir;
-    if (j < 0 || j >= segments.length) return;
-    [segments[idx], segments[j]] = [segments[j], segments[idx]];
-    renderSegments();
-  }
-
-  function renderSegments() {
-    segmentsEl.innerHTML = '';
-    let total = 0;
-    segments.forEach((seg, idx) => {
-      const src = sources.find((x) => x.id === seg.sourceId);
-      const dur = seg.out - seg.in;
-      total += dur;
-      const row = document.createElement('div');
-      row.className = 'vs-segment';
-      const order = document.createElement('span'); order.className = 'vs-meta'; order.textContent = (idx + 1) + '.';
-      const name = document.createElement('div'); name.className = 'vs-name';
-      name.textContent = (src ? src.name : 'clip');
-      const meta = document.createElement('div'); meta.className = 'vs-meta'; meta.textContent = `${fmtTime(seg.in)}–${fmtTime(seg.out)}`;
-      const up = document.createElement('button'); up.className = 'vs-mini'; up.textContent = '↑'; up.addEventListener('click', () => moveSegment(idx, -1));
-      const down = document.createElement('button'); down.className = 'vs-mini'; down.textContent = '↓'; down.addEventListener('click', () => moveSegment(idx, 1));
-      const del = document.createElement('button'); del.className = 'vs-mini danger'; del.textContent = '✕';
-      del.addEventListener('click', () => { segments.splice(idx, 1); renderSegments(); });
-      row.appendChild(order); row.appendChild(name); row.appendChild(meta); row.appendChild(up); row.appendChild(down); row.appendChild(del);
-      segmentsEl.appendChild(row);
-    });
-    timelineDur.textContent = segments.length ? fmtTime(total) + ' total' : '';
-  }
+  if (handleLEl) handleLEl.addEventListener('pointerdown', dragHandle('L'));
+  if (handleREl) handleREl.addEventListener('pointerdown', dragHandle('R'));
+  if (cutMidBtn) cutMidBtn.addEventListener('click', startMiddleCut);
+  if (keepWholeBtn) keepWholeBtn.addEventListener('click', keepWhole);
 
   // ── Upload wiring ─────────────────────────────────────────────────
   dropzone.addEventListener('click', () => fileInput.click());
@@ -183,6 +214,160 @@ document.addEventListener('DOMContentLoaded', () => {
   ['dragenter', 'dragover'].forEach((ev) => dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.add('dragover'); }));
   ['dragleave', 'drop'].forEach((ev) => dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.remove('dragover'); }));
   dropzone.addEventListener('drop', (e) => { if (e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files); });
+
+  // ── Text & Titles ─────────────────────────────────────────────────
+  const overlay = document.getElementById('vs-overlay');
+  const addTextBtn = document.getElementById('vs-add-text');
+  const textListEl = document.getElementById('vs-text-list');
+  const textEditor = document.getElementById('vs-text-editor');
+  const tContent = document.getElementById('vs-text-content');
+  const tFont = document.getElementById('vs-text-font');
+  const tSize = document.getElementById('vs-text-size');
+  const tColor = document.getElementById('vs-text-color');
+  const tBg = document.getElementById('vs-text-bg');
+  const tWhole = document.getElementById('vs-text-whole');
+  const tTiming = document.getElementById('vs-text-timing');
+  const tSetIn = document.getElementById('vs-text-setin');
+  const tSetOut = document.getElementById('vs-text-setout');
+  const tTimeLabel = document.getElementById('vs-text-timelabel');
+  const tDelete = document.getElementById('vs-text-delete');
+  const presetBtns = document.querySelectorAll('.vs-preset');
+  const posBtns = document.querySelectorAll('.vs-pos-btns [data-pos]');
+
+  const FONTS_VS = {
+    inter: { file: 'Inter-Bold.ttf', css: "'VS Inter', sans-serif" },
+    anton: { file: 'Anton.ttf', css: "'VS Anton', sans-serif" },
+    montserrat: { file: 'Montserrat-Bold.ttf', css: "'VS Montserrat', sans-serif" }
+  };
+  const TEXT_PRESETS = {
+    clean: { font: 'inter', sizeFrac: 0.06, color: '#ffffff', bg: false, cy: 0.5 },
+    bold: { font: 'anton', sizeFrac: 0.10, color: '#ffffff', bg: false, cy: 0.5 },
+    caption: { font: 'montserrat', sizeFrac: 0.05, color: '#ffffff', bg: true, cy: 0.86 }
+  };
+  let texts = [];
+  let selectedTextId = null;
+  const selectedText = () => texts.find((t) => t.id === selectedTextId) || null;
+  const overlayH = () => (overlay ? overlay.clientHeight : 0);
+
+  function addTextOverlay(presetKey) {
+    const p = TEXT_PRESETS[presetKey] || TEXT_PRESETS.clean;
+    texts.push({ id: ++uid, content: 'Your text', font: p.font, sizeFrac: p.sizeFrac, color: p.color, bg: p.bg, cx: 0.5, cy: p.cy, whole: true, start: 0, end: 0, _el: null });
+    selectedTextId = uid;
+    renderOverlay(); renderTextList(); syncEditor();
+    if (tContent) { tContent.focus(); tContent.select(); }
+  }
+
+  function renderTextList() {
+    if (!textListEl) return;
+    textListEl.innerHTML = '';
+    texts.forEach((t) => {
+      const row = document.createElement('div');
+      row.className = 'vs-text-row' + (t.id === selectedTextId ? ' active' : '');
+      const name = document.createElement('div'); name.className = 'vs-name'; name.textContent = t.content || '(empty)';
+      row.appendChild(name);
+      row.addEventListener('click', () => { selectedTextId = t.id; renderOverlay(); renderTextList(); syncEditor(); });
+      textListEl.appendChild(row);
+    });
+    if (textEditor) textEditor.style.display = (texts.length && selectedText()) ? 'flex' : 'none';
+  }
+
+  function renderOverlay() {
+    if (!overlay) return;
+    overlay.innerHTML = '';
+    const h = overlayH();
+    texts.forEach((t) => {
+      const el = document.createElement('div');
+      el.className = 'vs-text-item' + (t.bg ? ' has-bg' : '') + (t.id === selectedTextId ? ' selected' : '');
+      el.textContent = t.content;
+      el.style.left = (t.cx * 100) + '%';
+      el.style.top = (t.cy * 100) + '%';
+      el.style.fontFamily = FONTS_VS[t.font].css;
+      el.style.fontSize = Math.max(8, t.sizeFrac * h) + 'px';
+      el.style.color = t.color;
+      t._el = el;
+      attachDrag(el, t);
+      overlay.appendChild(el);
+    });
+    updateTextVisibility();
+  }
+
+  function updateTextVisibility() {
+    const now = video.currentTime || 0;
+    texts.forEach((t) => {
+      if (!t._el) return;
+      t._el.style.display = (t.whole || (now >= t.start && now <= (t.end || 1e9))) ? '' : 'none';
+    });
+  }
+
+  function attachDrag(el, t) {
+    el.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      selectedTextId = t.id; renderTextList(); syncEditor();
+      texts.forEach((x) => x._el && x._el.classList.toggle('selected', x.id === t.id));
+      const rect = overlay.getBoundingClientRect();
+      const move = (ev) => {
+        t.cx = Math.min(1, Math.max(0, (ev.clientX - rect.left) / rect.width));
+        t.cy = Math.min(1, Math.max(0, (ev.clientY - rect.top) / rect.height));
+        el.style.left = (t.cx * 100) + '%';
+        el.style.top = (t.cy * 100) + '%';
+      };
+      const up = () => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); };
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', up);
+    });
+  }
+
+  function syncEditor() {
+    const t = selectedText();
+    if (!textEditor) return;
+    if (!t) { textEditor.style.display = 'none'; return; }
+    textEditor.style.display = 'flex';
+    tContent.value = t.content;
+    tFont.value = t.font;
+    tSize.value = (t.sizeFrac * 100).toFixed(1);
+    tColor.value = t.color;
+    tBg.checked = t.bg;
+    tWhole.checked = t.whole;
+    tTiming.style.display = t.whole ? 'none' : 'flex';
+    tTimeLabel.textContent = t.whole ? '' : `${fmtTime(t.start)}–${fmtTime(t.end)}`;
+  }
+
+  function updateSelected(fn) { const t = selectedText(); if (!t) return; fn(t); renderOverlay(); renderTextList(); }
+
+  if (addTextBtn) addTextBtn.addEventListener('click', () => addTextOverlay('clean'));
+  if (tContent) tContent.addEventListener('input', () => updateSelected((t) => { t.content = tContent.value; }));
+  if (tFont) tFont.addEventListener('change', () => updateSelected((t) => { t.font = tFont.value; }));
+  if (tSize) tSize.addEventListener('input', () => updateSelected((t) => { t.sizeFrac = parseFloat(tSize.value) / 100; }));
+  if (tColor) tColor.addEventListener('input', () => updateSelected((t) => { t.color = tColor.value; }));
+  if (tBg) tBg.addEventListener('change', () => updateSelected((t) => { t.bg = tBg.checked; }));
+  if (tWhole) tWhole.addEventListener('change', () => {
+    updateSelected((t) => {
+      t.whole = tWhole.checked;
+      if (!t.whole && !t.end) { t.start = video.currentTime; const d = activeSource() ? activeSource().duration : t.start + 3; t.end = Math.min(d, t.start + 3); }
+    });
+    syncEditor();
+  });
+  if (tSetIn) tSetIn.addEventListener('click', () => { updateSelected((t) => { t.start = video.currentTime; }); syncEditor(); });
+  if (tSetOut) tSetOut.addEventListener('click', () => { updateSelected((t) => { t.end = video.currentTime; }); syncEditor(); });
+  if (tDelete) tDelete.addEventListener('click', () => {
+    texts = texts.filter((t) => t.id !== selectedTextId);
+    selectedTextId = texts.length ? texts[texts.length - 1].id : null;
+    renderOverlay(); renderTextList(); syncEditor();
+  });
+  presetBtns.forEach((b) => b.addEventListener('click', () => {
+    const p = TEXT_PRESETS[b.dataset.preset]; if (!p) return;
+    updateSelected((t) => { t.font = p.font; t.sizeFrac = p.sizeFrac; t.color = p.color; t.bg = p.bg; t.cy = p.cy; });
+    presetBtns.forEach((x) => x.classList.remove('active')); b.classList.add('active');
+    syncEditor();
+  }));
+  posBtns.forEach((b) => b.addEventListener('click', () => {
+    const map = { top: 0.12, mid: 0.5, bottom: 0.86 };
+    updateSelected((t) => { t.cy = map[b.dataset.pos]; t.cx = 0.5; });
+  }));
+
+  video.addEventListener('timeupdate', updateTextVisibility);
+  video.addEventListener('loadedmetadata', renderOverlay);
+  window.addEventListener('resize', renderOverlay);
 
   // ── FFmpeg ────────────────────────────────────────────────────────
   function loadFFmpegScript() {
@@ -238,7 +423,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   exportBtn.addEventListener('click', async () => {
-    if (!segments.length) { status('Add at least one segment to the timeline first.'); return; }
+    const exportClips = [];
+    sources.forEach((s) => {
+      if (hasCut(s)) {
+        if (s.cutStart > 0.05) exportClips.push({ sourceId: s.id, start: 0, end: s.cutStart });
+        if (s.cutEnd < s.duration - 0.05) exportClips.push({ sourceId: s.id, start: s.cutEnd, end: s.duration });
+      } else {
+        exportClips.push({ sourceId: s.id, start: 0, end: s.duration });
+      }
+    });
+    if (!exportClips.length) { status('Nothing to export — the whole video was removed.'); return; }
     exportBtn.disabled = true;
     progressWrap.style.display = 'block';
     updateProgress(0);
@@ -253,20 +447,20 @@ document.addEventListener('DOMContentLoaded', () => {
         : ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', String(preset.crf), '-pix_fmt', 'yuv420p'];
       const acodec = fmt === 'webm' ? ['-c:a', 'libopus', '-ar', '48000', '-ac', '2'] : ['-c:a', 'aac', '-ar', '44100', '-ac', '2'];
 
-      overallTotal = segments.length + (segments.length > 1 ? 1 : 0) || 1;
+      overallTotal = (exportClips.length + (exportClips.length > 1 ? 1 : 0) + (texts.length ? 1 : 0)) || 1;
       exportStart = performance.now();
 
       const written = {};
       const segFiles = [];
-      for (let i = 0; i < segments.length; i++) {
-        const seg = segments[i];
+      for (let i = 0; i < exportClips.length; i++) {
+        const seg = exportClips[i];
         const src = sources.find((x) => x.id === seg.sourceId);
         const inName = `src_${seg.sourceId}.${ext(src.name)}`;
         if (!written[inName]) { ffmpegInstance.FS('writeFile', inName, await fetchFile(src.file)); written[inName] = true; }
         const outName = `seg_${i}.${fmt}`;
         overallBase = i;
-        status(`Rendering segment ${i + 1} of ${segments.length}…`);
-        await ffmpegInstance.run('-i', inName, '-ss', String(seg.in), '-to', String(seg.out), '-vf', vf, '-r', '30', ...vcodec, ...acodec, outName);
+        status(`Rendering part ${i + 1} of ${exportClips.length}…`);
+        await ffmpegInstance.run('-i', inName, '-ss', String(seg.start), '-to', String(seg.end), '-vf', vf, '-r', '30', ...vcodec, ...acodec, outName);
         segFiles.push(outName);
       }
 
@@ -275,12 +469,45 @@ document.addEventListener('DOMContentLoaded', () => {
         finalName = segFiles[0];
         updateProgress(1);
       } else {
-        overallBase = segments.length;
-        status('Joining segments…');
+        overallBase = exportClips.length;
+        status('Joining parts…');
         const listTxt = segFiles.map((f) => `file '${f}'`).join('\n');
         ffmpegInstance.FS('writeFile', 'concat.txt', new TextEncoder().encode(listTxt));
         finalName = `final.${fmt}`;
         await ffmpegInstance.run('-f', 'concat', '-safe', '0', '-i', 'concat.txt', '-c', 'copy', finalName);
+        updateProgress(1);
+      }
+
+      // Text & Titles burn-in pass
+      if (texts.length) {
+        overallBase = overallTotal - 1;
+        status('Adding text…');
+        const usedFonts = Array.from(new Set(texts.map((t) => t.font)));
+        for (const fk of usedFonts) {
+          const file = FONTS_VS[fk].file;
+          if (!fontLoaded[file]) {
+            ffmpegInstance.FS('writeFile', file, await fetchFile(new URL('/assets/fonts/' + file, location.href).href));
+            fontLoaded[file] = true;
+          }
+        }
+        const draws = texts.map((t, i) => {
+          ffmpegInstance.FS('writeFile', `txt_${i}.txt`, new TextEncoder().encode(t.content || ' '));
+          const size = Math.max(8, Math.round(t.sizeFrac * preset.h));
+          const col = '0x' + (t.color || '#ffffff').replace('#', '');
+          let d = `drawtext=fontfile=${FONTS_VS[t.font].file}:textfile=txt_${i}.txt:expansion=none`;
+          d += `:fontsize=${size}:fontcolor=${col}`;
+          d += `:x=w*${t.cx.toFixed(4)}-text_w/2:y=h*${t.cy.toFixed(4)}-text_h/2`;
+          if (t.bg) d += `:box=1:boxcolor=black@0.55:boxborderw=${Math.round(size * 0.35)}`;
+          else d += `:shadowcolor=black@0.5:shadowx=2:shadowy=2`;
+          if (!t.whole) d += `:enable=between(t\\,${(+t.start).toFixed(2)}\\,${(+t.end || 1e6).toFixed(2)})`;
+          return d;
+        }).join(',');
+        const textOut = `texted.${fmt}`;
+        const inputMerged = finalName;
+        await ffmpegInstance.run('-i', inputMerged, '-vf', draws, ...vcodec, '-c:a', 'copy', textOut);
+        safeUnlink(inputMerged);
+        for (let i = 0; i < texts.length; i++) safeUnlink(`txt_${i}.txt`);
+        finalName = textOut;
         updateProgress(1);
       }
 
