@@ -1504,11 +1504,12 @@ section {
 
 .email-address {
   display: block;
-  font-size: clamp(20px, 3vw, 30px);
+  font-size: clamp(16px, 4vw, 30px);
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text);
-  word-break: break-all;
+  overflow-wrap: anywhere;
+  word-break: normal;
   margin-bottom: 26px;
   transition: color 0.2s;
 }

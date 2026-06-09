@@ -124,9 +124,9 @@
 
   // Console Greeting
   console.log(
-    "%c RIYO STUDIO \n%c System Architecture Online. \n\n Welcome.",
-    "font-family: 'Inter', sans-serif; font-size: 32px; font-weight: 800; color: #10B981; text-shadow: 0 0 10px rgba(16,185,129,0.5);",
-    "font-family: 'Inter', sans-serif; font-size: 14px; color: #A1A1AA;"
+    "%cRiyo Studio\n%c100% client-side tools — your files never leave your browser.",
+    "font-family: 'Inter', sans-serif; font-size: 26px; font-weight: 800; color: #10B981;",
+    "font-family: 'Inter', sans-serif; font-size: 13px; color: #A1A1AA;"
   );
 
 
