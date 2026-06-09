@@ -1377,5 +1377,172 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ── Brand Kit & Export Pack ──────────────────────────────────────
+  const brandkitBtn = document.getElementById('brandkit-btn');
+  const brandkitModal = document.getElementById('brandkit-modal');
+  const brandkitGrid = document.getElementById('brandkit-grid');
+  const brandkitClose = document.getElementById('brandkit-close');
+  const brandkitZip = document.getElementById('brandkit-zip');
+  const brandkitSize = document.getElementById('brandkit-size');
+  const brandkitTransparent = document.getElementById('brandkit-transparent');
+
+  const VARIATIONS = [
+    { key: 'horizontal', label: 'Horizontal' },
+    { key: 'stacked', label: 'Stacked' },
+    { key: 'icon', label: 'Icon only' },
+    { key: 'monogram', label: 'Monogram' },
+    { key: 'black', label: 'Black' },
+    { key: 'white', label: 'White / reversed' }
+  ];
+  const isSquare = (k) => k === 'icon' || k === 'monogram';
+
+  function cloneObjs(objs) {
+    return Promise.all(objs.map((o) => new Promise((res) => o.clone((c) => res(c)))));
+  }
+  function recolorObj(obj, color) {
+    const apply = (o) => {
+      if (o.fill && o.fill !== 'transparent' && typeof o.fill === 'string') o.set('fill', color);
+      if (o.stroke && o.stroke !== 'transparent') o.set('stroke', color);
+    };
+    if (obj.getObjects) obj.getObjects().forEach(apply);
+    apply(obj);
+  }
+  function firstFill(obj) {
+    if (obj && obj.getObjects) { const f = obj.getObjects().find((o) => o.fill && o.fill !== 'transparent' && typeof o.fill === 'string'); return f ? f.fill : null; }
+    return obj && typeof obj.fill === 'string' ? obj.fill : null;
+  }
+  function getSource() {
+    const objs = canvas.getObjects().filter((o) => o !== bgRect);
+    return {
+      icon: objs.find((o) => o.type === 'group' || o.type === 'path' || o.type === 'image') || null,
+      texts: objs.filter((o) => o.type === 'i-text' || o.type === 'text'),
+      bg: bgRect.fill
+    };
+  }
+  async function buildVariation(key, transparent) {
+    const square = isSquare(key);
+    const W = square ? 1024 : 1600, H = square ? 1024 : 800;
+    const el = document.createElement('canvas'); el.width = W; el.height = H;
+    const tc = new fabric.StaticCanvas(el, { width: W, height: H, enableRetinaScaling: false, renderOnAddRemove: false });
+    const src = getSource();
+
+    if (key === 'white') tc.backgroundColor = '#0B1220';
+    else if (key === 'black') tc.backgroundColor = '#FFFFFF';
+    else if (!transparent) tc.backgroundColor = src.bg;
+
+    let icon = null, texts = [];
+    if (key === 'monogram') {
+      const initials = (src.texts[0] && src.texts[0].text) || 'R';
+      const col = firstFill(src.icon) || '#10B981';
+      icon = buildMark({ icon: col, bg: tc.backgroundColor || '#0B1220', text: tc.backgroundColor || '#0B1220' }, { h: (src.texts[0] && src.texts[0].fontFamily) || 'Clash Display' }, initials, 6);
+    } else {
+      if (src.icon) { const c = await cloneObjs([src.icon]); icon = c[0]; }
+      if (key !== 'icon') texts = await cloneObjs(src.texts);
+    }
+
+    if (key === 'black') { if (icon) recolorObj(icon, '#000000'); texts.forEach((t) => recolorObj(t, '#000000')); }
+    if (key === 'white') { if (icon) recolorObj(icon, '#FFFFFF'); texts.forEach((t) => recolorObj(t, '#FFFFFF')); }
+
+    if (icon) tc.add(icon);
+    texts.forEach((t) => tc.add(t));
+    await document.fonts.ready;
+    texts.forEach((t) => { if (t.initDimensions) t.initDimensions(); });
+
+    if (icon) scaleTo(icon, square ? Math.min(W, H) * 0.6 : H * 0.34);
+
+    if (square) {
+      if (icon) icon.set({ originX: 'center', originY: 'center', left: W / 2, top: H / 2 });
+    } else if (key === 'horizontal') {
+      arrangeLeft(tc, icon, texts[0], texts[1]);
+    } else {
+      arrangeStack(tc, icon, texts[0], texts[1]);
+    }
+    tc.renderAll();
+    return tc;
+  }
+  function triggerDownload(url, name) {
+    const a = document.createElement('a'); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+  async function downloadVariation(key, fmt) {
+    const transparent = brandkitTransparent && brandkitTransparent.checked;
+    const tc = await buildVariation(key, transparent);
+    if (fmt === 'svg') {
+      const blob = new Blob([tc.toSVG()], { type: 'image/svg+xml;charset=utf-8' });
+      triggerDownload(URL.createObjectURL(blob), `riyo-logo-${key}.svg`);
+    } else {
+      let mult = 2, suffix = '';
+      if (isSquare(key)) { const px = parseInt((brandkitSize && brandkitSize.value) || '512', 10) || 512; mult = px / 1024; suffix = `-${px}`; }
+      triggerDownload(tc.toDataURL({ format: 'png', multiplier: mult }), `riyo-logo-${key}${suffix}.png`);
+    }
+    tc.dispose();
+  }
+  function miniBtnStyle() { return 'padding:5px 10px;background:rgba(16,185,129,0.12);color:#10B981;border:1px solid rgba(16,185,129,0.4);border-radius:6px;font-size:0.72rem;font-weight:600;cursor:pointer;'; }
+  function openBrandKit() {
+    if (!brandkitModal || !brandkitGrid) return;
+    const src = getSource();
+    if (!src.icon && src.texts.length === 0) { alert('Add a logo to the canvas first — try Auto-Build.'); return; }
+    brandkitModal.style.display = 'flex';
+    brandkitGrid.innerHTML = '';
+    const transparent = brandkitTransparent && brandkitTransparent.checked;
+    VARIATIONS.forEach((v) => {
+      const card = document.createElement('div');
+      card.style.cssText = 'border:1px solid rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;background:#05080f;display:flex;flex-direction:column;';
+      const thumb = document.createElement('div');
+      thumb.style.cssText = `aspect-ratio:${isSquare(v.key) ? '1/1' : '2/1'};display:flex;align-items:center;justify-content:center;background:#05080f;color:#3a4656;font-size:0.72rem;`;
+      thumb.textContent = 'rendering…';
+      const bar = document.createElement('div');
+      bar.style.cssText = 'display:flex;gap:6px;padding:8px;align-items:center;justify-content:space-between;';
+      const lbl = document.createElement('span'); lbl.textContent = v.label; lbl.style.cssText = 'font-size:0.78rem;color:#cdd6e2;';
+      const btns = document.createElement('div'); btns.style.cssText = 'display:flex;gap:6px;';
+      const pngBtn = document.createElement('button'); pngBtn.textContent = 'PNG'; pngBtn.style.cssText = miniBtnStyle();
+      const svgBtn = document.createElement('button'); svgBtn.textContent = 'SVG'; svgBtn.style.cssText = miniBtnStyle();
+      pngBtn.addEventListener('click', () => downloadVariation(v.key, 'png'));
+      svgBtn.addEventListener('click', () => downloadVariation(v.key, 'svg'));
+      btns.appendChild(pngBtn); btns.appendChild(svgBtn);
+      bar.appendChild(lbl); bar.appendChild(btns);
+      card.appendChild(thumb); card.appendChild(bar);
+      brandkitGrid.appendChild(card);
+      buildVariation(v.key, transparent).then((tc) => {
+        const url = tc.toDataURL({ format: 'png', multiplier: isSquare(v.key) ? 360 / 1024 : 480 / 1600 });
+        tc.dispose();
+        thumb.textContent = '';
+        const img = document.createElement('img'); img.src = url;
+        img.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block;';
+        thumb.appendChild(img);
+      }).catch((err) => { console.error('Variation failed:', err); thumb.style.fontSize = '0.6rem'; thumb.style.padding = '6px'; thumb.style.textAlign = 'center'; thumb.textContent = '⚠ ' + ((err && err.message) || 'error'); });
+    });
+  }
+  async function downloadBrandKitZip() {
+    if (typeof JSZip === 'undefined') { alert('ZIP library is not loaded — download files individually instead.'); return; }
+    const transparent = brandkitTransparent && brandkitTransparent.checked;
+    if (brandkitZip) brandkitZip.textContent = 'Packaging…';
+    try {
+      const zip = new JSZip();
+      for (const v of VARIATIONS) {
+        const tc = await buildVariation(v.key, transparent);
+        const mult = isSquare(v.key) ? 1 : 2;
+        zip.file(`png/${v.key}.png`, tc.toDataURL({ format: 'png', multiplier: mult }).split(',')[1], { base64: true });
+        zip.file(`svg/${v.key}.svg`, tc.toSVG());
+        tc.dispose();
+      }
+      for (const px of [16, 32, 48, 180, 512, 1024]) {
+        const tc = await buildVariation('icon', true);
+        zip.file(`app-icons/icon-${px}.png`, tc.toDataURL({ format: 'png', multiplier: px / 1024 }).split(',')[1], { base64: true });
+        tc.dispose();
+      }
+      const blob = await zip.generateAsync({ type: 'blob' });
+      triggerDownload(URL.createObjectURL(blob), 'riyo-brand-kit.zip');
+    } catch (err) {
+      console.error('ZIP failed:', err);
+      alert('Could not build the ZIP. Try downloading files individually.');
+    }
+    if (brandkitZip) brandkitZip.textContent = '⬇ Download All (ZIP) — logo set + favicon + app icons';
+  }
+  if (brandkitBtn) brandkitBtn.addEventListener('click', openBrandKit);
+  if (brandkitClose) brandkitClose.addEventListener('click', () => { brandkitModal.style.display = 'none'; });
+  if (brandkitModal) brandkitModal.addEventListener('click', (e) => { if (e.target === brandkitModal) brandkitModal.style.display = 'none'; });
+  if (brandkitZip) brandkitZip.addEventListener('click', downloadBrandKitZip);
+
   document.fonts.ready.then(() => { addText(); });
 });

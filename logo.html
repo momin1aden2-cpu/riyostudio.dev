@@ -348,6 +348,9 @@
                 <button id="logo-export-btn" class="nav-cta-btn" style="width: 100%; padding: 13px; background: linear-gradient(135deg, #34D399, #10B981); border: 1px solid rgba(16, 185, 129, 0.6); border-radius: 10px; color: #04140d; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 8px 24px rgba(16,185,129,0.35);">
                     📥 Download 4K PNG
                 </button>
+                <button id="brandkit-btn" style="width: 100%; padding: 13px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 10px; color: #10B981; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s;">
+                    🎁 Brand Kit &amp; Sizes
+                </button>
                 <div style="display: flex; gap: 8px;">
                     <button id="logo-export-svg-btn" style="flex: 1; padding: 12px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; color: #10B981; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.2s;">
                         💎 Export Vector SVG
@@ -463,6 +466,33 @@
     </div>
   </div>
 
+  <!-- Brand Kit modal -->
+  <div id="brandkit-modal" style="display:none; position:fixed; inset:0; z-index:3000; background:rgba(6,11,20,0.85); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
+    <div style="background:#0B1220; border:1px solid rgba(16,185,129,0.3); border-radius:16px; padding:24px; max-width:980px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 30px 80px rgba(0,0,0,0.6); box-sizing:border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <h3 style="margin:0; color:#fff; font-size:1.2rem;">Brand Kit &amp; Export Sizes</h3>
+        <button id="brandkit-close" style="background:none; border:none; color:#8b97a8; font-size:1.4rem; cursor:pointer; line-height:1; padding:4px 8px;">✕</button>
+      </div>
+      <p style="margin:0 0 14px; color:var(--text-dim); font-size:0.82rem;">Every variation built from your logo · rendered in your browser · download any file you need</p>
+      <div style="display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin-bottom:16px;">
+        <label style="display:flex; align-items:center; gap:7px; color:#cdd6e2; font-size:0.85rem; cursor:pointer;">
+          <input type="checkbox" id="brandkit-transparent"> Transparent background
+        </label>
+        <label style="display:flex; align-items:center; gap:7px; color:#cdd6e2; font-size:0.85rem;">
+          App-icon size
+          <select id="brandkit-size" style="background:rgba(0,0,0,0.5); border:1px solid var(--border); border-radius:6px; padding:6px 8px; color:#fff; font-size:0.85rem; cursor:pointer;">
+            <option value="256">256 × 256</option>
+            <option value="512" selected>512 × 512</option>
+            <option value="1024">1024 × 1024</option>
+          </select>
+        </label>
+      </div>
+      <div id="brandkit-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;"></div>
+      <button id="brandkit-zip" style="margin-top:18px; width:100%; padding:13px; background:linear-gradient(135deg, #34D399, #10B981); color:#04140d; border:none; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.95rem;">⬇ Download All (ZIP) — logo set + favicon + app icons</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="bg.js?v=18"></script>
   <script src="script.js?v=23"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
@@ -512,7 +542,7 @@
     </div>
   </div>
 
-  <script src="logo.js?v=20"></script>
+  <script src="logo.js?v=21"></script>
 
     <!-- Mockup Modal -->
     <div id="mockup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
