@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const saveProjBtn = document.getElementById('save-proj-btn');
   const loadProjBtn = document.getElementById('load-proj-btn');
   const magicBrandInput = document.getElementById('magic-brand-input');
+  const magicKeywordInput = document.getElementById('magic-keyword-input');
   const magicGenerateBtn = document.getElementById('magic-generate-btn');
   const motionSelector = document.getElementById('motion-selector');
 
@@ -929,47 +930,250 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   });
 
-  if (magicGenerateBtn) magicGenerateBtn.addEventListener('click', async () => {
-      const brandName = magicBrandInput.value.trim() || 'BRAND';
-      const objs = canvas.getObjects();
-      objs.forEach(obj => { if (obj !== bgRect) canvas.remove(obj); });
-      magicGenerateBtn.textContent = 'Wait...';
-      
+  // ── Smart Auto-Generate ──────────────────────────────────────────
+  // 100% client-side "smart assembly": keyword-relevant icon (Iconify) +
+  // curated palette + curated font pairing + a layout. No AI API, no cost,
+  // nothing but the icon keyword leaves the device.
+  const GEN_PALETTES = [
+    { bg: '#0B1220', icon: '#34D399', text: '#FFFFFF' }, // dark emerald
+    { bg: '#FFFFFF', icon: '#111827', text: '#111827' }, // clean light
+    { bg: '#1E293B', icon: '#38BDF8', text: '#F1F5F9' }, // slate blue
+    { bg: '#FDF2F8', icon: '#DB2777', text: '#831843' }, // rose
+    { bg: '#0F172A', icon: '#FBBF24', text: '#FDE68A' }, // navy gold
+    { bg: '#ECFDF5', icon: '#059669', text: '#064E3B' }, // mint
+    { bg: '#111111', icon: '#FFFFFF', text: '#FFFFFF' }, // mono dark
+    { bg: '#F5F3FF', icon: '#7C3AED', text: '#4C1D95' }, // violet
+    { bg: '#FFF7ED', icon: '#EA580C', text: '#7C2D12' }, // sunset
+    { bg: '#042F2E', icon: '#2DD4BF', text: '#CCFBF1' }  // deep teal
+  ];
+  const GEN_FONTS = [
+    { h: 'Clash Display', s: 'Inter' },
+    { h: 'Space Grotesk', s: 'DM Sans' },
+    { h: 'Syne', s: 'Inter' },
+    { h: 'Playfair Display', s: 'DM Sans' },
+    { h: 'Cinzel', s: 'Inter' },
+    { h: 'Outfit', s: 'Inter' },
+    { h: 'Bricolage Grotesque', s: 'DM Sans' }
+  ];
+  const GEN_KEYWORDS = ['abstract', 'geometric', 'leaf', 'rocket', 'star', 'mountain', 'wave', 'spark', 'shield', 'globe', 'crown', 'flame', 'diamond', 'hexagon'];
+  const pickRand = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  // Procedural mark generator — builds a unique, editable vector mark from
+  // geometry/initials. 100% client-side, no network, no AI, no cost.
+  function buildMark(palette, fp, brandName, idx) {
+    const c = palette.icon;
+    const tint = new fabric.Color(c).setAlpha(0.45).toRgba();
+    const cx = 100, cy = 100;
+    const initials = ((brandName || 'R').replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase()) || 'R';
+
+    const recipes = [
+      () => [ // concentric rings
+        new fabric.Circle({ radius: 34, left: cx, top: cy, originX: 'center', originY: 'center', fill: c }),
+        new fabric.Circle({ radius: 60, left: cx, top: cy, originX: 'center', originY: 'center', fill: 'transparent', stroke: c, strokeWidth: 12 }),
+        new fabric.Circle({ radius: 88, left: cx, top: cy, originX: 'center', originY: 'center', fill: 'transparent', stroke: tint, strokeWidth: 10 })
+      ],
+      () => [ // overlapping circles
+        new fabric.Circle({ radius: 52, left: cx - 24, top: cy, originX: 'center', originY: 'center', fill: c }),
+        new fabric.Circle({ radius: 52, left: cx + 24, top: cy, originX: 'center', originY: 'center', fill: tint })
+      ],
+      () => [ // stacked triangles
+        new fabric.Triangle({ width: 150, height: 130, left: cx, top: cy - 8, originX: 'center', originY: 'center', fill: c }),
+        new fabric.Triangle({ width: 150, height: 130, left: cx, top: cy + 8, originX: 'center', originY: 'center', fill: tint, angle: 180 })
+      ],
+      () => { // hexagon outline + core
+        const outer = [], inner = [];
+        for (let i = 0; i < 6; i++) { const a = Math.PI / 180 * (60 * i - 30); outer.push({ x: cx + 82 * Math.cos(a), y: cy + 82 * Math.sin(a) }); inner.push({ x: cx + 34 * Math.cos(a), y: cy + 34 * Math.sin(a) }); }
+        return [ new fabric.Polygon(outer, { fill: 'transparent', stroke: c, strokeWidth: 12 }), new fabric.Polygon(inner, { fill: c }) ];
+      },
+      () => { // vertical bars
+        const o = []; [70, 120, 90, 150, 100].forEach((h, i) => o.push(new fabric.Rect({ width: 18, height: h, rx: 9, ry: 9, left: 40 + i * 30, top: cy + 75, originX: 'center', originY: 'bottom', fill: i % 2 ? tint : c }))); return o;
+      },
+      () => { // starburst
+        const pts = []; const spikes = 6, R = 88, r = 36;
+        for (let i = 0; i < spikes * 2; i++) { const rad = i % 2 ? r : R; const a = Math.PI / spikes * i - Math.PI / 2; pts.push({ x: cx + rad * Math.cos(a), y: cy + rad * Math.sin(a) }); }
+        return [ new fabric.Polygon(pts, { fill: c }) ];
+      },
+      () => [ // monogram in a circle
+        new fabric.Circle({ radius: 90, left: cx, top: cy, originX: 'center', originY: 'center', fill: c }),
+        new fabric.IText(initials, { left: cx, top: cy, originX: 'center', originY: 'center', fontFamily: fp.h, fontWeight: 'bold', fontSize: 84, fill: palette.bg, objectCaching: false })
+      ],
+      () => [ // monogram in a rounded square
+        new fabric.Rect({ width: 170, height: 170, rx: 36, ry: 36, left: cx, top: cy, originX: 'center', originY: 'center', fill: tint, stroke: c, strokeWidth: 8 }),
+        new fabric.IText(initials.slice(0, 1), { left: cx, top: cy, originX: 'center', originY: 'center', fontFamily: fp.h, fontWeight: 'bold', fontSize: 110, fill: c, objectCaching: false })
+      ]
+    ];
+
+    const recipe = recipes[(idx == null ? Math.floor(Math.random() * recipes.length) : idx) % recipes.length];
+    return new fabric.Group(recipe(), { originX: 'center', originY: 'center' });
+  }
+
+  function placeMark(mark, topY) {
+    const s = 320 / Math.max(mark.width || 320, mark.height || 320);
+    mark.set({ originX: 'center', originY: 'center', left: canvas.width / 2, top: topY, scaleX: s, scaleY: s });
+    canvas.add(mark);
+  }
+
+  // ── Concept Grid: 6 finished concepts to pick from ───────────────
+  const conceptModal = document.getElementById('concept-modal');
+  const conceptGrid = document.getElementById('concept-grid');
+  const conceptClose = document.getElementById('concept-close');
+  const conceptRegen = document.getElementById('concept-regen');
+
+  function scaleTo(obj, target) {
+    const s = target / Math.max(obj.width || target, obj.height || target);
+    obj.set({ originX: 'center', originY: 'center', scaleX: s, scaleY: s });
+  }
+  function lighten(hex, amt) {
+    const src = new fabric.Color(hex).getSource();
+    const m = (v) => Math.round(v + (255 - v) * amt);
+    return `rgb(${m(src[0])},${m(src[1])},${m(src[2])})`;
+  }
+  function applyGradient(group, c) {
+    if (!group.getObjects) return;
+    const c2 = lighten(c, 0.4);
+    group.getObjects().forEach((o) => {
+      if (o.type === 'i-text' || !o.fill || o.fill === 'transparent') return;
+      o.set('fill', new fabric.Gradient({ type: 'linear', gradientUnits: 'percentage', coords: { x1: 0, y1: 0, x2: 1, y2: 1 }, colorStops: [{ offset: 0, color: c2 }, { offset: 1, color: c }] }));
+    });
+  }
+  function arrangeStack(cv, icon, brand, sub) {
+    const cx = cv.width / 2, cy = cv.height / 2;
+    const gap = cv.width > 800 ? 40 : 14;
+    const pad = cv.width > 800 ? 14 : 6;
+    const iconH = icon ? icon.getScaledHeight() : 0;
+    const bH = brand.getScaledHeight();
+    const sH = sub ? sub.getScaledHeight() : 0;
+    const totalH = iconH + (icon ? gap : 0) + bH + (sub ? pad + sH : 0);
+    let y = cy - totalH / 2;
+    if (icon) { icon.set({ originX: 'center', originY: 'top', left: cx, top: y }); y += iconH + gap; }
+    brand.set({ originX: 'center', originY: 'top', left: cx, top: y }); y += bH + pad;
+    if (sub) sub.set({ originX: 'center', originY: 'top', left: cx, top: y });
+  }
+  function arrangeLeft(cv, icon, brand, sub) {
+    const cx = cv.width / 2, cy = cv.height / 2;
+    const gap = cv.width > 800 ? 36 : 12;
+    const iconW = icon ? icon.getScaledWidth() : 0;
+    const bW = brand.getScaledWidth();
+    const sx = cx - (iconW + (icon ? gap : 0) + bW) / 2;
+    const tx = sx + iconW + (icon ? gap : 0);
+    if (icon) icon.set({ originX: 'left', originY: 'center', left: sx, top: cy });
+    if (sub) {
+      brand.set({ originX: 'left', originY: 'bottom', left: tx, top: cy - 2 });
+      sub.set({ originX: 'left', originY: 'top', left: tx, top: cy + 2 });
+    } else {
+      brand.set({ originX: 'left', originY: 'center', left: tx, top: cy });
+    }
+  }
+  function makeConcept(brandName) {
+    return {
+      brandName,
+      palette: pickRand(GEN_PALETTES),
+      fp: pickRand(GEN_FONTS),
+      layout: pickRand(['stack', 'left']),
+      gradient: Math.random() < 0.5,
+      useIcon: Math.random() < 0.4,
+      recipeIndex: Math.floor(Math.random() * 8),
+      kw: (magicKeywordInput && magicKeywordInput.value.trim()) || pickRand(GEN_KEYWORDS),
+      iconSvg: null
+    };
+  }
+  async function getConceptIcon(concept) {
+    if (concept.iconSvg) {
+      return await new Promise((r) => fabric.loadSVGFromString(concept.iconSvg, (o, op) => r(fabric.util.groupSVGElements(o, op))));
+    }
+    if (concept.useIcon) {
       try {
-          const res = await fetch(`https://api.iconify.design/search?query=geometric&limit=15`);
-          const data = await res.json();
-          if (data && data.icons && data.icons.length > 0) {
-              const iconName = data.icons[Math.floor(Math.random() * data.icons.length)];
-              const [prefix, name] = iconName.split(':');
-              const svgRes = await fetch(`https://api.iconify.design/${prefix}/${name}.svg`);
-              const svgText = await svgRes.text();
-              
-              fabric.loadSVGFromString(svgText, (objects, options) => {
-                  const iconObj = fabric.util.groupSVGElements(objects, options);
-                  iconObj.set({
-                      left: 800, top: 340,
-                      originX: 'center', originY: 'center', fill: '#8b5cf6',
-                      scaleX: 100 / (iconObj.width || 100), scaleY: 100 / (iconObj.height || 100)
-                  });
-                  canvas.add(iconObj);
-                  
-                  const textObj = new fabric.IText(brandName.toUpperCase(), {
-                      left: 800, top: 460,
-                      fontFamily: 'Space Grotesk', fontWeight: 'bold', fontSize: 54, fill: '#ffffff',
-                      originX: 'center', originY: 'center', objectCaching: false
-                  });
-                  canvas.add(textObj);
-                  
-                  // Ensure canvas updates if fonts are still loading
-                  document.fonts.ready.then(() => {
-                      textObj.setCoords();
-                      canvas.renderAll();
-                  });
-                  canvas.renderAll();
-              });
-          }
-      } catch(e) { console.error(e); }
-      magicGenerateBtn.textContent = 'Auto-Build';
+        const res = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(concept.kw)}&limit=30`);
+        const data = await res.json();
+        if (data && data.icons && data.icons.length) {
+          const [prefix, name] = pickRand(data.icons).split(':');
+          const svgRes = await fetch(`https://api.iconify.design/${prefix}/${name}.svg?color=${encodeURIComponent(concept.palette.icon)}`);
+          concept.iconSvg = await svgRes.text();
+          return await new Promise((r) => fabric.loadSVGFromString(concept.iconSvg, (o, op) => r(fabric.util.groupSVGElements(o, op))));
+        }
+      } catch (e) { /* fall through to procedural */ }
+    }
+    const mark = buildMark(concept.palette, concept.fp, concept.brandName, concept.recipeIndex);
+    if (concept.gradient) applyGradient(mark, concept.palette.icon);
+    return mark;
+  }
+  async function renderConceptThumb(concept) {
+    const el = document.createElement('canvas');
+    el.width = 480; el.height = 240;
+    const tc = new fabric.StaticCanvas(el, { width: 480, height: 240, enableRetinaScaling: false, renderOnAddRemove: false });
+    tc.backgroundColor = concept.palette.bg;
+    const icon = await getConceptIcon(concept);
+    scaleTo(icon, 92);
+    const brand = new fabric.IText(concept.brandName, { fontFamily: concept.fp.h, fontWeight: 'bold', fontSize: 30, fill: concept.palette.text, objectCaching: false });
+    const sub = new fabric.IText('YOUR TAGLINE', { fontFamily: concept.fp.s, fontSize: 10, fill: concept.palette.text, opacity: 0.7, charSpacing: 300, objectCaching: false });
+    tc.add(icon, brand, sub);
+    await document.fonts.ready;
+    if (brand.initDimensions) brand.initDimensions();
+    if (sub.initDimensions) sub.initDimensions();
+    if (concept.layout === 'left') arrangeLeft(tc, icon, brand, sub); else arrangeStack(tc, icon, brand, sub);
+    tc.renderAll();
+    const url = tc.toDataURL({ format: 'png', multiplier: 1 });
+    tc.dispose();
+    return url;
+  }
+  async function applyConcept(concept) {
+    canvas.getObjects().forEach((o) => { if (o !== bgRect) canvas.remove(o); });
+    bgRect.set('fill', concept.palette.bg);
+    const icon = await getConceptIcon(concept);
+    scaleTo(icon, 320);
+    canvas.add(icon);
+    const brand = new fabric.IText(concept.brandName, { fontFamily: concept.fp.h, fontWeight: 'bold', fontSize: 64, fill: concept.palette.text, objectCaching: false });
+    const sub = new fabric.IText('YOUR TAGLINE HERE', { fontFamily: concept.fp.s, fontWeight: 'normal', fontSize: 20, fill: concept.palette.text, opacity: 0.75, charSpacing: 400, objectCaching: false });
+    canvas.add(brand); canvas.add(sub);
+    const place = () => {
+      if (concept.layout === 'left') arrangeLeft(canvas, icon, brand, sub); else arrangeStack(canvas, icon, brand, sub);
+      canvas.getObjects().forEach((o) => o.setCoords && o.setCoords());
+      canvas.renderAll();
+    };
+    place();
+    document.fonts.ready.then(() => { if (brand.initDimensions) brand.initDimensions(); if (sub.initDimensions) sub.initDimensions(); place(); });
+    saveHistory();
+    if (conceptModal) conceptModal.style.display = 'none';
+  }
+  function openConceptGrid() {
+    if (!conceptModal || !conceptGrid) return;
+    const brandName = (magicBrandInput.value.trim() || 'BRAND').toUpperCase();
+    conceptGrid.innerHTML = '';
+    conceptModal.style.display = 'flex';
+    Array.from({ length: 6 }, () => makeConcept(brandName)).forEach((c) => {
+      const card = document.createElement('div');
+      card.style.cssText = 'cursor:pointer;border:1px solid rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;background:#05080f;aspect-ratio:2/1;display:flex;align-items:center;justify-content:center;color:#3a4656;font-size:0.78rem;transition:border-color .15s,transform .15s;';
+      card.textContent = 'rendering…';
+      card.addEventListener('mouseenter', () => { card.style.borderColor = '#10B981'; card.style.transform = 'translateY(-2px)'; });
+      card.addEventListener('mouseleave', () => { card.style.borderColor = 'rgba(255,255,255,0.1)'; card.style.transform = 'none'; });
+      card.addEventListener('click', () => applyConcept(c));
+      conceptGrid.appendChild(card);
+      renderConceptThumb(c).then((url) => {
+        card.textContent = '';
+        const img = document.createElement('img');
+        img.src = url;
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+        card.appendChild(img);
+      }).catch((err) => { console.error('Concept thumb failed:', err); card.style.fontSize = '0.6rem'; card.style.padding = '6px'; card.style.textAlign = 'center'; card.textContent = '⚠ ' + ((err && err.message) || 'render error'); });
+    });
+  }
+  if (magicGenerateBtn) magicGenerateBtn.addEventListener('click', () => openConceptGrid());
+  if (conceptClose) conceptClose.addEventListener('click', () => { conceptModal.style.display = 'none'; });
+  if (conceptRegen) conceptRegen.addEventListener('click', () => openConceptGrid());
+  if (conceptModal) conceptModal.addEventListener('click', (e) => { if (e.target === conceptModal) conceptModal.style.display = 'none'; });
+
+  const magicMarkBtn = document.getElementById('magic-mark-btn');
+  if (magicMarkBtn) magicMarkBtn.addEventListener('click', () => {
+      const palette = pickRand(GEN_PALETTES);
+      const fp = pickRand(GEN_FONTS);
+      const mark = buildMark(palette, fp, (magicBrandInput.value.trim() || 'R').toUpperCase());
+      if (Math.random() < 0.5) applyGradient(mark, palette.icon);
+      placeMark(mark, canvas.height / 2);
+      mark.set({ top: canvas.height / 2 });
+      canvas.setActiveObject(mark);
+      document.fonts.ready.then(() => { mark.setCoords(); canvas.renderAll(); });
+      canvas.renderAll();
+      saveHistory();
   });
 
   let animationFrame;

@@ -143,7 +143,10 @@
                 <label style="display: block; font-size: 1.05rem; color: #10B981; margin-bottom: 12px; font-weight: bold;">🪄 AI Auto-Generator</label>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     <input type="text" id="magic-brand-input" placeholder="Enter Brand Name..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.5); background: rgba(0,0,0,0.5); color: #fff; font-size: 1.0rem; box-sizing: border-box;">
+                    <input type="text" id="magic-keyword-input" placeholder="What's it about? (coffee, tech, fitness…)" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.5); background: rgba(0,0,0,0.5); color: #fff; font-size: 1.0rem; box-sizing: border-box;">
                     <button id="magic-generate-btn" style="width: 100%; padding: 14px 20px; background: #10B981; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.0rem; white-space: nowrap; box-sizing: border-box;">✨ Auto-Build Logo</button>
+                    <button id="magic-mark-btn" style="width: 100%; padding: 10px; background: rgba(16,185,129,0.1); color: #10B981; border: 1px solid rgba(16,185,129,0.4); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; box-sizing: border-box;">✦ Generate Mark</button>
+                    <p style="font-size: 0.72rem; color: var(--text-dim); margin: 0; text-align: center;">100% in your browser · click again for a new concept</p>
                 </div>
             </div>
 
@@ -447,6 +450,19 @@
     <span>Ctrl K</span>
   </button>
 
+  <!-- Concept Grid modal -->
+  <div id="concept-modal" style="display:none; position:fixed; inset:0; z-index:3000; background:rgba(6,11,20,0.85); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
+    <div style="background:#0B1220; border:1px solid rgba(16,185,129,0.3); border-radius:16px; padding:24px; max-width:920px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 30px 80px rgba(0,0,0,0.6); box-sizing:border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <h3 style="margin:0; color:#fff; font-size:1.2rem;">Pick a concept</h3>
+        <button id="concept-close" style="background:none; border:none; color:#8b97a8; font-size:1.4rem; cursor:pointer; line-height:1; padding:4px 8px;">✕</button>
+      </div>
+      <p style="margin:0 0 16px; color:var(--text-dim); font-size:0.82rem;">6 fresh concepts · generated in your browser · click one to edit it</p>
+      <div id="concept-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px;"></div>
+      <button id="concept-regen" style="margin-top:18px; width:100%; padding:12px; background:rgba(16,185,129,0.12); color:#10B981; border:1px solid rgba(16,185,129,0.4); border-radius:10px; font-weight:600; cursor:pointer; font-size:0.95rem;">↻ Regenerate 6 concepts</button>
+    </div>
+  </div>
+
   <script src="bg.js?v=18"></script>
   <script src="script.js?v=23"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
@@ -496,7 +512,7 @@
     </div>
   </div>
 
-  <script src="logo.js?v=17"></script>
+  <script src="logo.js?v=20"></script>
 
     <!-- Mockup Modal -->
     <div id="mockup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
