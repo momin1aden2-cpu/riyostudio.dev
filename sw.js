@@ -1,4 +1,4 @@
-const CACHE_NAME = 'riyo-studio-v32';
+const CACHE_NAME = 'riyo-studio-v33';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
