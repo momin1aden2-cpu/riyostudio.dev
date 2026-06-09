@@ -1,14 +1,6 @@
 <!DOCTYPE html>
 <html lang="en-AU">
 <head>
-<!-- Google Analytics Placeholder -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-6P5C0ZYLE0"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-6P5C0ZYLE0');
-</script>
 
   <style>body { background-color: #060B14 !important; }</style>
   <!-- PWA: Capture install event as early as possible before any other scripts -->
@@ -29,7 +21,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg?v=2">
   <link rel="apple-touch-icon" href="assets/icon.svg?v=2">
-  <link rel="stylesheet" href="style.css?v=20260609a">
+  <link rel="stylesheet" href="style.css?v=20260609b">
   <link rel="stylesheet" href="scanner.css">
 
   <style>
@@ -52,7 +44,7 @@
     .vs-stage { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; }
     #vs-video { width: 100%; max-height: 56vh; background: #000; border-radius: 10px; display: block; }
 
-    .vs-controls { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+    .vs-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
     .vs-controls button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.12); color: #10B981; font-size: 1rem; cursor: pointer; flex-shrink: 0; }
     .vs-controls span { font-variant-numeric: tabular-nums; color: var(--text-dim); font-size: 0.9rem; }
 
@@ -90,7 +82,7 @@
     .vs-mini.danger { color: #fca5a5; border-color: rgba(248,113,113,0.3); }
 
     .vs-hint { color: var(--text-dim); font-size: 0.72rem; margin: 6px 0 0; }
-    .vs-segments:empty::after { content: 'No segments yet — set In/Out and add to the timeline.'; color: var(--text-dim); font-size: 0.78rem; }
+    .vs-segments:empty::after { content: 'Load a video to start editing.'; color: var(--text-dim); font-size: 0.78rem; }
 
     .vs-progress-wrap { height: 8px; background: rgba(255,255,255,0.08); border-radius: 6px; overflow: hidden; margin-top: 12px; }
     .vs-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #10B981, #34D399); transition: width 0.2s; }
@@ -390,6 +382,7 @@
       <a href="invoice.html" class="mobile-more-link"><span class="more-icon">📄</span> Invoice Maker</a>
       <a href="scanner.html" class="mobile-more-link"><span class="more-icon">🎨</span> Mockup Studio</a>
       <a href="forge.html" class="mobile-more-link"><span class="more-icon">🔧</span> File Forge</a>
+      <a href="video.html" class="mobile-more-link"><span class="more-icon">🎬</span> Video Studio</a>
       <div class="mobile-more-divider"></div>
       <h4>Company</h4>
       <a href="index.html#about" class="mobile-more-link"><span class="more-icon">💡</span> About Us</a>
@@ -402,7 +395,7 @@
   </div>
 
   <script src="bg.js?v=18"></script>
-  <script src="script.js?v=23"></script>
+  <script src="script.js?v=24"></script>
   <script src="video.js?v=5"></script>
 </body>
 </html>
