@@ -89,6 +89,7 @@
             <div id="shape-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: #111; border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 8px; z-index: 100; min-width: 120px; flex-direction: column; gap: 4px; margin-top: 4px;">
               <button class="cyber-button shape-btn" data-shape="rectangle" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Rectangle</button>
               <button class="cyber-button shape-btn" data-shape="circle" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Circle</button>
+              <button class="cyber-button shape-btn" data-shape="glass" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Glass Card</button>
             </div>
           </div>
           
@@ -103,6 +104,11 @@
               <button class="cyber-button sticker-btn" data-sticker="ribbon" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Top Rated Ribbon</button>
               <button class="cyber-button sticker-btn" data-sticker="arrow" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Drawn Arrow</button>
               <button class="cyber-button sticker-btn" data-sticker="starburst" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Starburst</button>
+              <button class="cyber-button sticker-btn" data-sticker="ring" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">⭕ Highlight Ring</button>
+              <button class="cyber-button sticker-btn" data-sticker="badge1" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">① Badge 1</button>
+              <button class="cyber-button sticker-btn" data-sticker="badge2" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">② Badge 2</button>
+              <button class="cyber-button sticker-btn" data-sticker="badge3" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">③ Badge 3</button>
+              <button class="cyber-button sticker-btn" data-sticker="tap" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">👆 Tap Point</button>
             </div>
           </div>
           
@@ -233,7 +239,29 @@
                <label class="cyber-label" style="margin: 0;">Bg Blur</label>
                <input type="range" id="bg-blur-input" min="0" max="100" value="0" style="width: 120px;">
             </div>
-            
+
+            <label class="cyber-label" style="margin-top: 16px; display: block;">Background Studio</label>
+            <select id="bg-type-select" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none; font-size: 0.85rem; margin-top: 8px;">
+              <option value="gradient">Linear Gradient</option>
+              <option value="radial">Radial Gradient</option>
+              <option value="mesh">Mesh Gradient</option>
+              <option value="solid">Solid Colour</option>
+            </select>
+            <div style="display: flex; gap: 16px; margin-top: 10px; align-items: center;">
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-dim); cursor: pointer;">
+                <input type="color" id="bg-color-1" value="#6a11cb" style="width: 34px; height: 34px; border: none; border-radius: 6px; cursor: pointer; background: transparent;"> Colour 1
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-dim); cursor: pointer;">
+                <input type="color" id="bg-color-2" value="#2575fc" style="width: 34px; height: 34px; border: none; border-radius: 6px; cursor: pointer; background: transparent;"> Colour 2
+              </label>
+            </div>
+            <div style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between;">
+              <label style="display: flex; align-items: center; gap: 8px; color: #fff; font-size: 0.9rem; cursor: pointer;">
+                <input type="checkbox" id="grain-toggle"> Film Grain
+              </label>
+              <input type="range" id="grain-amount" min="0" max="100" value="35" style="width: 110px;">
+            </div>
+
             <label class="cyber-label" style="margin-top: 16px; display: block;">Audio Track (Music/Voice)</label>
             <div style="margin-top: 8px; display: flex; gap: 8px;">
               <button id="upload-audio-btn" class="cyber-button" style="flex: 1; padding: 6px; font-size: 0.8rem;">Upload Audio</button>
@@ -437,6 +465,9 @@
               <label style="display: flex; gap: 8px; align-items: center; color: #fff; font-size: 0.9rem; cursor: pointer;">
                 <input type="checkbox" id="img-floor-shadow-toggle"> Floor Shadow
               </label>
+              <label style="display: flex; gap: 8px; align-items: center; color: #fff; font-size: 0.9rem; cursor: pointer;">
+                <input type="checkbox" id="img-reflection-toggle"> Mirror Reflection
+              </label>
             </div>
             
             <div style="display: flex; gap: 8px; margin-top: 8px;">
@@ -521,6 +552,6 @@
 
   <script src="bg.js?v=16"></script>
   <script src="script.js?v=23"></script>
-  <script src="scanner.js?v=32"></script>
+  <script src="scanner.js?v=33"></script>
 </body>
 </html>

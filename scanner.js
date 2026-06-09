@@ -45,6 +45,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const bgUploadBtn = document.getElementById('upload-bg-btn');
     const bgUploadInput = document.getElementById('bg-upload-input');
     const bgBlurInput = document.getElementById('bg-blur-input');
+    const bgTypeSelect = document.getElementById('bg-type-select');
+    const bgColor1Input = document.getElementById('bg-color-1');
+    const bgColor2Input = document.getElementById('bg-color-2');
+    const grainToggle = document.getElementById('grain-toggle');
+    const grainAmount = document.getElementById('grain-amount');
     
     // Premium Image Transforms & Realism
     const rotateInput = document.getElementById('img-rotate-input');
@@ -56,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const shadowDistInput = document.getElementById('img-shadow-dist-input');
     const glareToggle = document.getElementById('img-glare-toggle');
     const floorShadowToggle = document.getElementById('img-floor-shadow-toggle');
+    const reflectionToggle = document.getElementById('img-reflection-toggle');
 
     // Dropdowns (Sticker & Shape)
     const setupDropdown = (btnId, menuId) => {
@@ -96,6 +102,29 @@ document.addEventListener('DOMContentLoaded', () => {
     let bgColor2 = '#4ECDC4';
     let bgImgObj = null;
     let bgBlur = 0;
+    let grainEnabled = false;
+    let grainVal = 35;
+
+    // Static monochrome noise tile used for the film-grain overlay
+    const noiseCanvas = document.createElement('canvas');
+    noiseCanvas.width = 140; noiseCanvas.height = 140;
+    (function () {
+        const nctx = noiseCanvas.getContext('2d');
+        const idata = nctx.createImageData(140, 140);
+        for (let i = 0; i < idata.data.length; i += 4) {
+            const v = (Math.random() * 255) | 0;
+            idata.data[i] = v; idata.data[i + 1] = v; idata.data[i + 2] = v; idata.data[i + 3] = 255;
+        }
+        nctx.putImageData(idata, 0, 0);
+    })();
+
+    // Hex -> rgba() with alpha (for mesh blobs that fade to transparent)
+    function hexA(hex, a) {
+        const h = (hex || '#000000').replace('#', '');
+        const n = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+        const r = parseInt(n.substr(0, 2), 16) || 0, g = parseInt(n.substr(2, 2), 16) || 0, b = parseInt(n.substr(4, 2), 16) || 0;
+        return `rgba(${r},${g},${b},${a})`;
+    }
 
     let layers = []; // { id, type: 'text'|'image'|'sticker'|'shape', x, y, scale, ... }
     let selectedLayerId = null;
@@ -115,7 +144,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Smart Sticker Assets
     const stickers = {
         'apple': new Image(), 'google': new Image(), 'stars': new Image(), 'cursor': new Image(),
-        'ph': new Image(), 'ribbon': new Image(), 'arrow': new Image(), 'starburst': new Image()
+        'ph': new Image(), 'ribbon': new Image(), 'arrow': new Image(), 'starburst': new Image(),
+        'ring': new Image(), 'badge1': new Image(), 'badge2': new Image(), 'badge3': new Image(), 'tap': new Image()
     };
     
     stickers['apple'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="240" height="80" viewBox="0 0 240 80"><rect width="240" height="80" rx="16" fill="%23000"/><text x="120" y="45" font-family="Arial" font-weight="bold" font-size="24" fill="%23FFF" text-anchor="middle">Download on the</text><text x="120" y="70" font-family="Arial" font-weight="bold" font-size="28" fill="%23FFF" text-anchor="middle">App Store</text></svg>';
@@ -126,6 +156,11 @@ document.addEventListener('DOMContentLoaded', () => {
     stickers['ribbon'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><path d="M0,0 L200,0 L180,30 L200,60 L0,60 Z" fill="%23EAB308"/><text x="90" y="38" font-family="Arial" font-weight="bold" font-size="24" fill="%23FFF" text-anchor="middle">TOP RATED</text></svg>';
     stickers['arrow'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M20,80 Q50,20 80,40 M70,25 L85,42 L65,55" fill="none" stroke="%23EF4444" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     stickers['starburst'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M50,0 L60,40 L100,50 L60,60 L50,100 L40,60 L0,50 L40,40 Z" fill="%23FBBF24"/></svg>';
+    stickers['ring'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220"><circle cx="110" cy="110" r="96" fill="none" stroke="%2310B981" stroke-width="12"/></svg>';
+    stickers['badge1'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="%2310B981"/><text x="60" y="83" font-family="Arial" font-weight="bold" font-size="62" fill="%23FFF" text-anchor="middle">1</text></svg>';
+    stickers['badge2'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="%2310B981"/><text x="60" y="83" font-family="Arial" font-weight="bold" font-size="62" fill="%23FFF" text-anchor="middle">2</text></svg>';
+    stickers['badge3'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="%2310B981"/><text x="60" y="83" font-family="Arial" font-weight="bold" font-size="62" fill="%23FFF" text-anchor="middle">3</text></svg>';
+    stickers['tap'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180"><circle cx="90" cy="90" r="36" fill="%2310B981"/><circle cx="90" cy="90" r="68" fill="none" stroke="%2310B981" stroke-width="8" opacity="0.5"/></svg>';
 
     // --- LocalStorage Auto-Save System ---
     function loadPrefs() {
@@ -136,6 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (prefs.bgType) bgType = prefs.bgType;
                 if (prefs.bgColor1) bgColor1 = prefs.bgColor1;
                 if (prefs.bgColor2) bgColor2 = prefs.bgColor2;
+                if (typeof prefs.grain === 'boolean') grainEnabled = prefs.grain;
+                if (typeof prefs.grainVal === 'number') grainVal = prefs.grainVal;
                 if (prefs.preset) presetSelect.value = prefs.preset;
                 if (prefs.screens) screensSelect.value = prefs.screens;
             }
@@ -148,6 +185,8 @@ document.addEventListener('DOMContentLoaded', () => {
             bgType: bgType,
             bgColor1: bgColor1,
             bgColor2: bgColor2,
+            grain: grainEnabled,
+            grainVal: grainVal,
             preset: presetSelect.value,
             screens: screensSelect.value
         };
@@ -157,6 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Initialization ---
     function init() {
         loadPrefs();
+        syncBgControls();
         updateCanvasSize();
         window.addEventListener('resize', scaleWrapperToFit);
         render();
@@ -583,6 +623,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('template-dropdown').style.display = 'none';
         updatePropsPanel();
+        syncBgControls();
         render();
     }
 
@@ -852,6 +893,28 @@ document.addEventListener('DOMContentLoaded', () => {
     
     bgBlurInput.addEventListener('input', (e) => { bgBlur = parseInt(e.target.value); render(); });
 
+    // --- Background Studio controls ---
+    function syncBgControls() {
+        const known = ['gradient', 'radial', 'mesh', 'solid'];
+        if (bgTypeSelect) bgTypeSelect.value = (bgType === 'color') ? 'solid' : (known.includes(bgType) ? bgType : 'gradient');
+        if (bgColor1Input && /^#[0-9a-fA-F]{6}$/.test(bgColor1)) bgColor1Input.value = bgColor1;
+        if (bgColor2Input && /^#[0-9a-fA-F]{6}$/.test(bgColor2)) bgColor2Input.value = bgColor2;
+        if (grainToggle) grainToggle.checked = grainEnabled;
+        if (grainAmount) grainAmount.value = grainVal;
+    }
+    const ensureCustomBg = () => {
+        if (!['gradient', 'radial', 'mesh', 'solid', 'color'].includes(bgType)) {
+            bgType = 'gradient';
+            if (bgTypeSelect) bgTypeSelect.value = 'gradient';
+        }
+        document.querySelectorAll('.bg-btn').forEach(b => b.classList.remove('active'));
+    };
+    if (bgTypeSelect) bgTypeSelect.addEventListener('change', () => { bgType = bgTypeSelect.value; render(); });
+    if (bgColor1Input) bgColor1Input.addEventListener('input', () => { bgColor1 = bgColor1Input.value; ensureCustomBg(); render(); });
+    if (bgColor2Input) bgColor2Input.addEventListener('input', () => { bgColor2 = bgColor2Input.value; ensureCustomBg(); render(); });
+    if (grainToggle) grainToggle.addEventListener('change', () => { grainEnabled = grainToggle.checked; render(); });
+    if (grainAmount) grainAmount.addEventListener('input', () => { grainVal = parseInt(grainAmount.value) || 0; render(); });
+
     // --- Rendering Core ---
     let lastRenderTime = 0;
     function render() {
@@ -905,7 +968,28 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             tCtx.fillStyle = grad;
             tCtx.fillRect(0, 0, w, h);
-        } else if (bgType === 'solid') {
+        } else if (bgType === 'radial') {
+            const grad = tCtx.createRadialGradient(w / 2, h * 0.42, 0, w / 2, h * 0.42, Math.max(w, h) * 0.72);
+            grad.addColorStop(0, bgColor1);
+            grad.addColorStop(1, bgColor2);
+            tCtx.fillStyle = grad;
+            tCtx.fillRect(0, 0, w, h);
+        } else if (bgType === 'mesh') {
+            tCtx.fillStyle = bgColor2;
+            tCtx.fillRect(0, 0, w, h);
+            const R = Math.max(w, h);
+            const blob = (cx, cy, rad, col) => {
+                const g = tCtx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+                g.addColorStop(0, hexA(col, 0.9));
+                g.addColorStop(1, hexA(col, 0));
+                tCtx.fillStyle = g;
+                tCtx.fillRect(0, 0, w, h);
+            };
+            blob(w * 0.18, h * 0.22, R * 0.6, bgColor1);
+            blob(w * 0.85, h * 0.18, R * 0.5, bgColor2);
+            blob(w * 0.72, h * 0.82, R * 0.6, bgColor1);
+            blob(w * 0.25, h * 0.9, R * 0.45, bgColor2);
+        } else if (bgType === 'solid' || bgType === 'color') {
             tCtx.fillStyle = bgColor1;
             tCtx.fillRect(0, 0, w, h);
         } else if (bgType === 'image' && bgImgObj) {
@@ -990,7 +1074,22 @@ document.addEventListener('DOMContentLoaded', () => {
             tCtx.rotate(r);
             tCtx.scale(layer.scale, layer.scale);
 
-            if (layer.type === 'image') drawImageLayer(tCtx, layer);
+            if (layer.type === 'image') {
+                drawImageLayer(tCtx, layer);
+                if (layer.hasReflection) {
+                    // Partial mirror hugging the device's bottom edge (stays on-canvas)
+                    tCtx.save();
+                    const reflectH = layer.height * 0.45;
+                    tCtx.beginPath();
+                    tCtx.rect(-layer.width / 2, layer.height / 2, layer.width, reflectH);
+                    tCtx.clip();
+                    tCtx.translate(0, layer.height);
+                    tCtx.scale(1, -1);
+                    tCtx.globalAlpha = 0.22;
+                    drawImageLayer(tCtx, layer);
+                    tCtx.restore();
+                }
+            }
             else if (layer.type === 'text') drawTextLayer(tCtx, layer);
             else if (layer.type === 'sticker') drawStickerLayer(tCtx, layer);
             else if (layer.type === 'shape') drawShapeLayer(tCtx, layer);
@@ -1005,6 +1104,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         tCtx.restore();
+
+        // 5. Film grain overlay over the whole composed scene
+        if (grainEnabled && grainVal > 0) {
+            tCtx.save();
+            tCtx.globalCompositeOperation = 'overlay';
+            tCtx.globalAlpha = (grainVal / 100) * 0.55;
+            const pat = tCtx.createPattern(noiseCanvas, 'repeat');
+            if (pat) { tCtx.fillStyle = pat; tCtx.fillRect(0, 0, w, h); }
+            tCtx.restore();
+        }
+
         savePrefs();
     }
 
@@ -1013,6 +1123,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const h = layer.height;
         tCtx.translate(-w/2, -h/2);
         
+        if (layer.shapeType === 'glass') {
+            const gr = layer.radius || 48;
+            tCtx.fillStyle = 'rgba(255,255,255,0.12)';
+            tCtx.beginPath(); tCtx.roundRect(0, 0, w, h, gr); tCtx.fill();
+            const hi = tCtx.createLinearGradient(0, 0, 0, h);
+            hi.addColorStop(0, 'rgba(255,255,255,0.22)');
+            hi.addColorStop(0.5, 'rgba(255,255,255,0)');
+            tCtx.fillStyle = hi;
+            tCtx.beginPath(); tCtx.roundRect(0, 0, w, h, gr); tCtx.fill();
+            tCtx.lineWidth = 2;
+            tCtx.strokeStyle = 'rgba(255,255,255,0.4)';
+            tCtx.beginPath(); tCtx.roundRect(1, 1, w - 2, h - 2, gr); tCtx.stroke();
+            return;
+        }
+
         tCtx.fillStyle = layer.color;
         tCtx.beginPath();
         if (layer.shapeType === 'rectangle') {
@@ -1048,7 +1173,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sOp = layer.shadowOp !== undefined ? layer.shadowOp : 50;
         const sAngle = layer.shadowAngle !== undefined ? layer.shadowAngle : 90;
         const sDist = layer.shadowDistance !== undefined ? layer.shadowDistance : (sBlur / 2);
-        const shadowColor = layer.hasFloorShadow ? 'transparent' : `rgba(0,0,0,${sOp/100})`;
+        const shadowColor = `rgba(0,0,0,${sOp/100})`;
 
         const sRad = sAngle * Math.PI / 180;
 
@@ -1337,6 +1462,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(tiltXInput) tiltXInput.value = layer.tiltX || 0;
                 if(glareToggle) glareToggle.checked = layer.hasGlare || false;
                 if(floorShadowToggle) floorShadowToggle.checked = layer.hasFloorShadow || false;
+                if(reflectionToggle) reflectionToggle.checked = layer.hasReflection || false;
             } else {
                 if(document.getElementById('frame-style-container')) document.getElementById('frame-style-container').style.display = 'none';
                 if(document.getElementById('glare-shadow-toggles')) document.getElementById('glare-shadow-toggles').style.display = 'none';
@@ -1393,6 +1519,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if(glareToggle) glareToggle.addEventListener('change', (e) => { const l = layers.find(x => x?.id === selectedLayerId); if (l) { l.hasGlare = e.target.checked; render(); } });
     if(floorShadowToggle) floorShadowToggle.addEventListener('change', (e) => { const l = layers.find(x => x?.id === selectedLayerId); if (l) { l.hasFloorShadow = e.target.checked; render(); } });
+    if(reflectionToggle) reflectionToggle.addEventListener('change', (e) => { const l = layers.find(x => x?.id === selectedLayerId); if (l) { l.hasReflection = e.target.checked; render(); } });
 
     // Layer Ordering & Deletion
     const deleteLayer = () => { 
@@ -1443,6 +1570,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (bg === 'solid-dark') { bgType = 'solid'; bgColor1 = '#111'; }
             if (bg === 'solid-light') { bgType = 'solid'; bgColor1 = '#ffffff'; }
             if (bg === 'transparent') { bgType = 'transparent'; }
+            syncBgControls();
             render();
         });
     });
