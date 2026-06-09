@@ -56,9 +56,13 @@
     .vs-controls button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.12); color: #10B981; font-size: 1rem; cursor: pointer; flex-shrink: 0; }
     .vs-controls span { font-variant-numeric: tabular-nums; color: var(--text-dim); font-size: 0.9rem; }
 
-    .vs-track { position: relative; height: 18px; margin: 14px 0 6px; background: rgba(255,255,255,0.06); border-radius: 6px; cursor: pointer; overflow: hidden; }
-    .vs-region { position: absolute; top: 0; bottom: 0; background: rgba(16,185,129,0.35); border-left: 2px solid #34D399; border-right: 2px solid #34D399; }
-    .vs-playhead { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #fff; box-shadow: 0 0 6px rgba(255,255,255,0.8); }
+    .vs-track { position: relative; height: 46px; margin: 14px 0 6px; background: rgba(255,255,255,0.06); border-radius: 8px; cursor: pointer; touch-action: none; }
+    .vs-keep { position: absolute; top: 4px; bottom: 4px; background: rgba(16,185,129,0.3); border: 1px solid rgba(16,185,129,0.5); border-radius: 5px; box-sizing: border-box; pointer-events: none; }
+    .vs-cut { position: absolute; top: 4px; bottom: 4px; box-sizing: border-box; border: 1px dashed rgba(248,113,113,0.7); border-radius: 5px; pointer-events: none; background: repeating-linear-gradient(45deg, rgba(248,113,113,0.32), rgba(248,113,113,0.32) 7px, rgba(248,113,113,0.14) 7px, rgba(248,113,113,0.14) 14px); }
+    .vs-handle { position: absolute; top: -3px; bottom: -3px; width: 16px; transform: translateX(-50%); background: #34D399; border-radius: 5px; cursor: ew-resize; box-shadow: 0 1px 5px rgba(0,0,0,0.55); touch-action: none; z-index: 3; display: flex; align-items: center; justify-content: center; }
+    .vs-handle::after { content: ''; width: 3px; height: 42%; background: #04140d; border-radius: 2px; }
+    .vs-handle.hidden { display: none; }
+    .vs-playhead { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #fff; box-shadow: 0 0 6px rgba(255,255,255,0.85); pointer-events: none; z-index: 2; }
 
     .vs-inout { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
     .vs-inout label { display: flex; align-items: center; gap: 10px; color: var(--text-dim); font-size: 0.82rem; }
@@ -92,6 +96,37 @@
     .vs-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #10B981, #34D399); transition: width 0.2s; }
     .vs-status { color: var(--text-dim); font-size: 0.78rem; margin-top: 10px; font-variant-numeric: tabular-nums; }
     .vs-badge-private { display: inline-flex; align-items: center; gap: 6px; color: #10B981; font-size: 0.74rem; margin-top: 10px; }
+
+    /* Burn-in fonts (preview matches the export) */
+    @font-face { font-family: 'VS Inter'; src: url('assets/fonts/Inter-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
+    @font-face { font-family: 'VS Anton'; src: url('assets/fonts/Anton.ttf') format('truetype'); font-display: swap; }
+    @font-face { font-family: 'VS Montserrat'; src: url('assets/fonts/Montserrat-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
+
+    .vs-video-wrap { position: relative; width: 100%; line-height: 0; }
+    .vs-overlay { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+    .vs-text-item {
+      position: absolute; transform: translate(-50%, -50%); pointer-events: auto; cursor: grab;
+      color: #fff; font-family: 'VS Inter', sans-serif; font-weight: 700; line-height: 1.1;
+      text-align: center; white-space: pre; user-select: none; padding: 2px 4px; max-width: 92%;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.55);
+    }
+    .vs-text-item.has-bg { background: rgba(0,0,0,0.55); border-radius: 6px; padding: 6px 14px; text-shadow: none; }
+    .vs-text-item.selected { outline: 1.5px dashed rgba(16,185,129,0.9); outline-offset: 4px; cursor: grabbing; }
+
+    .vs-text-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid rgba(255,255,255,0.08); border-radius: 9px; margin-bottom: 8px; background: rgba(0,0,0,0.25); cursor: pointer; }
+    .vs-text-row.active { border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.08); }
+    .vs-text-row .vs-name { flex: 1; min-width: 0; color: #cdd6e2; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    #vs-text-editor { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; }
+    #vs-text-editor textarea { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 8px; padding: 9px; color: #fff; font-size: 0.9rem; resize: vertical; min-height: 44px; }
+    .vs-presets { display: flex; gap: 6px; }
+    .vs-preset { flex: 1; padding: 7px 4px; border-radius: 7px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: #cdd6e2; font-size: 0.72rem; cursor: pointer; }
+    .vs-preset.active { border-color: rgba(16,185,129,0.5); color: #10B981; }
+    .vs-field { display: flex; align-items: center; gap: 10px; color: var(--text-dim); font-size: 0.78rem; }
+    .vs-field input[type=range] { flex: 1; accent-color: #10B981; }
+    .vs-field select { flex: 1; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 7px; padding: 7px; color: #fff; font-size: 0.82rem; }
+    .vs-pos-btns { display: flex; gap: 6px; }
+    .vs-pos-btns button { flex: 1; }
 
     @media (max-width: 900px) {
       .vs-layout { grid-template-columns: 1fr; }
@@ -149,25 +184,27 @@
         <div class="vs-layout">
           <!-- Stage -->
           <div class="vs-stage">
-            <video id="vs-video" playsinline></video>
+            <div class="vs-video-wrap" id="vs-video-wrap">
+              <video id="vs-video" playsinline></video>
+              <div class="vs-overlay" id="vs-overlay"></div>
+            </div>
             <div class="vs-controls">
               <button id="vs-play" aria-label="Play / pause">▶</button>
               <span id="vs-time">0:00 / 0:00</span>
+              <div style="margin-left: auto; display: flex; gap: 6px;">
+                <button id="vs-cut-mid-btn" class="vs-primary" style="padding: 6px 11px; font-size: 0.78rem;">✂️ Cut middle</button>
+                <button id="vs-keep-whole" class="vs-mini" style="padding: 6px 9px; font-size: 0.72rem;">↺ Keep all</button>
+              </div>
             </div>
             <div id="vs-track" class="vs-track">
-              <div id="vs-region" class="vs-region"></div>
+              <div id="vs-keep-left" class="vs-keep"></div>
+              <div id="vs-cut-band" class="vs-cut" style="display:none;"></div>
+              <div id="vs-keep-right" class="vs-keep" style="display:none;"></div>
+              <div id="vs-handle-l" class="vs-handle hidden"></div>
+              <div id="vs-handle-r" class="vs-handle hidden"></div>
               <div id="vs-playhead" class="vs-playhead"></div>
             </div>
-            <div class="vs-inout">
-              <label>In <input type="range" id="vs-in" min="0" max="100" step="0.01" value="0"></label>
-              <label>Out <input type="range" id="vs-out" min="0" max="100" step="0.01" value="100"></label>
-            </div>
-            <div class="vs-inout-actions">
-              <button id="vs-set-in" class="vs-mini">⊣ Set In at playhead</button>
-              <button id="vs-set-out" class="vs-mini">Set Out at playhead ⊢</button>
-              <span id="vs-range-label" class="vs-meta" style="color: var(--text-dim); font-size: 0.78rem;"></span>
-              <button id="vs-add-segment" class="vs-primary" style="margin-left: auto;">＋ Add to timeline</button>
-            </div>
+            <p class="vs-hint" id="vs-cut-hint">The whole video is kept (green). To remove a section, tap <b>✂️ Cut out middle</b>, then drag the two handles — the <b>red</b> part is removed and the green start &amp; end are joined. Drag a handle to the far edge to instead trim just the start or end.</p>
           </div>
 
           <!-- Sidebar -->
@@ -179,9 +216,45 @@
             </div>
 
             <div class="vs-panel">
-              <h4>Timeline <span id="vs-timeline-dur"></span></h4>
+              <h4>What you're keeping <span id="vs-timeline-dur"></span></h4>
               <div id="vs-segments" class="vs-segments"></div>
-              <p class="vs-hint">Segments export in this order. Reorder with ↑ ↓.</p>
+            </div>
+
+            <div class="vs-panel">
+              <h4>Text &amp; Titles</h4>
+              <button id="vs-add-text" class="vs-ghost">＋ Add text</button>
+              <div id="vs-text-list" style="margin-top: 10px;"></div>
+              <div id="vs-text-editor" style="display:none;">
+                <textarea id="vs-text-content" placeholder="Type your text…" rows="2"></textarea>
+                <div class="vs-presets">
+                  <button class="vs-preset" data-preset="clean">Clean</button>
+                  <button class="vs-preset" data-preset="bold">Bold</button>
+                  <button class="vs-preset" data-preset="caption">Caption</button>
+                </div>
+                <label class="vs-field">Font
+                  <select id="vs-text-font">
+                    <option value="inter">Inter (clean)</option>
+                    <option value="anton">Anton (impact)</option>
+                    <option value="montserrat">Montserrat (modern)</option>
+                  </select>
+                </label>
+                <label class="vs-field">Size <input type="range" id="vs-text-size" min="3" max="16" step="0.5" value="6"></label>
+                <label class="vs-field">Colour <input type="color" id="vs-text-color" value="#ffffff" style="width:42px;height:28px;border:none;background:none;cursor:pointer;"></label>
+                <label class="vs-field" style="gap:7px;"><input type="checkbox" id="vs-text-bg"> Background bar (for readability)</label>
+                <div class="vs-pos-btns">
+                  <button class="vs-mini" data-pos="top">⤒ Top</button>
+                  <button class="vs-mini" data-pos="mid">↔ Middle</button>
+                  <button class="vs-mini" data-pos="bottom">⤓ Bottom</button>
+                </div>
+                <label class="vs-field" style="gap:7px;"><input type="checkbox" id="vs-text-whole" checked> Show for the whole video</label>
+                <div id="vs-text-timing" class="vs-pos-btns" style="display:none;">
+                  <button class="vs-mini" id="vs-text-setin">⊣ Start here</button>
+                  <button class="vs-mini" id="vs-text-setout">End here ⊢</button>
+                  <span id="vs-text-timelabel" class="vs-meta" style="color:var(--text-dim);font-size:0.72rem;align-self:center;"></span>
+                </div>
+                <button class="vs-mini danger" id="vs-text-delete">✕ Delete this text</button>
+                <p class="vs-hint">Tip: drag the text on the video to place it.</p>
+              </div>
             </div>
 
             <div class="vs-panel">
@@ -330,6 +403,6 @@
 
   <script src="bg.js?v=18"></script>
   <script src="script.js?v=23"></script>
-  <script src="video.js?v=1"></script>
+  <script src="video.js?v=5"></script>
 </body>
 </html>

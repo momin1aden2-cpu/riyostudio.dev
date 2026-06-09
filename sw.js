@@ -1,4 +1,4 @@
-const CACHE_NAME = 'riyo-studio-v26';
+const CACHE_NAME = 'riyo-studio-v30';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -17,7 +17,10 @@ const PRECACHE_ASSETS = [
   '/qr.js',
   '/invoice.js',
   '/video.js',
-  '/assets/icon.svg?v=2'
+  '/assets/icon.svg?v=2',
+  '/assets/fonts/Inter-Bold.ttf',
+  '/assets/fonts/Anton.ttf',
+  '/assets/fonts/Montserrat-Bold.ttf'
 ];
 
 self.addEventListener('install', (e) => {
