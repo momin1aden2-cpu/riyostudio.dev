@@ -1,4 +1,4 @@
-const CACHE_NAME = 'riyo-studio-v25';
+const CACHE_NAME = 'riyo-studio-v26';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -7,6 +7,7 @@ const PRECACHE_ASSETS = [
   '/scanner.html',
   '/qr.html',
   '/invoice.html',
+  '/video.html',
   '/style.css',
   '/script.js',
   '/bg.js',
@@ -15,6 +16,7 @@ const PRECACHE_ASSETS = [
   '/scanner.js',
   '/qr.js',
   '/invoice.js',
+  '/video.js',
   '/assets/icon.svg?v=2'
 ];
 
