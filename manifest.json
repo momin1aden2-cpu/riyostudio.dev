@@ -38,6 +38,13 @@
       "description": "Create custom QR codes",
       "url": "/qr.html",
       "icons": [{ "src": "assets/icon.svg?v=2", "sizes": "any" }]
+    },
+    {
+      "name": "Video Studio",
+      "short_name": "Video",
+      "description": "Trim, cut and merge video locally",
+      "url": "/video.html",
+      "icons": [{ "src": "assets/icon.svg?v=2", "sizes": "any" }]
     }
   ]
 }
