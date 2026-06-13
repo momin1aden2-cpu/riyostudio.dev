@@ -5,7 +5,25 @@
   <style>body { background-color: #060B14 !important; }</style>
   <!-- PWA: Capture install event as early as possible before any other scripts -->
   <script>window._pwaPrompt=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window._pwaPrompt=e;});</script>
-  <script src="coi-serviceworker.js"></script>
+  <!-- Video Studio uses the SINGLE-THREADED FFmpeg engine, which does NOT need
+       cross-origin isolation — and in fact its worker fails to load under it.
+       So we do NOT load coi-serviceworker here, and we drop any existing COI
+       service worker (registered by other pages) for this page. -->
+  <script>
+    (function () {
+      if (!('serviceWorker' in navigator)) return;
+      navigator.serviceWorker.getRegistrations().then(function (rs) {
+        var coi = rs.filter(function (r) {
+          var u = (r.active && r.active.scriptURL) || (r.installing && r.installing.scriptURL) || '';
+          return u.indexOf('coi-serviceworker') !== -1;
+        });
+        if (!coi.length) { sessionStorage.removeItem('vsCoiOff'); return; }
+        if (sessionStorage.getItem('vsCoiOff')) return; // already handled this session — avoid reload loop
+        sessionStorage.setItem('vsCoiOff', '1');
+        Promise.all(coi.map(function (r) { return r.unregister(); })).then(function () { location.reload(); });
+      }).catch(function () {});
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Video Studio — Trim, Cut &amp; Merge Video Locally | Riyo Studio</title>
@@ -48,18 +66,70 @@
     .vs-controls button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.12); color: #10B981; font-size: 1rem; cursor: pointer; flex-shrink: 0; }
     .vs-controls span { font-variant-numeric: tabular-nums; color: var(--text-dim); font-size: 0.9rem; }
 
-    .vs-track { position: relative; height: 46px; margin: 14px 0 6px; background: rgba(255,255,255,0.06); border-radius: 8px; cursor: pointer; touch-action: none; }
-    .vs-keep { position: absolute; top: 4px; bottom: 4px; background: rgba(16,185,129,0.3); border: 1px solid rgba(16,185,129,0.5); border-radius: 5px; box-sizing: border-box; pointer-events: none; }
-    .vs-cut { position: absolute; top: 4px; bottom: 4px; box-sizing: border-box; border: 1px dashed rgba(248,113,113,0.7); border-radius: 5px; pointer-events: none; background: repeating-linear-gradient(45deg, rgba(248,113,113,0.32), rgba(248,113,113,0.32) 7px, rgba(248,113,113,0.14) 7px, rgba(248,113,113,0.14) 14px); }
-    .vs-handle { position: absolute; top: -3px; bottom: -3px; width: 16px; transform: translateX(-50%); background: #34D399; border-radius: 5px; cursor: ew-resize; box-shadow: 0 1px 5px rgba(0,0,0,0.55); touch-action: none; z-index: 3; display: flex; align-items: center; justify-content: center; }
-    .vs-handle::after { content: ''; width: 3px; height: 42%; background: #04140d; border-radius: 2px; }
-    .vs-handle.hidden { display: none; }
-    .vs-playhead { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #fff; box-shadow: 0 0 6px rgba(255,255,255,0.85); pointer-events: none; z-index: 2; }
+    /* Section bar headings */
+    .vs-bar-head, .vs-trim-head { display: flex; justify-content: space-between; align-items: center; color: #fff; font-size: 0.9rem; font-weight: 600; gap: 10px; }
 
-    .vs-inout { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-    .vs-inout label { display: flex; align-items: center; gap: 10px; color: var(--text-dim); font-size: 0.82rem; }
-    .vs-inout input[type=range] { flex: 1; accent-color: #10B981; }
-    .vs-inout-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+    /* Whole-video timeline — one block per clip, one amber marker across everything */
+    .vs-gwrap { margin-top: 18px; }
+    .vs-gtrack { position: relative; height: 64px; margin: 30px 0 0; border-radius: 11px; background: rgba(255,255,255,0.06); cursor: ew-resize; touch-action: none; }
+    .vs-g-regions { position: absolute; inset: 0; display: flex; border-radius: 11px; overflow: hidden; }
+    .vs-g-region { height: 100%; background-color: #000; background-size: cover; background-position: center; border-right: 2px solid #060B14; box-sizing: border-box; min-width: 6px; }
+    .vs-g-region:last-child { border-right: none; }
+    .vs-g-region.active { box-shadow: inset 0 0 0 2px #34D399, inset 0 0 0 4px rgba(16,185,129,0.25); }
+    .vs-gplayhead { position: absolute; top: -2px; bottom: -2px; width: 2px; background: rgba(255,255,255,0.9); box-shadow: 0 0 6px rgba(255,255,255,0.85); pointer-events: none; z-index: 3; }
+
+    /* Trim bar — the selected clip's footage; green window = what you keep */
+    .vs-trim { margin-top: 18px; }
+    .vs-trim-sub { color: var(--text-dim); font-weight: 400; font-size: 0.76rem; font-variant-numeric: tabular-nums; }
+    .vs-track { position: relative; height: 56px; margin: 12px 0 0; background: rgba(255,255,255,0.06); border-radius: 10px; cursor: pointer; touch-action: none; }
+    .vs-drop { position: absolute; top: -12px; bottom: -4px; width: 3px; background: #FBBF24; box-shadow: 0 0 9px rgba(251,191,36,0.9); transform: translateX(-50%); z-index: 6; cursor: ew-resize; touch-action: none; border-radius: 2px; }
+    .vs-drop-tag { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 3px; background: #FBBF24; color: #1a1205; font-size: 0.64rem; font-weight: 800; padding: 2px 7px; border-radius: 7px; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.45); font-variant-numeric: tabular-nums; }
+    .vs-dim { position: absolute; top: 0; bottom: 0; background: rgba(6,11,20,0.74); border-radius: 10px; pointer-events: none; z-index: 1; }
+    .vs-keepwin { position: absolute; top: 0; bottom: 0; box-sizing: border-box; border: 2px solid #34D399; border-radius: 9px; background: rgba(16,185,129,0.12); pointer-events: none; z-index: 2; }
+    .vs-handle { position: absolute; top: -2px; bottom: -2px; width: 18px; transform: translateX(-50%); background: #34D399; border-radius: 6px; cursor: ew-resize; box-shadow: 0 1px 6px rgba(0,0,0,0.5); touch-action: none; z-index: 4; display: flex; align-items: center; justify-content: center; }
+    .vs-handle::after { content: ''; width: 3px; height: 46%; background: #04140d; border-radius: 2px; }
+    .vs-playhead { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #fff; box-shadow: 0 0 6px rgba(255,255,255,0.85); pointer-events: none; z-index: 3; }
+    .vs-playhead::before { content: ''; position: absolute; top: -7px; left: 50%; transform: translateX(-50%); width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 5px rgba(0,0,0,0.55); }
+    .vs-track { cursor: ew-resize; }
+
+    .vs-clip-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .vs-tool { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); color: #cdd6e2; border-radius: 9px; padding: 9px 13px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: border-color 0.15s, color 0.15s, background 0.15s; }
+    .vs-tool:hover { border-color: rgba(16,185,129,0.45); color: #34D399; }
+    .vs-tool.danger:hover { border-color: rgba(248,113,113,0.5); color: #fca5a5; }
+    .vs-tool.primary { background: linear-gradient(135deg, #34D399, #10B981); color: #04140d; border: none; box-shadow: 0 4px 14px rgba(16,185,129,0.28); }
+    .vs-tool.primary:hover { color: #04140d; filter: brightness(1.06); }
+
+    /* Guided banner + big action buttons */
+    .vs-banner { margin-top: 16px; padding: 12px 16px; border-radius: 12px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); color: #d7e4dd; font-size: 0.9rem; line-height: 1.45; }
+    .vs-banner b { color: #fff; }
+    .vs-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
+    .vs-action { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 16px 8px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: #cdd6e2; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: border-color 0.15s, background 0.15s, transform 0.1s; }
+    .vs-action:hover { border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.07); transform: translateY(-1px); }
+    .vs-action.active { border-color: #34D399; background: rgba(16,185,129,0.14); color: #fff; }
+    .vs-action-ico { font-size: 1.5rem; line-height: 1; }
+    .vs-action.go { background: linear-gradient(135deg, #34D399, #10B981); color: #04140d; border: none; box-shadow: 0 4px 16px rgba(16,185,129,0.3); }
+    .vs-action.go:hover { filter: brightness(1.06); color: #04140d; }
+    .vs-mode { margin-top: 18px; padding: 16px; border-radius: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(16,185,129,0.22); }
+    .vs-mode .vs-gtrack, .vs-mode .vs-track { margin-top: 30px; }
+    @media (max-width: 560px) { .vs-actions { grid-template-columns: repeat(2, 1fr); } }
+
+    /* Storyboard — clip cards in playback order */
+    .vs-story-head { display: flex; justify-content: space-between; align-items: center; margin: 22px 0 10px; color: #fff; font-size: 0.95rem; font-weight: 600; }
+    .vs-story-head .vs-story-tip { color: var(--text-dim); font-weight: 400; font-size: 0.74rem; }
+    #vs-clip-meta { color: var(--text-dim); font-weight: 400; font-size: 0.8rem; }
+    .vs-story { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 12px; align-items: center; }
+    .vs-card { position: relative; flex: 0 0 auto; width: 108px; height: 68px; border-radius: 11px; overflow: hidden; cursor: pointer; background-color: #000; background-size: cover; background-position: center; border: 2px solid rgba(255,255,255,0.12); touch-action: pan-y; transition: border-color 0.15s, transform 0.12s, opacity 0.12s, box-shadow 0.15s; }
+    .vs-card.active { border-color: #34D399; box-shadow: 0 0 0 3px rgba(16,185,129,0.2); }
+    .vs-card.dragging { opacity: 0.6; transform: scale(0.95); }
+    .vs-card-grad { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.72), rgba(0,0,0,0) 55%); pointer-events: none; }
+    .vs-card-num { position: absolute; top: 5px; left: 6px; min-width: 19px; height: 19px; padding: 0 4px; border-radius: 10px; background: rgba(0,0,0,0.62); color: #fff; font-size: 0.66rem; font-weight: 700; display: flex; align-items: center; justify-content: center; z-index: 2; font-variant-numeric: tabular-nums; }
+    .vs-card-dur { position: absolute; bottom: 5px; left: 7px; color: #fff; font-size: 0.72rem; font-weight: 600; text-shadow: 0 1px 3px rgba(0,0,0,0.85); z-index: 2; font-variant-numeric: tabular-nums; }
+    .vs-card-x { position: absolute; top: 4px; right: 4px; width: 21px; height: 21px; border-radius: 50%; border: none; background: rgba(0,0,0,0.62); color: #fff; font-size: 0.7rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 3; opacity: 0; transition: opacity 0.15s, background 0.15s; padding: 0; }
+    .vs-card-x:hover { background: rgba(248,113,113,0.85); }
+    .vs-card:hover .vs-card-x, .vs-card.active .vs-card-x { opacity: 1; }
+    .vs-chev { flex: 0 0 auto; align-self: center; color: rgba(52,211,153,0.55); font-size: 1.4rem; line-height: 1; margin: 0 -2px; }
+    .vs-add-card { flex: 0 0 auto; width: 108px; height: 68px; border-radius: 11px; border: 2px dashed rgba(16,185,129,0.4); background: rgba(16,185,129,0.05); color: #10B981; font-size: 0.78rem; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: border-color 0.15s, background 0.15s; }
+    .vs-add-card:hover { border-color: #34D399; background: rgba(16,185,129,0.12); }
 
     .vs-side { display: flex; flex-direction: column; gap: 16px; }
     .vs-panel { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px; }
@@ -71,9 +141,23 @@
     .vs-row select, #vs-format, #vs-quality { background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 8px; padding: 9px; color: #fff; font-size: 0.9rem; cursor: pointer; }
 
     .vs-source, .vs-segment { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; margin-bottom: 8px; background: rgba(0,0,0,0.25); }
+    .vs-source { cursor: pointer; transition: border-color 0.15s, background 0.15s, transform 0.12s, opacity 0.12s; }
     .vs-source.active { border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.08); }
+    .vs-source.dragging { opacity: 0.55; border-color: rgba(16,185,129,0.6); transform: scale(0.98); }
+    .vs-source.drop-target { box-shadow: 0 -2px 0 0 #34D399; }
     .vs-source .vs-name, .vs-segment .vs-name { flex: 1; min-width: 0; color: #cdd6e2; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .vs-source .vs-meta, .vs-segment .vs-meta { color: var(--text-dim); font-size: 0.72rem; font-variant-numeric: tabular-nums; }
+
+    .vs-grip { flex-shrink: 0; color: var(--text-dim); font-size: 1.05rem; line-height: 1; cursor: grab; touch-action: none; padding: 0 1px; user-select: none; }
+    .vs-grip:active { cursor: grabbing; color: #34D399; }
+    .vs-order { flex-shrink: 0; width: 19px; height: 19px; border-radius: 50%; background: rgba(16,185,129,0.18); color: #34D399; font-size: 0.66rem; font-weight: 700; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
+    .vs-thumb { flex-shrink: 0; width: 52px; height: 32px; border-radius: 5px; object-fit: cover; background: #000; border: 1px solid rgba(255,255,255,0.08); }
+    .vs-clip-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .vs-clip-col .vs-name { flex: 0 0 auto; }
+    .vs-clip-actions { flex-shrink: 0; display: flex; gap: 4px; }
+    .vs-icon-btn { width: 27px; height: 27px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: #cdd6e2; font-size: 0.78rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; transition: border-color 0.15s, color 0.15s; }
+    .vs-icon-btn:hover { border-color: rgba(16,185,129,0.4); color: #34D399; }
+    .vs-icon-btn.danger:hover { border-color: rgba(248,113,113,0.5); color: #fca5a5; }
 
     .vs-primary { background: linear-gradient(135deg, #34D399, #10B981); color: #04140d; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; padding: 11px 16px; font-size: 0.9rem; }
     .vs-ghost { width: 100%; background: rgba(16,185,129,0.1); color: #10B981; border: 1px solid rgba(16,185,129,0.35); border-radius: 10px; padding: 9px; font-weight: 600; cursor: pointer; font-size: 0.85rem; }
@@ -158,12 +242,15 @@
     <div class="container">
       <div class="tool-header" style="margin-top: 2rem;">
         <h1 class="tool-header-title">🎬 Video <span class="accent">Studio</span></h1>
-        <p class="tool-header-subtitle">Trim, cut and merge video — entirely in your browser. No uploads, no watermarks, 100% private.</p>
+        <p class="tool-header-subtitle">Combine, trim and arrange clips into one video — right in your browser. No uploads, no watermarks, 100% private.</p>
       </div>
+
+      <!-- File picker lives OUTSIDE the dropzone so a programmatic .click() can't
+           bubble back to the dropzone handler and wipe the insert target. -->
+      <input type="file" id="vs-file-input" accept="video/*" multiple hidden>
 
       <!-- Dropzone -->
       <div id="vs-dropzone" class="vs-dropzone">
-        <input type="file" id="vs-file-input" accept="video/*" multiple hidden>
         <div class="vs-dropzone-inner">
           <div style="font-size: 2.6rem;">🎬</div>
           <h3>Drop video files here</h3>
@@ -181,37 +268,66 @@
               <div class="vs-overlay" id="vs-overlay"></div>
             </div>
             <div class="vs-controls">
-              <button id="vs-play" aria-label="Play / pause">▶</button>
+              <button id="vs-play" aria-label="Play / pause" title="Play your whole video">▶</button>
               <span id="vs-time">0:00 / 0:00</span>
-              <div style="margin-left: auto; display: flex; gap: 6px;">
-                <button id="vs-cut-mid-btn" class="vs-primary" style="padding: 6px 11px; font-size: 0.78rem;">✂️ Cut middle</button>
-                <button id="vs-keep-whole" class="vs-mini" style="padding: 6px 9px; font-size: 0.72rem;">↺ Keep all</button>
+              <span style="margin-left:auto;color:var(--text-dim);font-size:0.76rem;">▶ plays your whole video</span>
+            </div>
+
+            <!-- Guided instruction — always tells you the next step -->
+            <div id="vs-banner" class="vs-banner"></div>
+
+            <!-- What do you want to do? -->
+            <div class="vs-actions">
+              <button id="vs-act-add" class="vs-action"><span class="vs-action-ico">➕</span><span>Add a video</span></button>
+              <button id="vs-act-trim" class="vs-action"><span class="vs-action-ico">✂️</span><span>Trim / cut</span></button>
+              <button id="vs-act-text" class="vs-action"><span class="vs-action-ico">🔤</span><span>Add text</span></button>
+              <button id="vs-act-export" class="vs-action go"><span class="vs-action-ico">⬇</span><span>Download</span></button>
+            </div>
+
+            <!-- ADD-A-VIDEO panel -->
+            <div id="vs-add-panel" class="vs-mode" style="display:none;">
+              <div class="vs-bar-head"><span>① Drag the amber <b style="color:#FBBF24;">⬇</b> marker to where the new video should go</span></div>
+              <div id="vs-gtrack" class="vs-gtrack">
+                <div id="vs-g-regions" class="vs-g-regions"></div>
+                <div id="vs-drop" class="vs-drop"><span id="vs-drop-tag" class="vs-drop-tag">⬇</span></div>
+              </div>
+              <div class="vs-clip-tools">
+                <button id="vs-insert-btn" class="vs-tool primary" title="Pick a video to drop in at the amber marker">② 📁 Choose video to add</button>
+                <button id="vs-split-btn" class="vs-tool" title="Split into two at the amber marker (no new video)">✂️ Just split here</button>
               </div>
             </div>
-            <div id="vs-track" class="vs-track">
-              <div id="vs-keep-left" class="vs-keep"></div>
-              <div id="vs-cut-band" class="vs-cut" style="display:none;"></div>
-              <div id="vs-keep-right" class="vs-keep" style="display:none;"></div>
-              <div id="vs-handle-l" class="vs-handle hidden"></div>
-              <div id="vs-handle-r" class="vs-handle hidden"></div>
-              <div id="vs-playhead" class="vs-playhead"></div>
+
+            <!-- TRIM panel -->
+            <div id="vs-trim-panel" class="vs-mode" style="display:none;">
+              <div class="vs-bar-head">
+                <span>Drag the <b style="color:#34D399;">green edges</b> inwards to keep only the part you want</span>
+                <span id="vs-trim-sub" class="vs-trim-sub"></span>
+              </div>
+              <div id="vs-track" class="vs-track">
+                <div id="vs-dim-l" class="vs-dim"></div>
+                <div id="vs-dim-r" class="vs-dim"></div>
+                <div id="vs-keep" class="vs-keepwin"></div>
+                <div id="vs-handle-l" class="vs-handle"></div>
+                <div id="vs-handle-r" class="vs-handle"></div>
+                <div id="vs-playhead" class="vs-playhead"></div>
+              </div>
+              <div class="vs-clip-tools">
+                <button id="vs-reset-trim" class="vs-tool" title="Keep the whole clip again">↺ Use full clip</button>
+                <button id="vs-remove-clip" class="vs-tool danger" title="Delete this clip entirely">🗑 Delete this clip</button>
+              </div>
             </div>
-            <p class="vs-hint" id="vs-cut-hint">The whole video is kept (green). To remove a section, tap <b>✂️ Cut out middle</b>, then drag the two handles — the <b>red</b> part is removed and the green start &amp; end are joined. Drag a handle to the far edge to instead trim just the start or end.</p>
+
+            <!-- Your clips -->
+            <div class="vs-story-head">
+              <span>🎞️ Your clips <span id="vs-clip-meta"></span></span>
+              <span class="vs-story-tip">tap = pick · drag = reorder</span>
+            </div>
+            <div id="vs-story" class="vs-story"></div>
+            <p class="vs-hint" id="vs-cut-hint"></p>
           </div>
 
           <!-- Sidebar -->
           <aside class="vs-side">
-            <div class="vs-panel">
-              <h4>Sources</h4>
-              <div id="vs-sources"></div>
-              <button id="vs-add-more" class="vs-ghost">＋ Add another video</button>
-            </div>
-
-            <div class="vs-panel">
-              <h4>What you're keeping <span id="vs-timeline-dur"></span></h4>
-              <div id="vs-segments" class="vs-segments"></div>
-            </div>
-
             <div class="vs-panel">
               <h4>Text &amp; Titles</h4>
               <button id="vs-add-text" class="vs-ghost">＋ Add text</button>
@@ -260,9 +376,9 @@
                 </label>
                 <label>Quality
                   <select id="vs-quality">
-                    <option value="social">Social</option>
-                    <option value="youtube" selected>YouTube</option>
-                    <option value="hq">High Quality</option>
+                    <option value="social">Square 720 (fast)</option>
+                    <option value="youtube" selected>720p (fast)</option>
+                    <option value="hq">1080p (slower)</option>
                   </select>
                 </label>
               </div>
@@ -396,6 +512,6 @@
 
   <script src="bg.js?v=18"></script>
   <script src="script.js?v=24"></script>
-  <script src="video.js?v=5"></script>
+  <script src="video.js?v=27"></script>
 </body>
 </html>
