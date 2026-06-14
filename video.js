@@ -80,6 +80,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const fmtRotateBtns = document.querySelectorAll('[data-rotate]');
   const fmtFlipHBtn = document.getElementById('vs-fmt-fliph');
   const fmtFlipVBtn = document.getElementById('vs-fmt-flipv');
+  const actEffects = document.getElementById('vs-act-effects');
+  const effectsPanel = document.getElementById('vs-effects-panel');
+  const fxClipLabel = document.getElementById('vs-fx-clip');
+  const fxSpeedBtns = document.querySelectorAll('[data-speed]');
+  const fxFilterBtns = document.querySelectorAll('.vs-fx-filter');
+  const fxFadeInBtn = document.getElementById('vs-fx-fadein');
+  const fxFadeOutBtn = document.getElementById('vs-fx-fadeout');
   const formatSel = document.getElementById('vs-format');
   const qualitySel = document.getElementById('vs-quality');
   const exportBtn = document.getElementById('vs-export');
@@ -125,6 +132,19 @@ document.addEventListener('DOMContentLoaded', () => {
   let outFill = 'blur';       // 'blur' | 'crop' | 'bars'
   let outRotate = 'none';     // 'none' | 'cw' | 'ccw'
   let outFlipH = false, outFlipV = false;
+  // Effects: per-clip speed (on each source) + global colour look and fades.
+  let vfilter = 'none';       // colour look applied to the whole video
+  let fadeIn = false, fadeOut = false;
+  const FILTERS = {
+    none: { css: 'none', ff: '' },
+    vivid: { css: 'saturate(1.4) contrast(1.08)', ff: 'eq=saturation=1.4:contrast=1.08' },
+    warm: { css: 'saturate(1.15) sepia(0.18)', ff: 'colorbalance=rm=0.09:rh=0.06:bm=-0.05:bh=-0.04,eq=saturation=1.12' },
+    cool: { css: 'saturate(1.1) brightness(1.02) hue-rotate(-8deg)', ff: 'colorbalance=bm=0.09:bh=0.06:rm=-0.05,eq=saturation=1.08' },
+    bw: { css: 'grayscale(1) contrast(1.12)', ff: 'hue=s=0,eq=contrast=1.12' },
+    vintage: { css: 'sepia(0.4) saturate(0.85) contrast(0.95)', ff: 'colorbalance=rm=0.12:gm=0.04:bm=-0.08,eq=saturation=0.82:contrast=0.95' },
+    cinematic: { css: 'contrast(1.18) saturate(1.06) brightness(0.97)', ff: 'eq=contrast=1.18:saturation=1.06:brightness=-0.03,colorbalance=bh=0.04:rl=0.03' }
+  };
+  const speedOf = (s) => s.speed || 1;
   let ffmpegInstance = null;  // single-threaded FFmpeg 0.12 engine, loaded on first export
   let ffLogs = [];            // recent FFmpeg log lines, for surfacing real errors
   let exportStart = 0;
@@ -141,9 +161,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const clamp01 = (f) => Math.min(1, Math.max(0, f));
   const inOf = (s) => s.in || 0;
   const outOf = (s) => (s.out != null ? s.out : s.duration) || 0;
-  const winLen = (s) => Math.max(0, outOf(s) - inOf(s));
+  const winLen = (s) => Math.max(0, outOf(s) - inOf(s));     // source seconds kept
   const clampWin = (s, t) => Math.min(outOf(s), Math.max(inOf(s), t));
-  const keptDuration = (s) => winLen(s);
+  const keptDuration = (s) => winLen(s) / speedOf(s);        // played (output) seconds
 
   const totalDur = () => sources.reduce((a, s) => a + keptDuration(s), 0);
   const globalStartOf = (idx) => { let acc = 0; for (let i = 0; i < idx; i++) acc += keptDuration(sources[i]); return acc; };
@@ -269,6 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const s = activeSource();
     if (!s) return;
     const start = () => {
+      video.playbackRate = speedOf(s);
       try { video.currentTime = inOf(s); } catch (e) { /* not seekable yet */ }
       if (autoplay) { const p = video.play(); if (p && p.catch) p.catch(() => {}); }
     };
@@ -286,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const at = clipAtGlobal(dropGlobal);
     if (at) {
       const s = at.clip;
-      const ft = inOf(s) + at.local;
+      const ft = inOf(s) + at.local * speedOf(s);
       if (activeId !== s.id && video.src !== s.url) { video.pause(); video.src = s.url; }
       activeId = s.id;
       if (seek) {
@@ -328,6 +349,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (capProgress) capProgress.style.display = 'none';
     if (capListEl) capListEl.innerHTML = '';
     if (capCue) { try { capCue.remove(); } catch (e) { /* ignore */ } capCue = null; }
+    vfilter = 'none'; fadeIn = false; fadeOut = false;
+    applyLook();
     texts = [];
     selectedTextId = null;
     renderOverlay();
@@ -352,7 +375,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (audioPanel) audioPanel.style.display = (mode === 'audio') ? '' : 'none';
     if (captionsPanel) captionsPanel.style.display = (mode === 'captions') ? '' : 'none';
     if (formatPanel) formatPanel.style.display = (mode === 'format') ? '' : 'none';
+    if (effectsPanel) effectsPanel.style.display = (mode === 'effects') ? '' : 'none';
     if (actFormat) actFormat.classList.toggle('active', mode === 'format');
+    if (actEffects) actEffects.classList.toggle('active', mode === 'effects');
+    if (mode === 'effects') refreshFxButtons();
     if (actAdd) actAdd.classList.toggle('active', mode === 'add');
     if (actTrim) actTrim.classList.toggle('active', mode === 'trim');
     if (actCut) actCut.classList.toggle('active', mode === 'cut');
@@ -383,8 +409,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (mode === 'format') {
       const labels = { '16:9': 'Landscape 16:9', '9:16': 'Vertical 9:16', '1:1': 'Square 1:1', '4:5': 'Portrait 4:5' };
       banner.innerHTML = `📐 <b>Format: ${labels[outAspect]}.</b> Pick a shape for your platform and how to fill the frame — the preview reframes live. <b>Blur background</b> looks best when the shapes don’t match.`;
+    } else if (mode === 'effects') {
+      banner.innerHTML = '✨ <b>Effects.</b> <b>Speed</b> changes the selected clip (slow-mo or speed-up). <b>Look</b> recolours the whole video and <b>Fade</b> eases it in/out — both shown on the preview (fade is applied on download).';
     } else {
-      banner.innerHTML = 'What next? <b>➕ Add a video</b>, <b>✂️ Shorten a clip</b>, <b>🗑️ Remove a section</b>, <b>🔤 Add text</b>, <b>💬 Captions</b>, <b>🎙️ Audio</b>, <b>📐 Format</b>, or <b>⬇ Download</b>.';
+      banner.innerHTML = 'What next? <b>➕ Add a video</b>, <b>✂️ Shorten a clip</b>, <b>🗑️ Remove a section</b>, <b>🔤 Add text</b>, <b>💬 Captions</b>, <b>🎙️ Audio</b>, <b>📐 Format</b>, <b>✨ Effects</b>, or <b>⬇ Download</b>.';
     }
   }
 
@@ -392,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function previewGlobal(g) {
     const at = clipAtGlobal(g);
     if (!at) return;
-    const s = at.clip, ft = inOf(s) + at.local;
+    const s = at.clip, ft = inOf(s) + at.local * speedOf(s);
     if (activeId !== s.id) { activeId = s.id; if (video.src !== s.url) video.src = s.url; }
     const apply = () => { try { video.currentTime = ft; } catch (e) { /* ignore */ } };
     if (video.readyState >= 1 && video.src === s.url) apply();
@@ -400,7 +428,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ── Rendering ─────────────────────────────────────────────────────
-  function renderAll() { renderTimeline(); renderTrim(); renderCut(); renderStory(); renderAudioList(); updateBanner(); }
+  function renderAll() { renderTimeline(); renderTrim(); renderCut(); renderStory(); renderAudioList(); refreshFxButtons(); updateBanner(); }
 
   function renderCut() {
     if (!cutTrack) return;
@@ -442,7 +470,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const T = totalDur() || 1;
     if (!s) { if (timeLabel) timeLabel.textContent = '0:00 / 0:00'; if (dropTag) dropTag.textContent = '⬇'; return; }
     const idx = sources.findIndex((x) => x.id === s.id);
-    const local = Math.max(0, Math.min(keptDuration(s), video.currentTime - inOf(s)));
+    if (video.playbackRate !== speedOf(s)) video.playbackRate = speedOf(s);
+    const local = Math.max(0, Math.min(keptDuration(s), (video.currentTime - inOf(s)) / speedOf(s)));
     const g = globalStartOf(idx) + local;
     dropGlobal = g;
     if (dropEl) dropEl.style.left = (g / T * 100) + '%';
@@ -565,7 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Queue an insert at an absolute position in the whole video, then open the picker.
   function insertAtGlobal(gt) {
     const at = clipAtGlobal(gt);
-    pendingInsert = at ? { clipId: at.clip.id, time: inOf(at.clip) + at.local } : null;
+    pendingInsert = at ? { clipId: at.clip.id, time: inOf(at.clip) + at.local * speedOf(at.clip) } : null;
     fileInput.click();
   }
 
@@ -573,7 +602,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function splitAtGlobal(gt) {
     const at = clipAtGlobal(gt);
     if (!at) return;
-    const s = at.clip, t = inOf(s) + at.local;
+    const s = at.clip, t = inOf(s) + at.local * speedOf(s);
     if (t <= inOf(s) + 0.05 || t >= outOf(s) - 0.05) return;
     const idx = sources.findIndex((x) => x.id === s.id);
     const left = Object.assign({}, s, { id: ++uid, in: inOf(s), out: t });
@@ -887,7 +916,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const cache = {};
     let acc = 0, any = false;
     for (const s of sources) {
-      const len = keptDuration(s);
+      const outLen = keptDuration(s);   // played seconds on the timeline
+      const srcLen = winLen(s);         // source seconds consumed
       if (!(s.fileKey in cache)) {
         try { cache[s.fileKey] = await dec.decodeAudioData(await s.file.arrayBuffer()); }
         catch (e) { cache[s.fileKey] = null; }
@@ -895,16 +925,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const buf = cache[s.fileKey];
       if (buf) {
         const off = Math.min(inOf(s), buf.duration);
-        const dur = Math.min(len, Math.max(0, buf.duration - off));
+        const dur = Math.min(srcLen, Math.max(0, buf.duration - off));
         if (dur > 0.02) {
           const node = offline.createBufferSource();
           node.buffer = buf;
+          node.playbackRate.value = speedOf(s);  // speed-shifts so word times match the export
           node.connect(offline.destination);
           node.start(acc, off, dur);
           any = true;
         }
       }
-      acc += len;
+      acc += outLen;
     }
     try { dec.close(); } catch (e) { /* ignore */ }
     if (!any) return null;
@@ -1093,6 +1124,33 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fmtFlipVBtn) fmtFlipVBtn.classList.toggle('active', outFlipV);
   }
 
+  // ── Effects (per-clip speed, colour look, fade) ────────────────────
+  function applyLook() {
+    if (!video) return;
+    const f = FILTERS[vfilter];
+    video.style.filter = (f && f.css !== 'none') ? f.css : '';
+  }
+
+  function setClipSpeed(v) {
+    const s = activeSource();
+    if (!s) { flashHint('Tap a clip below first, then set its speed.'); return; }
+    s.speed = v;
+    if (video) video.playbackRate = v;
+    if (captions.length) flashHint('Speed changed — re-generate captions if you want them re-synced.');
+    refreshFxButtons();
+    renderAll();
+  }
+
+  function refreshFxButtons() {
+    const s = activeSource();
+    const sp = s ? speedOf(s) : 1;
+    fxSpeedBtns.forEach((b) => b.classList.toggle('active', parseFloat(b.dataset.speed) === sp));
+    fxFilterBtns.forEach((b) => b.classList.toggle('active', b.dataset.filter === vfilter));
+    if (fxFadeInBtn) fxFadeInBtn.classList.toggle('active', fadeIn);
+    if (fxFadeOutBtn) fxFadeOutBtn.classList.toggle('active', fadeOut);
+    if (fxClipLabel) fxClipLabel.textContent = s ? `· clip ${sources.findIndex((x) => x.id === s.id) + 1}` : '· tap a clip below';
+  }
+
   // ── Playback (plays the whole video; the marker stays put) ─────────
   const nextClipId = () => {
     const i = sources.findIndex((x) => x.id === activeId);
@@ -1158,7 +1216,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const scrub = (cx) => {
       const ft = clampWin(s, clamp01((cx - rect.left) / rect.width) * s.duration);
       try { video.currentTime = ft; } catch (e2) { /* ignore */ }
-      dropGlobal = globalStartOf(idx) + (ft - inOf(s));
+      dropGlobal = globalStartOf(idx) + (ft - inOf(s)) / speedOf(s);
       renderAll();
     };
     scrub(e.clientX);
@@ -1230,6 +1288,13 @@ document.addEventListener('DOMContentLoaded', () => {
   fmtRotateBtns.forEach((b) => b.addEventListener('click', () => { outRotate = (outRotate === b.dataset.rotate) ? 'none' : b.dataset.rotate; applyFormatPreview(); refreshFmtButtons(); }));
   if (fmtFlipHBtn) fmtFlipHBtn.addEventListener('click', () => { outFlipH = !outFlipH; applyFormatPreview(); refreshFmtButtons(); });
   if (fmtFlipVBtn) fmtFlipVBtn.addEventListener('click', () => { outFlipV = !outFlipV; applyFormatPreview(); refreshFmtButtons(); });
+
+  // Effects controls
+  if (actEffects) actEffects.addEventListener('click', () => setMode('effects'));
+  fxSpeedBtns.forEach((b) => b.addEventListener('click', () => setClipSpeed(parseFloat(b.dataset.speed))));
+  fxFilterBtns.forEach((b) => b.addEventListener('click', () => { vfilter = b.dataset.filter; applyLook(); refreshFxButtons(); }));
+  if (fxFadeInBtn) fxFadeInBtn.addEventListener('click', () => { fadeIn = !fadeIn; refreshFxButtons(); });
+  if (fxFadeOutBtn) fxFadeOutBtn.addEventListener('click', () => { fadeOut = !fadeOut; refreshFxButtons(); });
 
   // ── Upload wiring ─────────────────────────────────────────────────
   dropzone.addEventListener('click', () => { pendingInsert = null; fileInput.click(); });
@@ -1472,9 +1537,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportClips = [];
     sources.forEach((s) => {
       const a = inOf(s), b = outOf(s);
-      if (b > a + 0.05) exportClips.push({ sourceId: s.id, start: a, end: b });
+      if (b > a + 0.05) exportClips.push({ sourceId: s.id, start: a, end: b, speed: speedOf(s) });
     });
     if (!exportClips.length) { status('Nothing to export — add a clip first.'); return; }
+
+    // atempo only spans 0.5–2.0, so chain it for speeds outside that range.
+    const atempoChain = (speed) => {
+      if (Math.abs(speed - 1) < 0.001) return '';
+      let s = speed; const ch = [];
+      while (s > 2.0 + 1e-6) { ch.push('atempo=2.0'); s /= 2; }
+      while (s < 0.5 - 1e-6) { ch.push('atempo=0.5'); s *= 2; }
+      ch.push('atempo=' + s.toFixed(4));
+      return ',' + ch.join(',');
+    };
 
     pauseAudioPreview();
     const overlayAudios = audios.slice();
@@ -1569,6 +1644,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return s;
     })();
 
+    const totalOut = exportClips.reduce((a, s) => a + (s.end - s.start) / s.speed, 0);
+    const FADE_D = Math.min(0.6, Math.max(0.2, totalOut / 4));
+
     const buildGraph = () => {
       const parts = [];
       inputs.forEach((inp) => {
@@ -1588,7 +1666,7 @@ document.addEventListener('DOMContentLoaded', () => {
       exportClips.forEach((seg, i) => {
         const inp = inputs[fileKeyToIndex[seg._fk]];
         const vlbl = inp._vl[inp._vn++];
-        const base = `[${vlbl}]trim=${seg.start.toFixed(3)}:${seg.end.toFixed(3)},setpts=PTS-STARTPTS${tf},fps=30`;
+        const base = `[${vlbl}]trim=${seg.start.toFixed(3)}:${seg.end.toFixed(3)},setpts=(PTS-STARTPTS)/${seg.speed}${tf},fps=30`;
         if (outFill === 'crop') {
           parts.push(`${base},scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1[v${i}]`);
         } else if (outFill === 'bars') {
@@ -1602,9 +1680,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (inp.hasAudio) {
           const albl = inp._al[inp._an++];
-          parts.push(`[${albl}]atrim=${seg.start.toFixed(3)}:${seg.end.toFixed(3)},asetpts=PTS-STARTPTS,aresample=44100,aformat=channel_layouts=stereo[a${i}]`);
+          parts.push(`[${albl}]atrim=${seg.start.toFixed(3)}:${seg.end.toFixed(3)},asetpts=PTS-STARTPTS${atempoChain(seg.speed)},aresample=44100,aformat=channel_layouts=stereo[a${i}]`);
         } else {
-          parts.push(`anullsrc=r=44100:cl=stereo:d=${(seg.end - seg.start).toFixed(3)}[a${i}]`);
+          parts.push(`anullsrc=r=44100:cl=stereo:d=${((seg.end - seg.start) / seg.speed).toFixed(3)}[a${i}]`);
         }
       });
       const n = exportClips.length;
@@ -1612,9 +1690,18 @@ document.addEventListener('DOMContentLoaded', () => {
       let cat = '';
       for (let i = 0; i < n; i++) cat += `[v${i}][a${i}]`;
       parts.push(`${cat}concat=n=${n}:v=1:a=1[cv][ca]`);
-      let vOut = '[cv]';
+      // Post-processing on the combined video: colour look → text/captions → fade.
+      const post = [];
+      const lookFf = FILTERS[vfilter] && FILTERS[vfilter].ff;
+      if (lookFf) post.push(lookFf);
       const draws = [texts.length ? drawChain() : '', captions.length ? captionChain() : ''].filter(Boolean).join(',');
-      if (draws) { parts.push(`[cv]${draws}[outv]`); vOut = '[outv]'; }
+      if (draws) post.push(draws);
+      const fades = [];
+      if (fadeIn) fades.push(`fade=t=in:st=0:d=${FADE_D.toFixed(2)}`);
+      if (fadeOut) fades.push(`fade=t=out:st=${Math.max(0, totalOut - FADE_D).toFixed(2)}:d=${FADE_D.toFixed(2)}`);
+      if (fades.length) post.push(fades.join(','));
+      let vOut = '[cv]';
+      if (post.length) { parts.push(`[cv]${post.join(',')}[outv]`); vOut = '[outv]'; }
       return { graph: parts.join(';'), vOut };
     };
 
@@ -1665,36 +1752,43 @@ document.addEventListener('DOMContentLoaded', () => {
       await prepFS(ff);
       status('Checking clips…');
       await probeAudio(ff);
-      status(overlayAudios.length ? 'Mixing audio…' : (exportClips.length > 1 ? 'Combining your clips…' : 'Rendering…'));
+      status(fmt === 'gif' ? 'Rendering GIF…' : (overlayAudios.length ? 'Mixing audio…' : (exportClips.length > 1 ? 'Combining your clips…' : 'Rendering…')));
       const g = buildGraph();
       let graphStr = g.graph;
-      let aOut = '[ca]';
-      // Mix voiceover / music tracks over the video's own audio.
-      if (overlayAudios.length) {
-        const mixParts = [];
-        const labels = ['[ca]'];
-        overlayAudios.forEach((au, j) => {
-          const inIdx = inputs.length + j;
-          const lbl = `oa${j}`;
-          const vol = Math.max(0, au.volume != null ? au.volume : 1).toFixed(2);
-          const delayMs = Math.max(0, Math.round((au.start || 0) * 1000));
-          let chain = `[${inIdx}:a]aresample=44100,aformat=channel_layouts=stereo`;
-          if (delayMs > 0) chain += `,adelay=${delayMs}|${delayMs}`;
-          chain += `,volume=${vol}[${lbl}]`;
-          mixParts.push(chain);
-          labels.push(`[${lbl}]`);
-        });
-        graphStr += ';' + mixParts.join(';') + ';' + labels.join('') +
-          `amix=inputs=${labels.length}:duration=first:dropout_transition=0:normalize=0[mixa]`;
-        aOut = '[mixa]';
-      }
       const args = [];
       inputs.forEach((inp) => args.push('-i', inp.name));
-      overlayAudios.forEach((au) => {
-        if (au.kind === 'music' && au.loop) args.push('-stream_loop', '-1');
-        args.push('-i', au._fsName);
-      });
-      args.push('-filter_complex', graphStr, '-map', g.vOut, '-map', aOut, ...vcodec, ...acodec, outName);
+      if (fmt === 'gif') {
+        // No audio (discard the concat track); drop fps/size and build a palette for a sharp, smaller GIF.
+        const gifW = Math.min(W, 480);
+        graphStr += `;[ca]anullsink;${g.vOut}fps=12,scale=${gifW}:-2:flags=lanczos,split[gpa][gpb];[gpb]palettegen=stats_mode=diff[pal];[gpa][pal]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle[gifo]`;
+        args.push('-filter_complex', graphStr, '-map', '[gifo]', '-loop', '0', outName);
+      } else {
+        let aOut = '[ca]';
+        // Mix voiceover / music tracks over the video's own audio.
+        if (overlayAudios.length) {
+          const mixParts = [];
+          const labels = ['[ca]'];
+          overlayAudios.forEach((au, j) => {
+            const inIdx = inputs.length + j;
+            const lbl = `oa${j}`;
+            const vol = Math.max(0, au.volume != null ? au.volume : 1).toFixed(2);
+            const delayMs = Math.max(0, Math.round((au.start || 0) * 1000));
+            let chain = `[${inIdx}:a]aresample=44100,aformat=channel_layouts=stereo`;
+            if (delayMs > 0) chain += `,adelay=${delayMs}|${delayMs}`;
+            chain += `,volume=${vol}[${lbl}]`;
+            mixParts.push(chain);
+            labels.push(`[${lbl}]`);
+          });
+          graphStr += ';' + mixParts.join(';') + ';' + labels.join('') +
+            `amix=inputs=${labels.length}:duration=first:dropout_transition=0:normalize=0[mixa]`;
+          aOut = '[mixa]';
+        }
+        overlayAudios.forEach((au) => {
+          if (au.kind === 'music' && au.loop) args.push('-stream_loop', '-1');
+          args.push('-i', au._fsName);
+        });
+        args.push('-filter_complex', graphStr, '-map', g.vOut, '-map', aOut, ...vcodec, ...acodec, outName);
+      }
       console.log('[VideoStudio] filtergraph:', graphStr);
       console.log('[VideoStudio] ffmpeg args:', args.join(' '));
       ffLogs = [];
@@ -1702,7 +1796,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await ff.readFile(outName);
       if (!data || !data.length) throw new Error('no output produced');
       updateProgress(1);
-      const blob = new Blob([data.buffer], { type: fmt === 'webm' ? 'video/webm' : 'video/mp4' });
+      const mimeByFmt = { webm: 'video/webm', gif: 'image/gif', mp4: 'video/mp4' };
+      const blob = new Blob([data.buffer], { type: mimeByFmt[fmt] || 'video/mp4' });
       triggerDownload(blob, `riyo-video.${fmt}`);
       status('Done! Saved to your downloads.');
     } catch (err) {
@@ -1717,7 +1812,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(updateBanner, 2600);
   });
 
-  // Apply the default output frame (16:9) and button states on load.
+  // Apply the default output frame (16:9), look and button states on load.
   applyFormatPreview();
   refreshFmtButtons();
+  applyLook();
+  refreshFxButtons();
 });
