@@ -121,6 +121,8 @@
 
     /* Second video (PiP / side-by-side) preview */
     #vs-ovl-video { position: absolute; object-fit: cover; background: #000; z-index: 4; box-shadow: 0 4px 16px rgba(0,0,0,0.55); }
+    #vs-ovl-video.draggable { cursor: grab; outline: 2px solid rgba(16,185,129,0.6); }
+    #vs-ovl-video.draggable:active { cursor: grabbing; }
 
     /* Format panel */
     .vs-fmt-aspects { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
@@ -478,6 +480,14 @@
               <input id="vs-ovl-input" type="file" accept="video/*" hidden>
               <div id="vs-ovl-name" class="vs-cap-status"></div>
               <div id="vs-ovl-opts" style="display:none;">
+                <div class="vs-bar-head" style="margin-top:12px;"><span>✂️ Trim it <span id="vs-ovl-trim-sub" class="vs-trim-sub"></span></span></div>
+                <div id="vs-ovl-track" class="vs-track" style="margin-top:8px;">
+                  <div id="vs-ovl-dim-l" class="vs-dim"></div>
+                  <div id="vs-ovl-dim-r" class="vs-dim"></div>
+                  <div id="vs-ovl-keep" class="vs-keepwin"></div>
+                  <div id="vs-ovl-handle-l" class="vs-handle"></div>
+                  <div id="vs-ovl-handle-r" class="vs-handle"></div>
+                </div>
                 <div class="vs-bar-head" style="margin-top:12px;"><span>Layout</span></div>
                 <div class="vs-pos-btns">
                   <button class="vs-mini" data-pip="off">Off</button>
@@ -485,7 +495,7 @@
                   <button class="vs-mini" data-pip="sbs">⬛ Side-by-side</button>
                 </div>
                 <div id="vs-pip-opts" style="display:none;">
-                  <div class="vs-bar-head" style="margin-top:12px;"><span>Corner &amp; size</span></div>
+                  <div class="vs-bar-head" style="margin-top:12px;"><span>Position &amp; size <small style="color:var(--text-dim);font-weight:400;">· or drag it on the video</small></span></div>
                   <div class="vs-pos-btns">
                     <button class="vs-mini" data-corner="tl">↖ Top-left</button>
                     <button class="vs-mini" data-corner="tr">↗ Top-right</button>
@@ -766,6 +776,6 @@
 
   <script src="bg.js?v=18"></script>
   <script src="script.js?v=24"></script>
-  <script src="video.js?v=36"></script>
+  <script src="video.js?v=37"></script>
 </body>
 </html>

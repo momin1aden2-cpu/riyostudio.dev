@@ -99,6 +99,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const pipSizeInput = document.getElementById('vs-pip-size');
   const sbsSwapBtn = document.getElementById('vs-sbs-swap');
   const ovlMuteBtn = document.getElementById('vs-ovl-mute');
+  const ovlTrack = document.getElementById('vs-ovl-track');
+  const ovlDimL = document.getElementById('vs-ovl-dim-l');
+  const ovlDimR = document.getElementById('vs-ovl-dim-r');
+  const ovlKeep = document.getElementById('vs-ovl-keep');
+  const ovlHandleL = document.getElementById('vs-ovl-handle-l');
+  const ovlHandleR = document.getElementById('vs-ovl-handle-r');
+  const ovlTrimSub = document.getElementById('vs-ovl-trim-sub');
   const actEffects = document.getElementById('vs-act-effects');
   const effectsPanel = document.getElementById('vs-effects-panel');
   const fxClipLabel = document.getElementById('vs-fx-clip');
@@ -157,9 +164,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let vfilter = 'none';       // colour look applied to the whole video
   let fadeIn = false, fadeOut = false;
   // Second video (PiP / side-by-side), composited over the whole main video.
-  let overlay2 = null;        // { file, url, duration, w, h }
+  let overlay2 = null;        // { file, url, duration, w, h, in, out }
   let pipLayout = 'off';      // 'off' | 'pip' | 'sbs'
-  let pipCorner = 'br';       // 'tl' | 'tr' | 'bl' | 'br'
+  let pipX = 0.66, pipY = 0.65; // PiP top-left position, as fractions of the frame
   let pipSize = 0.3;          // inset width as a fraction of the frame
   let sbsDir = 'lr';          // 'lr' | 'tb'
   let sbsSwap = false;        // which side each video sits on
@@ -1202,7 +1209,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (overlay2) { try { URL.revokeObjectURL(overlay2.url); } catch (e) { /* ignore */ } }
     const url = URL.createObjectURL(file);
     const meta = await getMeta(url);
-    overlay2 = { file, url, name: file.name, duration: meta.duration, w: meta.w, h: meta.h };
+    overlay2 = { file, url, name: file.name, duration: meta.duration, w: meta.w, h: meta.h, in: 0, out: meta.duration || 0 };
     if (pipLayout === 'off') pipLayout = 'pip';
     applyOverlayPreview();
     refreshOverlayButtons();
@@ -1226,15 +1233,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ovlVideo.src !== overlay2.url) ovlVideo.src = overlay2.url;
     ovlVideo.muted = true;
     if (pipLayout === 'pip') {
-      const m = '4%';
-      ovlVideo.style.width = (pipSize * 100).toFixed(0) + '%';
+      ovlVideo.classList.add('draggable');
+      ovlVideo.style.width = (pipSize * 100).toFixed(1) + '%';
       ovlVideo.style.height = 'auto';
       ovlVideo.style.borderRadius = '8px';
-      ovlVideo.style.left = (pipCorner === 'tl' || pipCorner === 'bl') ? m : 'auto';
-      ovlVideo.style.right = (pipCorner === 'tr' || pipCorner === 'br') ? m : 'auto';
-      ovlVideo.style.top = (pipCorner === 'tl' || pipCorner === 'tr') ? m : 'auto';
-      ovlVideo.style.bottom = (pipCorner === 'bl' || pipCorner === 'br') ? m : 'auto';
+      ovlVideo.style.right = 'auto'; ovlVideo.style.bottom = 'auto';
+      ovlVideo.style.left = (Math.max(0, Math.min(1 - pipSize, pipX)) * 100).toFixed(2) + '%';
+      ovlVideo.style.top = (Math.max(0, Math.min(0.98, pipY)) * 100).toFixed(2) + '%';
     } else {
+      ovlVideo.classList.remove('draggable');
       ovlVideo.style.borderRadius = '0';
       ovlVideo.style.height = '';
       video.style.objectFit = 'cover';
@@ -1253,8 +1260,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!ovlVideo) return;
     if (!overlay2 || pipLayout === 'off') { if (!ovlVideo.paused) ovlVideo.pause(); return; }
     if (ovlVideo.src !== overlay2.url) ovlVideo.src = overlay2.url;
-    const dur = overlay2.duration || 0;
-    const target = dur > 0 ? (g % dur) : 0;
+    const oin = overlay2.in || 0;
+    const olen = Math.max(0.1, (overlay2.out != null ? overlay2.out : overlay2.duration) - oin);
+    const target = oin + (g % olen);
     if (Math.abs((ovlVideo.currentTime || 0) - target) > 0.4) { try { ovlVideo.currentTime = target; } catch (e) { /* ignore */ } }
     if (!video.paused && ovlVideo.paused) { const p = ovlVideo.play(); if (p && p.catch) p.catch(() => {}); }
     else if (video.paused && !ovlVideo.paused) ovlVideo.pause();
@@ -1269,9 +1277,68 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pipOpts) pipOpts.style.display = (pipLayout === 'pip') ? '' : 'none';
     if (sbsOpts) sbsOpts.style.display = (pipLayout === 'sbs') ? '' : 'none';
     pipBtns.forEach((b) => b.classList.toggle('active', b.dataset.pip === pipLayout));
-    cornerBtns.forEach((b) => b.classList.toggle('active', b.dataset.corner === pipCorner));
     sbsBtns.forEach((b) => b.classList.toggle('active', b.dataset.sbs === sbsDir));
     if (ovlMuteBtn) { ovlMuteBtn.classList.toggle('active', pipMuted); ovlMuteBtn.textContent = pipMuted ? '🔇 Its sound: off' : '🔊 Its sound: on'; }
+    renderOvlTrim();
+  }
+
+  function renderOvlTrim() {
+    if (!ovlTrack || !overlay2 || !overlay2.duration) return;
+    const d = overlay2.duration;
+    const pi = (overlay2.in / d) * 100, po = (overlay2.out / d) * 100;
+    if (ovlDimL) { ovlDimL.style.left = '0%'; ovlDimL.style.width = pi + '%'; }
+    if (ovlDimR) { ovlDimR.style.left = po + '%'; ovlDimR.style.width = (100 - po) + '%'; }
+    if (ovlKeep) { ovlKeep.style.left = pi + '%'; ovlKeep.style.width = (po - pi) + '%'; }
+    if (ovlHandleL) ovlHandleL.style.left = pi + '%';
+    if (ovlHandleR) ovlHandleR.style.left = po + '%';
+    if (ovlTrimSub) ovlTrimSub.textContent = `keeping ${fmtTime(overlay2.out - overlay2.in)} of ${fmtTime(d)}`;
+  }
+
+  function ovlTrimHandle(which) {
+    return (e) => {
+      e.preventDefault(); e.stopPropagation();
+      if (!overlay2 || !overlay2.duration) return;
+      const d = overlay2.duration;
+      const rect = ovlTrack.getBoundingClientRect();
+      const move = (ev) => {
+        const t = clamp01((ev.clientX - rect.left) / rect.width) * d;
+        if (which === 'L') overlay2.in = Math.max(0, Math.min(t, overlay2.out - 0.3));
+        else overlay2.out = Math.min(d, Math.max(t, overlay2.in + 0.3));
+        try { if (ovlVideo) ovlVideo.currentTime = (which === 'L') ? overlay2.in : overlay2.out; } catch (e2) { /* ignore */ }
+        renderOvlTrim();
+      };
+      const up = () => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); };
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', up);
+    };
+  }
+
+  // Drag the inset around the preview (PiP only).
+  function pipDragStart(e) {
+    if (pipLayout !== 'pip' || !overlay2 || !videoWrap) return;
+    e.preventDefault();
+    const wrap = videoWrap.getBoundingClientRect();
+    const move = (ev) => {
+      const r = ovlVideo.getBoundingClientRect();
+      const x = (ev.clientX - wrap.left - r.width / 2) / wrap.width;
+      const y = (ev.clientY - wrap.top - r.height / 2) / wrap.height;
+      pipX = Math.max(0, Math.min(1 - r.width / wrap.width, x));
+      pipY = Math.max(0, Math.min(1 - r.height / wrap.height, y));
+      applyOverlayPreview();
+    };
+    const up = () => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
+  }
+
+  // Corner buttons are quick presets for the drag position.
+  function setPipCorner(corner) {
+    const m = 0.03;
+    let hFrac = pipSize * 0.6;
+    if (ovlVideo && videoWrap) { const wr = videoWrap.getBoundingClientRect(); const r = ovlVideo.getBoundingClientRect(); if (wr.height && r.height) hFrac = r.height / wr.height; }
+    pipX = (corner === 'tl' || corner === 'bl') ? m : (1 - pipSize - m);
+    pipY = (corner === 'tl' || corner === 'tr') ? m : Math.max(0, 1 - hFrac - m);
+    applyOverlayPreview();
   }
 
   // ── Playback (plays the whole video; the marker stays put) ─────────
@@ -1428,11 +1495,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (ovlInput) ovlInput.addEventListener('change', () => { const f = ovlInput.files && ovlInput.files[0]; if (f) addOverlay2(f); ovlInput.value = ''; });
   if (ovlRemoveBtn) ovlRemoveBtn.addEventListener('click', removeOverlay2);
   pipBtns.forEach((b) => b.addEventListener('click', () => { pipLayout = b.dataset.pip; applyOverlayPreview(); refreshOverlayButtons(); }));
-  cornerBtns.forEach((b) => b.addEventListener('click', () => { pipCorner = b.dataset.corner; applyOverlayPreview(); refreshOverlayButtons(); }));
+  cornerBtns.forEach((b) => b.addEventListener('click', () => { setPipCorner(b.dataset.corner); }));
   sbsBtns.forEach((b) => b.addEventListener('click', () => { sbsDir = b.dataset.sbs; applyOverlayPreview(); refreshOverlayButtons(); }));
   if (sbsSwapBtn) sbsSwapBtn.addEventListener('click', () => { sbsSwap = !sbsSwap; applyOverlayPreview(); });
   if (pipSizeInput) pipSizeInput.addEventListener('input', () => { pipSize = parseFloat(pipSizeInput.value); applyOverlayPreview(); });
   if (ovlMuteBtn) ovlMuteBtn.addEventListener('click', () => { pipMuted = !pipMuted; refreshOverlayButtons(); });
+  if (ovlHandleL) ovlHandleL.addEventListener('pointerdown', ovlTrimHandle('L'));
+  if (ovlHandleR) ovlHandleR.addEventListener('pointerdown', ovlTrimHandle('R'));
+  if (ovlVideo) ovlVideo.addEventListener('pointerdown', pipDragStart);
 
   // ── Upload wiring ─────────────────────────────────────────────────
   dropzone.addEventListener('click', () => { pendingInsert = null; fileInput.click(); });
@@ -1914,15 +1984,20 @@ document.addEventListener('DOMContentLoaded', () => {
         args.push('-i', au._fsName);
       });
       const oi = inputs.length + overlayAudios.length;   // second-video input index
-      if (pipOn) args.push('-stream_loop', '-1', '-i', overlay2._fsName);
+      if (pipOn) {
+        // Loop the second video's trimmed window to fill the main video's length.
+        const oin = Math.max(0, overlay2.in || 0);
+        const olen = Math.max(0.1, (overlay2.out != null ? overlay2.out : overlay2.duration) - oin);
+        args.push('-stream_loop', '-1', '-ss', oin.toFixed(3), '-t', olen.toFixed(3), '-i', overlay2._fsName);
+      }
 
       // Composite the second video over the main one (PiP corner or split screen).
       if (pipOn) {
         if (pipLayout === 'pip') {
           const pw = Math.max(2, Math.round(W * pipSize / 2) * 2);
-          const mg = Math.round(W * 0.03);
-          const pos = { tl: `${mg}:${mg}`, tr: `W-w-${mg}:${mg}`, bl: `${mg}:H-h-${mg}`, br: `W-w-${mg}:H-h-${mg}` }[pipCorner];
-          graphStr += `;[${oi}:v]scale=${pw}:-2,setsar=1[pipv];${vOut}[pipv]overlay=${pos}[comp]`;
+          const px = Math.round(Math.max(0, Math.min(1 - pipSize, pipX)) * W);
+          const py = Math.round(Math.max(0, Math.min(0.98, pipY)) * H);
+          graphStr += `;[${oi}:v]scale=${pw}:-2,setsar=1[pipv];${vOut}[pipv]overlay=${px}:${py}[comp]`;
         } else {
           const order = sbsSwap ? '[sb][sa]' : '[sa][sb]';
           if (sbsDir === 'tb') {
