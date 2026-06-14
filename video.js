@@ -192,7 +192,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const speedOf = (s) => s.speed || 1;
   let ffmpegInstance = null;  // single-threaded FFmpeg 0.12 engine, loaded on first export
   let ffLogs = [];            // recent FFmpeg log lines, for surfacing real errors
+  let ffExpectedDur = 0;      // expected output seconds — for accurate progress when the wrapper can't tell (looped inputs)
   let exportStart = 0;
+  let exportPhase = '';
+  let exportHeartbeat = null;
 
   const fmtTime = (s) => {
     if (!isFinite(s) || s < 0) s = 0;
@@ -1675,8 +1678,19 @@ document.addEventListener('DOMContentLoaded', () => {
       const pending = {};
       worker.onmessage = ({ data }) => {
         const id = data.id, type = data.type, payload = data.data;
-        if (type === 'LOG') { if (payload && payload.message) { ffLogs.push(payload.message); if (ffLogs.length > 120) ffLogs.shift(); } return; }
-        if (type === 'PROGRESS') { if (payload && payload.progress >= 0 && payload.progress <= 1) updateProgress(payload.progress); return; }
+        if (type === 'LOG') {
+          if (payload && payload.message) {
+            ffLogs.push(payload.message); if (ffLogs.length > 120) ffLogs.shift();
+            // Drive progress from ffmpeg's own "time=HH:MM:SS.ss" — accurate even when a
+            // looped (-stream_loop) input makes the wrapper's % unreliable.
+            if (ffExpectedDur > 0) {
+              const tm = /time=(\d+):(\d+):(\d+(?:\.\d+)?)/.exec(payload.message);
+              if (tm) updateProgress(Math.min(0.999, ((+tm[1]) * 3600 + (+tm[2]) * 60 + (+tm[3])) / ffExpectedDur));
+            }
+          }
+          return;
+        }
+        if (type === 'PROGRESS') { if (ffExpectedDur <= 0 && payload && payload.progress >= 0 && payload.progress <= 1) updateProgress(payload.progress); return; }
         const p = pending[id];
         if (!p) return;
         delete pending[id];
@@ -1706,14 +1720,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateProgress(frac) {
+    // Only drives the bar — the status text is the ticking elapsed clock (heartbeat),
+    // because the % is unreliable during a two-track merge (looped input).
     frac = Math.min(1, Math.max(0, frac));
     progressBar.style.width = (frac * 100) + '%';
-    if (frac > 0.001 && exportStart) {
-      const elapsed = (performance.now() - exportStart) / 1000;
-      const total = elapsed / frac;
-      const remain = Math.max(0, total - elapsed);
-      status(`Rendering… ${Math.round(frac * 100)}% · ~${fmtTime(remain)} left`);
-    }
   }
 
   function status(msg) { statusEl.textContent = msg; if (exporting && banner) banner.textContent = msg; }
@@ -1745,7 +1755,7 @@ document.addEventListener('DOMContentLoaded', () => {
     pauseAudioPreview();
     const overlayAudios = audios.slice();
     const pipOn = t2.length > 0 && pipLayout !== 'off';
-    let t2File = null, t2HasAudio = false;
+    let t2File = null, t2HasAudio = false, t2In = null, t2Len = 0;
     const audioExt = (au) => {
       const t = (au.file && au.file.type) || '';
       if (/mpeg|mp3/.test(t)) return 'mp3';
@@ -1762,6 +1772,16 @@ document.addEventListener('DOMContentLoaded', () => {
     progressWrap.style.display = 'block';
     updateProgress(0);
     exportStart = performance.now();
+
+    // A ticking elapsed clock so a slow render never *looks* frozen.
+    exportPhase = 'Preparing';
+    if (exportHeartbeat) clearInterval(exportHeartbeat);
+    exportHeartbeat = setInterval(() => {
+      if (!exporting) return;
+      const el = (performance.now() - exportStart) / 1000;
+      const tip = el > 25 ? ' — long/HD clips take a few minutes, keep this tab open' : '';
+      status(`${exportPhase}… ${fmtTime(el)}${tip}`);
+    }, 1000);
 
     const fmt = formatSel.value;
     const qual = QUALITY[qualitySel.value] || QUALITY.sd;
@@ -1865,9 +1885,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (outFill === 'color') {
           parts.push(`${base},scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=0x${(bgColor || '#000000').replace('#', '')},setsar=1[v${i}]`);
         } else {
-          // Blurred backdrop: a zoomed, cropped, blurred copy behind the fitted clip.
+          // Blurred backdrop: blur a tiny downscaled copy then upscale it — visually the
+          // same but far cheaper than blurring the full-size frame.
+          const bw = Math.max(2, Math.round(W / 4 / 2) * 2), bh = Math.max(2, Math.round(H / 4 / 2) * 2);
           parts.push(`${base},split=2[v${i}a][v${i}b]`);
-          parts.push(`[v${i}a]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},boxblur=14:2,setsar=1[v${i}bg]`);
+          parts.push(`[v${i}a]scale=${bw}:${bh}:force_original_aspect_ratio=increase,crop=${bw}:${bh},boxblur=6:1,scale=${W}:${H},setsar=1[v${i}bg]`);
           parts.push(`[v${i}b]scale=${W}:${H}:force_original_aspect_ratio=decrease,setsar=1[v${i}fg]`);
           parts.push(`[v${i}bg][v${i}fg]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[v${i}]`);
         }
@@ -1981,12 +2003,23 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const ff = await ensureFFmpeg();
       await prepFS(ff);
-      status('Checking clips…');
+      exportPhase = 'Checking clips';
       await probeAudio(ff);
       if (pipOn) {
-        status('Rendering the second video…');
-        const r = await renderTrack2(ff);
-        if (r.ok) { t2File = 'track2.mp4'; t2HasAudio = r.hasAudio; }
+        if (t2.length === 1 && (t2[0].speed || 1) === 1) {
+          // Single clip at normal speed → feed it straight to the composite (no extra encode).
+          const s = t2[0];
+          t2File = `ovl2.${ext(s.name)}`;
+          await ff.writeFile(t2File, await u8FromFile(s.file));
+          t2In = inOf(s); t2Len = Math.max(0.1, winLen(s));
+          ffLogs = [];
+          try { const code = await ff.exec(['-i', t2File, '-map', '0:a:0', '-t', '0.1', '-c:a', 'aac', '-y', 'ovlpr.m4a']); t2HasAudio = (code === 0) && !ffLogs.some((l) => /matches no streams|does not contain/i.test(l)); }
+          catch (e) { t2HasAudio = false; }
+        } else {
+          exportPhase = 'Rendering the second video';
+          const r = await renderTrack2(ff);
+          if (r.ok) { t2File = 'track2.mp4'; t2HasAudio = r.hasAudio; }
+        }
       }
       status(fmt === 'gif' ? 'Rendering GIF…' : (overlayAudios.length ? 'Mixing audio…' : (exportClips.length > 1 ? 'Combining your clips…' : 'Rendering…')));
       const g = buildGraph();
@@ -1999,23 +2032,30 @@ document.addEventListener('DOMContentLoaded', () => {
         args.push('-i', au._fsName);
       });
       const oi = inputs.length + overlayAudios.length;   // second-video (track 2) input index
-      if (pipOn && t2File) args.push('-stream_loop', '-1', '-i', t2File);  // loop track 2 to fill
+      if (pipOn && t2File) {
+        // NOTE: never use -stream_loop -1 here — an infinite input deadlocks the
+        // filtergraph. The second video plays once; PiP freezes its last frame (overlay
+        // eof_action=repeat) and side-by-side pads the last frame (tpad) to the main length.
+        if (t2In != null) args.push('-ss', t2In.toFixed(3), '-t', t2Len.toFixed(3), '-i', t2File);
+        else args.push('-i', t2File);
+      }
 
       // Composite the second video over the main one (PiP corner or split screen).
       if (pipOn && t2File) {
+        const pad = `tpad=stop_mode=clone:stop_duration=${Math.max(1, totalOut).toFixed(2)}`;
         if (pipLayout === 'pip') {
           const pw = Math.max(2, Math.round(W * pipSize / 2) * 2);
           const px = Math.round(Math.max(0, Math.min(1 - pipSize, pipX)) * W);
           const py = Math.round(Math.max(0, Math.min(0.98, pipY)) * H);
-          graphStr += `;[${oi}:v]scale=${pw}:-2,setsar=1[pipv];${vOut}[pipv]overlay=${px}:${py}[comp]`;
+          graphStr += `;[${oi}:v]scale=${pw}:-2,setsar=1[pipv];${vOut}[pipv]overlay=${px}:${py}:eof_action=repeat[comp]`;
         } else {
           const order = sbsSwap ? '[sb][sa]' : '[sa][sb]';
           if (sbsDir === 'tb') {
             const hh = Math.max(2, Math.round(H / 4) * 2);
-            graphStr += `;${vOut}scale=${W}:${hh}:force_original_aspect_ratio=increase,crop=${W}:${hh},setsar=1[sa];[${oi}:v]scale=${W}:${hh}:force_original_aspect_ratio=increase,crop=${W}:${hh},setsar=1[sb];${order}vstack[comp]`;
+            graphStr += `;${vOut}scale=${W}:${hh}:force_original_aspect_ratio=increase,crop=${W}:${hh},setsar=1[sa];[${oi}:v]scale=${W}:${hh}:force_original_aspect_ratio=increase,crop=${W}:${hh},${pad},setsar=1[sb];${order}vstack[comp]`;
           } else {
             const ww = Math.max(2, Math.round(W / 4) * 2);
-            graphStr += `;${vOut}scale=${ww}:${H}:force_original_aspect_ratio=increase,crop=${ww}:${H},setsar=1[sa];[${oi}:v]scale=${ww}:${H}:force_original_aspect_ratio=increase,crop=${ww}:${H},setsar=1[sb];${order}hstack[comp]`;
+            graphStr += `;${vOut}scale=${ww}:${H}:force_original_aspect_ratio=increase,crop=${ww}:${H},setsar=1[sa];[${oi}:v]scale=${ww}:${H}:force_original_aspect_ratio=increase,crop=${ww}:${H},${pad},setsar=1[sb];${order}hstack[comp]`;
           }
         }
         vOut = '[comp]';
@@ -2071,20 +2111,30 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('[VideoStudio] filtergraph:', graphStr);
       console.log('[VideoStudio] ffmpeg args:', args.join(' '));
       ffLogs = [];
+      if (fmt !== 'gif') { exportPhase = pipOn ? 'Merging the two videos' : 'Rendering'; }
+      else { exportPhase = 'Rendering GIF'; }
+      ffExpectedDur = Math.max(0.1, totalOut);   // accurate progress for the main pass
+      updateProgress(0);
       await ff.exec(args);
+      ffExpectedDur = 0;
       const data = await ff.readFile(outName);
       if (!data || !data.length) throw new Error('no output produced');
       updateProgress(1);
       const mimeByFmt = { webm: 'video/webm', gif: 'image/gif', mp4: 'video/mp4' };
       const blob = new Blob([data.buffer], { type: mimeByFmt[fmt] || 'video/mp4' });
       triggerDownload(blob, `riyo-video.${fmt}`);
-      status('Done! Saved to your downloads.');
+      if (exportHeartbeat) { clearInterval(exportHeartbeat); exportHeartbeat = null; }
+      const took = fmtTime((performance.now() - exportStart) / 1000);
+      status(`Done! Saved to your downloads. (${took})`);
     } catch (err) {
       console.error('[VideoStudio] export failed:', err);
       console.error('[VideoStudio] ffmpeg log tail:\n' + ffLogs.slice(-30).join('\n'));
+      if (exportHeartbeat) { clearInterval(exportHeartbeat); exportHeartbeat = null; }
       const ffErr = ffLogs.filter((l) => /error|invalid|no such|unable|failed|not found|signature/i.test(l)).slice(-1)[0];
       status('Export failed: ' + (ffErr || (err && err.message) || 'unknown error'));
     }
+    if (exportHeartbeat) { clearInterval(exportHeartbeat); exportHeartbeat = null; }
+    ffExpectedDur = 0;
     exportBtn.disabled = false;
     exporting = false;
     setTimeout(() => { progressWrap.style.display = 'none'; }, 1500);
