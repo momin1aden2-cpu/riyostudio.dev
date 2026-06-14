@@ -34,9 +34,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const actAdd = document.getElementById('vs-act-add');
   const actTrim = document.getElementById('vs-act-trim');
   const actText = document.getElementById('vs-act-text');
+  const actCut = document.getElementById('vs-act-cut');
+  const actAudio = document.getElementById('vs-act-audio');
   const actExport = document.getElementById('vs-act-export');
+  const audioPanel = document.getElementById('vs-audio-panel');
+  const recBtn = document.getElementById('vs-rec-btn');
+  const musicBtn = document.getElementById('vs-music-btn');
+  const musicInput = document.getElementById('vs-music-input');
+  const aiBtn = document.getElementById('vs-ai-btn');
+  const aiForm = document.getElementById('vs-ai-form');
+  const aiText = document.getElementById('vs-ai-text');
+  const aiVoiceSel = document.getElementById('vs-ai-voice');
+  const aiKeyInput = document.getElementById('vs-ai-key');
+  const aiGenBtn = document.getElementById('vs-ai-gen');
+  const audioListEl = document.getElementById('vs-audio-list');
   const addPanel = document.getElementById('vs-add-panel');
   const trimPanel = document.getElementById('vs-trim-panel');
+  const cutPanel = document.getElementById('vs-cut-panel');
+  const cutTrack = document.getElementById('vs-cut-track');
+  const cutRegions = document.getElementById('vs-cut-regions');
+  const cutBand = document.getElementById('vs-cut-band');
+  const cutLEl = document.getElementById('vs-cut-l');
+  const cutREl = document.getElementById('vs-cut-r');
+  const cutSub = document.getElementById('vs-cut-sub');
+  const cutRemoveBtn = document.getElementById('vs-cut-remove');
+  const cutReplaceBtn = document.getElementById('vs-cut-replace');
   const formatSel = document.getElementById('vs-format');
   const qualitySel = document.getElementById('vs-quality');
   const exportBtn = document.getElementById('vs-export');
@@ -61,8 +83,11 @@ document.addEventListener('DOMContentLoaded', () => {
   let fileSeq = 0;
   let pendingInsert = null;   // { clipId, time } — where the next picked video drops in
   let dropGlobal = 0;         // amber marker, in seconds across the whole combined video
-  let mode = 'home';          // guided mode: 'home' | 'add' | 'trim'
+  let mode = 'home';          // guided mode: 'home' | 'add' | 'trim' | 'cut' | 'audio'
+  let cutS = 0, cutE = 0;     // 'cut out a part' selection, in seconds across the whole video
   let exporting = false;
+  let audios = [];            // overlay audio: { id, kind, name, file, url, duration, start, volume, el }
+  let mediaRecorder = null, recChunks = [], recStartGlobal = 0;
   let ffmpegInstance = null;  // single-threaded FFmpeg 0.12 engine, loaded on first export
   let ffLogs = [];            // recent FFmpeg log lines, for surfacing real errors
   let exportStart = 0;
@@ -258,6 +283,8 @@ document.addEventListener('DOMContentLoaded', () => {
     video.pause();
     video.removeAttribute('src');
     video.load();
+    audios.forEach((au) => { if (au.el) { try { au.el.pause(); } catch (e) { /* ignore */ } } try { URL.revokeObjectURL(au.url); } catch (e) { /* ignore */ } });
+    audios = [];
     texts = [];
     selectedTextId = null;
     renderOverlay();
@@ -278,8 +305,17 @@ document.addEventListener('DOMContentLoaded', () => {
     mode = (mode === m && m !== 'home') ? 'home' : m;
     if (addPanel) addPanel.style.display = (mode === 'add') ? '' : 'none';
     if (trimPanel) trimPanel.style.display = (mode === 'trim') ? '' : 'none';
+    if (cutPanel) cutPanel.style.display = (mode === 'cut') ? '' : 'none';
+    if (audioPanel) audioPanel.style.display = (mode === 'audio') ? '' : 'none';
     if (actAdd) actAdd.classList.toggle('active', mode === 'add');
     if (actTrim) actTrim.classList.toggle('active', mode === 'trim');
+    if (actCut) actCut.classList.toggle('active', mode === 'cut');
+    if (actAudio) actAudio.classList.toggle('active', mode === 'audio');
+    if (mode === 'cut') {
+      // default selection: the middle third of the whole video
+      const T = totalDur();
+      cutS = T * 0.33; cutE = T * 0.66;
+    }
     renderAll();
   }
 
@@ -288,16 +324,53 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!sources.length) { banner.innerHTML = 'Add a video to get started.'; return; }
     if (mode === 'trim') {
       const n = Math.max(1, sources.findIndex((x) => x.id === activeId) + 1);
-      banner.innerHTML = `✂️ <b>Trimming clip ${n}.</b> Drag the <b style="color:#34D399;">green edges</b> in to keep only the part you want (dimmed = removed). Tap another clip below to trim that one instead.`;
+      banner.innerHTML = `✂️ <b>Shortening clip ${n}.</b> Drag the <b style="color:#34D399;">green edges</b> in to keep only the part you want (dimmed = removed). Tap another clip below to shorten that one instead.`;
     } else if (mode === 'add') {
       banner.innerHTML = '➕ <b>Add a video.</b> ① Drag the amber <b style="color:#FBBF24;">⬇</b> marker to the spot. ② Tap <b>“Choose video to add”</b> — it drops in right there.';
+    } else if (mode === 'cut') {
+      banner.innerHTML = '🗑️ <b>Remove a section.</b> Drag the <b style="color:#f87171;">red edges</b> to mark the section to remove (e.g. 1:10 → 1:50), then <b>Remove</b> it (the rest joins up) or <b>Replace</b> it with another video.';
+    } else if (mode === 'audio') {
+      banner.innerHTML = '🎙️ <b>Add audio.</b> <b>Record</b> a voiceover, <b>add music</b> from your device, or generate an <b>AI voice</b>. Set each track’s volume below — they’re mixed into your video when you download.';
     } else {
-      banner.innerHTML = 'What next? <b>➕ Add a video</b>, <b>✂️ Trim / cut</b> a clip, <b>🔤 Add text</b>, or <b>⬇ Download</b>. (Tap a clip below to pick which one to trim.)';
+      banner.innerHTML = 'What next? <b>➕ Add a video</b>, <b>✂️ Shorten a clip</b>, <b>🗑️ Remove a section</b>, <b>🔤 Add text</b>, <b>🎙️ Audio</b>, or <b>⬇ Download</b>.';
     }
   }
 
+  // Seek the preview to an absolute whole-video position (loads the right clip).
+  function previewGlobal(g) {
+    const at = clipAtGlobal(g);
+    if (!at) return;
+    const s = at.clip, ft = inOf(s) + at.local;
+    if (activeId !== s.id) { activeId = s.id; if (video.src !== s.url) video.src = s.url; }
+    const apply = () => { try { video.currentTime = ft; } catch (e) { /* ignore */ } };
+    if (video.readyState >= 1 && video.src === s.url) apply();
+    else video.addEventListener('loadedmetadata', apply, { once: true });
+  }
+
   // ── Rendering ─────────────────────────────────────────────────────
-  function renderAll() { renderTimeline(); renderTrim(); renderStory(); updateBanner(); }
+  function renderAll() { renderTimeline(); renderTrim(); renderCut(); renderStory(); renderAudioList(); updateBanner(); }
+
+  function renderCut() {
+    if (!cutTrack) return;
+    const T = totalDur() || 1;
+    if (cutRegions) {
+      cutRegions.innerHTML = '';
+      sources.forEach((s) => {
+        const r = document.createElement('div');
+        r.className = 'vs-g-region';
+        r.style.width = (keptDuration(s) / T * 100) + '%';
+        if (s.thumb) r.style.backgroundImage = `url("${s.thumb}")`;
+        cutRegions.appendChild(r);
+      });
+    }
+    cutS = Math.max(0, Math.min(cutS, T));
+    cutE = Math.max(cutS + 0.1, Math.min(cutE, T));
+    const ps = cutS / T * 100, pe = cutE / T * 100;
+    if (cutBand) { cutBand.style.left = ps + '%'; cutBand.style.width = (pe - ps) + '%'; }
+    if (cutLEl) cutLEl.style.left = ps + '%';
+    if (cutREl) cutREl.style.left = pe + '%';
+    if (cutSub) cutSub.textContent = `remove ${fmtTime(cutS)} → ${fmtTime(cutE)}  (−${fmtTime(cutE - cutS)})`;
+  }
 
   function updateClipMeta() {
     if (!clipMetaEl) return;
@@ -325,6 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (s.duration && playhead) playhead.style.left = clamp01(video.currentTime / s.duration) * 100 + '%';
     if (timeLabel) timeLabel.textContent = `${fmtTime(g)} / ${fmtTime(T)}`;
     updateInsertLabel();
+    if (audios.length) syncAudioPreview(g);
   }
 
   // Global timeline: one proportional block per clip + the amber marker.
@@ -423,7 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('pointerup', up);
   }
 
-  // ── Insert / Split / Trim ─────────────────────────────────────────
+  // ── Insert / Split / Trim / Cut-out ───────────────────────────────
   function insertHere() {
     const s = activeSource();
     if (s) {
@@ -433,6 +507,47 @@ document.addEventListener('DOMContentLoaded', () => {
       pendingInsert = null;
     }
     fileInput.click();
+  }
+
+  // Queue an insert at an absolute position in the whole video, then open the picker.
+  function insertAtGlobal(gt) {
+    const at = clipAtGlobal(gt);
+    pendingInsert = at ? { clipId: at.clip.id, time: inOf(at.clip) + at.local } : null;
+    fileInput.click();
+  }
+
+  // Add a clip boundary exactly at a whole-video position (no-op if already a boundary).
+  function splitAtGlobal(gt) {
+    const at = clipAtGlobal(gt);
+    if (!at) return;
+    const s = at.clip, t = inOf(s) + at.local;
+    if (t <= inOf(s) + 0.05 || t >= outOf(s) - 0.05) return;
+    const idx = sources.findIndex((x) => x.id === s.id);
+    const left = Object.assign({}, s, { id: ++uid, in: inOf(s), out: t });
+    const right = Object.assign({}, s, { id: ++uid, in: t, out: outOf(s) });
+    sources.splice(idx, 1, left, right);
+    refreshThumb(left, (left.in + left.out) / 2);
+    refreshThumb(right, (right.in + right.out) / 2);
+  }
+
+  // Remove the whole-video range [gs, ge] and join what's left.
+  function cutRange(gs, ge) {
+    if (ge - gs < 0.1) return;
+    splitAtGlobal(gs);
+    splitAtGlobal(ge);
+    const removed = [];
+    const keep = [];
+    let acc = 0;
+    sources.forEach((s) => {
+      const len = keptDuration(s);
+      const cs = acc, cse = acc + len;
+      acc = cse;
+      if (cs >= gs - 0.05 && cse <= ge + 0.05) removed.push(s);
+      else keep.push(s);
+    });
+    sources = keep;
+    const stillUsed = new Set(sources.map((s) => s.url));
+    removed.forEach((s) => { if (!stillUsed.has(s.url)) { try { URL.revokeObjectURL(s.url); } catch (e) { /* ignore */ } } });
   }
 
   function splitActive() {
@@ -480,6 +595,208 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+  // Drag the red range handles to mark the part to cut out.
+  function cutHandleDrag(which) {
+    return (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!video.paused) video.pause();
+      const T = totalDur();
+      const rect = cutTrack.getBoundingClientRect();
+      const move = (ev) => {
+        const g = clamp01((ev.clientX - rect.left) / rect.width) * T;
+        if (which === 'L') cutS = Math.min(g, cutE - 0.2);
+        else cutE = Math.max(g, cutS + 0.2);
+        previewGlobal(which === 'L' ? cutS : cutE);
+        renderCut();
+      };
+      const up = () => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); };
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', up);
+    };
+  }
+
+  function doCut(replace) {
+    const T = totalDur();
+    const gs = Math.max(0, Math.min(cutS, T)), ge = Math.max(gs + 0.1, Math.min(cutE, T));
+    if (ge - gs < 0.1) { flashHint('Mark a section to remove first (drag the red edges).'); return; }
+    if (replace) {
+      cutRange(gs, ge);
+      if (!sources.length) { resetToDropzone(); return; }
+      insertAtGlobal(gs); // opens the picker; addFiles drops the new clip into the gap
+      setMode('add');
+      return;
+    }
+    cutRange(gs, ge);
+    if (!sources.length) { resetToDropzone(); return; }
+    if (!activeSource()) activeId = sources[0].id;
+    previewGlobal(Math.min(gs, Math.max(0, totalDur() - 0.05)));
+    cutS = totalDur() * 0.33; cutE = totalDur() * 0.66;
+    renderAll();
+  }
+
+  // ── Audio: voiceover / music / AI voice ───────────────────────────
+  const fmtAudioMeta = (au) => {
+    const tag = au.kind === 'music' ? '🎵 Music' : (au.kind === 'ai' ? '🤖 AI voice' : '🎤 Voiceover');
+    const dur = au.duration ? ' · ' + fmtTime(au.duration) : '';
+    const at = au.start > 0.05 ? ' · from ' + fmtTime(au.start) : '';
+    const loop = (au.kind === 'music' && au.loop) ? ' · loops' : '';
+    return tag + dur + at + loop;
+  };
+
+  function getAudioDuration(url) {
+    return new Promise((resolve) => {
+      const a = document.createElement('audio');
+      a.preload = 'metadata';
+      a.onloadedmetadata = () => resolve(isFinite(a.duration) ? a.duration : 0);
+      a.onerror = () => resolve(0);
+      a.src = url;
+    });
+  }
+
+  async function addAudio(kind, file, name, start) {
+    const url = URL.createObjectURL(file);
+    const duration = await getAudioDuration(url);
+    const au = {
+      id: ++uid, kind, name: name || file.name || 'audio',
+      file, url, duration,
+      start: Math.max(0, start || 0),
+      volume: kind === 'music' ? 0.45 : 1,
+      loop: kind === 'music',
+      el: null
+    };
+    audios.push(au);
+    setMode('audio');
+    renderAudioList();
+  }
+
+  function removeAudio(id) {
+    const i = audios.findIndex((a) => a.id === id);
+    if (i < 0) return;
+    const [au] = audios.splice(i, 1);
+    if (au.el) { try { au.el.pause(); } catch (e) { /* ignore */ } }
+    try { URL.revokeObjectURL(au.url); } catch (e) { /* ignore */ }
+    renderAudioList();
+  }
+
+  function renderAudioList() {
+    if (!audioListEl) return;
+    audioListEl.innerHTML = '';
+    if (!audios.length) {
+      const empty = document.createElement('p');
+      empty.className = 'vs-hint';
+      empty.style.margin = '12px 0 0';
+      empty.textContent = 'No audio added yet. Record a voiceover, add music, or generate an AI voice above.';
+      audioListEl.appendChild(empty);
+      return;
+    }
+    audios.forEach((au) => {
+      const row = document.createElement('div');
+      row.className = 'vs-audio-row';
+      const ico = document.createElement('span'); ico.className = 'vs-au-ico';
+      ico.textContent = au.kind === 'music' ? '🎵' : (au.kind === 'ai' ? '🤖' : '🎤');
+      const name = document.createElement('div'); name.className = 'vs-au-name';
+      name.textContent = au.name;
+      const meta = document.createElement('div'); meta.className = 'vs-au-meta';
+      meta.textContent = fmtAudioMeta(au);
+      const vol = document.createElement('input');
+      vol.type = 'range'; vol.min = '0'; vol.max = '1.5'; vol.step = '0.05';
+      vol.value = String(au.volume); vol.title = 'Volume';
+      vol.addEventListener('input', () => { au.volume = parseFloat(vol.value); if (au.el) au.el.volume = Math.min(1, au.volume); });
+      const x = document.createElement('button'); x.className = 'vs-au-x'; x.innerHTML = '✕'; x.title = 'Remove this audio';
+      x.addEventListener('click', () => removeAudio(au.id));
+      row.appendChild(ico); row.appendChild(name); row.appendChild(meta); row.appendChild(vol); row.appendChild(x);
+      audioListEl.appendChild(row);
+    });
+  }
+
+  // Live preview: keep each overlay track in sync with the whole-video clock.
+  let previewPlaying = false;
+  let isRecording = false;
+  function syncAudioPreview(g) {
+    if (isRecording) { audios.forEach((au) => { if (au.el && !au.el.paused) au.el.pause(); }); return; }
+    audios.forEach((au) => {
+      if (!au.el) { au.el = new Audio(au.url); au.el.preload = 'auto'; }
+      au.el.volume = Math.min(1, au.volume);
+      const rel = g - au.start;
+      const within = au.kind === 'music' ? (rel >= 0) : (rel >= 0 && rel < au.duration + 0.05);
+      if (!previewPlaying || !within || au.duration <= 0) {
+        if (!au.el.paused) au.el.pause();
+        return;
+      }
+      const target = au.loop ? (rel % au.duration) : rel;
+      if (Math.abs(au.el.currentTime - target) > 0.32) { try { au.el.currentTime = target; } catch (e) { /* ignore */ } }
+      if (au.el.paused) { const p = au.el.play(); if (p && p.catch) p.catch(() => {}); }
+    });
+  }
+  function pauseAudioPreview() {
+    previewPlaying = false;
+    audios.forEach((au) => { if (au.el && !au.el.paused) au.el.pause(); });
+  }
+
+  // ── Mic recording ─────────────────────────────────────────────────
+  async function toggleRecord() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') { mediaRecorder.stop(); return; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { flashHint('Recording needs microphone access, which this browser does not support.'); return; }
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+    catch (e) { flashHint('Microphone blocked. Allow mic access and try again.'); return; }
+    recChunks = [];
+    recStartGlobal = dropGlobal || 0;
+    const wasMuted = video.muted;
+    const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+    mediaRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+    mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size) recChunks.push(e.data); };
+    mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach((t) => t.stop());
+      isRecording = false;
+      video.muted = wasMuted;
+      if (recBtn) { recBtn.classList.remove('recording'); recBtn.textContent = '🎤 Record voiceover'; }
+      if (!video.paused) video.pause();
+      const blob = new Blob(recChunks, { type: mime || 'audio/webm' });
+      if (blob.size) await addAudio('voice', blob, `Voiceover ${fmtTime(recStartGlobal)}`, recStartGlobal);
+    };
+    isRecording = true;
+    video.muted = true; // narrate over the video without it bleeding into the mic
+    mediaRecorder.start();
+    if (recBtn) { recBtn.classList.add('recording'); recBtn.textContent = '⏹ Stop recording'; }
+    // Play along from the marker so the voiceover lands in time.
+    previewGlobal(recStartGlobal);
+    const p = video.play(); if (p && p.catch) p.catch(() => {});
+  }
+
+  // ── AI voiceover (ElevenLabs, bring-your-own-key) ──────────────────
+  async function generateAIVoice() {
+    const text = (aiText && aiText.value || '').trim();
+    if (!text) { flashHint('Type what the voice should say first.'); return; }
+    const key = (aiKeyInput && aiKeyInput.value || '').trim();
+    if (!key) { flashHint('Enter your ElevenLabs API key.'); if (aiKeyInput) aiKeyInput.focus(); return; }
+    localStorage.setItem('elevenlabs_api_key', key);
+    const voiceId = aiVoiceSel ? aiVoiceSel.value : 'pNInz6obpgDQGcFmaJgB';
+    const orig = aiGenBtn ? aiGenBtn.textContent : '';
+    if (aiGenBtn) { aiGenBtn.disabled = true; aiGenBtn.textContent = 'Generating…'; }
+    try {
+      const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+        method: 'POST',
+        headers: { 'Accept': 'audio/mpeg', 'Content-Type': 'application/json', 'xi-api-key': key },
+        body: JSON.stringify({ text, model_id: 'eleven_monolingual_v1', voice_settings: { stability: 0.5, similarity_boost: 0.75 } })
+      });
+      if (!res.ok) {
+        let detail = res.status + '';
+        try { const j = await res.json(); detail = (j.detail && (j.detail.message || j.detail)) || detail; } catch (e) { /* ignore */ }
+        throw new Error(typeof detail === 'string' ? detail : 'request failed');
+      }
+      const blob = await res.blob();
+      await addAudio('ai', blob, 'AI voiceover', dropGlobal || 0);
+      if (aiForm) aiForm.style.display = 'none';
+      if (aiText) aiText.value = '';
+    } catch (e) {
+      flashHint('AI voice failed: ' + (e && e.message ? e.message : 'check your key and connection') + '.');
+    } finally {
+      if (aiGenBtn) { aiGenBtn.disabled = false; aiGenBtn.textContent = orig; }
+    }
+  }
+
   // ── Playback (plays the whole video; the marker stays put) ─────────
   const nextClipId = () => {
     const i = sources.findIndex((x) => x.id === activeId);
@@ -496,8 +813,8 @@ document.addEventListener('DOMContentLoaded', () => {
       video.pause();
     }
   });
-  video.addEventListener('play', () => { playBtn.textContent = '❚❚'; });
-  video.addEventListener('pause', () => { playBtn.textContent = '▶'; });
+  video.addEventListener('play', () => { playBtn.textContent = '❚❚'; previewPlaying = true; });
+  video.addEventListener('pause', () => { playBtn.textContent = '▶'; pauseAudioPreview(); });
   video.addEventListener('timeupdate', () => {
     const s = activeSource();
     if (s) {
@@ -565,8 +882,33 @@ document.addEventListener('DOMContentLoaded', () => {
   // Guided action buttons
   if (actAdd) actAdd.addEventListener('click', () => setMode('add'));
   if (actTrim) actTrim.addEventListener('click', () => setMode('trim'));
+  if (actCut) actCut.addEventListener('click', () => setMode('cut'));
   if (actText) actText.addEventListener('click', () => { addTextOverlay('clean'); });
   if (actExport) actExport.addEventListener('click', () => { if (!exporting) exportBtn.click(); });
+
+  // Cut-out-a-part controls
+  if (cutLEl) cutLEl.addEventListener('pointerdown', cutHandleDrag('L'));
+  if (cutREl) cutREl.addEventListener('pointerdown', cutHandleDrag('R'));
+  if (cutRemoveBtn) cutRemoveBtn.addEventListener('click', () => doCut(false));
+  if (cutReplaceBtn) cutReplaceBtn.addEventListener('click', () => doCut(true));
+
+  // Audio controls
+  if (actAudio) actAudio.addEventListener('click', () => setMode('audio'));
+  if (recBtn) recBtn.addEventListener('click', toggleRecord);
+  if (musicBtn) musicBtn.addEventListener('click', () => { if (musicInput) musicInput.click(); });
+  if (musicInput) musicInput.addEventListener('change', () => {
+    const f = musicInput.files && musicInput.files[0];
+    if (f) addAudio('music', f, f.name, 0);
+    musicInput.value = '';
+  });
+  if (aiBtn) aiBtn.addEventListener('click', () => {
+    if (!aiForm) return;
+    const show = aiForm.style.display === 'none';
+    aiForm.style.display = show ? 'flex' : 'none';
+    if (show && aiKeyInput && !aiKeyInput.value) aiKeyInput.value = localStorage.getItem('elevenlabs_api_key') || '';
+    if (show && aiText) aiText.focus();
+  });
+  if (aiGenBtn) aiGenBtn.addEventListener('click', generateAIVoice);
 
   // ── Upload wiring ─────────────────────────────────────────────────
   dropzone.addEventListener('click', () => { pendingInsert = null; fileInput.click(); });
@@ -808,6 +1150,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     if (!exportClips.length) { status('Nothing to export — add a clip first.'); return; }
 
+    pauseAudioPreview();
+    const overlayAudios = audios.slice();
+    const audioExt = (au) => {
+      const t = (au.file && au.file.type) || '';
+      if (/mpeg|mp3/.test(t)) return 'mp3';
+      if (/webm/.test(t)) return 'webm';
+      if (/ogg|opus/.test(t)) return 'ogg';
+      if (/wav/.test(t)) return 'wav';
+      if (/mp4|m4a|aac/.test(t)) return 'm4a';
+      const m = (au.name || '').toLowerCase().match(/\.(mp3|wav|ogg|m4a|aac|webm|opus|flac)$/);
+      return m ? m[1] : 'dat';
+    };
+
     exporting = true;
     exportBtn.disabled = true;
     progressWrap.style.display = 'block';
@@ -890,6 +1245,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function prepFS(ff) {
       for (const inp of inputs) await ff.writeFile(inp.name, await u8FromFile(inp.file));
+      for (let j = 0; j < overlayAudios.length; j++) {
+        const au = overlayAudios[j];
+        au._fsName = `aud_${j}.${audioExt(au)}`;
+        await ff.writeFile(au._fsName, await u8FromFile(au.file));
+      }
       if (texts.length) {
         const usedFonts = Array.from(new Set(texts.map((t) => t.font)));
         for (const fk of usedFonts) {
@@ -924,12 +1284,37 @@ document.addEventListener('DOMContentLoaded', () => {
       await prepFS(ff);
       status('Checking clips…');
       await probeAudio(ff);
-      status(exportClips.length > 1 ? 'Combining your clips…' : 'Rendering…');
+      status(overlayAudios.length ? 'Mixing audio…' : (exportClips.length > 1 ? 'Combining your clips…' : 'Rendering…'));
       const g = buildGraph();
+      let graphStr = g.graph;
+      let aOut = '[ca]';
+      // Mix voiceover / music tracks over the video's own audio.
+      if (overlayAudios.length) {
+        const mixParts = [];
+        const labels = ['[ca]'];
+        overlayAudios.forEach((au, j) => {
+          const inIdx = inputs.length + j;
+          const lbl = `oa${j}`;
+          const vol = Math.max(0, au.volume != null ? au.volume : 1).toFixed(2);
+          const delayMs = Math.max(0, Math.round((au.start || 0) * 1000));
+          let chain = `[${inIdx}:a]aresample=44100,aformat=channel_layouts=stereo`;
+          if (delayMs > 0) chain += `,adelay=${delayMs}|${delayMs}`;
+          chain += `,volume=${vol}[${lbl}]`;
+          mixParts.push(chain);
+          labels.push(`[${lbl}]`);
+        });
+        graphStr += ';' + mixParts.join(';') + ';' + labels.join('') +
+          `amix=inputs=${labels.length}:duration=first:dropout_transition=0:normalize=0[mixa]`;
+        aOut = '[mixa]';
+      }
       const args = [];
       inputs.forEach((inp) => args.push('-i', inp.name));
-      args.push('-filter_complex', g.graph, '-map', g.vOut, '-map', '[ca]', ...vcodec, ...acodec, outName);
-      console.log('[VideoStudio] filtergraph:', g.graph);
+      overlayAudios.forEach((au) => {
+        if (au.kind === 'music' && au.loop) args.push('-stream_loop', '-1');
+        args.push('-i', au._fsName);
+      });
+      args.push('-filter_complex', graphStr, '-map', g.vOut, '-map', aOut, ...vcodec, ...acodec, outName);
+      console.log('[VideoStudio] filtergraph:', graphStr);
       console.log('[VideoStudio] ffmpeg args:', args.join(' '));
       ffLogs = [];
       await ff.exec(args);
