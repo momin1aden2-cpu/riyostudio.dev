@@ -481,7 +481,7 @@
 
             <!-- OVERLAY panel — second video (PiP / side-by-side) -->
             <div id="vs-overlay-panel" class="vs-mode" style="display:none;">
-              <div class="vs-bar-head"><span>Show a <b>second video</b> at the same time — a corner inset (PiP) or a split screen.</span></div>
+              <div class="vs-bar-head"><span>Two videos on screen at once — perfect for <b>reactions</b>, <b>facecam over a screen-recording</b>, <b>duets</b> or <b>before/after</b>. Corner inset (PiP) or split screen.</span></div>
               <div class="vs-clip-tools">
                 <button id="vs-ovl-add" class="vs-tool primary">➕ Add second video</button>
                 <button id="vs-ovl-remove" class="vs-tool danger" style="display:none;">🗑️ Remove</button>
@@ -577,8 +577,9 @@
                 </label>
                 <label>Quality
                   <select id="vs-quality">
-                    <option value="sd" selected>720 (fast)</option>
-                    <option value="hd">1080 (sharper)</option>
+                    <option value="fast">480 (fastest)</option>
+                    <option value="sd" selected>720 (balanced)</option>
+                    <option value="hd">1080 (best, slow)</option>
                   </select>
                 </label>
               </div>
@@ -793,6 +794,6 @@
 
   <script src="bg.js?v=18"></script>
   <script src="script.js?v=24"></script>
-  <script src="video.js?v=43"></script>
+  <script src="video.js?v=44"></script>
 </body>
 </html>

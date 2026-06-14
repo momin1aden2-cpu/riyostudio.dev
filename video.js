@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Quality = the short side; the aspect ratio decides the other dimension. Kept
   // modest because the single-threaded WASM encoder is slow at 1080p.
-  const QUALITY = { sd: { base: 720, crf: 28 }, hd: { base: 1080, crf: 23 } };
+  const QUALITY = { fast: { base: 480, crf: 30 }, sd: { base: 720, crf: 28 }, hd: { base: 1080, crf: 23 } };
   const ASPECTS = { '16:9': [16, 9], '9:16': [9, 16], '1:1': [1, 1], '4:5': [4, 5] };
   const aspectRatio = (key) => { const a = ASPECTS[key] || ASPECTS['16:9']; return a[0] / a[1]; };
   function computeWH(aspectKey, base) {
@@ -504,7 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (mode === 'effects') {
       banner.innerHTML = '✨ <b>Effects.</b> <b>Speed</b> changes the selected clip (slow-mo or speed-up). <b>Look</b> recolours the whole video and <b>Fade</b> eases it in/out — both shown on the preview (fade is applied on download).';
     } else if (mode === 'overlay') {
-      banner.innerHTML = '🔀 <b>Merge two videos.</b> Build <b>Video 1</b> and <b>Video 2</b> separately (switch with the tabs under the player), then choose how they combine — <b>corner inset (PiP)</b> or <b>split screen</b>. They’re merged when you <b>download</b>.';
+      banner.innerHTML = '🔀 <b>Merge two videos</b> — for <b>reactions</b>, <b>facecam over a screen-recording</b>, <b>duets</b> or <b>before/after</b>. Build <b>Video 1</b> &amp; <b>Video 2</b> on their own tabs (under the player), pick <b>corner inset (PiP)</b> or <b>split screen</b>, then <b>download</b> to merge.';
     } else {
       banner.innerHTML = 'What next? <b>➕ Add a video</b>, <b>✂️ Shorten a clip</b>, <b>🗑️ Remove a section</b>, <b>🔤 Add text</b>, <b>💬 Captions</b>, <b>🎙️ Audio</b>, <b>📐 Format</b>, <b>✨ Effects</b>, or <b>⬇ Download</b>.';
     }
