@@ -58,8 +58,13 @@
     .vs-dropzone h3 { margin: 12px 0 6px; color: #fff; font-size: 1.3rem; }
     .vs-dropzone p { margin: 0; color: var(--text-dim); font-size: 0.9rem; }
 
-    .vs-layout { display: grid; grid-template-columns: 1fr 340px; gap: 20px; margin-top: 1.5rem; align-items: start; }
-    .vs-stage { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; }
+    .vs-layout { display: grid; grid-template-columns: 360px 1fr; gap: 20px; margin-top: 1.5rem; align-items: start; }
+    .vs-stage { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; position: sticky; top: 64px; max-height: calc(100vh - 80px); overflow-y: auto; }
+    /* Left tools rail — always visible beside the video, scrolls on its own */
+    .vs-tools { position: sticky; top: 64px; max-height: calc(100vh - 80px); overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding-right: 4px; }
+    .vs-tools > * { margin-top: 0; }
+    .vs-tools::-webkit-scrollbar, .vs-stage::-webkit-scrollbar { width: 8px; }
+    .vs-tools::-webkit-scrollbar-thumb, .vs-stage::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 8px; }
     #vs-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; display: block; transform-origin: center; }
 
     .vs-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
@@ -122,6 +127,12 @@
     .vs-fmt-aspect:hover { border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.07); }
     .vs-fmt-aspect.active { border-color: #34D399; background: rgba(16,185,129,0.14); }
     .vs-fmt-ico { display: block; border: 2px solid currentColor; border-radius: 3px; opacity: 0.8; margin-bottom: 4px; }
+
+    /* Effects panel */
+    .vs-fx-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .vs-fx-filter { padding: 7px 13px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: #cdd6e2; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+    .vs-fx-filter:hover { border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.07); }
+    .vs-fx-filter.active { border-color: #34D399; background: rgba(16,185,129,0.14); color: #fff; }
 
     /* Trim bar — the selected clip's footage; green window = what you keep */
     .vs-trim { margin-top: 18px; }
@@ -251,7 +262,9 @@
 
     @media (max-width: 900px) {
       .vs-layout { grid-template-columns: 1fr; }
-      .vs-video-wrap { --vs-frame-h: 44vh; }
+      .vs-video-wrap { --vs-frame-h: 40vh; }
+      .vs-tools, .vs-stage { position: static; max-height: none; overflow: visible; }
+      .vs-stage { order: -1; }
     }
   </style>
 </head>
@@ -306,18 +319,8 @@
       <!-- Editor -->
       <div id="vs-editor" style="display: none;">
         <div class="vs-layout">
-          <!-- Stage -->
-          <div class="vs-stage">
-            <div class="vs-video-wrap" id="vs-video-wrap">
-              <video id="vs-video" playsinline></video>
-              <div class="vs-overlay" id="vs-overlay"></div>
-            </div>
-            <div class="vs-controls">
-              <button id="vs-play" aria-label="Play / pause" title="Play your whole video">▶</button>
-              <span id="vs-time">0:00 / 0:00</span>
-              <span style="margin-left:auto;color:var(--text-dim);font-size:0.76rem;">▶ plays your whole video</span>
-            </div>
-
+          <!-- LEFT: tools — always visible beside the video -->
+          <aside class="vs-tools">
             <!-- Guided instruction — always tells you the next step -->
             <div id="vs-banner" class="vs-banner"></div>
 
@@ -330,58 +333,8 @@
               <button id="vs-act-captions" class="vs-action"><span class="vs-action-ico">💬</span><span>Captions</span></button>
               <button id="vs-act-audio" class="vs-action"><span class="vs-action-ico">🎙️</span><span>Audio</span></button>
               <button id="vs-act-format" class="vs-action"><span class="vs-action-ico">📐</span><span>Format</span></button>
+              <button id="vs-act-effects" class="vs-action"><span class="vs-action-ico">✨</span><span>Effects</span></button>
               <button id="vs-act-export" class="vs-action go"><span class="vs-action-ico">⬇</span><span>Download</span></button>
-            </div>
-
-            <!-- ADD-A-VIDEO panel -->
-            <div id="vs-add-panel" class="vs-mode" style="display:none;">
-              <div class="vs-bar-head"><span>① Drag the amber <b style="color:#FBBF24;">⬇</b> marker to where the new video should go</span></div>
-              <div id="vs-gtrack" class="vs-gtrack">
-                <div id="vs-g-regions" class="vs-g-regions"></div>
-                <div id="vs-drop" class="vs-drop"><span id="vs-drop-tag" class="vs-drop-tag">⬇</span></div>
-              </div>
-              <div class="vs-clip-tools">
-                <button id="vs-insert-btn" class="vs-tool primary" title="Pick a video to drop in at the amber marker">② 📁 Choose video to add</button>
-                <button id="vs-split-btn" class="vs-tool" title="Split into two at the amber marker (no new video)">✂️ Just split here</button>
-              </div>
-            </div>
-
-            <!-- TRIM panel -->
-            <div id="vs-trim-panel" class="vs-mode" style="display:none;">
-              <div class="vs-bar-head">
-                <span>Drag the <b style="color:#34D399;">green edges</b> inwards to keep only the part you want</span>
-                <span id="vs-trim-sub" class="vs-trim-sub"></span>
-              </div>
-              <div id="vs-track" class="vs-track">
-                <div id="vs-dim-l" class="vs-dim"></div>
-                <div id="vs-dim-r" class="vs-dim"></div>
-                <div id="vs-keep" class="vs-keepwin"></div>
-                <div id="vs-handle-l" class="vs-handle"></div>
-                <div id="vs-handle-r" class="vs-handle"></div>
-                <div id="vs-playhead" class="vs-playhead"></div>
-              </div>
-              <div class="vs-clip-tools">
-                <button id="vs-reset-trim" class="vs-tool" title="Keep the whole clip again">↺ Use full clip</button>
-                <button id="vs-remove-clip" class="vs-tool danger" title="Delete this clip entirely">🗑 Delete this clip</button>
-              </div>
-            </div>
-
-            <!-- CUT-OUT-A-PART panel -->
-            <div id="vs-cut-panel" class="vs-mode" style="display:none;">
-              <div class="vs-bar-head">
-                <span>Drag the <b style="color:#f87171;">red edges</b> to mark the part to remove</span>
-                <span id="vs-cut-sub" class="vs-trim-sub"></span>
-              </div>
-              <div id="vs-cut-track" class="vs-gtrack">
-                <div id="vs-cut-regions" class="vs-g-regions"></div>
-                <div id="vs-cut-band" class="vs-cut-band"></div>
-                <div id="vs-cut-l" class="vs-cut-handle"></div>
-                <div id="vs-cut-r" class="vs-cut-handle"></div>
-              </div>
-              <div class="vs-clip-tools">
-                <button id="vs-cut-remove" class="vs-tool danger" title="Remove the red part; the rest joins together">🗑️ Remove this part (join the rest)</button>
-                <button id="vs-cut-replace" class="vs-tool primary" title="Remove the red part and drop another video in its place">🔁 Replace with a video…</button>
-              </div>
             </div>
 
             <!-- AUDIO panel — voiceover, music, AI voice -->
@@ -468,17 +421,35 @@
               </div>
             </div>
 
-            <!-- Your clips -->
-            <div class="vs-story-head">
-              <span>🎞️ Your clips <span id="vs-clip-meta"></span></span>
-              <span class="vs-story-tip">tap = pick · drag = reorder</span>
+            <!-- EFFECTS panel — speed, colour look, fade -->
+            <div id="vs-effects-panel" class="vs-mode" style="display:none;">
+              <div class="vs-bar-head"><span><b>Speed</b> changes the selected clip · <b>Look</b> &amp; <b>Fade</b> apply to the whole video.</span></div>
+              <div class="vs-bar-head" style="margin-top:12px;"><span>⏩ Speed <span id="vs-fx-clip" class="vs-trim-sub"></span></span></div>
+              <div class="vs-pos-btns">
+                <button class="vs-mini" data-speed="0.25">🐢 0.25×</button>
+                <button class="vs-mini" data-speed="0.5">0.5×</button>
+                <button class="vs-mini" data-speed="1">1× normal</button>
+                <button class="vs-mini" data-speed="1.5">1.5×</button>
+                <button class="vs-mini" data-speed="2">🐇 2×</button>
+              </div>
+              <div class="vs-bar-head" style="margin-top:14px;"><span>🎨 Look</span></div>
+              <div class="vs-fx-filters">
+                <button class="vs-fx-filter" data-filter="none">None</button>
+                <button class="vs-fx-filter" data-filter="vivid">Vivid</button>
+                <button class="vs-fx-filter" data-filter="warm">Warm</button>
+                <button class="vs-fx-filter" data-filter="cool">Cool</button>
+                <button class="vs-fx-filter" data-filter="bw">B&amp;W</button>
+                <button class="vs-fx-filter" data-filter="vintage">Vintage</button>
+                <button class="vs-fx-filter" data-filter="cinematic">Cinematic</button>
+              </div>
+              <div class="vs-bar-head" style="margin-top:14px;"><span>🎬 Fade</span></div>
+              <div class="vs-pos-btns">
+                <button class="vs-mini" id="vs-fx-fadein">🌅 Fade in</button>
+                <button class="vs-mini" id="vs-fx-fadeout">🌇 Fade out</button>
+              </div>
             </div>
-            <div id="vs-story" class="vs-story"></div>
-            <p class="vs-hint" id="vs-cut-hint"></p>
-          </div>
 
-          <!-- Sidebar -->
-          <aside class="vs-side">
+            <!-- Text & Titles -->
             <div class="vs-panel">
               <h4>Text &amp; Titles</h4>
               <button id="vs-add-text" class="vs-ghost">＋ Add text</button>
@@ -523,6 +494,7 @@
                   <select id="vs-format">
                     <option value="mp4">MP4 (H.264)</option>
                     <option value="webm">WebM (VP9)</option>
+                    <option value="gif">GIF (no sound)</option>
                   </select>
                 </label>
                 <label>Quality
@@ -540,6 +512,78 @@
               <div class="vs-badge-private">🔒 Rendered locally — nothing uploaded</div>
             </div>
           </aside>
+
+          <!-- RIGHT: the video stage, always visible -->
+          <div class="vs-stage">
+            <div class="vs-video-wrap" id="vs-video-wrap">
+              <video id="vs-video" playsinline></video>
+              <div class="vs-overlay" id="vs-overlay"></div>
+            </div>
+            <div class="vs-controls">
+              <button id="vs-play" aria-label="Play / pause" title="Play your whole video">▶</button>
+              <span id="vs-time">0:00 / 0:00</span>
+              <span style="margin-left:auto;color:var(--text-dim);font-size:0.76rem;">▶ plays your whole video</span>
+            </div>
+
+            <!-- Timeline tools live under the video so the change is visible live -->
+            <!-- ADD-A-VIDEO panel -->
+            <div id="vs-add-panel" class="vs-mode" style="display:none;">
+              <div class="vs-bar-head"><span>① Drag the amber <b style="color:#FBBF24;">⬇</b> marker to where the new video should go</span></div>
+              <div id="vs-gtrack" class="vs-gtrack">
+                <div id="vs-g-regions" class="vs-g-regions"></div>
+                <div id="vs-drop" class="vs-drop"><span id="vs-drop-tag" class="vs-drop-tag">⬇</span></div>
+              </div>
+              <div class="vs-clip-tools">
+                <button id="vs-insert-btn" class="vs-tool primary" title="Pick a video to drop in at the amber marker">② 📁 Choose video to add</button>
+                <button id="vs-split-btn" class="vs-tool" title="Split into two at the amber marker (no new video)">✂️ Just split here</button>
+              </div>
+            </div>
+
+            <!-- TRIM panel -->
+            <div id="vs-trim-panel" class="vs-mode" style="display:none;">
+              <div class="vs-bar-head">
+                <span>Drag the <b style="color:#34D399;">green edges</b> inwards to keep only the part you want</span>
+                <span id="vs-trim-sub" class="vs-trim-sub"></span>
+              </div>
+              <div id="vs-track" class="vs-track">
+                <div id="vs-dim-l" class="vs-dim"></div>
+                <div id="vs-dim-r" class="vs-dim"></div>
+                <div id="vs-keep" class="vs-keepwin"></div>
+                <div id="vs-handle-l" class="vs-handle"></div>
+                <div id="vs-handle-r" class="vs-handle"></div>
+                <div id="vs-playhead" class="vs-playhead"></div>
+              </div>
+              <div class="vs-clip-tools">
+                <button id="vs-reset-trim" class="vs-tool" title="Keep the whole clip again">↺ Use full clip</button>
+                <button id="vs-remove-clip" class="vs-tool danger" title="Delete this clip entirely">🗑 Delete this clip</button>
+              </div>
+            </div>
+
+            <!-- REMOVE-A-SECTION panel -->
+            <div id="vs-cut-panel" class="vs-mode" style="display:none;">
+              <div class="vs-bar-head">
+                <span>Drag the <b style="color:#f87171;">red edges</b> to mark the part to remove</span>
+                <span id="vs-cut-sub" class="vs-trim-sub"></span>
+              </div>
+              <div id="vs-cut-track" class="vs-gtrack">
+                <div id="vs-cut-regions" class="vs-g-regions"></div>
+                <div id="vs-cut-band" class="vs-cut-band"></div>
+                <div id="vs-cut-l" class="vs-cut-handle"></div>
+                <div id="vs-cut-r" class="vs-cut-handle"></div>
+              </div>
+              <div class="vs-clip-tools">
+                <button id="vs-cut-remove" class="vs-tool danger" title="Remove the red part; the rest joins together">🗑️ Remove this part (join the rest)</button>
+                <button id="vs-cut-replace" class="vs-tool primary" title="Remove the red part and drop another video in its place">🔁 Replace with a video…</button>
+              </div>
+            </div>
+
+            <div class="vs-story-head">
+              <span>🎞️ Your clips <span id="vs-clip-meta"></span></span>
+              <span class="vs-story-tip">tap = pick · drag = reorder</span>
+            </div>
+            <div id="vs-story" class="vs-story"></div>
+            <p class="vs-hint" id="vs-cut-hint"></p>
+          </div>
         </div>
       </div>
     </div>
@@ -662,6 +706,6 @@
 
   <script src="bg.js?v=18"></script>
   <script src="script.js?v=24"></script>
-  <script src="video.js?v=33"></script>
+  <script src="video.js?v=34"></script>
 </body>
 </html>
