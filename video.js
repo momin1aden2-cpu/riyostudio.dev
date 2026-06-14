@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const aiVoiceSel = document.getElementById('vs-ai-voice');
   const aiKeyInput = document.getElementById('vs-ai-key');
   const aiGenBtn = document.getElementById('vs-ai-gen');
+  const duckBtn = document.getElementById('vs-duck-btn');
   const audioListEl = document.getElementById('vs-audio-list');
   const addPanel = document.getElementById('vs-add-panel');
   const trimPanel = document.getElementById('vs-trim-panel');
@@ -121,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let cutS = 0, cutE = 0;     // 'cut out a part' selection, in seconds across the whole video
   let exporting = false;
   let audios = [];            // overlay audio: { id, kind, name, file, url, duration, start, volume, el }
+  let duckMusic = false;      // auto-dip music under voice (sidechain compress on export)
   let mediaRecorder = null, recChunks = [], recStartGlobal = 0;
   let capWords = [];          // raw transcribed words: { text, start, end } in whole-video seconds
   let captions = [];          // display segments derived from capWords: { id, text, start, end }
@@ -343,6 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
     video.load();
     audios.forEach((au) => { if (au.el) { try { au.el.pause(); } catch (e) { /* ignore */ } } try { URL.revokeObjectURL(au.url); } catch (e) { /* ignore */ } });
     audios = [];
+    duckMusic = false; if (duckBtn) duckBtn.classList.remove('active');
     capWords = []; captions = [];
     if (capStyleBox) capStyleBox.style.display = 'none';
     if (capClearBtn) capClearBtn.style.display = 'none';
@@ -1263,6 +1266,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (show && aiText) aiText.focus();
   });
   if (aiGenBtn) aiGenBtn.addEventListener('click', generateAIVoice);
+  if (duckBtn) duckBtn.addEventListener('click', () => { duckMusic = !duckMusic; duckBtn.classList.toggle('active', duckMusic); });
 
   // Caption controls
   if (actCaptions) actCaptions.addEventListener('click', () => setMode('captions'));
@@ -1766,8 +1770,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let aOut = '[ca]';
         // Mix voiceover / music tracks over the video's own audio.
         if (overlayAudios.length) {
-          const mixParts = [];
-          const labels = ['[ca]'];
+          const proc = [];
+          const voiceLbls = ['[ca]'];   // clip audio + voiceovers — kept loud
+          const musicLbls = [];          // music tracks — ducked under the voice
           overlayAudios.forEach((au, j) => {
             const inIdx = inputs.length + j;
             const lbl = `oa${j}`;
@@ -1776,11 +1781,24 @@ document.addEventListener('DOMContentLoaded', () => {
             let chain = `[${inIdx}:a]aresample=44100,aformat=channel_layouts=stereo`;
             if (delayMs > 0) chain += `,adelay=${delayMs}|${delayMs}`;
             chain += `,volume=${vol}[${lbl}]`;
-            mixParts.push(chain);
-            labels.push(`[${lbl}]`);
+            proc.push(chain);
+            (au.kind === 'music' ? musicLbls : voiceLbls).push(`[${lbl}]`);
           });
-          graphStr += ';' + mixParts.join(';') + ';' + labels.join('') +
-            `amix=inputs=${labels.length}:duration=first:dropout_transition=0:normalize=0[mixa]`;
+          if (duckMusic && musicLbls.length) {
+            // Build a voice bus, split it (one copy to mix, one to drive the sidechain),
+            // then compress the music whenever the voice is above the threshold.
+            let vbus = voiceLbls[0];
+            if (voiceLbls.length > 1) { proc.push(`${voiceLbls.join('')}amix=inputs=${voiceLbls.length}:duration=first:normalize=0[vbus]`); vbus = '[vbus]'; }
+            proc.push(`${vbus}asplit=2[vmix][vsc]`);
+            let mbus = musicLbls[0];
+            if (musicLbls.length > 1) { proc.push(`${musicLbls.join('')}amix=inputs=${musicLbls.length}:normalize=0[mbus]`); mbus = '[mbus]'; }
+            proc.push(`${mbus}[vsc]sidechaincompress=threshold=0.05:ratio=8:attack=15:release=320[duck]`);
+            proc.push(`[vmix][duck]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[mixa]`);
+          } else {
+            const all = ['[ca]', ...overlayAudios.map((_, j) => `[oa${j}]`)];
+            proc.push(`${all.join('')}amix=inputs=${all.length}:duration=first:dropout_transition=0:normalize=0[mixa]`);
+          }
+          graphStr += ';' + proc.join(';');
           aOut = '[mixa]';
         }
         overlayAudios.forEach((au) => {
