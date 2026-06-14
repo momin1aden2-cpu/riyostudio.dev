@@ -95,6 +95,25 @@
     .vs-audio-row .vs-au-x { background: none; border: none; color: #f87171; cursor: pointer; font-size: 0.95rem; padding: 2px 4px; line-height: 1; }
     .vs-tool.recording { background: rgba(248,113,113,0.18); border-color: #f87171; color: #fecaca; }
 
+    /* Captions panel */
+    .vs-cap-progress { margin-top: 14px; }
+    .vs-cap-bar-wrap { height: 8px; border-radius: 6px; background: rgba(255,255,255,0.08); overflow: hidden; }
+    .vs-cap-bar { height: 100%; width: 0; background: linear-gradient(90deg, #10B981, #34D399); transition: width 0.2s; }
+    .vs-cap-status { margin-top: 8px; font-size: 0.8rem; color: var(--text-dim); }
+    .vs-cap-preset { padding: 7px 12px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: #cdd6e2; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+    .vs-cap-preset.active { border-color: #34D399; background: rgba(16,185,129,0.14); color: #fff; }
+    .vs-mini.active { border-color: #34D399; background: rgba(16,185,129,0.14); color: #fff; }
+    .vs-cap-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; max-height: 280px; overflow-y: auto; }
+    .vs-cap-row { display: flex; align-items: center; gap: 9px; padding: 6px 10px; border-radius: 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); }
+    .vs-cap-row .vs-cap-time { font-size: 0.68rem; color: var(--text-dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .vs-cap-row input.vs-cap-text { flex: 1; min-width: 0; background: rgba(0,0,0,0.3); border: 1px solid transparent; color: #e7eef5; border-radius: 7px; padding: 5px 8px; font: inherit; font-size: 0.82rem; outline: none; }
+    .vs-cap-row input.vs-cap-text:focus { border-color: rgba(16,185,129,0.5); }
+    .vs-cap-row .vs-cap-x { background: none; border: none; color: #f87171; cursor: pointer; font-size: 0.9rem; padding: 2px 4px; line-height: 1; }
+
+    /* On-video caption cue */
+    .vs-cap-cue { position: absolute; left: 50%; transform: translate(-50%, -50%); max-width: 90%; text-align: center; font-weight: 800; line-height: 1.15; letter-spacing: 0.01em; pointer-events: none; z-index: 6; text-shadow: 0 2px 7px rgba(0,0,0,0.65); white-space: pre-wrap; word-break: break-word; }
+    .vs-cap-cue.boxed { background: rgba(0,0,0,0.62); padding: 3px 13px; border-radius: 9px; text-shadow: none; }
+
     /* Trim bar — the selected clip's footage; green window = what you keep */
     .vs-trim { margin-top: 18px; }
     .vs-trim-sub { color: var(--text-dim); font-weight: 400; font-size: 0.76rem; font-variant-numeric: tabular-nums; }
@@ -299,6 +318,7 @@
               <button id="vs-act-trim" class="vs-action"><span class="vs-action-ico">✂️</span><span>Shorten a clip</span></button>
               <button id="vs-act-cut" class="vs-action"><span class="vs-action-ico">🗑️</span><span>Remove a section</span></button>
               <button id="vs-act-text" class="vs-action"><span class="vs-action-ico">🔤</span><span>Add text</span></button>
+              <button id="vs-act-captions" class="vs-action"><span class="vs-action-ico">💬</span><span>Captions</span></button>
               <button id="vs-act-audio" class="vs-action"><span class="vs-action-ico">🎙️</span><span>Audio</span></button>
               <button id="vs-act-export" class="vs-action go"><span class="vs-action-ico">⬇</span><span>Download</span></button>
             </div>
@@ -378,6 +398,40 @@
                 <p class="vs-hint">Your key is saved only on this device and sent directly to ElevenLabs.</p>
               </div>
               <div id="vs-audio-list" class="vs-audio-list"></div>
+            </div>
+
+            <!-- CAPTIONS panel — on-device speech-to-text subtitles -->
+            <div id="vs-captions-panel" class="vs-mode" style="display:none;">
+              <div class="vs-bar-head"><span>Auto-generate subtitles from the speech in your video — <b style="color:#34D399;">100% on your device</b>, nothing uploaded.</span></div>
+              <div class="vs-clip-tools">
+                <button id="vs-cap-generate" class="vs-tool primary" title="Transcribe the speech and add captions">✨ Generate captions</button>
+                <button id="vs-cap-clear" class="vs-tool danger" style="display:none;" title="Remove all captions">🗑️ Clear captions</button>
+              </div>
+              <div id="vs-cap-progress" class="vs-cap-progress" style="display:none;">
+                <div class="vs-cap-bar-wrap"><div id="vs-cap-bar" class="vs-cap-bar"></div></div>
+                <div id="vs-cap-status" class="vs-cap-status"></div>
+              </div>
+              <div id="vs-cap-style" style="display:none;">
+                <div class="vs-bar-head" style="margin-top:14px;"><span>Style</span></div>
+                <div class="vs-presets">
+                  <button class="vs-cap-preset" data-preset="clean">Clean</button>
+                  <button class="vs-cap-preset" data-preset="boxed">Boxed</button>
+                  <button class="vs-cap-preset active" data-preset="hype">🔥 Hype</button>
+                  <button class="vs-cap-preset" data-preset="bold">Bold</button>
+                </div>
+                <div class="vs-pos-btns" style="margin-top:10px;">
+                  <button class="vs-mini" data-cappos="top">⤒ Top</button>
+                  <button class="vs-mini" data-cappos="mid">↔ Middle</button>
+                  <button class="vs-mini" data-cappos="bottom">⤓ Bottom</button>
+                </div>
+                <div class="vs-pos-btns" style="margin-top:8px;">
+                  <button class="vs-mini" data-caplayout="word">🔥 One word at a time</button>
+                  <button class="vs-mini" data-caplayout="phrase">💬 Short phrases</button>
+                  <label class="vs-field" style="gap:7px;margin-left:auto;">Colour <input type="color" id="vs-cap-color" value="#FFE14D" style="width:38px;height:26px;border:none;background:none;cursor:pointer;"></label>
+                </div>
+                <p class="vs-hint">Tip: tap any caption below to fix a word the AI misheard.</p>
+              </div>
+              <div id="vs-cap-list" class="vs-cap-list"></div>
             </div>
 
             <!-- Your clips -->
@@ -575,6 +629,6 @@
 
   <script src="bg.js?v=18"></script>
   <script src="script.js?v=24"></script>
-  <script src="video.js?v=29"></script>
+  <script src="video.js?v=31"></script>
 </body>
 </html>

@@ -1,0 +1,9 @@
+# Local dev helpers / scratch
+.devserver.js
+chrome-dom*.html
+chrome-err.log
+chrome-stderr.log
+
+# Over Cloudflare Pages' 25 MiB per-file limit — loaded from CDN at runtime
+# (see FF_CORE_WASM in video.js). Keep it out of the repo so deploys succeed.
+assets/ffmpeg012/ffmpeg-core.wasm
