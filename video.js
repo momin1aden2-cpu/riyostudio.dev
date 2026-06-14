@@ -81,6 +81,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const fmtRotateBtns = document.querySelectorAll('[data-rotate]');
   const fmtFlipHBtn = document.getElementById('vs-fmt-fliph');
   const fmtFlipVBtn = document.getElementById('vs-fmt-flipv');
+  const bgColorInput = document.getElementById('vs-bg-color');
+  const bgSwatchBtns = document.querySelectorAll('[data-bg]');
+  const actOverlay = document.getElementById('vs-act-overlay');
+  const overlayPanel = document.getElementById('vs-overlay-panel');
+  const ovlVideo = document.getElementById('vs-ovl-video');
+  const ovlAddBtn = document.getElementById('vs-ovl-add');
+  const ovlRemoveBtn = document.getElementById('vs-ovl-remove');
+  const ovlInput = document.getElementById('vs-ovl-input');
+  const ovlNameEl = document.getElementById('vs-ovl-name');
+  const ovlOpts = document.getElementById('vs-ovl-opts');
+  const pipOpts = document.getElementById('vs-pip-opts');
+  const sbsOpts = document.getElementById('vs-sbs-opts');
+  const pipBtns = document.querySelectorAll('[data-pip]');
+  const cornerBtns = document.querySelectorAll('[data-corner]');
+  const sbsBtns = document.querySelectorAll('[data-sbs]');
+  const pipSizeInput = document.getElementById('vs-pip-size');
+  const sbsSwapBtn = document.getElementById('vs-sbs-swap');
+  const ovlMuteBtn = document.getElementById('vs-ovl-mute');
   const actEffects = document.getElementById('vs-act-effects');
   const effectsPanel = document.getElementById('vs-effects-panel');
   const fxClipLabel = document.getElementById('vs-fx-clip');
@@ -131,12 +149,21 @@ document.addEventListener('DOMContentLoaded', () => {
   let capBusy = false;
   // Output format: aspect ratio, how to fill the frame, and rotate/flip.
   let outAspect = '16:9';     // '16:9' | '9:16' | '1:1' | '4:5'
-  let outFill = 'blur';       // 'blur' | 'crop' | 'bars'
+  let outFill = 'blur';       // 'blur' | 'crop' | 'color'
+  let bgColor = '#000000';    // backdrop colour when fill = 'color'
   let outRotate = 'none';     // 'none' | 'cw' | 'ccw'
   let outFlipH = false, outFlipV = false;
   // Effects: per-clip speed (on each source) + global colour look and fades.
   let vfilter = 'none';       // colour look applied to the whole video
   let fadeIn = false, fadeOut = false;
+  // Second video (PiP / side-by-side), composited over the whole main video.
+  let overlay2 = null;        // { file, url, duration, w, h }
+  let pipLayout = 'off';      // 'off' | 'pip' | 'sbs'
+  let pipCorner = 'br';       // 'tl' | 'tr' | 'bl' | 'br'
+  let pipSize = 0.3;          // inset width as a fraction of the frame
+  let sbsDir = 'lr';          // 'lr' | 'tb'
+  let sbsSwap = false;        // which side each video sits on
+  let pipMuted = false;       // include the second video's audio on export
   const FILTERS = {
     none: { css: 'none', ff: '' },
     vivid: { css: 'saturate(1.4) contrast(1.08)', ff: 'eq=saturation=1.4:contrast=1.08' },
@@ -354,6 +381,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (capCue) { try { capCue.remove(); } catch (e) { /* ignore */ } capCue = null; }
     vfilter = 'none'; fadeIn = false; fadeOut = false;
     applyLook();
+    if (overlay2) { try { URL.revokeObjectURL(overlay2.url); } catch (e) { /* ignore */ } }
+    overlay2 = null; pipLayout = 'off';
+    if (ovlVideo) { try { ovlVideo.pause(); ovlVideo.removeAttribute('src'); ovlVideo.load(); } catch (e) { /* ignore */ } applyOverlayPreview(); }
+    if (typeof refreshOverlayButtons === 'function') refreshOverlayButtons();
     texts = [];
     selectedTextId = null;
     renderOverlay();
@@ -379,9 +410,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (captionsPanel) captionsPanel.style.display = (mode === 'captions') ? '' : 'none';
     if (formatPanel) formatPanel.style.display = (mode === 'format') ? '' : 'none';
     if (effectsPanel) effectsPanel.style.display = (mode === 'effects') ? '' : 'none';
+    if (overlayPanel) overlayPanel.style.display = (mode === 'overlay') ? '' : 'none';
     if (actFormat) actFormat.classList.toggle('active', mode === 'format');
     if (actEffects) actEffects.classList.toggle('active', mode === 'effects');
+    if (actOverlay) actOverlay.classList.toggle('active', mode === 'overlay');
     if (mode === 'effects') refreshFxButtons();
+    if (mode === 'overlay') refreshOverlayButtons();
     if (actAdd) actAdd.classList.toggle('active', mode === 'add');
     if (actTrim) actTrim.classList.toggle('active', mode === 'trim');
     if (actCut) actCut.classList.toggle('active', mode === 'cut');
@@ -414,6 +448,8 @@ document.addEventListener('DOMContentLoaded', () => {
       banner.innerHTML = `📐 <b>Format: ${labels[outAspect]}.</b> Pick a shape for your platform and how to fill the frame — the preview reframes live. <b>Blur background</b> looks best when the shapes don’t match.`;
     } else if (mode === 'effects') {
       banner.innerHTML = '✨ <b>Effects.</b> <b>Speed</b> changes the selected clip (slow-mo or speed-up). <b>Look</b> recolours the whole video and <b>Fade</b> eases it in/out — both shown on the preview (fade is applied on download).';
+    } else if (mode === 'overlay') {
+      banner.innerHTML = '🖼️ <b>Overlay a second video.</b> Add another clip, then show it as a <b>corner inset (PiP)</b> or <b>split screen</b> over your whole video — for reactions, facecam or duets. It loops to match your video’s length.';
     } else {
       banner.innerHTML = 'What next? <b>➕ Add a video</b>, <b>✂️ Shorten a clip</b>, <b>🗑️ Remove a section</b>, <b>🔤 Add text</b>, <b>💬 Captions</b>, <b>🎙️ Audio</b>, <b>📐 Format</b>, <b>✨ Effects</b>, or <b>⬇ Download</b>.';
     }
@@ -484,6 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateInsertLabel();
     if (audios.length) syncAudioPreview(g);
     renderCaptionPreview(g);
+    syncOverlayPreview(g);
   }
 
   // Global timeline: one proportional block per clip + the amber marker.
@@ -1103,7 +1140,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Output format (aspect ratio, fill, rotate/flip) ────────────────
   function applyFormatPreview() {
-    if (videoWrap) videoWrap.style.setProperty('--vs-ar', aspectRatio(outAspect).toFixed(4));
+    if (videoWrap) {
+      videoWrap.style.setProperty('--vs-ar', aspectRatio(outAspect).toFixed(4));
+      videoWrap.style.background = (outFill === 'color') ? bgColor : '#000';
+    }
     if (video) {
       // crop fills the frame (cover); blur/bars fit it (contain). The blurred
       // backdrop itself is applied on export — preview shows the framing.
@@ -1117,11 +1157,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     renderOverlay();
     renderCaptionPreview(dropGlobal);
+    applyOverlayPreview();
   }
 
   function refreshFmtButtons() {
     fmtAspectBtns.forEach((b) => b.classList.toggle('active', b.dataset.aspect === outAspect));
     fmtFillBtns.forEach((b) => b.classList.toggle('active', b.dataset.fill === outFill));
+    bgSwatchBtns.forEach((b) => b.classList.toggle('active', outFill === 'color' && b.dataset.bg.toLowerCase() === bgColor.toLowerCase()));
     fmtRotateBtns.forEach((b) => b.classList.toggle('active', b.dataset.rotate === outRotate));
     if (fmtFlipHBtn) fmtFlipHBtn.classList.toggle('active', outFlipH);
     if (fmtFlipVBtn) fmtFlipVBtn.classList.toggle('active', outFlipV);
@@ -1154,6 +1196,84 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fxClipLabel) fxClipLabel.textContent = s ? `· clip ${sources.findIndex((x) => x.id === s.id) + 1}` : '· tap a clip below';
   }
 
+  // ── Second video (PiP / side-by-side) ──────────────────────────────
+  async function addOverlay2(file) {
+    if (!file) return;
+    if (overlay2) { try { URL.revokeObjectURL(overlay2.url); } catch (e) { /* ignore */ } }
+    const url = URL.createObjectURL(file);
+    const meta = await getMeta(url);
+    overlay2 = { file, url, name: file.name, duration: meta.duration, w: meta.w, h: meta.h };
+    if (pipLayout === 'off') pipLayout = 'pip';
+    applyOverlayPreview();
+    refreshOverlayButtons();
+  }
+
+  function removeOverlay2() {
+    if (overlay2) { try { URL.revokeObjectURL(overlay2.url); } catch (e) { /* ignore */ } }
+    overlay2 = null; pipLayout = 'off';
+    if (ovlVideo) { try { ovlVideo.pause(); ovlVideo.removeAttribute('src'); ovlVideo.load(); } catch (e) { /* ignore */ } }
+    applyOverlayPreview();
+    refreshOverlayButtons();
+  }
+
+  function applyOverlayPreview() {
+    if (!ovlVideo || !video) return;
+    const on = overlay2 && pipLayout !== 'off';
+    ovlVideo.style.display = on ? 'block' : 'none';
+    video.style.left = ''; video.style.top = ''; video.style.width = ''; video.style.height = '';
+    video.style.objectFit = (outFill === 'crop') ? 'cover' : 'contain';
+    if (!on) return;
+    if (ovlVideo.src !== overlay2.url) ovlVideo.src = overlay2.url;
+    ovlVideo.muted = true;
+    if (pipLayout === 'pip') {
+      const m = '4%';
+      ovlVideo.style.width = (pipSize * 100).toFixed(0) + '%';
+      ovlVideo.style.height = 'auto';
+      ovlVideo.style.borderRadius = '8px';
+      ovlVideo.style.left = (pipCorner === 'tl' || pipCorner === 'bl') ? m : 'auto';
+      ovlVideo.style.right = (pipCorner === 'tr' || pipCorner === 'br') ? m : 'auto';
+      ovlVideo.style.top = (pipCorner === 'tl' || pipCorner === 'tr') ? m : 'auto';
+      ovlVideo.style.bottom = (pipCorner === 'bl' || pipCorner === 'br') ? m : 'auto';
+    } else {
+      ovlVideo.style.borderRadius = '0';
+      ovlVideo.style.height = '';
+      video.style.objectFit = 'cover';
+      const mainFirst = !sbsSwap;
+      if (sbsDir === 'lr') {
+        video.style.left = mainFirst ? '0' : '50%'; video.style.top = '0'; video.style.width = '50%'; video.style.height = '100%';
+        ovlVideo.style.left = mainFirst ? '50%' : '0'; ovlVideo.style.right = 'auto'; ovlVideo.style.top = '0'; ovlVideo.style.bottom = 'auto'; ovlVideo.style.width = '50%'; ovlVideo.style.height = '100%';
+      } else {
+        video.style.left = '0'; video.style.top = mainFirst ? '0' : '50%'; video.style.width = '100%'; video.style.height = '50%';
+        ovlVideo.style.left = '0'; ovlVideo.style.right = 'auto'; ovlVideo.style.top = mainFirst ? '50%' : '0'; ovlVideo.style.bottom = 'auto'; ovlVideo.style.width = '100%'; ovlVideo.style.height = '50%';
+      }
+    }
+  }
+
+  function syncOverlayPreview(g) {
+    if (!ovlVideo) return;
+    if (!overlay2 || pipLayout === 'off') { if (!ovlVideo.paused) ovlVideo.pause(); return; }
+    if (ovlVideo.src !== overlay2.url) ovlVideo.src = overlay2.url;
+    const dur = overlay2.duration || 0;
+    const target = dur > 0 ? (g % dur) : 0;
+    if (Math.abs((ovlVideo.currentTime || 0) - target) > 0.4) { try { ovlVideo.currentTime = target; } catch (e) { /* ignore */ } }
+    if (!video.paused && ovlVideo.paused) { const p = ovlVideo.play(); if (p && p.catch) p.catch(() => {}); }
+    else if (video.paused && !ovlVideo.paused) ovlVideo.pause();
+  }
+
+  function refreshOverlayButtons() {
+    const has = !!overlay2;
+    if (ovlRemoveBtn) ovlRemoveBtn.style.display = has ? '' : 'none';
+    if (ovlOpts) ovlOpts.style.display = has ? '' : 'none';
+    if (ovlAddBtn) ovlAddBtn.textContent = has ? '🔁 Replace second video' : '➕ Add second video';
+    if (ovlNameEl) ovlNameEl.textContent = overlay2 ? overlay2.name : '';
+    if (pipOpts) pipOpts.style.display = (pipLayout === 'pip') ? '' : 'none';
+    if (sbsOpts) sbsOpts.style.display = (pipLayout === 'sbs') ? '' : 'none';
+    pipBtns.forEach((b) => b.classList.toggle('active', b.dataset.pip === pipLayout));
+    cornerBtns.forEach((b) => b.classList.toggle('active', b.dataset.corner === pipCorner));
+    sbsBtns.forEach((b) => b.classList.toggle('active', b.dataset.sbs === sbsDir));
+    if (ovlMuteBtn) { ovlMuteBtn.classList.toggle('active', pipMuted); ovlMuteBtn.textContent = pipMuted ? '🔇 Its sound: off' : '🔊 Its sound: on'; }
+  }
+
   // ── Playback (plays the whole video; the marker stays put) ─────────
   const nextClipId = () => {
     const i = sources.findIndex((x) => x.id === activeId);
@@ -1171,7 +1291,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   video.addEventListener('play', () => { playBtn.textContent = '❚❚'; previewPlaying = true; });
-  video.addEventListener('pause', () => { playBtn.textContent = '▶'; pauseAudioPreview(); });
+  video.addEventListener('pause', () => { playBtn.textContent = '▶'; pauseAudioPreview(); if (ovlVideo && !ovlVideo.paused) ovlVideo.pause(); });
   video.addEventListener('timeupdate', () => {
     const s = activeSource();
     if (s) {
@@ -1289,6 +1409,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (actFormat) actFormat.addEventListener('click', () => setMode('format'));
   fmtAspectBtns.forEach((b) => b.addEventListener('click', () => { outAspect = b.dataset.aspect; applyFormatPreview(); refreshFmtButtons(); updateBanner(); }));
   fmtFillBtns.forEach((b) => b.addEventListener('click', () => { outFill = b.dataset.fill; applyFormatPreview(); refreshFmtButtons(); }));
+  if (bgColorInput) bgColorInput.addEventListener('input', () => { bgColor = bgColorInput.value; outFill = 'color'; applyFormatPreview(); refreshFmtButtons(); });
+  bgSwatchBtns.forEach((b) => b.addEventListener('click', () => { bgColor = b.dataset.bg; if (bgColorInput) bgColorInput.value = bgColor; outFill = 'color'; applyFormatPreview(); refreshFmtButtons(); }));
   fmtRotateBtns.forEach((b) => b.addEventListener('click', () => { outRotate = (outRotate === b.dataset.rotate) ? 'none' : b.dataset.rotate; applyFormatPreview(); refreshFmtButtons(); }));
   if (fmtFlipHBtn) fmtFlipHBtn.addEventListener('click', () => { outFlipH = !outFlipH; applyFormatPreview(); refreshFmtButtons(); });
   if (fmtFlipVBtn) fmtFlipVBtn.addEventListener('click', () => { outFlipV = !outFlipV; applyFormatPreview(); refreshFmtButtons(); });
@@ -1299,6 +1421,18 @@ document.addEventListener('DOMContentLoaded', () => {
   fxFilterBtns.forEach((b) => b.addEventListener('click', () => { vfilter = b.dataset.filter; applyLook(); refreshFxButtons(); }));
   if (fxFadeInBtn) fxFadeInBtn.addEventListener('click', () => { fadeIn = !fadeIn; refreshFxButtons(); });
   if (fxFadeOutBtn) fxFadeOutBtn.addEventListener('click', () => { fadeOut = !fadeOut; refreshFxButtons(); });
+
+  // Overlay (second video) controls
+  if (actOverlay) actOverlay.addEventListener('click', () => setMode('overlay'));
+  if (ovlAddBtn) ovlAddBtn.addEventListener('click', () => { if (ovlInput) ovlInput.click(); });
+  if (ovlInput) ovlInput.addEventListener('change', () => { const f = ovlInput.files && ovlInput.files[0]; if (f) addOverlay2(f); ovlInput.value = ''; });
+  if (ovlRemoveBtn) ovlRemoveBtn.addEventListener('click', removeOverlay2);
+  pipBtns.forEach((b) => b.addEventListener('click', () => { pipLayout = b.dataset.pip; applyOverlayPreview(); refreshOverlayButtons(); }));
+  cornerBtns.forEach((b) => b.addEventListener('click', () => { pipCorner = b.dataset.corner; applyOverlayPreview(); refreshOverlayButtons(); }));
+  sbsBtns.forEach((b) => b.addEventListener('click', () => { sbsDir = b.dataset.sbs; applyOverlayPreview(); refreshOverlayButtons(); }));
+  if (sbsSwapBtn) sbsSwapBtn.addEventListener('click', () => { sbsSwap = !sbsSwap; applyOverlayPreview(); });
+  if (pipSizeInput) pipSizeInput.addEventListener('input', () => { pipSize = parseFloat(pipSizeInput.value); applyOverlayPreview(); });
+  if (ovlMuteBtn) ovlMuteBtn.addEventListener('click', () => { pipMuted = !pipMuted; refreshOverlayButtons(); });
 
   // ── Upload wiring ─────────────────────────────────────────────────
   dropzone.addEventListener('click', () => { pendingInsert = null; fileInput.click(); });
@@ -1557,6 +1691,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     pauseAudioPreview();
     const overlayAudios = audios.slice();
+    const pipOn = overlay2 && pipLayout !== 'off';
     const audioExt = (au) => {
       const t = (au.file && au.file.type) || '';
       if (/mpeg|mp3/.test(t)) return 'mp3';
@@ -1673,8 +1808,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const base = `[${vlbl}]trim=${seg.start.toFixed(3)}:${seg.end.toFixed(3)},setpts=(PTS-STARTPTS)/${seg.speed}${tf},fps=30`;
         if (outFill === 'crop') {
           parts.push(`${base},scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1[v${i}]`);
-        } else if (outFill === 'bars') {
-          parts.push(`${base},scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2,setsar=1[v${i}]`);
+        } else if (outFill === 'color') {
+          parts.push(`${base},scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=0x${(bgColor || '#000000').replace('#', '')},setsar=1[v${i}]`);
         } else {
           // Blurred backdrop: a zoomed, cropped, blurred copy behind the fitted clip.
           parts.push(`${base},split=2[v${i}a][v${i}b]`);
@@ -1719,6 +1854,10 @@ document.addEventListener('DOMContentLoaded', () => {
         au._fsName = `aud_${j}.${audioExt(au)}`;
         await ff.writeFile(au._fsName, await u8FromFile(au.file));
       }
+      if (pipOn) {
+        overlay2._fsName = `ovl2.${ext(overlay2.name)}`;
+        await ff.writeFile(overlay2._fsName, await u8FromFile(overlay2.file));
+      }
       const usedFonts = new Set(texts.map((t) => t.font));
       if (captions.length) usedFonts.add(capStyle.font);
       for (const fk of usedFonts) {
@@ -1756,15 +1895,51 @@ document.addEventListener('DOMContentLoaded', () => {
       await prepFS(ff);
       status('Checking clips…');
       await probeAudio(ff);
+      if (pipOn && !pipMuted) {
+        ffLogs = [];
+        try {
+          const code = await ff.exec(['-i', overlay2._fsName, '-map', '0:a:0', '-t', '0.1', '-c:a', 'aac', '-y', 'ovlpr.m4a']);
+          overlay2.hasAudio = (code === 0) && !ffLogs.some((l) => /matches no streams|does not contain/i.test(l));
+        } catch (e) { overlay2.hasAudio = false; }
+        try { await ff.readFile('ovlpr.m4a'); } catch (e) { /* ignore */ }
+      }
       status(fmt === 'gif' ? 'Rendering GIF…' : (overlayAudios.length ? 'Mixing audio…' : (exportClips.length > 1 ? 'Combining your clips…' : 'Rendering…')));
       const g = buildGraph();
       let graphStr = g.graph;
+      let vOut = g.vOut;
       const args = [];
       inputs.forEach((inp) => args.push('-i', inp.name));
+      overlayAudios.forEach((au) => {
+        if (au.kind === 'music' && au.loop) args.push('-stream_loop', '-1');
+        args.push('-i', au._fsName);
+      });
+      const oi = inputs.length + overlayAudios.length;   // second-video input index
+      if (pipOn) args.push('-stream_loop', '-1', '-i', overlay2._fsName);
+
+      // Composite the second video over the main one (PiP corner or split screen).
+      if (pipOn) {
+        if (pipLayout === 'pip') {
+          const pw = Math.max(2, Math.round(W * pipSize / 2) * 2);
+          const mg = Math.round(W * 0.03);
+          const pos = { tl: `${mg}:${mg}`, tr: `W-w-${mg}:${mg}`, bl: `${mg}:H-h-${mg}`, br: `W-w-${mg}:H-h-${mg}` }[pipCorner];
+          graphStr += `;[${oi}:v]scale=${pw}:-2,setsar=1[pipv];${vOut}[pipv]overlay=${pos}[comp]`;
+        } else {
+          const order = sbsSwap ? '[sb][sa]' : '[sa][sb]';
+          if (sbsDir === 'tb') {
+            const hh = Math.max(2, Math.round(H / 4) * 2);
+            graphStr += `;${vOut}scale=${W}:${hh}:force_original_aspect_ratio=increase,crop=${W}:${hh},setsar=1[sa];[${oi}:v]scale=${W}:${hh}:force_original_aspect_ratio=increase,crop=${W}:${hh},setsar=1[sb];${order}vstack[comp]`;
+          } else {
+            const ww = Math.max(2, Math.round(W / 4) * 2);
+            graphStr += `;${vOut}scale=${ww}:${H}:force_original_aspect_ratio=increase,crop=${ww}:${H},setsar=1[sa];[${oi}:v]scale=${ww}:${H}:force_original_aspect_ratio=increase,crop=${ww}:${H},setsar=1[sb];${order}hstack[comp]`;
+          }
+        }
+        vOut = '[comp]';
+      }
+
       if (fmt === 'gif') {
         // No audio (discard the concat track); drop fps/size and build a palette for a sharp, smaller GIF.
         const gifW = Math.min(W, 480);
-        graphStr += `;[ca]anullsink;${g.vOut}fps=12,scale=${gifW}:-2:flags=lanczos,split[gpa][gpb];[gpb]palettegen=stats_mode=diff[pal];[gpa][pal]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle[gifo]`;
+        graphStr += `;[ca]anullsink;${vOut}fps=12,scale=${gifW}:-2:flags=lanczos,split[gpa][gpb];[gpb]palettegen=stats_mode=diff[pal];[gpa][pal]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle[gifo]`;
         args.push('-filter_complex', graphStr, '-map', '[gifo]', '-loop', '0', outName);
       } else {
         let aOut = '[ca]';
@@ -1801,11 +1976,12 @@ document.addEventListener('DOMContentLoaded', () => {
           graphStr += ';' + proc.join(';');
           aOut = '[mixa]';
         }
-        overlayAudios.forEach((au) => {
-          if (au.kind === 'music' && au.loop) args.push('-stream_loop', '-1');
-          args.push('-i', au._fsName);
-        });
-        args.push('-filter_complex', graphStr, '-map', g.vOut, '-map', aOut, ...vcodec, ...acodec, outName);
+        // Mix in the second video's own sound, unless muted.
+        if (pipOn && !pipMuted && overlay2.hasAudio) {
+          graphStr += `;[${oi}:a]aresample=44100,aformat=channel_layouts=stereo,volume=1[povla];${aOut}[povla]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[aout2]`;
+          aOut = '[aout2]';
+        }
+        args.push('-filter_complex', graphStr, '-map', vOut, '-map', aOut, ...vcodec, ...acodec, outName);
       }
       console.log('[VideoStudio] filtergraph:', graphStr);
       console.log('[VideoStudio] ffmpeg args:', args.join(' '));
@@ -1835,4 +2011,5 @@ document.addEventListener('DOMContentLoaded', () => {
   refreshFmtButtons();
   applyLook();
   refreshFxButtons();
+  refreshOverlayButtons();
 });

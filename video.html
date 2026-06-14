@@ -119,6 +119,9 @@
     .vs-cap-cue { position: absolute; left: 50%; transform: translate(-50%, -50%); max-width: 90%; text-align: center; font-weight: 800; line-height: 1.15; letter-spacing: 0.01em; pointer-events: none; z-index: 6; text-shadow: 0 2px 7px rgba(0,0,0,0.65); white-space: pre-wrap; word-break: break-word; }
     .vs-cap-cue.boxed { background: rgba(0,0,0,0.62); padding: 3px 13px; border-radius: 9px; text-shadow: none; }
 
+    /* Second video (PiP / side-by-side) preview */
+    #vs-ovl-video { position: absolute; object-fit: cover; background: #000; z-index: 4; box-shadow: 0 4px 16px rgba(0,0,0,0.55); }
+
     /* Format panel */
     .vs-fmt-aspects { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
     .vs-fmt-aspect { flex: 1 1 90px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; padding: 12px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: #cdd6e2; font-size: 0.82rem; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
@@ -133,6 +136,8 @@
     .vs-fx-filter { padding: 7px 13px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: #cdd6e2; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
     .vs-fx-filter:hover { border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.07); }
     .vs-fx-filter.active { border-color: #34D399; background: rgba(16,185,129,0.14); color: #fff; }
+    .vs-swatch { width: 26px; height: 26px; border-radius: 7px; border: 2px solid rgba(255,255,255,0.18); cursor: pointer; padding: 0; }
+    .vs-swatch.active { border-color: #34D399; box-shadow: 0 0 0 2px rgba(16,185,129,0.4); }
 
     /* Trim bar — the selected clip's footage; green window = what you keep */
     .vs-trim { margin-top: 18px; }
@@ -334,6 +339,7 @@
               <button id="vs-act-audio" class="vs-action"><span class="vs-action-ico">🎙️</span><span>Audio</span></button>
               <button id="vs-act-format" class="vs-action"><span class="vs-action-ico">📐</span><span>Format</span></button>
               <button id="vs-act-effects" class="vs-action"><span class="vs-action-ico">✨</span><span>Effects</span></button>
+              <button id="vs-act-overlay" class="vs-action"><span class="vs-action-ico">🖼️</span><span>Overlay</span></button>
               <button id="vs-act-export" class="vs-action go"><span class="vs-action-ico">⬇</span><span>Download</span></button>
             </div>
 
@@ -411,9 +417,19 @@
               </div>
               <div class="vs-bar-head" style="margin-top:14px;"><span>Fill the frame</span></div>
               <div class="vs-pos-btns">
-                <button class="vs-mini" data-fill="blur">🌫️ Blur background</button>
+                <button class="vs-mini" data-fill="blur">🌫️ Blur</button>
                 <button class="vs-mini" data-fill="crop">🔍 Crop to fill</button>
-                <button class="vs-mini" data-fill="bars">⬛ Letterbox</button>
+                <button class="vs-mini" data-fill="color">🎨 Background</button>
+                <label class="vs-field" style="gap:6px;margin-left:auto;">Colour <input type="color" id="vs-bg-color" value="#000000" style="width:38px;height:26px;border:none;background:none;cursor:pointer;"></label>
+              </div>
+              <div class="vs-pos-btns" id="vs-bg-swatches" style="margin-top:8px;">
+                <button class="vs-swatch" data-bg="#000000" style="background:#000000;" title="Black"></button>
+                <button class="vs-swatch" data-bg="#ffffff" style="background:#ffffff;" title="White"></button>
+                <button class="vs-swatch" data-bg="#0b1220" style="background:#0b1220;" title="Midnight"></button>
+                <button class="vs-swatch" data-bg="#10B981" style="background:#10B981;" title="Emerald"></button>
+                <button class="vs-swatch" data-bg="#7c3aed" style="background:#7c3aed;" title="Violet"></button>
+                <button class="vs-swatch" data-bg="#f43f5e" style="background:#f43f5e;" title="Rose"></button>
+                <button class="vs-swatch" data-bg="#fbbf24" style="background:#fbbf24;" title="Amber"></button>
               </div>
               <div class="vs-bar-head" style="margin-top:14px;"><span>Rotate &amp; flip</span></div>
               <div class="vs-pos-btns">
@@ -449,6 +465,46 @@
               <div class="vs-pos-btns">
                 <button class="vs-mini" id="vs-fx-fadein">🌅 Fade in</button>
                 <button class="vs-mini" id="vs-fx-fadeout">🌇 Fade out</button>
+              </div>
+            </div>
+
+            <!-- OVERLAY panel — second video (PiP / side-by-side) -->
+            <div id="vs-overlay-panel" class="vs-mode" style="display:none;">
+              <div class="vs-bar-head"><span>Show a <b>second video</b> at the same time — a corner inset (PiP) or a split screen.</span></div>
+              <div class="vs-clip-tools">
+                <button id="vs-ovl-add" class="vs-tool primary">➕ Add second video</button>
+                <button id="vs-ovl-remove" class="vs-tool danger" style="display:none;">🗑️ Remove</button>
+              </div>
+              <input id="vs-ovl-input" type="file" accept="video/*" hidden>
+              <div id="vs-ovl-name" class="vs-cap-status"></div>
+              <div id="vs-ovl-opts" style="display:none;">
+                <div class="vs-bar-head" style="margin-top:12px;"><span>Layout</span></div>
+                <div class="vs-pos-btns">
+                  <button class="vs-mini" data-pip="off">Off</button>
+                  <button class="vs-mini" data-pip="pip">🔲 Picture-in-picture</button>
+                  <button class="vs-mini" data-pip="sbs">⬛ Side-by-side</button>
+                </div>
+                <div id="vs-pip-opts" style="display:none;">
+                  <div class="vs-bar-head" style="margin-top:12px;"><span>Corner &amp; size</span></div>
+                  <div class="vs-pos-btns">
+                    <button class="vs-mini" data-corner="tl">↖ Top-left</button>
+                    <button class="vs-mini" data-corner="tr">↗ Top-right</button>
+                    <button class="vs-mini" data-corner="bl">↙ Bottom-left</button>
+                    <button class="vs-mini" data-corner="br">↘ Bottom-right</button>
+                  </div>
+                  <label class="vs-field" style="margin-top:10px;">Size <input type="range" id="vs-pip-size" min="0.18" max="0.5" step="0.02" value="0.3"></label>
+                </div>
+                <div id="vs-sbs-opts" style="display:none;">
+                  <div class="vs-bar-head" style="margin-top:12px;"><span>Split</span></div>
+                  <div class="vs-pos-btns">
+                    <button class="vs-mini" data-sbs="lr">⬌ Left / Right</button>
+                    <button class="vs-mini" data-sbs="tb">⬍ Top / Bottom</button>
+                    <button class="vs-mini" id="vs-sbs-swap">⇄ Swap sides</button>
+                  </div>
+                </div>
+                <div class="vs-pos-btns" style="margin-top:12px;">
+                  <button class="vs-mini" id="vs-ovl-mute">🔊 Its sound: on</button>
+                </div>
               </div>
             </div>
 
@@ -520,6 +576,7 @@
           <div class="vs-stage">
             <div class="vs-video-wrap" id="vs-video-wrap">
               <video id="vs-video" playsinline></video>
+              <video id="vs-ovl-video" playsinline muted style="display:none;"></video>
               <div class="vs-overlay" id="vs-overlay"></div>
             </div>
             <div class="vs-controls">
@@ -709,6 +766,6 @@
 
   <script src="bg.js?v=18"></script>
   <script src="script.js?v=24"></script>
-  <script src="video.js?v=35"></script>
+  <script src="video.js?v=36"></script>
 </body>
 </html>
