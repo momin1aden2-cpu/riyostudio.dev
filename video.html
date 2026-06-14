@@ -60,7 +60,7 @@
 
     .vs-layout { display: grid; grid-template-columns: 1fr 340px; gap: 20px; margin-top: 1.5rem; align-items: start; }
     .vs-stage { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; }
-    #vs-video { width: 100%; max-height: 56vh; background: #000; border-radius: 10px; display: block; }
+    #vs-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; display: block; transform-origin: center; }
 
     .vs-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
     .vs-controls button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.12); color: #10B981; font-size: 1rem; cursor: pointer; flex-shrink: 0; }
@@ -113,6 +113,15 @@
     /* On-video caption cue */
     .vs-cap-cue { position: absolute; left: 50%; transform: translate(-50%, -50%); max-width: 90%; text-align: center; font-weight: 800; line-height: 1.15; letter-spacing: 0.01em; pointer-events: none; z-index: 6; text-shadow: 0 2px 7px rgba(0,0,0,0.65); white-space: pre-wrap; word-break: break-word; }
     .vs-cap-cue.boxed { background: rgba(0,0,0,0.62); padding: 3px 13px; border-radius: 9px; text-shadow: none; }
+
+    /* Format panel */
+    .vs-fmt-aspects { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+    .vs-fmt-aspect { flex: 1 1 90px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; padding: 12px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: #cdd6e2; font-size: 0.82rem; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+    .vs-fmt-aspect b { color: #fff; font-size: 0.9rem; }
+    .vs-fmt-aspect small { color: var(--text-dim); font-size: 0.67rem; }
+    .vs-fmt-aspect:hover { border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.07); }
+    .vs-fmt-aspect.active { border-color: #34D399; background: rgba(16,185,129,0.14); }
+    .vs-fmt-ico { display: block; border: 2px solid currentColor; border-radius: 3px; opacity: 0.8; margin-bottom: 4px; }
 
     /* Trim bar — the selected clip's footage; green window = what you keep */
     .vs-trim { margin-top: 18px; }
@@ -214,7 +223,7 @@
     @font-face { font-family: 'VS Anton'; src: url('assets/fonts/Anton.ttf') format('truetype'); font-display: swap; }
     @font-face { font-family: 'VS Montserrat'; src: url('assets/fonts/Montserrat-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
 
-    .vs-video-wrap { position: relative; width: 100%; line-height: 0; }
+    .vs-video-wrap { position: relative; width: 100%; margin: 0 auto; --vs-ar: 1.7778; --vs-frame-h: 56vh; aspect-ratio: var(--vs-ar); max-width: calc(var(--vs-frame-h) * var(--vs-ar)); background: #000; border-radius: 10px; overflow: hidden; line-height: 0; }
     .vs-overlay { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
     .vs-text-item {
       position: absolute; transform: translate(-50%, -50%); pointer-events: auto; cursor: grab;
@@ -242,7 +251,7 @@
 
     @media (max-width: 900px) {
       .vs-layout { grid-template-columns: 1fr; }
-      #vs-video { max-height: 40vh; }
+      .vs-video-wrap { --vs-frame-h: 44vh; }
     }
   </style>
 </head>
@@ -320,6 +329,7 @@
               <button id="vs-act-text" class="vs-action"><span class="vs-action-ico">🔤</span><span>Add text</span></button>
               <button id="vs-act-captions" class="vs-action"><span class="vs-action-ico">💬</span><span>Captions</span></button>
               <button id="vs-act-audio" class="vs-action"><span class="vs-action-ico">🎙️</span><span>Audio</span></button>
+              <button id="vs-act-format" class="vs-action"><span class="vs-action-ico">📐</span><span>Format</span></button>
               <button id="vs-act-export" class="vs-action go"><span class="vs-action-ico">⬇</span><span>Download</span></button>
             </div>
 
@@ -434,6 +444,30 @@
               <div id="vs-cap-list" class="vs-cap-list"></div>
             </div>
 
+            <!-- FORMAT panel — aspect ratio, fill, rotate/flip -->
+            <div id="vs-format-panel" class="vs-mode" style="display:none;">
+              <div class="vs-bar-head"><span>Pick the shape for your platform, then how to fill the frame.</span></div>
+              <div class="vs-fmt-aspects">
+                <button class="vs-fmt-aspect" data-aspect="16:9"><span class="vs-fmt-ico" style="width:30px;height:17px;"></span><b>16:9</b><small>YouTube</small></button>
+                <button class="vs-fmt-aspect" data-aspect="9:16"><span class="vs-fmt-ico" style="width:17px;height:30px;"></span><b>9:16</b><small>Reels / TikTok</small></button>
+                <button class="vs-fmt-aspect" data-aspect="1:1"><span class="vs-fmt-ico" style="width:24px;height:24px;"></span><b>1:1</b><small>Feed</small></button>
+                <button class="vs-fmt-aspect" data-aspect="4:5"><span class="vs-fmt-ico" style="width:21px;height:26px;"></span><b>4:5</b><small>Instagram</small></button>
+              </div>
+              <div class="vs-bar-head" style="margin-top:14px;"><span>Fill the frame</span></div>
+              <div class="vs-pos-btns">
+                <button class="vs-mini" data-fill="blur">🌫️ Blur background</button>
+                <button class="vs-mini" data-fill="crop">🔍 Crop to fill</button>
+                <button class="vs-mini" data-fill="bars">⬛ Letterbox</button>
+              </div>
+              <div class="vs-bar-head" style="margin-top:14px;"><span>Rotate &amp; flip</span></div>
+              <div class="vs-pos-btns">
+                <button class="vs-mini" data-rotate="ccw">↺ 90°</button>
+                <button class="vs-mini" data-rotate="cw">↻ 90°</button>
+                <button class="vs-mini" id="vs-fmt-fliph">🔁 Flip H</button>
+                <button class="vs-mini" id="vs-fmt-flipv">🔃 Flip V</button>
+              </div>
+            </div>
+
             <!-- Your clips -->
             <div class="vs-story-head">
               <span>🎞️ Your clips <span id="vs-clip-meta"></span></span>
@@ -493,9 +527,8 @@
                 </label>
                 <label>Quality
                   <select id="vs-quality">
-                    <option value="social">Square 720 (fast)</option>
-                    <option value="youtube" selected>720p (fast)</option>
-                    <option value="hq">1080p (slower)</option>
+                    <option value="sd" selected>720 (fast)</option>
+                    <option value="hd">1080 (sharper)</option>
                   </select>
                 </label>
               </div>
@@ -629,6 +662,6 @@
 
   <script src="bg.js?v=18"></script>
   <script src="script.js?v=24"></script>
-  <script src="video.js?v=31"></script>
+  <script src="video.js?v=33"></script>
 </body>
 </html>

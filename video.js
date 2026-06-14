@@ -72,6 +72,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const capPresetBtns = document.querySelectorAll('.vs-cap-preset');
   const capPosBtns = document.querySelectorAll('[data-cappos]');
   const capLayoutBtns = document.querySelectorAll('[data-caplayout]');
+  const actFormat = document.getElementById('vs-act-format');
+  const formatPanel = document.getElementById('vs-format-panel');
+  const videoWrap = document.getElementById('vs-video-wrap');
+  const fmtAspectBtns = document.querySelectorAll('.vs-fmt-aspect');
+  const fmtFillBtns = document.querySelectorAll('[data-fill]');
+  const fmtRotateBtns = document.querySelectorAll('[data-rotate]');
+  const fmtFlipHBtn = document.getElementById('vs-fmt-fliph');
+  const fmtFlipVBtn = document.getElementById('vs-fmt-flipv');
   const formatSel = document.getElementById('vs-format');
   const qualitySel = document.getElementById('vs-quality');
   const exportBtn = document.getElementById('vs-export');
@@ -81,12 +89,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (!dropzone) return;
 
-  // Resolutions kept modest because the single-threaded WASM encoder is slow at 1080p.
-  const QUALITY = {
-    social: { w: 720, h: 720, crf: 30 },
-    youtube: { w: 1280, h: 720, crf: 28 },
-    hq: { w: 1920, h: 1080, crf: 24 }
-  };
+  // Quality = the short side; the aspect ratio decides the other dimension. Kept
+  // modest because the single-threaded WASM encoder is slow at 1080p.
+  const QUALITY = { sd: { base: 720, crf: 28 }, hd: { base: 1080, crf: 23 } };
+  const ASPECTS = { '16:9': [16, 9], '9:16': [9, 16], '1:1': [1, 1], '4:5': [4, 5] };
+  const aspectRatio = (key) => { const a = ASPECTS[key] || ASPECTS['16:9']; return a[0] / a[1]; };
+  function computeWH(aspectKey, base) {
+    const a = ASPECTS[aspectKey] || ASPECTS['16:9'];
+    let W, H;
+    if (a[0] >= a[1]) { H = base; W = Math.round(base * a[0] / a[1]); }
+    else { W = base; H = Math.round(base * a[1] / a[0]); }
+    return { W: W - (W % 2), H: H - (H % 2) };
+  }
 
   // Each clip plays a contiguous [in, out] slice of its file. The storyboard order
   // is the final video. dropGlobal is one marker measured across the WHOLE video.
@@ -106,6 +120,11 @@ document.addEventListener('DOMContentLoaded', () => {
   let capStyle = { font: 'anton', color: '#FFE14D', bg: false, sizeFrac: 0.11, cy: 0.5, layout: 'word' };
   let capTranscriber = null;  // cached Whisper pipeline, loaded once
   let capBusy = false;
+  // Output format: aspect ratio, how to fill the frame, and rotate/flip.
+  let outAspect = '16:9';     // '16:9' | '9:16' | '1:1' | '4:5'
+  let outFill = 'blur';       // 'blur' | 'crop' | 'bars'
+  let outRotate = 'none';     // 'none' | 'cw' | 'ccw'
+  let outFlipH = false, outFlipV = false;
   let ffmpegInstance = null;  // single-threaded FFmpeg 0.12 engine, loaded on first export
   let ffLogs = [];            // recent FFmpeg log lines, for surfacing real errors
   let exportStart = 0;
@@ -332,6 +351,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cutPanel) cutPanel.style.display = (mode === 'cut') ? '' : 'none';
     if (audioPanel) audioPanel.style.display = (mode === 'audio') ? '' : 'none';
     if (captionsPanel) captionsPanel.style.display = (mode === 'captions') ? '' : 'none';
+    if (formatPanel) formatPanel.style.display = (mode === 'format') ? '' : 'none';
+    if (actFormat) actFormat.classList.toggle('active', mode === 'format');
     if (actAdd) actAdd.classList.toggle('active', mode === 'add');
     if (actTrim) actTrim.classList.toggle('active', mode === 'trim');
     if (actCut) actCut.classList.toggle('active', mode === 'cut');
@@ -359,8 +380,11 @@ document.addEventListener('DOMContentLoaded', () => {
       banner.innerHTML = '🎙️ <b>Add audio.</b> <b>Record</b> a voiceover, <b>add music</b> from your device, or generate an <b>AI voice</b>. Set each track’s volume below — they’re mixed into your video when you download.';
     } else if (mode === 'captions') {
       banner.innerHTML = '💬 <b>Captions.</b> Tap <b>✨ Generate captions</b> — your speech is transcribed <b>privately on your device</b> (first run downloads the AI once), then pick a style. They’re burned into your video on download.';
+    } else if (mode === 'format') {
+      const labels = { '16:9': 'Landscape 16:9', '9:16': 'Vertical 9:16', '1:1': 'Square 1:1', '4:5': 'Portrait 4:5' };
+      banner.innerHTML = `📐 <b>Format: ${labels[outAspect]}.</b> Pick a shape for your platform and how to fill the frame — the preview reframes live. <b>Blur background</b> looks best when the shapes don’t match.`;
     } else {
-      banner.innerHTML = 'What next? <b>➕ Add a video</b>, <b>✂️ Shorten a clip</b>, <b>🗑️ Remove a section</b>, <b>🔤 Add text</b>, <b>💬 Captions</b>, <b>🎙️ Audio</b>, or <b>⬇ Download</b>.';
+      banner.innerHTML = 'What next? <b>➕ Add a video</b>, <b>✂️ Shorten a clip</b>, <b>🗑️ Remove a section</b>, <b>🔤 Add text</b>, <b>💬 Captions</b>, <b>🎙️ Audio</b>, <b>📐 Format</b>, or <b>⬇ Download</b>.';
     }
   }
 
@@ -836,6 +860,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const setCapBar = (f) => { if (capBar) capBar.style.width = (Math.max(0, Math.min(1, f)) * 100) + '%'; };
   const capStatus = (m) => { if (capStatusEl) capStatusEl.textContent = m; };
 
+  // Greedily break a caption into lines no longer than maxChars so it never
+  // overflows a narrow (e.g. 9:16) frame; drawtext doesn't word-wrap on its own.
+  function wrapToLines(text, maxChars) {
+    const words = (text || '').split(/\s+/).filter(Boolean);
+    if (!words.length) return [' '];
+    const lines = []; let cur = '';
+    words.forEach((w) => {
+      if (!cur) cur = w;
+      else if ((cur + ' ' + w).length <= maxChars) cur += ' ' + w;
+      else { lines.push(cur); cur = w; }
+    });
+    if (cur) lines.push(cur);
+    return lines;
+  }
+
   // Render the WHOLE combined video's audio to a 16 kHz mono buffer (respecting
   // each clip's trim and order) so Whisper's word times line up with the export.
   async function extractTimelineAudio() {
@@ -986,13 +1025,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const c = captions.find((x) => gg >= x.start - 0.02 && gg <= x.end + 0.02);
     if (!c) { cue.style.display = 'none'; return; }
     const wrap = document.getElementById('vs-video-wrap');
+    const w = wrap ? wrap.clientWidth : 0;
     const h = wrap ? wrap.clientHeight : 0;
+    const baseDim = Math.min(w, h) || h;  // size off the short side, like the export
     cue.style.display = '';
     cue.textContent = c.text;
     cue.style.top = (capStyle.cy * 100) + '%';
     cue.style.fontFamily = FONTS_VS[capStyle.font].css;
     cue.style.color = capStyle.color;
-    cue.style.fontSize = Math.max(11, capStyle.sizeFrac * h) + 'px';
+    cue.style.fontSize = Math.max(11, capStyle.sizeFrac * baseDim) + 'px';
     cue.classList.toggle('boxed', capStyle.bg);
   }
 
@@ -1024,6 +1065,32 @@ document.addEventListener('DOMContentLoaded', () => {
     if (capProgress) capProgress.style.display = 'none';
     renderCaptionList();
     renderCaptionPreview(dropGlobal);
+  }
+
+  // ── Output format (aspect ratio, fill, rotate/flip) ────────────────
+  function applyFormatPreview() {
+    if (videoWrap) videoWrap.style.setProperty('--vs-ar', aspectRatio(outAspect).toFixed(4));
+    if (video) {
+      // crop fills the frame (cover); blur/bars fit it (contain). The blurred
+      // backdrop itself is applied on export — preview shows the framing.
+      video.style.objectFit = (outFill === 'crop') ? 'cover' : 'contain';
+      const t = [];
+      if (outRotate === 'cw') t.push('rotate(90deg)');
+      else if (outRotate === 'ccw') t.push('rotate(-90deg)');
+      if (outFlipH) t.push('scaleX(-1)');
+      if (outFlipV) t.push('scaleY(-1)');
+      video.style.transform = t.join(' ');
+    }
+    renderOverlay();
+    renderCaptionPreview(dropGlobal);
+  }
+
+  function refreshFmtButtons() {
+    fmtAspectBtns.forEach((b) => b.classList.toggle('active', b.dataset.aspect === outAspect));
+    fmtFillBtns.forEach((b) => b.classList.toggle('active', b.dataset.fill === outFill));
+    fmtRotateBtns.forEach((b) => b.classList.toggle('active', b.dataset.rotate === outRotate));
+    if (fmtFlipHBtn) fmtFlipHBtn.classList.toggle('active', outFlipH);
+    if (fmtFlipVBtn) fmtFlipVBtn.classList.toggle('active', outFlipV);
   }
 
   // ── Playback (plays the whole video; the marker stays put) ─────────
@@ -1155,6 +1222,14 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshCapButtons(); renderCaptionPreview(dropGlobal);
   }));
   if (capColorInput) capColorInput.addEventListener('input', () => { capStyle.color = capColorInput.value; refreshCapButtons(); renderCaptionPreview(dropGlobal); });
+
+  // Format controls
+  if (actFormat) actFormat.addEventListener('click', () => setMode('format'));
+  fmtAspectBtns.forEach((b) => b.addEventListener('click', () => { outAspect = b.dataset.aspect; applyFormatPreview(); refreshFmtButtons(); updateBanner(); }));
+  fmtFillBtns.forEach((b) => b.addEventListener('click', () => { outFill = b.dataset.fill; applyFormatPreview(); refreshFmtButtons(); }));
+  fmtRotateBtns.forEach((b) => b.addEventListener('click', () => { outRotate = (outRotate === b.dataset.rotate) ? 'none' : b.dataset.rotate; applyFormatPreview(); refreshFmtButtons(); }));
+  if (fmtFlipHBtn) fmtFlipHBtn.addEventListener('click', () => { outFlipH = !outFlipH; applyFormatPreview(); refreshFmtButtons(); });
+  if (fmtFlipVBtn) fmtFlipVBtn.addEventListener('click', () => { outFlipV = !outFlipV; applyFormatPreview(); refreshFmtButtons(); });
 
   // ── Upload wiring ─────────────────────────────────────────────────
   dropzone.addEventListener('click', () => { pendingInsert = null; fileInput.click(); });
@@ -1421,13 +1496,21 @@ document.addEventListener('DOMContentLoaded', () => {
     exportStart = performance.now();
 
     const fmt = formatSel.value;
-    const preset = QUALITY[qualitySel.value];
-    const W = preset.w, H = preset.h;
+    const qual = QUALITY[qualitySel.value] || QUALITY.sd;
+    const { W, H } = computeWH(outAspect, qual.base);
+    const crf = qual.crf;
     const vcodec = fmt === 'webm'
-      ? ['-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', String(preset.crf), '-deadline', 'realtime', '-cpu-used', '8']
-      : ['-c:v', 'libx264', '-preset', 'ultrafast', '-crf', String(preset.crf), '-pix_fmt', 'yuv420p'];
+      ? ['-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', String(crf), '-deadline', 'realtime', '-cpu-used', '8']
+      : ['-c:v', 'libx264', '-preset', 'ultrafast', '-crf', String(crf), '-pix_fmt', 'yuv420p'];
     const acodec = fmt === 'webm' ? ['-c:a', 'libopus', '-ar', '48000', '-ac', '2'] : ['-c:a', 'aac', '-ar', '44100', '-ac', '2'];
     const outName = `out.${fmt}`;
+
+    // Captions are sized off the SHORT side (so they fit any aspect) and wrapped
+    // to the frame width, then rendered as centered stacked lines.
+    const capSize = Math.max(12, Math.round(capStyle.sizeFrac * Math.min(W, H)));
+    const capMaxChars = Math.max(6, Math.floor((W * 0.92) / (capSize * 0.5)));
+    const capLineH = Math.round(capSize * 1.18);
+    captions.forEach((c) => { c._lines = wrapToLines(c.text || '', capMaxChars); });
 
     const fileKeyToIndex = {};
     const inputs = [];
@@ -1454,20 +1537,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Burned-in captions: centered, one drawtext per segment, shown over its
     // whole-video time window (t in the filtergraph is the output timeline).
-    const captionChain = () => captions.map((c, i) => {
-      const size = Math.max(10, Math.round(capStyle.sizeFrac * H));
+    const captionChain = () => {
+      const out = [];
       const col = '0x' + (capStyle.color || '#ffffff').replace('#', '');
-      let d = `drawtext=fontfile=${FONTS_VS[capStyle.font].file}:textfile=cap_${i}.txt:expansion=none`;
-      d += `:fontsize=${size}:fontcolor=${col}`;
-      d += `:x=(w-text_w)/2:y=h*${capStyle.cy.toFixed(4)}-text_h/2`;
-      if (capStyle.bg) d += `:box=1:boxcolor=black@0.62:boxborderw=${Math.round(size * 0.3)}`;
-      else d += `:shadowcolor=black@0.6:shadowx=2:shadowy=2`;
-      d += `:enable=between(t\\,${(+c.start).toFixed(2)}\\,${(+c.end).toFixed(2)})`;
-      return d;
-    }).join(',');
+      captions.forEach((c, ci) => {
+        const lines = c._lines || [c.text || ' '];
+        const L = lines.length;
+        lines.forEach((ln, li) => {
+          const cyPx = H * capStyle.cy - ((L - 1) / 2 - li) * capLineH; // centre the stack on cy
+          let d = `drawtext=fontfile=${FONTS_VS[capStyle.font].file}:textfile=cap_${ci}_${li}.txt:expansion=none`;
+          d += `:fontsize=${capSize}:fontcolor=${col}`;
+          d += `:x=(w-text_w)/2:y=${cyPx.toFixed(1)}-text_h/2`;
+          if (capStyle.bg) d += `:box=1:boxcolor=black@0.62:boxborderw=${Math.round(capSize * 0.28)}`;
+          else d += `:shadowcolor=black@0.6:shadowx=2:shadowy=2`;
+          d += `:enable=between(t\\,${(+c.start).toFixed(2)}\\,${(+c.end).toFixed(2)})`;
+          out.push(d);
+        });
+      });
+      return out.join(',');
+    };
 
     // One pass: real audio where a clip has it, silent filler where it doesn't,
     // so the concat always has an audio track and audio is never silently dropped.
+    // Rotate / flip is applied to the raw frames before the clip is fit to the frame.
+    const tf = (() => {
+      let s = '';
+      if (outRotate === 'cw') s += ',transpose=1';
+      else if (outRotate === 'ccw') s += ',transpose=2';
+      if (outFlipH) s += ',hflip';
+      if (outFlipV) s += ',vflip';
+      return s;
+    })();
+
     const buildGraph = () => {
       const parts = [];
       inputs.forEach((inp) => {
@@ -1487,7 +1588,18 @@ document.addEventListener('DOMContentLoaded', () => {
       exportClips.forEach((seg, i) => {
         const inp = inputs[fileKeyToIndex[seg._fk]];
         const vlbl = inp._vl[inp._vn++];
-        parts.push(`[${vlbl}]trim=${seg.start.toFixed(3)}:${seg.end.toFixed(3)},setpts=PTS-STARTPTS,scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30[v${i}]`);
+        const base = `[${vlbl}]trim=${seg.start.toFixed(3)}:${seg.end.toFixed(3)},setpts=PTS-STARTPTS${tf},fps=30`;
+        if (outFill === 'crop') {
+          parts.push(`${base},scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1[v${i}]`);
+        } else if (outFill === 'bars') {
+          parts.push(`${base},scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2,setsar=1[v${i}]`);
+        } else {
+          // Blurred backdrop: a zoomed, cropped, blurred copy behind the fitted clip.
+          parts.push(`${base},split=2[v${i}a][v${i}b]`);
+          parts.push(`[v${i}a]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},boxblur=14:2,setsar=1[v${i}bg]`);
+          parts.push(`[v${i}b]scale=${W}:${H}:force_original_aspect_ratio=decrease,setsar=1[v${i}fg]`);
+          parts.push(`[v${i}bg][v${i}fg]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[v${i}]`);
+        }
         if (inp.hasAudio) {
           const albl = inp._al[inp._an++];
           parts.push(`[${albl}]atrim=${seg.start.toFixed(3)}:${seg.end.toFixed(3)},asetpts=PTS-STARTPTS,aresample=44100,aformat=channel_layouts=stereo[a${i}]`);
@@ -1523,7 +1635,10 @@ document.addEventListener('DOMContentLoaded', () => {
         await ff.writeFile(file, await u8FromURL(new URL('/assets/fonts/' + file, location.href).href));
       }
       for (let i = 0; i < texts.length; i++) await ff.writeFile(`txt_${i}.txt`, new TextEncoder().encode(texts[i].content || ' '));
-      for (let i = 0; i < captions.length; i++) await ff.writeFile(`cap_${i}.txt`, new TextEncoder().encode(captions[i].text || ' '));
+      for (let i = 0; i < captions.length; i++) {
+        const lines = captions[i]._lines || [captions[i].text || ' '];
+        for (let li = 0; li < lines.length; li++) await ff.writeFile(`cap_${i}_${li}.txt`, new TextEncoder().encode(lines[li] || ' '));
+      }
     }
 
     // Deterministic audio check: try to pull a sliver of the first audio stream.
@@ -1601,4 +1716,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => { progressWrap.style.display = 'none'; }, 1500);
     setTimeout(updateBanner, 2600);
   });
+
+  // Apply the default output frame (16:9) and button states on load.
+  applyFormatPreview();
+  refreshFmtButtons();
 });
