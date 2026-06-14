@@ -59,6 +59,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const cutSub = document.getElementById('vs-cut-sub');
   const cutRemoveBtn = document.getElementById('vs-cut-remove');
   const cutReplaceBtn = document.getElementById('vs-cut-replace');
+  const actCaptions = document.getElementById('vs-act-captions');
+  const captionsPanel = document.getElementById('vs-captions-panel');
+  const capGenBtn = document.getElementById('vs-cap-generate');
+  const capClearBtn = document.getElementById('vs-cap-clear');
+  const capProgress = document.getElementById('vs-cap-progress');
+  const capBar = document.getElementById('vs-cap-bar');
+  const capStatusEl = document.getElementById('vs-cap-status');
+  const capStyleBox = document.getElementById('vs-cap-style');
+  const capColorInput = document.getElementById('vs-cap-color');
+  const capListEl = document.getElementById('vs-cap-list');
+  const capPresetBtns = document.querySelectorAll('.vs-cap-preset');
+  const capPosBtns = document.querySelectorAll('[data-cappos]');
+  const capLayoutBtns = document.querySelectorAll('[data-caplayout]');
   const formatSel = document.getElementById('vs-format');
   const qualitySel = document.getElementById('vs-quality');
   const exportBtn = document.getElementById('vs-export');
@@ -88,6 +101,11 @@ document.addEventListener('DOMContentLoaded', () => {
   let exporting = false;
   let audios = [];            // overlay audio: { id, kind, name, file, url, duration, start, volume, el }
   let mediaRecorder = null, recChunks = [], recStartGlobal = 0;
+  let capWords = [];          // raw transcribed words: { text, start, end } in whole-video seconds
+  let captions = [];          // display segments derived from capWords: { id, text, start, end }
+  let capStyle = { font: 'anton', color: '#FFE14D', bg: false, sizeFrac: 0.11, cy: 0.5, layout: 'word' };
+  let capTranscriber = null;  // cached Whisper pipeline, loaded once
+  let capBusy = false;
   let ffmpegInstance = null;  // single-threaded FFmpeg 0.12 engine, loaded on first export
   let ffLogs = [];            // recent FFmpeg log lines, for surfacing real errors
   let exportStart = 0;
@@ -285,6 +303,12 @@ document.addEventListener('DOMContentLoaded', () => {
     video.load();
     audios.forEach((au) => { if (au.el) { try { au.el.pause(); } catch (e) { /* ignore */ } } try { URL.revokeObjectURL(au.url); } catch (e) { /* ignore */ } });
     audios = [];
+    capWords = []; captions = [];
+    if (capStyleBox) capStyleBox.style.display = 'none';
+    if (capClearBtn) capClearBtn.style.display = 'none';
+    if (capProgress) capProgress.style.display = 'none';
+    if (capListEl) capListEl.innerHTML = '';
+    if (capCue) { try { capCue.remove(); } catch (e) { /* ignore */ } capCue = null; }
     texts = [];
     selectedTextId = null;
     renderOverlay();
@@ -307,10 +331,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (trimPanel) trimPanel.style.display = (mode === 'trim') ? '' : 'none';
     if (cutPanel) cutPanel.style.display = (mode === 'cut') ? '' : 'none';
     if (audioPanel) audioPanel.style.display = (mode === 'audio') ? '' : 'none';
+    if (captionsPanel) captionsPanel.style.display = (mode === 'captions') ? '' : 'none';
     if (actAdd) actAdd.classList.toggle('active', mode === 'add');
     if (actTrim) actTrim.classList.toggle('active', mode === 'trim');
     if (actCut) actCut.classList.toggle('active', mode === 'cut');
     if (actAudio) actAudio.classList.toggle('active', mode === 'audio');
+    if (actCaptions) actCaptions.classList.toggle('active', mode === 'captions');
     if (mode === 'cut') {
       // default selection: the middle third of the whole video
       const T = totalDur();
@@ -331,8 +357,10 @@ document.addEventListener('DOMContentLoaded', () => {
       banner.innerHTML = '🗑️ <b>Remove a section.</b> Drag the <b style="color:#f87171;">red edges</b> to mark the section to remove (e.g. 1:10 → 1:50), then <b>Remove</b> it (the rest joins up) or <b>Replace</b> it with another video.';
     } else if (mode === 'audio') {
       banner.innerHTML = '🎙️ <b>Add audio.</b> <b>Record</b> a voiceover, <b>add music</b> from your device, or generate an <b>AI voice</b>. Set each track’s volume below — they’re mixed into your video when you download.';
+    } else if (mode === 'captions') {
+      banner.innerHTML = '💬 <b>Captions.</b> Tap <b>✨ Generate captions</b> — your speech is transcribed <b>privately on your device</b> (first run downloads the AI once), then pick a style. They’re burned into your video on download.';
     } else {
-      banner.innerHTML = 'What next? <b>➕ Add a video</b>, <b>✂️ Shorten a clip</b>, <b>🗑️ Remove a section</b>, <b>🔤 Add text</b>, <b>🎙️ Audio</b>, or <b>⬇ Download</b>.';
+      banner.innerHTML = 'What next? <b>➕ Add a video</b>, <b>✂️ Shorten a clip</b>, <b>🗑️ Remove a section</b>, <b>🔤 Add text</b>, <b>💬 Captions</b>, <b>🎙️ Audio</b>, or <b>⬇ Download</b>.';
     }
   }
 
@@ -399,6 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (timeLabel) timeLabel.textContent = `${fmtTime(g)} / ${fmtTime(T)}`;
     updateInsertLabel();
     if (audios.length) syncAudioPreview(g);
+    renderCaptionPreview(g);
   }
 
   // Global timeline: one proportional block per clip + the amber marker.
@@ -797,6 +826,206 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // ── Captions (on-device speech-to-text → burned-in subtitles) ──────
+  const CAP_PRESETS = {
+    clean: { font: 'inter', color: '#ffffff', bg: false, sizeFrac: 0.055, layout: 'phrase', cy: 0.85 },
+    boxed: { font: 'montserrat', color: '#ffffff', bg: true, sizeFrac: 0.05, layout: 'phrase', cy: 0.85 },
+    hype: { font: 'anton', color: '#FFE14D', bg: false, sizeFrac: 0.11, layout: 'word', cy: 0.5 },
+    bold: { font: 'anton', color: '#ffffff', bg: false, sizeFrac: 0.072, layout: 'phrase', cy: 0.85 }
+  };
+  const setCapBar = (f) => { if (capBar) capBar.style.width = (Math.max(0, Math.min(1, f)) * 100) + '%'; };
+  const capStatus = (m) => { if (capStatusEl) capStatusEl.textContent = m; };
+
+  // Render the WHOLE combined video's audio to a 16 kHz mono buffer (respecting
+  // each clip's trim and order) so Whisper's word times line up with the export.
+  async function extractTimelineAudio() {
+    const T = totalDur();
+    if (T <= 0) return null;
+    const SR = 16000;
+    const offline = new OfflineAudioContext(1, Math.max(SR, Math.ceil(T * SR)), SR);
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const dec = new AC();
+    const cache = {};
+    let acc = 0, any = false;
+    for (const s of sources) {
+      const len = keptDuration(s);
+      if (!(s.fileKey in cache)) {
+        try { cache[s.fileKey] = await dec.decodeAudioData(await s.file.arrayBuffer()); }
+        catch (e) { cache[s.fileKey] = null; }
+      }
+      const buf = cache[s.fileKey];
+      if (buf) {
+        const off = Math.min(inOf(s), buf.duration);
+        const dur = Math.min(len, Math.max(0, buf.duration - off));
+        if (dur > 0.02) {
+          const node = offline.createBufferSource();
+          node.buffer = buf;
+          node.connect(offline.destination);
+          node.start(acc, off, dur);
+          any = true;
+        }
+      }
+      acc += len;
+    }
+    try { dec.close(); } catch (e) { /* ignore */ }
+    if (!any) return null;
+    const rendered = await offline.startRendering();
+    return rendered.getChannelData(0);
+  }
+
+  async function loadTranscriber(onProg) {
+    if (capTranscriber) return capTranscriber;
+    const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+    env.allowLocalModels = false;
+    env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/';
+    capTranscriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en', { progress_callback: onProg });
+    return capTranscriber;
+  }
+
+  // Group raw words into short on-screen segments: 1–2 words for the punchy
+  // word-by-word look, or up to ~6 for readable phrases.
+  function chunkCaptions() {
+    captions = [];
+    if (!capWords.length) return;
+    const isWord = capStyle.layout === 'word';
+    const maxWords = isWord ? 2 : 6;
+    const maxDur = isWord ? 1.3 : 3.4;
+    let cur = null;
+    capWords.forEach((w, i) => {
+      if (!cur) cur = { words: [], start: w.start };
+      cur.words.push(w);
+      cur.end = w.end;
+      const next = capWords[i + 1];
+      const gap = next ? (next.start - w.end) : 99;
+      const dur = cur.end - cur.start;
+      const sentenceEnd = /[.!?]$/.test(w.text);
+      if (cur.words.length >= maxWords || dur >= maxDur || sentenceEnd || gap > 0.55 || !next) {
+        const text = cur.words.map((x) => x.text).join(' ').replace(/\s+([,.!?;:])/g, '$1').trim();
+        if (text) captions.push({ id: ++uid, text, start: cur.start, end: Math.max(cur.end, cur.start + 0.3) });
+        cur = null;
+      }
+    });
+  }
+
+  async function generateCaptions() {
+    if (capBusy) return;
+    if (!sources.length) { capStatus('Add a video first.'); return; }
+    capBusy = true;
+    if (capGenBtn) capGenBtn.disabled = true;
+    if (capProgress) capProgress.style.display = 'block';
+    setCapBar(0);
+    try {
+      capStatus('Reading your video’s audio…');
+      const audio = await extractTimelineAudio();
+      if (!audio || !audio.length) { capStatus('No speech found — your clips have no audio track.'); return; }
+      const tx = await loadTranscriber((d) => {
+        if (d && d.status === 'progress' && d.progress != null) {
+          setCapBar(d.progress / 100);
+          capStatus(`Downloading the caption AI… ${Math.round(d.progress)}% (one time only)`);
+        }
+      });
+      setCapBar(0);
+      capStatus('Transcribing speech… this runs on your device and can take a minute.');
+      const out = await tx(audio, { return_timestamps: 'word', chunk_length_s: 30, stride_length_s: 5 });
+      const chunks = (out && out.chunks) || [];
+      capWords = chunks.map((c) => ({
+        text: (c.text || '').trim(),
+        start: (c.timestamp && c.timestamp[0] != null) ? c.timestamp[0] : 0,
+        end: (c.timestamp && c.timestamp[1] != null) ? c.timestamp[1] : (((c.timestamp && c.timestamp[0]) || 0) + 0.4)
+      })).filter((w) => w.text);
+      if (!capWords.length && out && out.text && out.text.trim()) capWords = [{ text: out.text.trim(), start: 0, end: totalDur() }];
+      if (!capWords.length) { capStatus('Could not find any speech to caption.'); return; }
+      chunkCaptions();
+      if (capStyleBox) capStyleBox.style.display = 'block';
+      if (capClearBtn) capClearBtn.style.display = '';
+      refreshCapButtons();
+      renderCaptionList();
+      setCapBar(1);
+      capStatus(`Added ${captions.length} caption${captions.length > 1 ? 's' : ''}. Tap one to fix a word, pick a style, then Download.`);
+      renderAll();
+    } catch (e) {
+      console.error('[VideoStudio] captions failed:', e);
+      capStatus('Captions failed: ' + ((e && e.message) || 'unknown error') + '.');
+    } finally {
+      capBusy = false;
+      if (capGenBtn) capGenBtn.disabled = false;
+    }
+  }
+
+  function renderCaptionList() {
+    if (!capListEl) return;
+    capListEl.innerHTML = '';
+    captions.forEach((c) => {
+      const row = document.createElement('div'); row.className = 'vs-cap-row';
+      const time = document.createElement('span'); time.className = 'vs-cap-time'; time.textContent = fmtTime(c.start);
+      const inp = document.createElement('input'); inp.className = 'vs-cap-text'; inp.type = 'text'; inp.value = c.text;
+      inp.addEventListener('input', () => { c.text = inp.value; });
+      inp.addEventListener('focus', () => { previewGlobal((c.start + c.end) / 2); });
+      const x = document.createElement('button'); x.className = 'vs-cap-x'; x.innerHTML = '✕'; x.title = 'Delete this caption';
+      x.addEventListener('click', () => { captions = captions.filter((k) => k.id !== c.id); renderCaptionList(); renderCaptionPreview(dropGlobal); });
+      row.appendChild(time); row.appendChild(inp); row.appendChild(x);
+      capListEl.appendChild(row);
+    });
+  }
+
+  let capCue = null;
+  function ensureCapCue() {
+    if (capCue && capCue.isConnected) return capCue;
+    const wrap = document.getElementById('vs-video-wrap');
+    if (!wrap) return null;
+    capCue = document.createElement('div'); capCue.className = 'vs-cap-cue'; capCue.style.display = 'none';
+    wrap.appendChild(capCue);
+    return capCue;
+  }
+
+  function renderCaptionPreview(g) {
+    const cue = ensureCapCue();
+    if (!cue) return;
+    if (!captions.length) { cue.style.display = 'none'; return; }
+    const gg = (g == null) ? dropGlobal : g;
+    const c = captions.find((x) => gg >= x.start - 0.02 && gg <= x.end + 0.02);
+    if (!c) { cue.style.display = 'none'; return; }
+    const wrap = document.getElementById('vs-video-wrap');
+    const h = wrap ? wrap.clientHeight : 0;
+    cue.style.display = '';
+    cue.textContent = c.text;
+    cue.style.top = (capStyle.cy * 100) + '%';
+    cue.style.fontFamily = FONTS_VS[capStyle.font].css;
+    cue.style.color = capStyle.color;
+    cue.style.fontSize = Math.max(11, capStyle.sizeFrac * h) + 'px';
+    cue.classList.toggle('boxed', capStyle.bg);
+  }
+
+  function applyCapPreset(key) {
+    const p = CAP_PRESETS[key]; if (!p) return;
+    const relayout = p.layout !== capStyle.layout;
+    capStyle = { font: p.font, color: p.color, bg: p.bg, sizeFrac: p.sizeFrac, cy: p.cy, layout: p.layout };
+    if (capColorInput) capColorInput.value = p.color;
+    if (relayout) chunkCaptions();
+    refreshCapButtons();
+    renderCaptionList();
+    renderCaptionPreview(dropGlobal);
+  }
+
+  function refreshCapButtons() {
+    capPresetBtns.forEach((b) => {
+      const p = CAP_PRESETS[b.dataset.preset];
+      b.classList.toggle('active', !!p && p.font === capStyle.font && p.color === capStyle.color && p.layout === capStyle.layout && p.bg === capStyle.bg);
+    });
+    capLayoutBtns.forEach((b) => b.classList.toggle('active', b.dataset.caplayout === capStyle.layout));
+    const map = { top: 0.14, mid: 0.5, bottom: 0.85 };
+    capPosBtns.forEach((b) => b.classList.toggle('active', Math.abs(map[b.dataset.cappos] - capStyle.cy) < 0.001));
+  }
+
+  function clearCaptions() {
+    capWords = []; captions = [];
+    if (capStyleBox) capStyleBox.style.display = 'none';
+    if (capClearBtn) capClearBtn.style.display = 'none';
+    if (capProgress) capProgress.style.display = 'none';
+    renderCaptionList();
+    renderCaptionPreview(dropGlobal);
+  }
+
   // ── Playback (plays the whole video; the marker stays put) ─────────
   const nextClipId = () => {
     const i = sources.findIndex((x) => x.id === activeId);
@@ -909,6 +1138,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (show && aiText) aiText.focus();
   });
   if (aiGenBtn) aiGenBtn.addEventListener('click', generateAIVoice);
+
+  // Caption controls
+  if (actCaptions) actCaptions.addEventListener('click', () => setMode('captions'));
+  if (capGenBtn) capGenBtn.addEventListener('click', generateCaptions);
+  if (capClearBtn) capClearBtn.addEventListener('click', clearCaptions);
+  capPresetBtns.forEach((b) => b.addEventListener('click', () => applyCapPreset(b.dataset.preset)));
+  capLayoutBtns.forEach((b) => b.addEventListener('click', () => {
+    capStyle.layout = b.dataset.caplayout;
+    capStyle.cy = (b.dataset.caplayout === 'word') ? 0.5 : 0.85;
+    chunkCaptions(); refreshCapButtons(); renderCaptionList(); renderCaptionPreview(dropGlobal);
+  }));
+  capPosBtns.forEach((b) => b.addEventListener('click', () => {
+    const map = { top: 0.14, mid: 0.5, bottom: 0.85 };
+    capStyle.cy = map[b.dataset.cappos];
+    refreshCapButtons(); renderCaptionPreview(dropGlobal);
+  }));
+  if (capColorInput) capColorInput.addEventListener('input', () => { capStyle.color = capColorInput.value; refreshCapButtons(); renderCaptionPreview(dropGlobal); });
 
   // ── Upload wiring ─────────────────────────────────────────────────
   dropzone.addEventListener('click', () => { pendingInsert = null; fileInput.click(); });
@@ -1075,6 +1321,11 @@ document.addEventListener('DOMContentLoaded', () => {
   //    "function signature mismatch". Served same-origin so the worker can
   //    importScripts the core (a blob-worker importing a blob-core fails). ──
   const FF_BASE = new URL('/assets/ffmpeg012/', location.href).href;
+  // ffmpeg-core.wasm is ~30 MB — over Cloudflare Pages' 25 MB per-file limit — so
+  // it is loaded from jsdelivr (the identical @ffmpeg/core@0.12.6 build) rather than
+  // shipped in the repo. The worker + core.js stay self-hosted, so importScripts
+  // still pulls a real-origin core (the old blob-origin failure doesn't return).
+  const FF_CORE_WASM = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm';
 
   function withTimeout(promise, ms, msg) {
     return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error(msg)), ms))]);
@@ -1117,7 +1368,7 @@ document.addEventListener('DOMContentLoaded', () => {
         exec: (args) => send('EXEC', { args, timeout: -1 }),
         readFile: (path) => send('READ_FILE', { path, encoding: 'binary' })
       };
-      send('LOAD', { coreURL: FF_BASE + 'ffmpeg-core.js', wasmURL: FF_BASE + 'ffmpeg-core.wasm' })
+      send('LOAD', { coreURL: FF_BASE + 'ffmpeg-core.js', wasmURL: FF_CORE_WASM })
         .then(() => { loaded = true; ffmpegInstance = client; resolve(client); })
         .catch(reject);
     });
@@ -1201,6 +1452,20 @@ document.addEventListener('DOMContentLoaded', () => {
       return d;
     }).join(',');
 
+    // Burned-in captions: centered, one drawtext per segment, shown over its
+    // whole-video time window (t in the filtergraph is the output timeline).
+    const captionChain = () => captions.map((c, i) => {
+      const size = Math.max(10, Math.round(capStyle.sizeFrac * H));
+      const col = '0x' + (capStyle.color || '#ffffff').replace('#', '');
+      let d = `drawtext=fontfile=${FONTS_VS[capStyle.font].file}:textfile=cap_${i}.txt:expansion=none`;
+      d += `:fontsize=${size}:fontcolor=${col}`;
+      d += `:x=(w-text_w)/2:y=h*${capStyle.cy.toFixed(4)}-text_h/2`;
+      if (capStyle.bg) d += `:box=1:boxcolor=black@0.62:boxborderw=${Math.round(size * 0.3)}`;
+      else d += `:shadowcolor=black@0.6:shadowx=2:shadowy=2`;
+      d += `:enable=between(t\\,${(+c.start).toFixed(2)}\\,${(+c.end).toFixed(2)})`;
+      return d;
+    }).join(',');
+
     // One pass: real audio where a clip has it, silent filler where it doesn't,
     // so the concat always has an audio track and audio is never silently dropped.
     const buildGraph = () => {
@@ -1236,7 +1501,8 @@ document.addEventListener('DOMContentLoaded', () => {
       for (let i = 0; i < n; i++) cat += `[v${i}][a${i}]`;
       parts.push(`${cat}concat=n=${n}:v=1:a=1[cv][ca]`);
       let vOut = '[cv]';
-      if (texts.length) { parts.push(`[cv]${drawChain()}[outv]`); vOut = '[outv]'; }
+      const draws = [texts.length ? drawChain() : '', captions.length ? captionChain() : ''].filter(Boolean).join(',');
+      if (draws) { parts.push(`[cv]${draws}[outv]`); vOut = '[outv]'; }
       return { graph: parts.join(';'), vOut };
     };
 
@@ -1250,14 +1516,14 @@ document.addEventListener('DOMContentLoaded', () => {
         au._fsName = `aud_${j}.${audioExt(au)}`;
         await ff.writeFile(au._fsName, await u8FromFile(au.file));
       }
-      if (texts.length) {
-        const usedFonts = Array.from(new Set(texts.map((t) => t.font)));
-        for (const fk of usedFonts) {
-          const file = FONTS_VS[fk].file;
-          await ff.writeFile(file, await u8FromURL(new URL('/assets/fonts/' + file, location.href).href));
-        }
-        for (let i = 0; i < texts.length; i++) await ff.writeFile(`txt_${i}.txt`, new TextEncoder().encode(texts[i].content || ' '));
+      const usedFonts = new Set(texts.map((t) => t.font));
+      if (captions.length) usedFonts.add(capStyle.font);
+      for (const fk of usedFonts) {
+        const file = FONTS_VS[fk].file;
+        await ff.writeFile(file, await u8FromURL(new URL('/assets/fonts/' + file, location.href).href));
       }
+      for (let i = 0; i < texts.length; i++) await ff.writeFile(`txt_${i}.txt`, new TextEncoder().encode(texts[i].content || ' '));
+      for (let i = 0; i < captions.length; i++) await ff.writeFile(`cap_${i}.txt`, new TextEncoder().encode(captions[i].text || ' '));
     }
 
     // Deterministic audio check: try to pull a sliver of the first audio stream.
