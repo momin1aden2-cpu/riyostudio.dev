@@ -77,6 +77,23 @@
     .vs-g-region:last-child { border-right: none; }
     .vs-g-region.active { box-shadow: inset 0 0 0 2px #34D399, inset 0 0 0 4px rgba(16,185,129,0.25); }
     .vs-gplayhead { position: absolute; top: -2px; bottom: -2px; width: 2px; background: rgba(255,255,255,0.9); box-shadow: 0 0 6px rgba(255,255,255,0.85); pointer-events: none; z-index: 3; }
+    /* Cut-out range selection (red) */
+    .vs-cut-band { position: absolute; top: 0; bottom: 0; box-sizing: border-box; border: 2px solid #f87171; border-radius: 9px; pointer-events: none; z-index: 2; background: repeating-linear-gradient(45deg, rgba(248,113,113,0.34), rgba(248,113,113,0.34) 8px, rgba(248,113,113,0.16) 8px, rgba(248,113,113,0.16) 16px); }
+    .vs-cut-handle { position: absolute; top: -2px; bottom: -2px; width: 18px; transform: translateX(-50%); background: #f87171; border-radius: 6px; cursor: ew-resize; box-shadow: 0 1px 6px rgba(0,0,0,0.5); touch-action: none; z-index: 4; display: flex; align-items: center; justify-content: center; }
+    .vs-cut-handle::after { content: ''; width: 3px; height: 46%; background: #2a0a0a; border-radius: 2px; }
+
+    /* Audio panel — voiceover / music / AI voice */
+    .vs-ai-form { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); }
+    .vs-ai-form textarea, .vs-ai-form input[type=password] { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.12); color: #e7eef5; border-radius: 9px; padding: 9px 11px; font: inherit; font-size: 0.85rem; outline: none; resize: vertical; }
+    .vs-ai-form textarea:focus, .vs-ai-form input[type=password]:focus { border-color: rgba(16,185,129,0.55); }
+    .vs-audio-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+    .vs-audio-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 11px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
+    .vs-audio-row .vs-au-ico { font-size: 1.1rem; line-height: 1; }
+    .vs-audio-row .vs-au-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.84rem; color: #dbe5ee; }
+    .vs-audio-row .vs-au-meta { font-size: 0.7rem; color: var(--text-dim); white-space: nowrap; }
+    .vs-audio-row input[type=range] { width: 90px; accent-color: #10B981; cursor: pointer; }
+    .vs-audio-row .vs-au-x { background: none; border: none; color: #f87171; cursor: pointer; font-size: 0.95rem; padding: 2px 4px; line-height: 1; }
+    .vs-tool.recording { background: rgba(248,113,113,0.18); border-color: #f87171; color: #fecaca; }
 
     /* Trim bar — the selected clip's footage; green window = what you keep */
     .vs-trim { margin-top: 18px; }
@@ -102,8 +119,8 @@
     /* Guided banner + big action buttons */
     .vs-banner { margin-top: 16px; padding: 12px 16px; border-radius: 12px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); color: #d7e4dd; font-size: 0.9rem; line-height: 1.45; }
     .vs-banner b { color: #fff; }
-    .vs-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
-    .vs-action { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 16px 8px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: #cdd6e2; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: border-color 0.15s, background 0.15s, transform 0.1s; }
+    .vs-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .vs-action { flex: 1 1 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 16px 8px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: #cdd6e2; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: border-color 0.15s, background 0.15s, transform 0.1s; }
     .vs-action:hover { border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.07); transform: translateY(-1px); }
     .vs-action.active { border-color: #34D399; background: rgba(16,185,129,0.14); color: #fff; }
     .vs-action-ico { font-size: 1.5rem; line-height: 1; }
@@ -279,8 +296,10 @@
             <!-- What do you want to do? -->
             <div class="vs-actions">
               <button id="vs-act-add" class="vs-action"><span class="vs-action-ico">➕</span><span>Add a video</span></button>
-              <button id="vs-act-trim" class="vs-action"><span class="vs-action-ico">✂️</span><span>Trim / cut</span></button>
+              <button id="vs-act-trim" class="vs-action"><span class="vs-action-ico">✂️</span><span>Shorten a clip</span></button>
+              <button id="vs-act-cut" class="vs-action"><span class="vs-action-ico">🗑️</span><span>Remove a section</span></button>
               <button id="vs-act-text" class="vs-action"><span class="vs-action-ico">🔤</span><span>Add text</span></button>
+              <button id="vs-act-audio" class="vs-action"><span class="vs-action-ico">🎙️</span><span>Audio</span></button>
               <button id="vs-act-export" class="vs-action go"><span class="vs-action-ico">⬇</span><span>Download</span></button>
             </div>
 
@@ -315,6 +334,50 @@
                 <button id="vs-reset-trim" class="vs-tool" title="Keep the whole clip again">↺ Use full clip</button>
                 <button id="vs-remove-clip" class="vs-tool danger" title="Delete this clip entirely">🗑 Delete this clip</button>
               </div>
+            </div>
+
+            <!-- CUT-OUT-A-PART panel -->
+            <div id="vs-cut-panel" class="vs-mode" style="display:none;">
+              <div class="vs-bar-head">
+                <span>Drag the <b style="color:#f87171;">red edges</b> to mark the part to remove</span>
+                <span id="vs-cut-sub" class="vs-trim-sub"></span>
+              </div>
+              <div id="vs-cut-track" class="vs-gtrack">
+                <div id="vs-cut-regions" class="vs-g-regions"></div>
+                <div id="vs-cut-band" class="vs-cut-band"></div>
+                <div id="vs-cut-l" class="vs-cut-handle"></div>
+                <div id="vs-cut-r" class="vs-cut-handle"></div>
+              </div>
+              <div class="vs-clip-tools">
+                <button id="vs-cut-remove" class="vs-tool danger" title="Remove the red part; the rest joins together">🗑️ Remove this part (join the rest)</button>
+                <button id="vs-cut-replace" class="vs-tool primary" title="Remove the red part and drop another video in its place">🔁 Replace with a video…</button>
+              </div>
+            </div>
+
+            <!-- AUDIO panel — voiceover, music, AI voice -->
+            <div id="vs-audio-panel" class="vs-mode" style="display:none;">
+              <div class="vs-bar-head"><span>Add a <b style="color:#34D399;">🎤 voiceover</b>, <b style="color:#34D399;">🎵 music</b>, or an <b style="color:#34D399;">🤖 AI voice</b> — mixed into your video on export.</span></div>
+              <div class="vs-clip-tools">
+                <button id="vs-rec-btn" class="vs-tool primary" title="Record your voice with the microphone">🎤 Record voiceover</button>
+                <button id="vs-music-btn" class="vs-tool" title="Add a music or audio file from your device">🎵 Add music</button>
+                <button id="vs-ai-btn" class="vs-tool" title="Type a script and generate an AI voiceover">🤖 AI voiceover</button>
+              </div>
+              <input id="vs-music-input" type="file" accept="audio/*" hidden>
+              <div id="vs-ai-form" class="vs-ai-form" style="display:none;">
+                <textarea id="vs-ai-text" rows="2" placeholder="Type what the voice should say…"></textarea>
+                <label class="vs-field">Voice
+                  <select id="vs-ai-voice">
+                    <option value="pNInz6obpgDQGcFmaJgB">Adam (Professional)</option>
+                    <option value="21m00Tcm4TlvDq8ikWAM">Rachel (Calm)</option>
+                    <option value="AZnzlk1XvdvUeBnXmlld">Domi (Energetic)</option>
+                    <option value="MF3mGyEYCl7XYWbV9V6O">Elli (Emotional)</option>
+                  </select>
+                </label>
+                <input id="vs-ai-key" type="password" placeholder="ElevenLabs API key" autocomplete="off">
+                <button id="vs-ai-gen" class="vs-tool primary">✨ Generate voiceover</button>
+                <p class="vs-hint">Your key is saved only on this device and sent directly to ElevenLabs.</p>
+              </div>
+              <div id="vs-audio-list" class="vs-audio-list"></div>
             </div>
 
             <!-- Your clips -->
@@ -512,6 +575,6 @@
 
   <script src="bg.js?v=18"></script>
   <script src="script.js?v=24"></script>
-  <script src="video.js?v=27"></script>
+  <script src="video.js?v=29"></script>
 </body>
 </html>
