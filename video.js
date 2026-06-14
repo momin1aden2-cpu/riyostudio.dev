@@ -26,6 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const resetTrimBtn = document.getElementById('vs-reset-trim');
   const removeClipBtn = document.getElementById('vs-remove-clip');
   const storyEl = document.getElementById('vs-story');
+  const tsBtns = document.querySelectorAll('[data-track]');
+  const tsHint = document.getElementById('vs-ts-hint');
+  const storyTitle = document.getElementById('vs-story-title');
   const clipMetaEl = document.getElementById('vs-clip-meta');
   const cutHint = document.getElementById('vs-cut-hint');
   const cutHintDefault = cutHint ? cutHint.innerHTML : null;
@@ -137,7 +140,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Each clip plays a contiguous [in, out] slice of its file. The storyboard order
   // is the final video. dropGlobal is one marker measured across the WHOLE video.
-  let sources = [];
+  // Two tracks: t1 (main) and t2 (second video). `sources` always points at the
+  // track currently being edited, so every tool works on either track.
+  const t1 = [];
+  const t2 = [];
+  let sources = t1;
+  let editingTrack = 1;       // 1 = main video, 2 = second video
+  let activeIdT = { 1: null, 2: null };
   let activeId = null;
   let uid = 0;
   let fileSeq = 0;
@@ -344,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (at) {
       const s = at.clip;
       const ft = inOf(s) + at.local * speedOf(s);
-      if (activeId !== s.id && video.src !== s.url) { video.pause(); video.src = s.url; }
+      if (video.src !== s.url) { video.pause(); video.src = s.url; }
       activeId = s.id;
       if (seek) {
         const apply = () => { try { video.currentTime = ft; } catch (e) { /* not seekable yet */ } };
@@ -368,12 +377,48 @@ document.addEventListener('DOMContentLoaded', () => {
     if (idx < 0) return;
     const [removed] = sources.splice(idx, 1);
     if (removed && !sources.some((s) => s.url === removed.url)) { try { URL.revokeObjectURL(removed.url); } catch (e) { /* ignore */ } }
-    if (!sources.length) { resetToDropzone(); return; }
+    if (!sources.length) {
+      if (editingTrack === 1 && !t2.length) { resetToDropzone(); return; }
+      activeId = null; dropGlobal = 0;
+      video.pause(); video.removeAttribute('src'); video.load();
+      renderAll(); refreshTrackSwitch();
+      return;
+    }
     selectClip(sources[Math.min(idx, sources.length - 1)].id);
+  }
+
+  // Switch which track every tool edits. The inactive track keeps its clips.
+  function setEditingTrack(n) {
+    if (n === editingTrack) return;
+    activeIdT[editingTrack] = activeId;
+    editingTrack = n;
+    sources = (n === 1) ? t1 : t2;
+    const saved = activeIdT[n];
+    activeId = (saved && sources.some((s) => s.id === saved)) ? saved : (sources.length ? sources[0].id : null);
+    pendingInsert = null; dropGlobal = 0;
+    if (sources.length) {
+      const idx = Math.max(0, sources.findIndex((s) => s.id === activeId));
+      goToGlobal(globalStartOf(idx), true);
+    } else {
+      video.pause(); video.removeAttribute('src'); video.load();
+      renderAll();
+    }
+    applyOverlayPreview();
+    refreshOverlayButtons();
+    refreshTrackSwitch();
+  }
+
+  function refreshTrackSwitch() {
+    tsBtns.forEach((b) => b.classList.toggle('active', parseInt(b.dataset.track, 10) === editingTrack));
+    if (storyTitle) storyTitle.textContent = editingTrack === 1 ? 'Video 1 clips' : 'Video 2 clips';
+    if (tsHint) tsHint.textContent = (editingTrack === 2 && !t2.length) ? '— drop clips here for the second video' : '';
   }
 
   function resetToDropzone() {
     activeId = null; dropGlobal = 0;
+    t2.length = 0; sources = t1; sources.length = 0;
+    editingTrack = 1; activeIdT = { 1: null, 2: null };
+    if (typeof refreshTrackSwitch === 'function') refreshTrackSwitch();
     video.pause();
     video.removeAttribute('src');
     video.load();
@@ -456,7 +501,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (mode === 'effects') {
       banner.innerHTML = '✨ <b>Effects.</b> <b>Speed</b> changes the selected clip (slow-mo or speed-up). <b>Look</b> recolours the whole video and <b>Fade</b> eases it in/out — both shown on the preview (fade is applied on download).';
     } else if (mode === 'overlay') {
-      banner.innerHTML = '🖼️ <b>Overlay a second video.</b> Add another clip, then show it as a <b>corner inset (PiP)</b> or <b>split screen</b> over your whole video — for reactions, facecam or duets. It loops to match your video’s length.';
+      banner.innerHTML = '🔀 <b>Merge two videos.</b> Build <b>Video 1</b> and <b>Video 2</b> separately (switch with the tabs under the player), then choose how they combine — <b>corner inset (PiP)</b> or <b>split screen</b>. They’re merged when you <b>download</b>.';
     } else {
       banner.innerHTML = 'What next? <b>➕ Add a video</b>, <b>✂️ Shorten a clip</b>, <b>🗑️ Remove a section</b>, <b>🔤 Add text</b>, <b>💬 Captions</b>, <b>🎙️ Audio</b>, <b>📐 Format</b>, <b>✨ Effects</b>, or <b>⬇ Download</b>.';
     }
@@ -674,7 +719,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (cs >= gs - 0.05 && cse <= ge + 0.05) removed.push(s);
       else keep.push(s);
     });
-    sources = keep;
+    sources.length = 0;
+    keep.forEach((s) => sources.push(s));
     const stillUsed = new Set(sources.map((s) => s.url));
     removed.forEach((s) => { if (!stillUsed.has(s.url)) { try { URL.revokeObjectURL(s.url); } catch (e) { /* ignore */ } } });
   }
@@ -1203,122 +1249,56 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fxClipLabel) fxClipLabel.textContent = s ? `· clip ${sources.findIndex((x) => x.id === s.id) + 1}` : '· tap a clip below';
   }
 
-  // ── Second video (PiP / side-by-side) ──────────────────────────────
-  async function addOverlay2(file) {
-    if (!file) return;
-    if (overlay2) { try { URL.revokeObjectURL(overlay2.url); } catch (e) { /* ignore */ } }
-    const url = URL.createObjectURL(file);
-    const meta = await getMeta(url);
-    overlay2 = { file, url, name: file.name, duration: meta.duration, w: meta.w, h: meta.h, in: 0, out: meta.duration || 0 };
+  // ── Second video preview = the OTHER track, shown as PiP / split ────
+  const otherTrackClips = () => (editingTrack === 1 ? t2 : t1);
+
+  function addOverlay2() {            // "Add second video" → jump to the Video 2 track
     if (pipLayout === 'off') pipLayout = 'pip';
-    applyOverlayPreview();
-    refreshOverlayButtons();
+    setEditingTrack(2);
+    if (!t2.length) fileInput.click();
   }
 
-  function removeOverlay2() {
-    if (overlay2) { try { URL.revokeObjectURL(overlay2.url); } catch (e) { /* ignore */ } }
-    overlay2 = null; pipLayout = 'off';
-    if (ovlVideo) { try { ovlVideo.pause(); ovlVideo.removeAttribute('src'); ovlVideo.load(); } catch (e) { /* ignore */ } }
-    applyOverlayPreview();
-    refreshOverlayButtons();
-  }
-
+  // Each track is edited FULLSCREEN on its own; the two are merged only on download,
+  // so the editor never shows a second video (that's what was causing the mix-ups).
   function applyOverlayPreview() {
     if (!ovlVideo || !video) return;
-    const on = overlay2 && pipLayout !== 'off';
-    ovlVideo.style.display = on ? 'block' : 'none';
     video.style.left = ''; video.style.top = ''; video.style.width = ''; video.style.height = '';
     video.style.objectFit = (outFill === 'crop') ? 'cover' : 'contain';
-    if (!on) return;
-    if (ovlVideo.src !== overlay2.url) ovlVideo.src = overlay2.url;
-    ovlVideo.muted = true;
-    if (pipLayout === 'pip') {
-      ovlVideo.classList.add('draggable');
-      ovlVideo.style.width = (pipSize * 100).toFixed(1) + '%';
-      ovlVideo.style.height = 'auto';
-      ovlVideo.style.borderRadius = '8px';
-      ovlVideo.style.right = 'auto'; ovlVideo.style.bottom = 'auto';
-      ovlVideo.style.left = (Math.max(0, Math.min(1 - pipSize, pipX)) * 100).toFixed(2) + '%';
-      ovlVideo.style.top = (Math.max(0, Math.min(0.98, pipY)) * 100).toFixed(2) + '%';
-    } else {
-      ovlVideo.classList.remove('draggable');
-      ovlVideo.style.borderRadius = '0';
-      ovlVideo.style.height = '';
-      video.style.objectFit = 'cover';
-      const mainFirst = !sbsSwap;
-      if (sbsDir === 'lr') {
-        video.style.left = mainFirst ? '0' : '50%'; video.style.top = '0'; video.style.width = '50%'; video.style.height = '100%';
-        ovlVideo.style.left = mainFirst ? '50%' : '0'; ovlVideo.style.right = 'auto'; ovlVideo.style.top = '0'; ovlVideo.style.bottom = 'auto'; ovlVideo.style.width = '50%'; ovlVideo.style.height = '100%';
-      } else {
-        video.style.left = '0'; video.style.top = mainFirst ? '0' : '50%'; video.style.width = '100%'; video.style.height = '50%';
-        ovlVideo.style.left = '0'; ovlVideo.style.right = 'auto'; ovlVideo.style.top = mainFirst ? '50%' : '0'; ovlVideo.style.bottom = 'auto'; ovlVideo.style.width = '100%'; ovlVideo.style.height = '50%';
-      }
-    }
+    ovlVideo.style.display = 'none';
+    ovlVideo.classList.remove('draggable', 'dimmed');
+    if (!ovlVideo.paused) ovlVideo.pause();
   }
 
-  function syncOverlayPreview(g) {
-    if (!ovlVideo) return;
-    if (!overlay2 || pipLayout === 'off') { if (!ovlVideo.paused) ovlVideo.pause(); return; }
-    if (ovlVideo.src !== overlay2.url) ovlVideo.src = overlay2.url;
-    const oin = overlay2.in || 0;
-    const olen = Math.max(0.1, (overlay2.out != null ? overlay2.out : overlay2.duration) - oin);
-    const target = oin + (g % olen);
-    if (Math.abs((ovlVideo.currentTime || 0) - target) > 0.4) { try { ovlVideo.currentTime = target; } catch (e) { /* ignore */ } }
-    if (!video.paused && ovlVideo.paused) { const p = ovlVideo.play(); if (p && p.catch) p.catch(() => {}); }
-    else if (video.paused && !ovlVideo.paused) ovlVideo.pause();
+  function syncOverlayPreview() {
+    if (ovlVideo && !ovlVideo.paused) ovlVideo.pause();
   }
 
   function refreshOverlayButtons() {
-    const has = !!overlay2;
-    if (ovlRemoveBtn) ovlRemoveBtn.style.display = has ? '' : 'none';
-    if (ovlOpts) ovlOpts.style.display = has ? '' : 'none';
-    if (ovlAddBtn) ovlAddBtn.textContent = has ? '🔁 Replace second video' : '➕ Add second video';
-    if (ovlNameEl) ovlNameEl.textContent = overlay2 ? overlay2.name : '';
+    const hasT2 = t2.length > 0;
+    if (ovlRemoveBtn) ovlRemoveBtn.style.display = 'none';
+    if (ovlOpts) ovlOpts.style.display = hasT2 ? '' : 'none';
+    if (ovlAddBtn) ovlAddBtn.textContent = hasT2 ? '✏️ Edit Video 2 clips' : '➕ Add a second video';
+    if (ovlNameEl) ovlNameEl.textContent = hasT2 ? `Video 2 · ${t2.length} clip${t2.length > 1 ? 's' : ''}` : '';
     if (pipOpts) pipOpts.style.display = (pipLayout === 'pip') ? '' : 'none';
     if (sbsOpts) sbsOpts.style.display = (pipLayout === 'sbs') ? '' : 'none';
     pipBtns.forEach((b) => b.classList.toggle('active', b.dataset.pip === pipLayout));
     sbsBtns.forEach((b) => b.classList.toggle('active', b.dataset.sbs === sbsDir));
     if (ovlMuteBtn) { ovlMuteBtn.classList.toggle('active', pipMuted); ovlMuteBtn.textContent = pipMuted ? '🔇 Its sound: off' : '🔊 Its sound: on'; }
-    renderOvlTrim();
+    // The old single-video trim bar is gone — Video 2 is trimmed per clip on its track.
+    if (ovlTrack) { ovlTrack.style.display = 'none'; if (ovlTrack.previousElementSibling) ovlTrack.previousElementSibling.style.display = 'none'; }
   }
+  function ovlTrimHandle() { return function () {}; }   // legacy hook; Video 2 trims per clip now
 
-  function renderOvlTrim() {
-    if (!ovlTrack || !overlay2 || !overlay2.duration) return;
-    const d = overlay2.duration;
-    const pi = (overlay2.in / d) * 100, po = (overlay2.out / d) * 100;
-    if (ovlDimL) { ovlDimL.style.left = '0%'; ovlDimL.style.width = pi + '%'; }
-    if (ovlDimR) { ovlDimR.style.left = po + '%'; ovlDimR.style.width = (100 - po) + '%'; }
-    if (ovlKeep) { ovlKeep.style.left = pi + '%'; ovlKeep.style.width = (po - pi) + '%'; }
-    if (ovlHandleL) ovlHandleL.style.left = pi + '%';
-    if (ovlHandleR) ovlHandleR.style.left = po + '%';
-    if (ovlTrimSub) ovlTrimSub.textContent = `keeping ${fmtTime(overlay2.out - overlay2.in)} of ${fmtTime(d)}`;
-  }
-
-  function ovlTrimHandle(which) {
-    return (e) => {
-      e.preventDefault(); e.stopPropagation();
-      if (!overlay2 || !overlay2.duration) return;
-      const d = overlay2.duration;
-      const rect = ovlTrack.getBoundingClientRect();
-      const move = (ev) => {
-        const t = clamp01((ev.clientX - rect.left) / rect.width) * d;
-        if (which === 'L') overlay2.in = Math.max(0, Math.min(t, overlay2.out - 0.3));
-        else overlay2.out = Math.min(d, Math.max(t, overlay2.in + 0.3));
-        try { if (ovlVideo) ovlVideo.currentTime = (which === 'L') ? overlay2.in : overlay2.out; } catch (e2) { /* ignore */ }
-        renderOvlTrim();
-      };
-      const up = () => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); };
-      document.addEventListener('pointermove', move);
-      document.addEventListener('pointerup', up);
-    };
-  }
-
-  // Drag the inset around the preview (PiP only).
+  // Drag the inset around the preview (PiP only); a tap (no drag) edits that track.
+  let ovlPointerMoved = false;
   function pipDragStart(e) {
-    if (pipLayout !== 'pip' || !overlay2 || !videoWrap) return;
+    if (!otherTrackClips().length || !videoWrap) return;
+    ovlPointerMoved = false;
+    if (pipLayout !== 'pip') return;   // side-by-side isn't draggable; the click handler switches tracks
     e.preventDefault();
     const wrap = videoWrap.getBoundingClientRect();
     const move = (ev) => {
+      ovlPointerMoved = true;
       const r = ovlVideo.getBoundingClientRect();
       const x = (ev.clientX - wrap.left - r.width / 2) / wrap.width;
       const y = (ev.clientY - wrap.top - r.height / 2) / wrap.height;
@@ -1491,9 +1471,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Overlay (second video) controls
   if (actOverlay) actOverlay.addEventListener('click', () => setMode('overlay'));
-  if (ovlAddBtn) ovlAddBtn.addEventListener('click', () => { if (ovlInput) ovlInput.click(); });
-  if (ovlInput) ovlInput.addEventListener('change', () => { const f = ovlInput.files && ovlInput.files[0]; if (f) addOverlay2(f); ovlInput.value = ''; });
-  if (ovlRemoveBtn) ovlRemoveBtn.addEventListener('click', removeOverlay2);
+  if (ovlAddBtn) ovlAddBtn.addEventListener('click', addOverlay2);
   pipBtns.forEach((b) => b.addEventListener('click', () => { pipLayout = b.dataset.pip; applyOverlayPreview(); refreshOverlayButtons(); }));
   cornerBtns.forEach((b) => b.addEventListener('click', () => { setPipCorner(b.dataset.corner); }));
   sbsBtns.forEach((b) => b.addEventListener('click', () => { sbsDir = b.dataset.sbs; applyOverlayPreview(); refreshOverlayButtons(); }));
@@ -1503,6 +1481,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (ovlHandleL) ovlHandleL.addEventListener('pointerdown', ovlTrimHandle('L'));
   if (ovlHandleR) ovlHandleR.addEventListener('pointerdown', ovlTrimHandle('R'));
   if (ovlVideo) ovlVideo.addEventListener('pointerdown', pipDragStart);
+  if (ovlVideo) ovlVideo.addEventListener('click', () => { if (!ovlPointerMoved && otherTrackClips().length) setEditingTrack(editingTrack === 1 ? 2 : 1); });
+
+  // Track switcher (Video 1 / Video 2)
+  tsBtns.forEach((b) => b.addEventListener('click', () => setEditingTrack(parseInt(b.dataset.track, 10))));
 
   // ── Upload wiring ─────────────────────────────────────────────────
   dropzone.addEventListener('click', () => { pendingInsert = null; fileInput.click(); });
@@ -1742,6 +1724,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   exportBtn.addEventListener('click', async () => {
+    if (editingTrack === 2) setEditingTrack(1);   // the main render is always Video 1
     const exportClips = [];
     sources.forEach((s) => {
       const a = inOf(s), b = outOf(s);
@@ -1761,7 +1744,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     pauseAudioPreview();
     const overlayAudios = audios.slice();
-    const pipOn = overlay2 && pipLayout !== 'off';
+    const pipOn = t2.length > 0 && pipLayout !== 'off';
+    let t2File = null, t2HasAudio = false;
     const audioExt = (au) => {
       const t = (au.file && au.file.type) || '';
       if (/mpeg|mp3/.test(t)) return 'mp3';
@@ -1924,10 +1908,6 @@ document.addEventListener('DOMContentLoaded', () => {
         au._fsName = `aud_${j}.${audioExt(au)}`;
         await ff.writeFile(au._fsName, await u8FromFile(au.file));
       }
-      if (pipOn) {
-        overlay2._fsName = `ovl2.${ext(overlay2.name)}`;
-        await ff.writeFile(overlay2._fsName, await u8FromFile(overlay2.file));
-      }
       const usedFonts = new Set(texts.map((t) => t.font));
       if (captions.length) usedFonts.add(capStyle.font);
       for (const fk of usedFonts) {
@@ -1959,19 +1939,54 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // Run 1 of the composite: concatenate the Video 2 track to its own file,
+    // which the main pass then overlays / stacks (PiP or split screen).
+    async function renderTrack2(ff) {
+      const segs = [];
+      t2.forEach((s) => { const a = inOf(s), b = outOf(s); if (b > a + 0.05) segs.push({ s, start: a, end: b, speed: speedOf(s) }); });
+      if (!segs.length) return { ok: false };
+      const fk2idx = {}; const t2in = [];
+      segs.forEach((seg) => { const fk = seg.s.fileKey; if (!(fk in fk2idx)) { fk2idx[fk] = t2in.length; t2in.push({ fk, name: `t2_${fk}.${ext(seg.s.name)}`, file: seg.s.file, hasAudio: false }); } });
+      for (const inp of t2in) await ff.writeFile(inp.name, await u8FromFile(inp.file));
+      for (let i = 0; i < t2in.length; i++) {
+        const inp = t2in[i]; ffLogs = [];
+        try { const code = await ff.exec(['-i', inp.name, '-map', '0:a:0', '-t', '0.1', '-c:a', 'aac', '-y', `t2pr_${i}.m4a`]); inp.hasAudio = (code === 0) && !ffLogs.some((l) => /matches no streams|does not contain/i.test(l)); }
+        catch (e) { inp.hasAudio = false; }
+      }
+      const parts = [];
+      t2in.forEach((inp) => {
+        const k = fk2idx[inp.fk];
+        const cnt = segs.filter((s) => s.s.fileKey === inp.fk).length;
+        const vl = []; for (let j = 0; j < cnt; j++) vl.push(`t2v${k}_${j}`);
+        parts.push(`[${k}:v]split=${cnt}[${vl.join('][')}]`); inp._vl = vl; inp._vn = 0;
+        if (inp.hasAudio) { const al = []; for (let j = 0; j < cnt; j++) al.push(`t2a${k}_${j}`); parts.push(`[${k}:a]asplit=${cnt}[${al.join('][')}]`); inp._al = al; inp._an = 0; }
+      });
+      segs.forEach((seg, i) => {
+        const inp = t2in[fk2idx[seg.s.fileKey]];
+        const vlbl = inp._vl[inp._vn++];
+        parts.push(`[${vlbl}]trim=${seg.start.toFixed(3)}:${seg.end.toFixed(3)},setpts=(PTS-STARTPTS)/${seg.speed},fps=30,scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2,setsar=1[t2cv${i}]`);
+        if (inp.hasAudio) { const albl = inp._al[inp._an++]; parts.push(`[${albl}]atrim=${seg.start.toFixed(3)}:${seg.end.toFixed(3)},asetpts=PTS-STARTPTS${atempoChain(seg.speed)},aresample=44100,aformat=channel_layouts=stereo[t2ca${i}]`); }
+        else parts.push(`anullsrc=r=44100:cl=stereo:d=${((seg.end - seg.start) / seg.speed).toFixed(3)}[t2ca${i}]`);
+      });
+      const n = segs.length; let cat = ''; for (let i = 0; i < n; i++) cat += `[t2cv${i}][t2ca${i}]`;
+      parts.push(`${cat}concat=n=${n}:v=1:a=1[t2vo][t2ao]`);
+      const a2 = []; t2in.forEach((inp) => a2.push('-i', inp.name));
+      a2.push('-filter_complex', parts.join(';'), '-map', '[t2vo]', '-map', '[t2ao]', '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '26', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-ar', '44100', '-ac', '2', 'track2.mp4');
+      ffLogs = [];
+      await ff.exec(a2);
+      return { ok: true, hasAudio: t2in.some((i) => i.hasAudio) };
+    }
+
     ffLogs = [];
     try {
       const ff = await ensureFFmpeg();
       await prepFS(ff);
       status('Checking clips…');
       await probeAudio(ff);
-      if (pipOn && !pipMuted) {
-        ffLogs = [];
-        try {
-          const code = await ff.exec(['-i', overlay2._fsName, '-map', '0:a:0', '-t', '0.1', '-c:a', 'aac', '-y', 'ovlpr.m4a']);
-          overlay2.hasAudio = (code === 0) && !ffLogs.some((l) => /matches no streams|does not contain/i.test(l));
-        } catch (e) { overlay2.hasAudio = false; }
-        try { await ff.readFile('ovlpr.m4a'); } catch (e) { /* ignore */ }
+      if (pipOn) {
+        status('Rendering the second video…');
+        const r = await renderTrack2(ff);
+        if (r.ok) { t2File = 'track2.mp4'; t2HasAudio = r.hasAudio; }
       }
       status(fmt === 'gif' ? 'Rendering GIF…' : (overlayAudios.length ? 'Mixing audio…' : (exportClips.length > 1 ? 'Combining your clips…' : 'Rendering…')));
       const g = buildGraph();
@@ -1983,16 +1998,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (au.kind === 'music' && au.loop) args.push('-stream_loop', '-1');
         args.push('-i', au._fsName);
       });
-      const oi = inputs.length + overlayAudios.length;   // second-video input index
-      if (pipOn) {
-        // Loop the second video's trimmed window to fill the main video's length.
-        const oin = Math.max(0, overlay2.in || 0);
-        const olen = Math.max(0.1, (overlay2.out != null ? overlay2.out : overlay2.duration) - oin);
-        args.push('-stream_loop', '-1', '-ss', oin.toFixed(3), '-t', olen.toFixed(3), '-i', overlay2._fsName);
-      }
+      const oi = inputs.length + overlayAudios.length;   // second-video (track 2) input index
+      if (pipOn && t2File) args.push('-stream_loop', '-1', '-i', t2File);  // loop track 2 to fill
 
       // Composite the second video over the main one (PiP corner or split screen).
-      if (pipOn) {
+      if (pipOn && t2File) {
         if (pipLayout === 'pip') {
           const pw = Math.max(2, Math.round(W * pipSize / 2) * 2);
           const px = Math.round(Math.max(0, Math.min(1 - pipSize, pipX)) * W);
@@ -2052,7 +2062,7 @@ document.addEventListener('DOMContentLoaded', () => {
           aOut = '[mixa]';
         }
         // Mix in the second video's own sound, unless muted.
-        if (pipOn && !pipMuted && overlay2.hasAudio) {
+        if (pipOn && t2File && !pipMuted && t2HasAudio) {
           graphStr += `;[${oi}:a]aresample=44100,aformat=channel_layouts=stereo,volume=1[povla];${aOut}[povla]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[aout2]`;
           aOut = '[aout2]';
         }
@@ -2087,4 +2097,5 @@ document.addEventListener('DOMContentLoaded', () => {
   applyLook();
   refreshFxButtons();
   refreshOverlayButtons();
+  refreshTrackSwitch();
 });
