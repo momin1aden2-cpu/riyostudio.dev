@@ -111,6 +111,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const ovlTrimSub = document.getElementById('vs-ovl-trim-sub');
   const actEffects = document.getElementById('vs-act-effects');
   const effectsPanel = document.getElementById('vs-effects-panel');
+  const actLook = document.getElementById('vs-act-look');
+  const actSpeed = document.getElementById('vs-act-speed');
+  const actAppear = document.getElementById('vs-act-appear');
+  const lookPanel = document.getElementById('vs-look-panel');
+  const speedPanel = document.getElementById('vs-speed-panel');
+  const appearPanel = document.getElementById('vs-appear-panel');
+  const railGlobal = document.getElementById('vs-rail-global');
+  const railClip = document.getElementById('vs-rail-clip');
+  const clipBackBtn = document.getElementById('vs-clip-back');
+  const clipSplitBtn = document.getElementById('vs-clip-split');
+  const clipDelBtn = document.getElementById('vs-clip-del');
   const fxClipLabel = document.getElementById('vs-fx-clip');
   const fxAnimBtns = document.querySelectorAll('[data-anim]');
   const fxSpeedBtns = document.querySelectorAll('[data-speed]');
@@ -143,6 +154,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const cardAddBtn = document.getElementById('vs-card-add');
   const cardColorBtns = document.querySelectorAll('[data-cardbg]');
   let cardBg = '#0B1220';
+  const recModeBtns = document.querySelectorAll('[data-rec]');
+  const recBar = document.getElementById('vs-rec-bar');
+  const recTimeEl = document.getElementById('vs-rec-time');
+  const recPauseBtn = document.getElementById('vs-rec-pause');
+  const recStopBtn = document.getElementById('vs-rec-stop');
+  const recDropBtn = document.getElementById('vs-rec-dropzone');
+  const recDropWrap = document.getElementById('vs-rec-dropzone-wrap');
+  const addVideoBtn = document.getElementById('vs-add-video');
+  const addPhotoBtn = document.getElementById('vs-add-photo');
+  const addRecBtn = document.getElementById('vs-add-rec');
+  const addCardBtn = document.getElementById('vs-add-card');
+  const recSection = document.getElementById('vs-rec-section');
+  const cardSection = document.getElementById('vs-card-section');
+  // Screen / camera recording state
+  let recScreenStream = null, recCamStream = null, recScreenRec = null, recCamRec = null;
+  let recScreenChunks = [], recCamChunks = [], recTimerInt = null;
+  let recStartTs = 0, recElapsed = 0, recPaused = false, recMode = null, recMime = '';
+  let recording = false;   // true while a live screen/camera capture is showing in the stage
 
   if (!dropzone) return;
 
@@ -183,6 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let pendingInsert = null;   // { clipId, time } — where the next picked video drops in
   let dropGlobal = 0;         // amber marker, in seconds across the whole combined video
   let mode = 'home';          // guided mode: 'home' | 'add' | 'trim' | 'cut' | 'audio'
+  let railMode = 'global';    // 'global' = add/whole-video tools · 'clip' = the tapped clip's tools
   let cutS = 0, cutE = 0;     // 'cut out a part' selection, in seconds across the whole video
   let exporting = false;
   let audios = [];            // overlay audio: { id, kind, name, file, url, duration, start, volume, el }
@@ -385,10 +415,146 @@ document.addEventListener('DOMContentLoaded', () => {
     pendingInsert = null;
     sources.splice(at, 0, ...added);
 
-    dropzone.style.display = 'none';
-    editor.style.display = 'block';
+    revealEditor();
     selectClip(added[added.length - 1].id);
+  }
+
+  function revealEditor() {
+    if (dropzone) dropzone.style.display = 'none';
+    if (recDropWrap) recDropWrap.style.display = 'none';
+    if (editor) editor.style.display = 'block';
     if (mode === 'home') setMode('add');   // open the Media tab the first time
+  }
+
+  // ── Screen / camera recording ─────────────────────────────────────
+  function pickRecMime() {
+    const prefs = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+    for (const m of prefs) { try { if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m; } catch (e) {} }
+    return '';
+  }
+  const recExt = (mime) => (/mp4/.test(mime) ? 'mp4' : 'webm');
+
+  function showRecUI(on) {
+    if (recBar) recBar.style.display = on ? 'flex' : 'none';
+    recModeBtns.forEach((b) => { b.disabled = on; b.style.opacity = on ? '0.5' : ''; });
+    if (on && recPauseBtn) recPauseBtn.textContent = '⏸ Pause';
+  }
+
+  function setupRecPreview(mode) {
+    recording = true;
+    if (videoWrap) videoWrap.classList.add('recording');
+    if (imgEl) imgEl.style.display = 'none';
+    const mainStream = recScreenStream || recCamStream;
+    if (video && mainStream) { video.srcObject = mainStream; video.style.display = ''; video.muted = true; const p = video.play(); if (p && p.catch) p.catch(() => {}); }
+    if (mode === 'both' && recCamStream && ovlVideo) {
+      ovlVideo.srcObject = recCamStream; ovlVideo.muted = true; ovlVideo.style.display = 'block'; ovlVideo.style.objectFit = 'cover';
+      ovlVideo.style.right = 'auto'; ovlVideo.style.bottom = 'auto'; ovlVideo.style.height = 'auto';
+      ovlVideo.style.width = (Math.max(0.18, Math.min(0.5, pipSize)) * 100) + '%';
+      ovlVideo.style.left = (clamp01(pipX) * 100) + '%'; ovlVideo.style.top = (clamp01(pipY) * 100) + '%';
+      ovlVideo.style.borderRadius = '10px';
+      const p = ovlVideo.play(); if (p && p.catch) p.catch(() => {});
+    }
+  }
+  function teardownRecPreview() {
+    recording = false;
+    if (videoWrap) videoWrap.classList.remove('recording');
+    if (video) { try { video.srcObject = null; } catch (e) {} video.muted = false; }
+    if (ovlVideo) { try { ovlVideo.srcObject = null; } catch (e) {} ovlVideo.style.display = 'none'; ovlVideo.classList.remove('draggable'); }
+  }
+  function cleanupRecStreams() {
+    [recScreenStream, recCamStream].forEach((s) => { if (s) { try { s.getTracks().forEach((t) => t.stop()); } catch (e) {} } });
+    recScreenStream = null; recCamStream = null; recScreenRec = null; recCamRec = null;
+  }
+  function updateRecTimer() {
+    if (recPaused) return;
+    if (recTimeEl) recTimeEl.textContent = fmtTime(recElapsed + (performance.now() - recStartTs) / 1000);
+  }
+
+  async function startRecording(mode) {
+    if (recScreenRec || recCamRec) return;
+    const needsScreen = (mode === 'screen' || mode === 'both');
+    const needsCam = (mode === 'cam' || mode === 'both');
+    if (needsScreen && !(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia)) { flashHint('Screen recording needs a desktop browser — try 📷 Camera instead.'); return; }
+    if (needsCam && !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) { flashHint('This browser can’t access the camera.'); return; }
+    revealEditor(); setMode('add');
+    recMode = mode;
+    try {
+      if (needsScreen) recScreenStream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true });
+    } catch (e) { flashHint('Screen recording was cancelled.'); cleanupRecStreams(); return; }
+    if (needsCam) {
+      try { recCamStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: true }); }
+      catch (e) {
+        if (mode === 'cam') { flashHint('Camera was blocked or unavailable.'); cleanupRecStreams(); return; }
+        flashHint('Camera blocked — recording the screen only.'); recMode = 'screen';
+      }
+    }
+    recMime = pickRecMime();
+    recScreenChunks = []; recCamChunks = [];
+    setupRecPreview(recMode);
+    const mk = (stream, chunks) => { const r = new MediaRecorder(stream, recMime ? { mimeType: recMime } : undefined); r.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); }; return r; };
+    if (recScreenStream) recScreenRec = mk(recScreenStream, recScreenChunks);
+    if (recCamStream) recCamRec = mk(recCamStream, recCamChunks);
+    if (recScreenStream) { const vt = recScreenStream.getVideoTracks()[0]; if (vt) vt.onended = () => stopRecording(); }
+    recPaused = false; recElapsed = 0; recStartTs = performance.now();
+    try { if (recScreenRec) recScreenRec.start(1000); if (recCamRec) recCamRec.start(1000); } catch (e) { flashHint('Could not start recording.'); cleanupRecStreams(); teardownRecPreview(); return; }
+    recTimerInt = setInterval(updateRecTimer, 250);
+    showRecUI(true);
+  }
+
+  function toggleRecPause() {
+    if (!recScreenRec && !recCamRec) return;
+    if (recPaused) {
+      recPaused = false; recStartTs = performance.now();
+      [recScreenRec, recCamRec].forEach((r) => { if (r && r.state === 'paused') try { r.resume(); } catch (e) {} });
+      if (recPauseBtn) recPauseBtn.textContent = '⏸ Pause';
+    } else {
+      recPaused = true; recElapsed += (performance.now() - recStartTs) / 1000;
+      [recScreenRec, recCamRec].forEach((r) => { if (r && r.state === 'recording') try { r.pause(); } catch (e) {} });
+      if (recPauseBtn) recPauseBtn.textContent = '▶ Resume';
+    }
+  }
+
+  async function addRecordedClip(file, arr) {
+    const url = URL.createObjectURL(file);
+    const meta = await getMeta(url);
+    const clip = { id: ++uid, fileKey: 'f' + (++fileSeq), file, url, name: file.name, duration: meta.duration, w: meta.w, h: meta.h, thumb: meta.thumb, in: 0, out: meta.duration };
+    arr.push(clip);
+    return clip;
+  }
+
+  async function stopRecording() {
+    if (!recScreenRec && !recCamRec) return;
+    const sRec = recScreenRec, cRec = recCamRec;
+    const finish = (rec) => new Promise((res) => { if (!rec) return res(); rec.onstop = res; try { if (rec.state !== 'inactive') rec.stop(); else res(); } catch (e) { res(); } });
+    await Promise.all([finish(sRec), finish(cRec)]);
+    if (recTimerInt) { clearInterval(recTimerInt); recTimerInt = null; }
+    const mime = recMime, ext = recExt(mime);
+    const screenBlob = recScreenChunks.length ? new Blob(recScreenChunks, { type: mime || 'video/webm' }) : null;
+    const camBlob = recCamChunks.length ? new Blob(recCamChunks, { type: mime || 'video/webm' }) : null;
+    const mode = recMode;
+    cleanupRecStreams(); teardownRecPreview(); showRecUI(false);
+    revealEditor();
+    if (mode === 'both' && screenBlob && camBlob) {
+      await addRecordedClip(new File([screenBlob], `screen-recording.${ext}`, { type: mime || 'video/webm' }), t1);
+      await addRecordedClip(new File([camBlob], `camera-recording.${ext}`, { type: mime || 'video/webm' }), t2);
+      pipLayout = 'pip';
+      editingTrack = 1; sources = t1; activeId = t1.length ? t1[t1.length - 1].id : null;
+      refreshTrackSwitch(); refreshOverlayButtons();
+      if (activeId) selectClip(activeId);
+      applyOverlayPreview();
+      flashHint('Recorded! Screen = Video 1, camera = Video 2 (drag & resize it in the 🔀 Merge tab).');
+    } else {
+      const blob = screenBlob || camBlob;
+      if (blob) {
+        const name = (mode === 'cam' ? 'camera' : 'screen') + `-recording.${ext}`;
+        const target = (editingTrack === 2) ? t2 : t1;
+        const clip = await addRecordedClip(new File([blob], name, { type: mime || 'video/webm' }), target);
+        selectClip(clip.id);
+      }
+      flashHint('Recorded! Trim it, add captions, voiceover or music — then download.');
+    }
+    recMode = null;
+    renderAll();
   }
 
   // ── Selecting / positioning ───────────────────────────────────────
@@ -585,12 +751,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (audioPanel) audioPanel.style.display = (mode === 'audio') ? '' : 'none';
     if (captionsPanel) captionsPanel.style.display = (mode === 'captions') ? '' : 'none';
     if (formatPanel) formatPanel.style.display = (mode === 'format') ? '' : 'none';
-    if (effectsPanel) effectsPanel.style.display = (mode === 'effects') ? '' : 'none';
+    if (lookPanel) lookPanel.style.display = (mode === 'look') ? '' : 'none';
+    if (speedPanel) speedPanel.style.display = (mode === 'speed') ? '' : 'none';
+    if (appearPanel) appearPanel.style.display = (mode === 'appear') ? '' : 'none';
     if (overlayPanel) overlayPanel.style.display = (mode === 'overlay') ? '' : 'none';
     if (textPanel) textPanel.style.display = (mode === 'text') ? '' : 'none';
-    if (mode === 'effects') refreshFxButtons();
+    if (mode === 'look' || mode === 'speed' || mode === 'appear') refreshFxButtons();
     if (mode === 'overlay') refreshOverlayButtons();
-    // Highlight the matching tab. Trim + Cut share the Trim tab.
+    // Highlight the matching tool. Trim + Cut share the Trim button.
     if (tabBtns && tabBtns.length) {
       tabBtns.forEach((b) => {
         const dm = b.dataset.mode;
@@ -603,6 +771,27 @@ document.addEventListener('DOMContentLoaded', () => {
       cutS = T * 0.33; cutE = T * 0.66;
     }
     renderAll();
+  }
+
+  // The left rail swaps between whole-video/add tools and the tapped clip's tools.
+  function setRailMode(m) {
+    railMode = m;
+    if (railGlobal) railGlobal.style.display = (m === 'clip') ? 'none' : '';
+    if (railClip) railClip.style.display = (m === 'clip') ? '' : 'none';
+    if (m === 'clip') {
+      const s = activeSource(), img = isImage(s);
+      if (actSpeed) actSpeed.style.display = img ? 'none' : '';   // images have a duration, not a speed
+      if (clipSplitBtn) clipSplitBtn.style.display = img ? 'none' : '';
+    }
+  }
+  function enterClipTools(id) {
+    if (id != null) selectClip(id);
+    setRailMode('clip');
+    setMode('trim');
+  }
+  function exitClipTools() {
+    setRailMode('global');
+    setMode('home');
   }
 
   function updateBanner() {
@@ -622,12 +811,16 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (mode === 'format') {
       const labels = { '16:9': 'Landscape 16:9', '9:16': 'Vertical 9:16', '1:1': 'Square 1:1', '4:5': 'Portrait 4:5' };
       banner.innerHTML = `📐 <b>Format: ${labels[outAspect]}.</b> Pick a shape for your platform and how to fill the frame — the preview reframes live. <b>Blur background</b> looks best when the shapes don’t match.`;
-    } else if (mode === 'effects') {
-      banner.innerHTML = '✨ <b>Effects.</b> <b>Speed</b> changes the selected clip (slow-mo or speed-up). <b>Look</b> recolours the whole video and <b>Fade</b> eases it in/out — both shown on the preview (fade is applied on download).';
+    } else if (mode === 'speed') {
+      banner.innerHTML = '⏩ <b>Speed of this clip.</b> Slow it down for emphasis or speed it up — the preview updates live.';
+    } else if (mode === 'appear') {
+      banner.innerHTML = '🎞️ <b>How this clip appears.</b> Give it a PowerPoint-style entrance — fade, slide, or zoom. Press play to see it.';
+    } else if (mode === 'look') {
+      banner.innerHTML = '✨ <b>Look.</b> A colour grade for the <b>whole video</b>, plus <b>Fade</b> in/out — shown live on the preview (fade applies on download).';
     } else if (mode === 'overlay') {
-      banner.innerHTML = '🔀 <b>Merge two videos</b> — for <b>reactions</b>, <b>facecam over a screen-recording</b>, <b>duets</b> or <b>before/after</b>. Add a second video, pick <b>corner inset (PiP)</b> or <b>split screen</b>, and the preview shows the <b>live merge</b>. Drag the inset to place it; <b>tap it</b> to edit Video 2 on its own.';
+      banner.innerHTML = '🔀 <b>Overlay a 2nd video</b> — for <b>reactions</b>, <b>facecam over a screen-recording</b>, <b>duets</b> or <b>before/after</b>. Add a second video, pick <b>corner inset (PiP)</b> or <b>split screen</b>, and the preview shows the <b>live result</b>. Drag the inset to place it; <b>tap it</b> to edit Video 2 on its own.';
     } else {
-      banner.innerHTML = 'What next? <b>➕ Add a video</b>, <b>✂️ Shorten a clip</b>, <b>🗑️ Remove a section</b>, <b>🔤 Add text</b>, <b>💬 Captions</b>, <b>🎙️ Audio</b>, <b>📐 Format</b>, <b>✨ Effects</b>, or <b>⬇ Download</b>.';
+      banner.innerHTML = '<b>Add</b> a video, image, recording or title card — or <b>tap any clip below</b> to trim, speed, animate or delete it.';
     }
   }
 
@@ -683,6 +876,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // The amber marker always sits where the preview is "looking" — scrub or play,
   // and that becomes the insert/split point. Insert reads the live position too.
   function updatePlayhead() {
+    if (recording) return;   // the stage is showing a live capture, not a clip
     const s = activeSource();
     const T = totalDur() || 1;
     if (!s) { if (timeLabel) timeLabel.textContent = '0:00 / 0:00'; if (dropTag) dropTag.textContent = '⬇'; return; }
@@ -875,7 +1069,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const up = () => {
       document.removeEventListener('pointermove', move);
       document.removeEventListener('pointerup', up);
-      if (!moved) selectClip(id);
+      if (!moved) enterClipTools(id);   // tapping a clip opens that clip's tools
       else renderAll();
     };
     document.addEventListener('pointermove', move);
@@ -1512,7 +1706,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const compositeOn = () => editingTrack === 1 && t2.length > 0 && pipLayout !== 'off';
 
   function applyOverlayPreview() {
-    if (!ovlVideo || !video) return;
+    if (!ovlVideo || !video || recording) return;
     // Reset the main video to a full, centred frame.
     video.style.left = ''; video.style.top = ''; video.style.right = ''; video.style.bottom = '';
     video.style.width = ''; video.style.height = '';
@@ -1558,7 +1752,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Seek the 2nd-video element to its frame at the whole-video time, and keep it
   // playing/paused in step with the main preview.
   function syncOverlayPreview(g) {
-    if (!ovlVideo) return;
+    if (!ovlVideo || recording) return;
     if (!compositeOn()) { if (!ovlVideo.paused) ovlVideo.pause(); return; }
     const total = trackKept(t2);
     const gg = (g == null) ? dropGlobal : g;
@@ -1633,6 +1827,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   playBtn.addEventListener('click', () => {
+    if (recording) return;
     const s = activeSource();
     if (!s) return;
     if (isImage(s)) {
@@ -1675,6 +1870,7 @@ document.addEventListener('DOMContentLoaded', () => {
     exportBtn.click();
   });
   video.addEventListener('timeupdate', () => {
+    if (recording) return;
     const s = activeSource();
     if (s) {
       const t = video.currentTime;
@@ -1744,6 +1940,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (imgFlipBtn) imgFlipBtn.addEventListener('click', () => transformImageClip('flip'));
   cardColorBtns.forEach((b) => b.addEventListener('click', () => { cardBg = b.dataset.cardbg; cardColorBtns.forEach((x) => x.classList.remove('active')); b.classList.add('active'); }));
   if (cardAddBtn) cardAddBtn.addEventListener('click', addTitleCard);
+  const pickFiles = (acc) => { pendingInsert = null; if (fileInput) { fileInput.accept = acc; fileInput.value = ''; fileInput.click(); } };
+  if (addVideoBtn) addVideoBtn.addEventListener('click', () => pickFiles('video/*'));
+  if (addPhotoBtn) addPhotoBtn.addEventListener('click', () => pickFiles('image/*'));
+  if (addRecBtn) addRecBtn.addEventListener('click', () => { const on = recSection && recSection.style.display === 'none'; if (recSection) recSection.style.display = on ? '' : 'none'; if (cardSection) cardSection.style.display = 'none'; });
+  if (addCardBtn) addCardBtn.addEventListener('click', () => { const on = cardSection && cardSection.style.display === 'none'; if (cardSection) cardSection.style.display = on ? '' : 'none'; if (recSection) recSection.style.display = 'none'; });
+  recModeBtns.forEach((b) => b.addEventListener('click', () => startRecording(b.dataset.rec)));
+  if (recPauseBtn) recPauseBtn.addEventListener('click', toggleRecPause);
+  if (recStopBtn) recStopBtn.addEventListener('click', stopRecording);
+  if (recDropBtn) recDropBtn.addEventListener('click', () => { revealEditor(); setRailMode('global'); setMode('add'); if (recSection) recSection.style.display = ''; if (cardSection) cardSection.style.display = 'none'; flashHint('Pick what to record: 🖥️＋📷 Screen + Cam, 🖥️ Screen, or 📷 Camera.'); });
 
   // Tool tabs
   if (actAdd) actAdd.addEventListener('click', () => setMode('add'));
@@ -1753,7 +1958,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (actExport) actExport.addEventListener('click', () => { if (!exporting) exportBtn.click(); });
   // Cross-links between Shorten (trim) and Remove-a-section (cut)
   if (toCutBtn) toCutBtn.addEventListener('click', () => setMode('cut'));
-  if (toTrimBtn) toTrimBtn.addEventListener('click', () => setMode('trim'));
+  if (toTrimBtn) toTrimBtn.addEventListener('click', () => { if (activeId != null) enterClipTools(activeId); else setMode('trim'); });
 
   // Cut-out-a-part controls
   if (cutLEl) cutLEl.addEventListener('pointerdown', cutHandleDrag('L'));
@@ -1808,7 +2013,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (fmtFlipVBtn) fmtFlipVBtn.addEventListener('click', () => { outFlipV = !outFlipV; applyFormatPreview(); refreshFmtButtons(); });
 
   // Effects controls
-  if (actEffects) actEffects.addEventListener('click', () => setMode('effects'));
+  if (actLook) actLook.addEventListener('click', () => setMode('look'));
+  if (actSpeed) actSpeed.addEventListener('click', () => setMode('speed'));
+  if (actAppear) actAppear.addEventListener('click', () => setMode('appear'));
+  if (clipBackBtn) clipBackBtn.addEventListener('click', exitClipTools);
+  if (clipSplitBtn) clipSplitBtn.addEventListener('click', () => { splitActive(); flashHint('Split — the clip is now two pieces you can edit separately.'); });
+  if (clipDelBtn) clipDelBtn.addEventListener('click', () => { if (activeId != null) removeSource(activeId); if (sources.length) { setRailMode('clip'); setMode('trim'); } else { exitClipTools(); } });
   fxAnimBtns.forEach((b) => b.addEventListener('click', () => setClipAnim(b.dataset.anim)));
   fxSpeedBtns.forEach((b) => b.addEventListener('click', () => setClipSpeed(parseFloat(b.dataset.speed))));
   fxFilterBtns.forEach((b) => b.addEventListener('click', () => { vfilter = b.dataset.filter; applyLook(); refreshFxButtons(); }));
@@ -2895,4 +3105,5 @@ document.addEventListener('DOMContentLoaded', () => {
   refreshFxButtons();
   refreshOverlayButtons();
   refreshTrackSwitch();
+  setRailMode('global');
 });

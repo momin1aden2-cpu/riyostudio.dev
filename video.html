@@ -67,6 +67,9 @@
     .vs-tools::-webkit-scrollbar-thumb, .vs-stage::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 8px; }
     #vs-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; display: block; transform-origin: center; }
     #vs-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; z-index: 2; }
+    .vs-rec-dot { width: 11px; height: 11px; border-radius: 50%; background: #f87171; box-shadow: 0 0 8px #f87171; animation: vsRecPulse 1.1s infinite; flex-shrink: 0; }
+    @keyframes vsRecPulse { 50% { opacity: 0.3; } }
+    #vs-video-wrap.recording { outline: 2px solid rgba(248,113,113,0.7); outline-offset: 2px; }
 
     .vs-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
     .vs-controls button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.12); color: #10B981; font-size: 1rem; cursor: pointer; flex-shrink: 0; }
@@ -301,7 +304,15 @@
 
     .vs-workspace { display: grid; grid-template-columns: 332px minmax(0, 1fr); grid-auto-rows: min-content; gap: 16px; margin-top: 14px; align-items: start; }
     .vs-toolpanel { grid-column: 1; grid-row: 1 / span 4; position: sticky; top: 134px; max-height: calc(100vh - 152px); display: flex; flex-direction: column; min-height: 0; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
-    .vs-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 11px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .vs-tabs { padding: 11px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .vs-railgrp { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .vs-tab.done { color: var(--accent-bright); }
+    .vs-tab.danger { color: #fca5a5; }
+    .vs-add-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .vs-addbtn { display: flex; align-items: center; gap: 11px; padding: 13px; border-radius: 13px; border: 1px solid var(--border2); background: rgba(255,255,255,0.04); color: #fff; font: inherit; font-weight: 700; font-size: 0.85rem; cursor: pointer; text-align: left; transition: border-color 0.15s, background 0.15s; }
+    .vs-addbtn:hover { border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.07); }
+    .vs-addbtn .vs-addbtn-i { font-size: 1.4rem; line-height: 1; }
+    .vs-addbtn small { display: block; color: var(--text-dim); font-weight: 500; font-size: 0.68rem; margin-top: 2px; }
     .vs-tab { border: 1px solid transparent; background: rgba(255,255,255,0.04); color: var(--text-dim); cursor: pointer; border-radius: 11px; padding: 9px 2px 7px; display: flex; flex-direction: column; align-items: center; gap: 4px; font: inherit; font-size: 0.6rem; font-weight: 700; transition: 0.13s; }
     .vs-tab .ti { font-size: 1.05rem; line-height: 1; }
     .vs-tab:hover { color: var(--text); background: rgba(255,255,255,0.07); }
@@ -338,6 +349,39 @@
       .vs-tb-title { display: none; }
       .vs-tb-btn { padding: 9px 11px; }
     }
+
+    /* ───── Premium polish: depth, soft gradients, refined controls ───── */
+    .vs-toolpanel { background: linear-gradient(180deg, rgba(255,255,255,0.032), rgba(255,255,255,0.012)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 18px 46px rgba(0,0,0,0.34); }
+    .vs-tabs { background: rgba(0,0,0,0.16); }
+    .vs-railgrp { gap: 7px; }
+    .vs-tab { border: 1px solid rgba(255,255,255,0.06); background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018)); border-radius: 12px; transition: transform .12s, border-color .15s, background .15s, color .15s, box-shadow .15s; }
+    .vs-tab:hover { color: #fff; border-color: rgba(16,185,129,0.4); transform: translateY(-1px); }
+    .vs-tab.active { color: #fff; background: linear-gradient(180deg, rgba(16,185,129,0.24), rgba(16,185,129,0.07)); border-color: rgba(52,211,153,0.6); box-shadow: 0 5px 16px rgba(16,185,129,0.2), inset 0 1px 0 rgba(255,255,255,0.1); }
+    .vs-tab .ti { filter: drop-shadow(0 1px 2px rgba(0,0,0,0.35)); }
+
+    .vs-toolbody { display: flex; flex-direction: column; gap: 14px; }
+    .vs-toolbody .vs-mode { background: rgba(255,255,255,0.016); border: 1px solid rgba(255,255,255,0.06); border-radius: 15px; padding: 16px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.03); }
+    .vs-banner { margin-top: 0; padding: 12px 15px; border-radius: 13px; background: linear-gradient(180deg, rgba(16,185,129,0.1), rgba(16,185,129,0.03)); border: 1px solid rgba(16,185,129,0.2); color: #cfe7dd; font-size: 0.84rem; line-height: 1.5; }
+    .vs-bar-head { color: #cdd6e2; font-size: 0.86rem; }
+
+    .vs-mini { background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.022)); border: 1px solid rgba(255,255,255,0.09); border-radius: 10px; padding: 8px 12px; font-size: 0.78rem; font-weight: 600; transition: .13s; }
+    .vs-mini:hover { border-color: rgba(16,185,129,0.5); color: #fff; background: rgba(16,185,129,0.09); }
+    .vs-mini.active { border-color: #34D399; background: linear-gradient(180deg, rgba(16,185,129,0.2), rgba(16,185,129,0.07)); color: #fff; box-shadow: 0 3px 10px rgba(16,185,129,0.16); }
+    .vs-pos-btns { gap: 8px; flex-wrap: wrap; }
+
+    .vs-tool { background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.028)); border: 1px solid rgba(255,255,255,0.12); border-radius: 11px; padding: 10px 14px; font-weight: 700; transition: transform .14s, border-color .15s, background .15s, box-shadow .15s; }
+    .vs-tool:hover { transform: translateY(-1px); }
+    .vs-tool.primary { box-shadow: 0 6px 18px rgba(16,185,129,0.32), inset 0 1px 0 rgba(255,255,255,0.18); }
+
+    .vs-add-grid { gap: 8px; }
+    .vs-addbtn { gap: 9px; background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.018)); border: 1px solid rgba(255,255,255,0.09); border-radius: 11px; padding: 9px 10px; font-size: 0.78rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.04); transition: transform .14s, border-color .15s, background .15s, box-shadow .15s; }
+    .vs-addbtn:hover { transform: translateY(-1px); border-color: rgba(16,185,129,0.55); background: linear-gradient(180deg, rgba(16,185,129,0.12), rgba(16,185,129,0.035)); box-shadow: 0 8px 20px rgba(0,0,0,0.3), 0 0 0 1px rgba(16,185,129,0.2); }
+    .vs-addbtn .vs-addbtn-i { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-size: 0.98rem; background: rgba(16,185,129,0.13); box-shadow: inset 0 0 0 1px rgba(16,185,129,0.25); flex-shrink: 0; }
+    .vs-addbtn small { font-size: 0.62rem; margin-top: 1px; line-height: 1.25; }
+
+    .vs-swatch { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08); }
+    .vs-transport { padding: 4px 6px; }
+    .vs-filmstrip { box-shadow: inset 0 1px 0 rgba(255,255,255,0.03); }
   </style>
 </head>
 <body>
@@ -387,6 +431,10 @@
           <p>or click to browse · videos, screen recordings &amp; screenshots · stays on your device</p>
         </div>
       </div>
+      <div id="vs-rec-dropzone-wrap" style="text-align:center; margin-top:14px;">
+        <button id="vs-rec-dropzone" class="vs-tool primary" style="padding:11px 18px;">🔴 Record your screen &amp; camera</button>
+        <p class="vs-hint" style="margin-top:8px;">React to a video, capture a game, demo an app — record screen + webcam straight onto the timeline. 100% on your device.</p>
+      </div>
 
       <!-- Editor -->
       <div id="vs-editor" style="display: none;">
@@ -431,42 +479,74 @@
           <!-- LEFT: every tool shown, one tap away -->
           <aside class="vs-toolpanel">
             <div class="vs-tabs" id="vs-tabs">
-              <button id="vs-act-add" class="vs-tab" data-mode="add"><span class="ti">🎞️</span>Media</button>
-              <button id="vs-act-overlay" class="vs-tab" data-mode="overlay"><span class="ti">🔀</span>Merge</button>
-              <button id="vs-act-text" class="vs-tab" data-mode="text"><span class="ti">🔤</span>Text</button>
-              <button id="vs-act-captions" class="vs-tab" data-mode="captions"><span class="ti">💬</span>Captions</button>
-              <button id="vs-act-audio" class="vs-tab" data-mode="audio"><span class="ti">🎵</span>Music</button>
-              <button id="vs-act-effects" class="vs-tab" data-mode="effects"><span class="ti">✨</span>Effects</button>
-              <button id="vs-act-trim" class="vs-tab" data-mode="trim"><span class="ti">✂️</span>Trim</button>
-              <button id="vs-act-format" class="vs-tab" data-mode="format"><span class="ti">📐</span>Format</button>
+              <!-- GLOBAL tools — shown when nothing is selected -->
+              <div id="vs-rail-global" class="vs-railgrp">
+                <button id="vs-act-add" class="vs-tab" data-mode="add"><span class="ti">➕</span>Add</button>
+                <button id="vs-act-text" class="vs-tab" data-mode="text"><span class="ti">🔤</span>Text</button>
+                <button id="vs-act-captions" class="vs-tab" data-mode="captions"><span class="ti">💬</span>Captions</button>
+                <button id="vs-act-audio" class="vs-tab" data-mode="audio"><span class="ti">🎵</span>Audio</button>
+                <button id="vs-act-cut" class="vs-tab" data-mode="cut"><span class="ti">✂️</span>Cut out</button>
+                <button id="vs-act-overlay" class="vs-tab" data-mode="overlay"><span class="ti">🔀</span>Overlay</button>
+                <button id="vs-act-format" class="vs-tab" data-mode="format"><span class="ti">📐</span>Format</button>
+                <button id="vs-act-look" class="vs-tab" data-mode="look"><span class="ti">✨</span>Look</button>
+              </div>
+              <!-- THIS-CLIP tools — shown when a clip is tapped -->
+              <div id="vs-rail-clip" class="vs-railgrp" style="display:none;">
+                <button id="vs-clip-back" class="vs-tab done" title="Back to Add"><span class="ti">‹</span>Back</button>
+                <button id="vs-act-trim" class="vs-tab" data-mode="trim"><span class="ti">✂️</span>Trim</button>
+                <button id="vs-clip-split" class="vs-tab"><span class="ti">⎯</span>Split</button>
+                <button id="vs-act-speed" class="vs-tab" data-mode="speed"><span class="ti">⏩</span>Speed</button>
+                <button id="vs-act-appear" class="vs-tab" data-mode="appear"><span class="ti">🎞️</span>Appear</button>
+                <button id="vs-clip-del" class="vs-tab danger"><span class="ti">🗑</span>Delete</button>
+              </div>
             </div>
             <div class="vs-toolbody">
               <!-- Guided instruction — always tells you the next step -->
               <div id="vs-banner" class="vs-banner"></div>
 
-            <!-- MEDIA / ADD-A-VIDEO panel -->
+            <!-- ADD panel — one clear menu -->
             <div id="vs-add-panel" class="vs-mode" style="display:none;">
-              <div class="vs-bar-head"><span>① Drag the amber <b style="color:#FBBF24;">⬇</b> marker to where the new video should go</span></div>
-              <div id="vs-gtrack" class="vs-gtrack">
-                <div id="vs-g-regions" class="vs-g-regions"></div>
-                <div id="vs-drop" class="vs-drop"><span id="vs-drop-tag" class="vs-drop-tag">⬇</span></div>
+              <div class="vs-bar-head"><span>What do you want to add?</span></div>
+              <div class="vs-add-grid">
+                <button id="vs-add-video" class="vs-addbtn"><span class="vs-addbtn-i">📹</span><span>Video / clip<small>a video file from your device</small></span></button>
+                <button id="vs-add-photo" class="vs-addbtn"><span class="vs-addbtn-i">🖼️</span><span>Photo / screenshot<small>shows for a few seconds</small></span></button>
+                <button id="vs-add-rec" class="vs-addbtn"><span class="vs-addbtn-i">🔴</span><span>Record<small>your screen &amp; camera</small></span></button>
+                <button id="vs-add-card" class="vs-addbtn"><span class="vs-addbtn-i">🅰️</span><span>Title card<small>text on a colour</small></span></button>
               </div>
-              <div class="vs-clip-tools">
-                <button id="vs-insert-btn" class="vs-tool primary" title="Pick a video or image to drop in at the amber marker">② 📁 Choose video to add</button>
-                <button id="vs-split-btn" class="vs-tool" title="Split into two at the amber marker (no new video)">✂️ Just split here</button>
+              <p class="vs-hint">New items add to the end — drag clips to reorder. To cut a chunk out of the middle, use <b>✂️ Cut out</b>.</p>
+
+              <!-- Record (revealed when "Record" is tapped) -->
+              <div id="vs-rec-section" style="display:none;">
+                <div class="vs-bar-head" style="margin-top:14px;"><span>🔴 Record onto your timeline</span></div>
+                <div class="vs-pos-btns" id="vs-rec-modes" style="margin-top:10px;">
+                  <button class="vs-mini" data-rec="both" title="Screen on Video 1, your camera on Video 2 (drag &amp; resize it)">🖥️＋📷 Screen + Cam</button>
+                  <button class="vs-mini" data-rec="screen" title="Just your screen / a tab / a window">🖥️ Screen</button>
+                  <button class="vs-mini" data-rec="cam" title="Just your camera">📷 Camera</button>
+                </div>
+                <div id="vs-rec-bar" style="display:none; align-items:center; gap:10px; margin-top:12px; padding:10px 12px; border-radius:11px; background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.4);">
+                  <span class="vs-rec-dot"></span>
+                  <span id="vs-rec-time" style="font-variant-numeric:tabular-nums; font-weight:700; color:#fecaca;">0:00</span>
+                  <button class="vs-mini" id="vs-rec-pause" style="margin-left:auto;">⏸ Pause</button>
+                  <button class="vs-tool danger" id="vs-rec-stop">⏹ Stop &amp; add</button>
+                </div>
+                <p class="vs-hint" id="vs-rec-hint">Tip: open the video you want to react to first, then record <b>Screen + Cam</b> — your camera lands as Video 2, ready to drag &amp; resize.</p>
               </div>
-              <div class="vs-bar-head" style="margin-top:16px;"><span>🅰️ Or add a title card</span></div>
-              <textarea id="vs-card-text" rows="2" placeholder="e.g. ShiftCore — Isolation Lock Demo" style="width:100%;box-sizing:border-box;margin-top:10px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);color:#e7eef5;border-radius:9px;padding:9px 11px;font:inherit;font-size:0.85rem;outline:none;resize:vertical;"></textarea>
-              <div class="vs-pos-btns" id="vs-card-colors" style="margin-top:8px;">
-                <button class="vs-swatch active" data-cardbg="#0B1220" style="background:#0B1220;" title="Midnight"></button>
-                <button class="vs-swatch" data-cardbg="#10B981" style="background:#10B981;" title="Emerald"></button>
-                <button class="vs-swatch" data-cardbg="#000000" style="background:#000000;" title="Black"></button>
-                <button class="vs-swatch" data-cardbg="#ffffff" style="background:#ffffff;" title="White"></button>
-                <button class="vs-swatch" data-cardbg="#7c3aed" style="background:#7c3aed;" title="Violet"></button>
-                <button class="vs-swatch" data-cardbg="#f43f5e" style="background:#f43f5e;" title="Rose"></button>
-                <button class="vs-swatch" data-cardbg="#2563eb" style="background:#2563eb;" title="Blue"></button>
+
+              <!-- Title card (revealed when "Title card" is tapped) -->
+              <div id="vs-card-section" style="display:none;">
+                <div class="vs-bar-head" style="margin-top:14px;"><span>🅰️ Title card</span></div>
+                <textarea id="vs-card-text" rows="2" placeholder="e.g. ShiftCore — Isolation Lock Demo" style="width:100%;box-sizing:border-box;margin-top:10px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);color:#e7eef5;border-radius:9px;padding:9px 11px;font:inherit;font-size:0.85rem;outline:none;resize:vertical;"></textarea>
+                <div class="vs-pos-btns" id="vs-card-colors" style="margin-top:8px;">
+                  <button class="vs-swatch active" data-cardbg="#0B1220" style="background:#0B1220;" title="Midnight"></button>
+                  <button class="vs-swatch" data-cardbg="#10B981" style="background:#10B981;" title="Emerald"></button>
+                  <button class="vs-swatch" data-cardbg="#000000" style="background:#000000;" title="Black"></button>
+                  <button class="vs-swatch" data-cardbg="#ffffff" style="background:#ffffff;" title="White"></button>
+                  <button class="vs-swatch" data-cardbg="#7c3aed" style="background:#7c3aed;" title="Violet"></button>
+                  <button class="vs-swatch" data-cardbg="#f43f5e" style="background:#f43f5e;" title="Rose"></button>
+                  <button class="vs-swatch" data-cardbg="#2563eb" style="background:#2563eb;" title="Blue"></button>
+                </div>
+                <button id="vs-card-add" class="vs-tool primary" style="margin-top:10px;">＋ Add title card</button>
               </div>
-              <button id="vs-card-add" class="vs-tool primary" style="margin-top:10px;">＋ Add title card</button>
             </div>
 
             <!-- TRIM panel -->
@@ -629,11 +709,10 @@
               </div>
             </div>
 
-            <!-- EFFECTS panel — speed, colour look, fade -->
-            <div id="vs-effects-panel" class="vs-mode" style="display:none;">
-              <div class="vs-bar-head"><span><b>Transition</b> &amp; <b>Speed</b> change the selected clip · <b>Look</b> &amp; <b>Fade</b> apply to the whole video.</span></div>
-              <div class="vs-bar-head" style="margin-top:12px;"><span>🎞️ How this clip appears <span id="vs-fx-clip" class="vs-trim-sub"></span></span></div>
-              <div class="vs-fx-filters">
+            <!-- APPEAR panel (this clip) — entrance animation -->
+            <div id="vs-appear-panel" class="vs-mode" style="display:none;">
+              <div class="vs-bar-head"><span>🎞️ How this clip appears <span id="vs-fx-clip" class="vs-trim-sub"></span></span></div>
+              <div class="vs-fx-filters" style="margin-top:10px;">
                 <button class="vs-mini" data-anim="none">Cut (instant)</button>
                 <button class="vs-mini" data-anim="fade">✨ Fade in</button>
                 <button class="vs-mini" data-anim="slideUp">⬆ Slide up</button>
@@ -643,16 +722,24 @@
                 <button class="vs-mini" data-anim="zoom">🔍 Zoom in</button>
               </div>
               <p class="vs-hint">Each clip “enters” with this effect — like PowerPoint. Great for images &amp; screenshots.</p>
-              <div class="vs-bar-head" style="margin-top:14px;"><span>⏩ Speed</span></div>
-              <div class="vs-pos-btns">
+            </div>
+
+            <!-- SPEED panel (this clip) -->
+            <div id="vs-speed-panel" class="vs-mode" style="display:none;">
+              <div class="vs-bar-head"><span>⏩ Speed of this clip — slow-mo or speed-up</span></div>
+              <div class="vs-pos-btns" style="margin-top:10px;">
                 <button class="vs-mini" data-speed="0.25">🐢 0.25×</button>
                 <button class="vs-mini" data-speed="0.5">0.5×</button>
                 <button class="vs-mini" data-speed="1">1× normal</button>
                 <button class="vs-mini" data-speed="1.5">1.5×</button>
                 <button class="vs-mini" data-speed="2">🐇 2×</button>
               </div>
-              <div class="vs-bar-head" style="margin-top:14px;"><span>🎨 Look</span></div>
-              <div class="vs-fx-filters">
+            </div>
+
+            <!-- LOOK panel (whole video) — colour grade + fade -->
+            <div id="vs-look-panel" class="vs-mode" style="display:none;">
+              <div class="vs-bar-head"><span>🎨 Colour look — applies to the whole video</span></div>
+              <div class="vs-fx-filters" style="margin-top:10px;">
                 <button class="vs-fx-filter" data-filter="none">None</button>
                 <button class="vs-fx-filter" data-filter="vivid">Vivid</button>
                 <button class="vs-fx-filter" data-filter="warm">Warm</button>
@@ -899,6 +986,6 @@
 
   <script src="bg.js?v=18"></script>
   <script src="script.js?v=24"></script>
-  <script src="video.js?v=55"></script>
+  <script src="video.js?v=58"></script>
 </body>
 </html>
