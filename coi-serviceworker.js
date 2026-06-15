@@ -22,7 +22,10 @@ if (typeof window === 'undefined') {
           }
           
           const newHeaders = new Headers(response.headers);
-          newHeaders.set("Cross-Origin-Embedder-Policy", "require-corp");
+          // credentialless (not require-corp) still gives crossOriginIsolated/SharedArrayBuffer
+          // for Forge's ffmpeg, but lets cross-origin CDN/esm resources load on every page
+          // instead of being blocked — so the other tools don't break after visiting Forge.
+          newHeaders.set("Cross-Origin-Embedder-Policy", "credentialless");
           newHeaders.set("Cross-Origin-Opener-Policy", "same-origin");
           
           const body = (response.status === 204 || response.status === 205 || response.status === 304) ? null : response.body;

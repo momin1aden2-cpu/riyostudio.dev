@@ -26,7 +26,7 @@
   function showInstallBanner(mode) {
     // mode: 'android' = native prompt available, 'ios' = manual instructions
     if (isInStandaloneMode) return; // already installed
-    if (sessionStorage.getItem('pwa-banner-dismissed')) return;
+    if (localStorage.getItem('pwa-banner-dismissed')) return; // remember the dismissal across visits
     if (document.getElementById('pwa-install-banner')) return;
     if (window.innerWidth > 900) return; // desktop only needs web
 
@@ -61,7 +61,7 @@
     if (dismissBtn) {
       dismissBtn.addEventListener('click', () => {
         banner.classList.remove('visible');
-        sessionStorage.setItem('pwa-banner-dismissed', '1');
+        localStorage.setItem('pwa-banner-dismissed', '1');
         setTimeout(() => banner.remove(), 400);
       });
     }
