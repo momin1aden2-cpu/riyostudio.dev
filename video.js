@@ -236,6 +236,19 @@ document.addEventListener('DOMContentLoaded', () => {
     return null;
   }
 
+  // Same global→clip mapping, but against any track array (the live 2nd-video preview).
+  const trackKept = (arr) => arr.reduce((a, s) => a + keptDuration(s), 0);
+  function clipAtGlobalIn(arr, gt) {
+    if (!arr.length) return null;
+    let acc = 0;
+    for (let i = 0; i < arr.length; i++) {
+      const len = keptDuration(arr[i]);
+      if (gt < acc + len || i === arr.length - 1) return { idx: i, clip: arr[i], local: Math.max(0, Math.min(len, gt - acc)) };
+      acc += len;
+    }
+    return null;
+  }
+
   // ── Loading & thumbnails ──────────────────────────────────────────
   function getMeta(url) {
     return new Promise((resolve) => {
@@ -514,7 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (mode === 'effects') {
       banner.innerHTML = '✨ <b>Effects.</b> <b>Speed</b> changes the selected clip (slow-mo or speed-up). <b>Look</b> recolours the whole video and <b>Fade</b> eases it in/out — both shown on the preview (fade is applied on download).';
     } else if (mode === 'overlay') {
-      banner.innerHTML = '🔀 <b>Merge two videos</b> — for <b>reactions</b>, <b>facecam over a screen-recording</b>, <b>duets</b> or <b>before/after</b>. Build <b>Video 1</b> &amp; <b>Video 2</b> on their own tabs (under the player), pick <b>corner inset (PiP)</b> or <b>split screen</b>, then <b>download</b> to merge.';
+      banner.innerHTML = '🔀 <b>Merge two videos</b> — for <b>reactions</b>, <b>facecam over a screen-recording</b>, <b>duets</b> or <b>before/after</b>. Add a second video, pick <b>corner inset (PiP)</b> or <b>split screen</b>, and the preview shows the <b>live merge</b>. Drag the inset to place it; <b>tap it</b> to edit Video 2 on its own.';
     } else {
       banner.innerHTML = 'What next? <b>➕ Add a video</b>, <b>✂️ Shorten a clip</b>, <b>🗑️ Remove a section</b>, <b>🔤 Add text</b>, <b>💬 Captions</b>, <b>🎙️ Audio</b>, <b>📐 Format</b>, <b>✨ Effects</b>, or <b>⬇ Download</b>.';
     }
@@ -1272,19 +1285,72 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!t2.length) fileInput.click();
   }
 
-  // Each track is edited FULLSCREEN on its own; the two are merged only on download,
-  // so the editor never shows a second video (that's what was causing the mix-ups).
+  // While editing Video 1, the preview shows the real composite — Video 2 as a PiP
+  // inset or split-screen half, synced to the playhead — exactly how it merges on
+  // download. Video 2 is edited fullscreen on its own tab (tap the inset to jump there).
+  const compositeOn = () => editingTrack === 1 && t2.length > 0 && pipLayout !== 'off';
+
   function applyOverlayPreview() {
     if (!ovlVideo || !video) return;
-    video.style.left = ''; video.style.top = ''; video.style.width = ''; video.style.height = '';
+    // Reset the main video to a full, centred frame.
+    video.style.left = ''; video.style.top = ''; video.style.right = ''; video.style.bottom = '';
+    video.style.width = ''; video.style.height = '';
     video.style.objectFit = (outFill === 'crop') ? 'cover' : 'contain';
-    ovlVideo.style.display = 'none';
-    ovlVideo.classList.remove('draggable', 'dimmed');
-    if (!ovlVideo.paused) ovlVideo.pause();
+    if (!compositeOn()) {
+      ovlVideo.style.display = 'none';
+      ovlVideo.classList.remove('draggable', 'dimmed');
+      if (!ovlVideo.paused) ovlVideo.pause();
+      return;
+    }
+    ovlVideo.style.filter = video.style.filter || '';   // match the colour look
+    ovlVideo.style.display = 'block';
+    ovlVideo.style.objectFit = 'cover';
+    if (pipLayout === 'pip') {
+      ovlVideo.classList.add('draggable'); ovlVideo.classList.remove('dimmed');
+      ovlVideo.style.right = 'auto'; ovlVideo.style.bottom = 'auto'; ovlVideo.style.height = 'auto';
+      ovlVideo.style.width = (clamp01(pipSize) * 100).toFixed(2) + '%';
+      ovlVideo.style.left = (clamp01(pipX) * 100).toFixed(2) + '%';
+      ovlVideo.style.top = (clamp01(pipY) * 100).toFixed(2) + '%';
+      ovlVideo.style.borderRadius = '10px';
+      ovlVideo.style.boxShadow = '0 4px 16px rgba(0,0,0,0.55)';
+    } else {   // side-by-side: split the frame, both halves cropped to fill
+      ovlVideo.classList.remove('draggable', 'dimmed');
+      ovlVideo.style.borderRadius = '0'; ovlVideo.style.boxShadow = 'none';
+      video.style.objectFit = 'cover';
+      if (sbsDir === 'tb') {
+        const mt = sbsSwap ? '50%' : '0%', ot = sbsSwap ? '0%' : '50%';
+        Object.assign(video.style, { left: '0', top: mt, right: 'auto', bottom: 'auto', width: '100%', height: '50%' });
+        Object.assign(ovlVideo.style, { left: '0', top: ot, right: 'auto', bottom: 'auto', width: '100%', height: '50%' });
+      } else {
+        const ml = sbsSwap ? '50%' : '0%', ol = sbsSwap ? '0%' : '50%';
+        Object.assign(video.style, { left: ml, top: '0', right: 'auto', bottom: 'auto', width: '50%', height: '100%' });
+        Object.assign(ovlVideo.style, { left: ol, top: '0', right: 'auto', bottom: 'auto', width: '50%', height: '100%' });
+      }
+    }
+    syncOverlayPreview(dropGlobal);
   }
 
-  function syncOverlayPreview() {
-    if (ovlVideo && !ovlVideo.paused) ovlVideo.pause();
+  // Seek the 2nd-video element to its frame at the whole-video time, and keep it
+  // playing/paused in step with the main preview.
+  function syncOverlayPreview(g) {
+    if (!ovlVideo) return;
+    if (!compositeOn()) { if (!ovlVideo.paused) ovlVideo.pause(); return; }
+    const total = trackKept(t2);
+    const gg = (g == null) ? dropGlobal : g;
+    if (gg >= total - 0.02) { if (!ovlVideo.paused) ovlVideo.pause(); return; }   // Video 2 ended → freeze
+    const at = clipAtGlobalIn(t2, gg);
+    if (!at) return;
+    const s = at.clip;
+    const ft = inOf(s) + at.local * speedOf(s);
+    if (ovlVideo.src !== s.url) {
+      ovlVideo.src = s.url;
+      ovlVideo.addEventListener('loadedmetadata', () => { try { ovlVideo.currentTime = ft; } catch (e) {} }, { once: true });
+      return;
+    }
+    if (ovlVideo.readyState >= 1 && Math.abs(ovlVideo.currentTime - ft) > 0.3) { try { ovlVideo.currentTime = ft; } catch (e) {} }
+    ovlVideo.playbackRate = speedOf(s);
+    if (!video.paused) { if (ovlVideo.paused) { const p = ovlVideo.play(); if (p && p.catch) p.catch(() => {}); } }
+    else if (!ovlVideo.paused) ovlVideo.pause();
   }
 
   function refreshOverlayButtons() {
@@ -1513,11 +1579,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Overlay (second video) controls
   if (actOverlay) actOverlay.addEventListener('click', () => setMode('overlay'));
   if (ovlAddBtn) ovlAddBtn.addEventListener('click', addOverlay2);
-  pipBtns.forEach((b) => b.addEventListener('click', () => { pipLayout = b.dataset.pip; applyOverlayPreview(); refreshOverlayButtons(); }));
-  cornerBtns.forEach((b) => b.addEventListener('click', () => { setPipCorner(b.dataset.corner); }));
-  sbsBtns.forEach((b) => b.addEventListener('click', () => { sbsDir = b.dataset.sbs; applyOverlayPreview(); refreshOverlayButtons(); }));
-  if (sbsSwapBtn) sbsSwapBtn.addEventListener('click', () => { sbsSwap = !sbsSwap; applyOverlayPreview(); });
-  if (pipSizeInput) pipSizeInput.addEventListener('input', () => { pipSize = parseFloat(pipSizeInput.value); applyOverlayPreview(); });
+  // Choosing a layout / adjusting it shows the composite — that lives on the Video 1 view.
+  const toComposite = () => { if (t2.length && editingTrack !== 1) setEditingTrack(1); };
+  pipBtns.forEach((b) => b.addEventListener('click', () => { pipLayout = b.dataset.pip; toComposite(); applyOverlayPreview(); refreshOverlayButtons(); }));
+  cornerBtns.forEach((b) => b.addEventListener('click', () => { toComposite(); setPipCorner(b.dataset.corner); }));
+  sbsBtns.forEach((b) => b.addEventListener('click', () => { sbsDir = b.dataset.sbs; toComposite(); applyOverlayPreview(); refreshOverlayButtons(); }));
+  if (sbsSwapBtn) sbsSwapBtn.addEventListener('click', () => { sbsSwap = !sbsSwap; toComposite(); applyOverlayPreview(); });
+  if (pipSizeInput) pipSizeInput.addEventListener('input', () => { pipSize = parseFloat(pipSizeInput.value); toComposite(); applyOverlayPreview(); });
   if (ovlMuteBtn) ovlMuteBtn.addEventListener('click', () => { pipMuted = !pipMuted; refreshOverlayButtons(); });
   if (ovlHandleL) ovlHandleL.addEventListener('pointerdown', ovlTrimHandle('L'));
   if (ovlHandleR) ovlHandleR.addEventListener('pointerdown', ovlTrimHandle('R'));
