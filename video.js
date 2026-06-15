@@ -132,6 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const qualitySel = document.getElementById('vs-quality');
   const exportBtn = document.getElementById('vs-export');
   const progressWrap = document.getElementById('vs-progress-wrap');
+  const dlEl = document.getElementById('vs-dl');
+  let dlHideTimer = null;
   const progressBar = document.getElementById('vs-progress-bar');
   const statusEl = document.getElementById('vs-status');
   const textPanel = document.getElementById('vs-text-panel');
@@ -2274,14 +2276,20 @@ document.addEventListener('DOMContentLoaded', () => {
     return withTimeout(start, 60000, 'Engine took too long to load — please retry.');
   }
 
+  // The download bar (progress + status) sits under the Download button and only
+  // shows while a render is happening (or briefly after, for the result message).
+  function showDownload() { if (dlEl) dlEl.style.display = ''; if (dlHideTimer) { clearTimeout(dlHideTimer); dlHideTimer = null; } }
+  function hideDownloadSoon(ms) { if (dlHideTimer) clearTimeout(dlHideTimer); dlHideTimer = setTimeout(() => { if (dlEl && !exporting) dlEl.style.display = 'none'; }, ms || 2600); }
+
   function updateProgress(frac) {
     // Only drives the bar — the status text is the ticking elapsed clock (heartbeat),
     // because the % is unreliable during a two-track merge (looped input).
     frac = Math.min(1, Math.max(0, frac));
     progressBar.style.width = (frac * 100) + '%';
+    showDownload();
   }
 
-  function status(msg) { statusEl.textContent = msg; if (exporting && banner) banner.textContent = msg; }
+  function status(msg) { if (statusEl) statusEl.textContent = msg; if (exporting && banner) banner.textContent = msg; showDownload(); if (!exporting) hideDownloadSoon(4500); }
 
   function triggerDownload(blob, name) {
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
@@ -2377,7 +2385,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try { if (!(await Combinator.isSupported())) return false; } catch (e) { return false; }
 
     exporting = true; exportBtn.disabled = true;
-    progressWrap.style.display = 'block'; updateProgress(0);
+    showDownload(); updateProgress(0);
     exportStart = performance.now();
     exportPhase = '⚡ Fast render';
     if (exportHeartbeat) clearInterval(exportHeartbeat);
@@ -2669,7 +2677,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (exportHeartbeat) { clearInterval(exportHeartbeat); exportHeartbeat = null; }
       await deliverOutput(blob, 'riyo-video.mp4', `Done! Saved to your downloads. (⚡ ${fmtTime((performance.now() - exportStart) / 1000)})`);
       exportBtn.disabled = false; exporting = false;
-      setTimeout(() => { progressWrap.style.display = 'none'; }, 1500);
+      hideDownloadSoon(2600);
       setTimeout(updateBanner, 2600);
       return true;
     } catch (e) {
@@ -2720,7 +2728,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     exporting = true;
     exportBtn.disabled = true;
-    progressWrap.style.display = 'block';
+    showDownload();
     updateProgress(0);
     exportStart = performance.now();
 
@@ -3097,7 +3105,7 @@ document.addEventListener('DOMContentLoaded', () => {
     exportAction = 'download';
     exportBtn.disabled = false;
     exporting = false;
-    setTimeout(() => { progressWrap.style.display = 'none'; }, 1500);
+    hideDownloadSoon(2600);
     setTimeout(updateBanner, 2600);
   });
 
