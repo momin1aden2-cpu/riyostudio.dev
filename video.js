@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const sbsBtns = document.querySelectorAll('[data-sbs]');
   const pipSizeInput = document.getElementById('vs-pip-size');
   const sbsSwapBtn = document.getElementById('vs-sbs-swap');
-  const ovlMuteBtn = document.getElementById('vs-ovl-mute');
+  const mergeAudioBtns = document.querySelectorAll('[data-merge-audio]');
   const ovlTrack = document.getElementById('vs-ovl-track');
   const ovlDimL = document.getElementById('vs-ovl-dim-l');
   const ovlDimR = document.getElementById('vs-ovl-dim-r');
@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let pipSize = 0.3;          // inset width as a fraction of the frame
   let sbsDir = 'lr';          // 'lr' | 'tb'
   let sbsSwap = false;        // which side each video sits on
-  let pipMuted = false;       // include the second video's audio on export
+  let mergeAudio = 'both';    // 'both' | 'v1' | 'v2' — which video's sound to keep when merging
   const FILTERS = {
     none: { css: 'none', ff: '' },
     vivid: { css: 'saturate(1.4) contrast(1.08)', ff: 'eq=saturation=1.4:contrast=1.08' },
@@ -204,6 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let exportStart = 0;
   let exportPhase = '';
   let exportHeartbeat = null;
+  let exportAction = 'download';   // 'download' | 'share' — set by the button that started the render
+  let lastExportBlob = null, lastExportName = '';
 
   const fmtTime = (s) => {
     if (!isFinite(s) || s < 0) s = 0;
@@ -1300,8 +1302,12 @@ document.addEventListener('DOMContentLoaded', () => {
       ovlVideo.style.display = 'none';
       ovlVideo.classList.remove('draggable', 'dimmed');
       if (!ovlVideo.paused) ovlVideo.pause();
+      video.muted = false; ovlVideo.muted = true;
       return;
     }
+    // Preview audio follows the "Which video's sound?" choice so you can hear it.
+    video.muted = (mergeAudio === 'v2');
+    ovlVideo.muted = (mergeAudio === 'v1');
     ovlVideo.style.filter = video.style.filter || '';   // match the colour look
     ovlVideo.style.display = 'block';
     ovlVideo.style.objectFit = 'cover';
@@ -1363,7 +1369,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sbsOpts) sbsOpts.style.display = (pipLayout === 'sbs') ? '' : 'none';
     pipBtns.forEach((b) => b.classList.toggle('active', b.dataset.pip === pipLayout));
     sbsBtns.forEach((b) => b.classList.toggle('active', b.dataset.sbs === sbsDir));
-    if (ovlMuteBtn) { ovlMuteBtn.classList.toggle('active', pipMuted); ovlMuteBtn.textContent = pipMuted ? '🔇 Its sound: off' : '🔊 Its sound: on'; }
+    mergeAudioBtns.forEach((b) => b.classList.toggle('active', b.dataset.mergeAudio === mergeAudio));
     // The old single-video trim bar is gone — Video 2 is trimmed per clip on its track.
     if (ovlTrack) { ovlTrack.style.display = 'none'; if (ovlTrack.previousElementSibling) ovlTrack.previousElementSibling.style.display = 'none'; }
   }
@@ -1437,11 +1443,12 @@ document.addEventListener('DOMContentLoaded', () => {
     scrubEl.addEventListener('pointercancel', endScrub);
   }
 
-  // Share — direct social sharing is a planned follow-up; guide the user for now.
-  if (shareBtn) shareBtn.addEventListener('click', async () => {
-    const msg = 'Download your video first, then share it from your photos/files. Direct sharing to socials is coming soon.';
-    if (navigator.share) { try { await navigator.share({ title: 'Made with Riyo Video Studio', text: 'Check out my video — made free at riyostudio.dev', url: 'https://riyostudio.dev/video.html' }); return; } catch (_) {} }
-    status(msg);
+  // Share — render the video, then open the native share sheet (post straight to socials).
+  if (shareBtn) shareBtn.addEventListener('click', () => {
+    if (exporting) return;
+    if (!sources.length) { status('Add a video first, then tap Share.'); return; }
+    exportAction = 'share';
+    exportBtn.click();
   });
   video.addEventListener('timeupdate', () => {
     const s = activeSource();
@@ -1586,7 +1593,7 @@ document.addEventListener('DOMContentLoaded', () => {
   sbsBtns.forEach((b) => b.addEventListener('click', () => { sbsDir = b.dataset.sbs; toComposite(); applyOverlayPreview(); refreshOverlayButtons(); }));
   if (sbsSwapBtn) sbsSwapBtn.addEventListener('click', () => { sbsSwap = !sbsSwap; toComposite(); applyOverlayPreview(); });
   if (pipSizeInput) pipSizeInput.addEventListener('input', () => { pipSize = parseFloat(pipSizeInput.value); toComposite(); applyOverlayPreview(); });
-  if (ovlMuteBtn) ovlMuteBtn.addEventListener('click', () => { pipMuted = !pipMuted; refreshOverlayButtons(); });
+  mergeAudioBtns.forEach((b) => b.addEventListener('click', () => { mergeAudio = b.dataset.mergeAudio; applyOverlayPreview(); refreshOverlayButtons(); }));
   if (ovlHandleL) ovlHandleL.addEventListener('pointerdown', ovlTrimHandle('L'));
   if (ovlHandleR) ovlHandleR.addEventListener('pointerdown', ovlTrimHandle('R'));
   if (ovlVideo) ovlVideo.addEventListener('pointerdown', pipDragStart);
@@ -1839,6 +1846,25 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   }
 
+  // Hand the finished video to the user — save it, or open the native share sheet
+  // (post straight to Instagram / TikTok / WhatsApp on phones that support it).
+  async function deliverOutput(blob, name, doneMsg) {
+    const action = exportAction; exportAction = 'download';
+    lastExportBlob = blob; lastExportName = name;
+    if (action === 'share') {
+      const file = new File([blob], name, { type: blob.type || 'video/mp4' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: 'My video', text: 'Made with Riyo Video Studio — riyostudio.dev' }); status('Shared ✓'); return; }
+        catch (e) { if (e && e.name === 'AbortError') { status('Share cancelled — tap Share or Download again any time.'); return; } }
+      }
+      triggerDownload(blob, name);
+      status('Saved to your downloads — this device can’t share the file directly, so post it from your photos/files.');
+      return;
+    }
+    triggerDownload(blob, name);
+    status(doneMsg);
+  }
+
   // ── Fast export via WebCodecs (WebAV) — hardware-accelerated, minutes → seconds ──
   // Covers the full editor: concat, every aspect/fill, colour looks, fades, flip,
   // burned-in text + captions, voiceover/music, and the PiP / side-by-side merge.
@@ -2003,6 +2029,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const needProc = !!lookCss || flipH || flipV || sbs;
       const mainFit = (outFill === 'crop' || sbs) ? 'cover' : 'contain';
       const useBlur = !sbs && outFill === 'blur';
+      // Which video's sound to keep when merging two videos.
+      const mergeActive = pip || sbs;
+      const mainAudioOn = !(mergeActive && mergeAudio === 'v2');
+      const t2AudioOn = mergeAudio !== 'v1';
 
       // ── MAIN TRACK: trim each clip, lay them end to end ──
       let offsetUs = 0;
@@ -2017,7 +2047,7 @@ document.addEventListener('DOMContentLoaded', () => {
           Object.assign(bg.rect, mainVP);
           await com.addSprite(bg);
         }
-        const { clip, c } = await trimClip(s.file, inUs, durUs, true);
+        const { clip, c } = await trimClip(s.file, inUs, durUs, mainAudioOn);
         const cw = (clip.meta && clip.meta.width) || s.w || W, ch = (clip.meta && clip.meta.height) || s.h || H;
         const spr = new OffscreenSprite(needProc ? frameProc(c, mainVP.w, mainVP.h, mainFit, lookCss, flipH, flipV) : c);
         spr.time = { offset: offsetUs, duration: durUs }; spr.zIndex = 1;
@@ -2037,7 +2067,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const inUs = Math.round(seg.start * 1e6);
           let durUs = Math.max(1e5, Math.round((seg.end - seg.start) * 1e6));
           if (t2off + durUs > totalUs) durUs = totalUs - t2off;
-          const { clip, c } = await trimClip(seg.s.file, inUs, durUs, !pipMuted);
+          const { clip, c } = await trimClip(seg.s.file, inUs, durUs, t2AudioOn);
           const tw = (clip.meta && clip.meta.width) || seg.s.w || 16, th = (clip.meta && clip.meta.height) || seg.s.h || 9;
           let spr, rect;
           if (pip) {
@@ -2149,9 +2179,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const blob = new Blob(parts, { type: 'video/mp4' });
       if (!blob.size) throw new Error('empty output');
       updateProgress(1);
-      triggerDownload(blob, 'riyo-video.mp4');
       if (exportHeartbeat) { clearInterval(exportHeartbeat); exportHeartbeat = null; }
-      status(`Done! Saved to your downloads. (⚡ ${fmtTime((performance.now() - exportStart) / 1000)})`);
+      await deliverOutput(blob, 'riyo-video.mp4', `Done! Saved to your downloads. (⚡ ${fmtTime((performance.now() - exportStart) / 1000)})`);
       exportBtn.disabled = false; exporting = false;
       setTimeout(() => { progressWrap.style.display = 'none'; }, 1500);
       setTimeout(updateBanner, 2600);
@@ -2502,11 +2531,14 @@ document.addEventListener('DOMContentLoaded', () => {
         graphStr += `;[ca]anullsink;${vOut}fps=12,scale=${gifW}:-2:flags=lanczos,split[gpa][gpb];[gpb]palettegen=stats_mode=diff[pal];[gpa][pal]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle[gifo]`;
         args.push('-filter_complex', graphStr, '-map', '[gifo]', '-loop', '0', outName);
       } else {
-        let aOut = '[ca]';
+        // When merging, "Sound from Video 2" silences Video 1's own audio.
+        const caLbl = (pipOn && mergeAudio === 'v2') ? '[cav1m]' : '[ca]';
+        if (caLbl !== '[ca]') graphStr += ';[ca]volume=0[cav1m]';
+        let aOut = caLbl;
         // Mix voiceover / music tracks over the video's own audio.
         if (overlayAudios.length) {
           const proc = [];
-          const voiceLbls = ['[ca]'];   // clip audio + voiceovers — kept loud
+          const voiceLbls = [caLbl];   // clip audio + voiceovers — kept loud
           const musicLbls = [];          // music tracks — ducked under the voice
           overlayAudios.forEach((au, j) => {
             const inIdx = inputs.length + j;
@@ -2530,14 +2562,14 @@ document.addEventListener('DOMContentLoaded', () => {
             proc.push(`${mbus}[vsc]sidechaincompress=threshold=0.05:ratio=8:attack=15:release=320[duck]`);
             proc.push(`[vmix][duck]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[mixa]`);
           } else {
-            const all = ['[ca]', ...overlayAudios.map((_, j) => `[oa${j}]`)];
+            const all = [caLbl, ...overlayAudios.map((_, j) => `[oa${j}]`)];
             proc.push(`${all.join('')}amix=inputs=${all.length}:duration=first:dropout_transition=0:normalize=0[mixa]`);
           }
           graphStr += ';' + proc.join(';');
           aOut = '[mixa]';
         }
-        // Mix in the second video's own sound, unless muted.
-        if (pipOn && t2File && !pipMuted && t2HasAudio) {
+        // Mix in the second video's own sound, unless "Sound from Video 1" is chosen.
+        if (pipOn && t2File && mergeAudio !== 'v1' && t2HasAudio) {
           graphStr += `;[${oi}:a]aresample=44100,aformat=channel_layouts=stereo,volume=1[povla];${aOut}[povla]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[aout2]`;
           aOut = '[aout2]';
         }
@@ -2557,10 +2589,9 @@ document.addEventListener('DOMContentLoaded', () => {
       updateProgress(1);
       const mimeByFmt = { webm: 'video/webm', gif: 'image/gif', mp4: 'video/mp4' };
       const blob = new Blob([data.buffer], { type: mimeByFmt[fmt] || 'video/mp4' });
-      triggerDownload(blob, `riyo-video.${fmt}`);
       if (exportHeartbeat) { clearInterval(exportHeartbeat); exportHeartbeat = null; }
       const took = fmtTime((performance.now() - exportStart) / 1000);
-      status(`Done! Saved to your downloads. (${took})`);
+      await deliverOutput(blob, `riyo-video.${fmt}`, `Done! Saved to your downloads. (${took})`);
     } catch (err) {
       console.error('[VideoStudio] export failed:', err);
       console.error('[VideoStudio] ffmpeg log tail:\n' + ffLogs.slice(-30).join('\n'));
@@ -2570,6 +2601,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (exportHeartbeat) { clearInterval(exportHeartbeat); exportHeartbeat = null; }
     ffExpectedDur = 0;
+    exportAction = 'download';
     exportBtn.disabled = false;
     exporting = false;
     setTimeout(() => { progressWrap.style.display = 'none'; }, 1500);
