@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cool: { css: 'saturate(1.1) brightness(1.02) hue-rotate(-8deg)', ff: 'colorbalance=bm=0.09:bh=0.06:rm=-0.05,eq=saturation=1.08' },
     bw: { css: 'grayscale(1) contrast(1.12)', ff: 'hue=s=0,eq=contrast=1.12' },
     vintage: { css: 'sepia(0.4) saturate(0.85) contrast(0.95)', ff: 'colorbalance=rm=0.12:gm=0.04:bm=-0.08,eq=saturation=0.82:contrast=0.95' },
-    cinematic: { css: 'contrast(1.18) saturate(1.06) brightness(0.97)', ff: 'eq=contrast=1.18:saturation=1.06:brightness=-0.03,colorbalance=bh=0.04:rl=0.03' }
+    cinematic: { css: 'contrast(1.18) saturate(1.06) brightness(0.97)', ff: 'eq=contrast=1.18:saturation=1.06:brightness=-0.03,colorbalance=bh=0.04:rs=0.03' }
   };
   const speedOf = (s) => s.speed || 1;
   let ffmpegInstance = null;  // single-threaded FFmpeg 0.12 engine, loaded on first export
@@ -2403,14 +2403,17 @@ document.addEventListener('DOMContentLoaded', () => {
         else { const ww = Math.round(W / 2); const a = { x: 0, y: 0, w: ww, h: H }, b = { x: ww, y: 0, w: W - ww, h: H }; mainVP = sbsSwap ? b : a; t2VP = sbsSwap ? a : b; }
       }
 
-      // Trim one MP4Clip to its [in, in+dur] window via split.
+      // Trim one MP4Clip to its [in, in+dur] window via split. Splits can fail on
+      // variable-framerate footage (e.g. screen recordings) when there's no sample at
+      // the exact cut time — that's non-fatal: the sprite's own time window still caps
+      // playback, so we just fall back to the un-split clip.
       const trimClip = async (file, inUs, durUs, withAudio) => {
         const clip = new MP4Clip(file.stream(), { audio: withAudio });
         await clip.ready;
         let c = clip;
-        if (inUs > 5000) c = (await c.split(inUs))[1];
+        if (inUs > 5000) { try { c = (await c.split(inUs))[1]; } catch (e) { /* keep from start */ } }
         const total = (clip.meta && clip.meta.duration) || (c.meta && c.meta.duration) || durUs;
-        if (durUs < total - 2000) c = (await c.split(durUs))[0];
+        if (durUs < total - 50000) { try { c = (await c.split(durUs))[0]; } catch (e) { /* keep full; sprite.time caps it */ } }
         return { clip, c };
       };
 
