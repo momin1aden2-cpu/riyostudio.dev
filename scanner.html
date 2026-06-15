@@ -28,9 +28,23 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg?v=2">
   <link rel="apple-touch-icon" href="assets/icon.svg?v=2">
-  <link rel="stylesheet" href="style.css?v=20260609b">
+  <link rel="stylesheet" href="style.css?v=20260615a">
   <link rel="stylesheet" href="scanner.css?v=5">
-  
+
+  <!-- Mobile: stack the editor (canvas on top, the contextual panel below) and
+       make room for the bottom nav. !important overrides the inline desktop styles. -->
+  <style>
+    @media (max-width: 900px) {
+      /* The canvas wrapper is laid out at full resolution and only scaled visually,
+         so min-width:0 down the chain stops it forcing a desktop-width editor. */
+      .container.fluid.editor-fluid { width: 100% !important; max-width: 100% !important; min-width: 0 !important; padding: 0 12px 92px !important; box-sizing: border-box !important; overflow-x: hidden !important; }
+      .editor-toolbar { width: 100% !important; max-width: 100% !important; min-width: 0 !important; padding: 12px !important; gap: 10px !important; margin-bottom: 16px !important; box-sizing: border-box !important; }
+      .editor-workspace { flex-direction: column !important; height: auto !important; width: 100% !important; max-width: 100% !important; min-width: 0 !important; gap: 14px !important; min-height: 0 !important; }
+      .canvas-container { flex: none !important; width: 100% !important; max-width: 100% !important; min-width: 0 !important; height: 52vh !important; min-height: 300px !important; box-sizing: border-box !important; }
+      .properties-panel { width: 100% !important; max-width: 100% !important; min-width: 0 !important; max-height: none !important; padding: 18px !important; box-sizing: border-box !important; }
+    }
+  </style>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body class="tool-page-clean">
@@ -541,6 +555,34 @@
       <div style="margin-top: 16px;">
         <a href="https://elevenlabs.io" target="_blank" style="color: #10B981; font-size: 0.8rem; text-decoration: none;">Get a free API key here</a>
       </div>
+    </div>
+  </div>
+
+  <!-- Mobile Bottom Tab Bar -->
+  <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Mobile navigation">
+    <a href="index.html" class="mobile-tab" data-page="home"><span class="mobile-tab-icon">🏠</span><span class="mobile-tab-label">Home</span></a>
+    <a href="qr.html" class="mobile-tab" data-page="qr"><span class="mobile-tab-icon">📱</span><span class="mobile-tab-label">QR Hub</span></a>
+    <a href="scanner.html" class="mobile-tab active" data-page="scanner"><span class="mobile-tab-icon">🎨</span><span class="mobile-tab-label">Mockup</span></a>
+    <a href="video.html" class="mobile-tab" data-page="video"><span class="mobile-tab-icon">🎬</span><span class="mobile-tab-label">Video</span></a>
+    <button class="mobile-tab" id="mobile-more-btn" data-page="more"><span class="mobile-tab-icon">☰</span><span class="mobile-tab-label">More</span></button>
+  </nav>
+
+  <!-- More Drawer -->
+  <div class="mobile-more-overlay" id="mobile-more-overlay">
+    <div class="mobile-more-drawer">
+      <div class="mobile-more-handle"></div>
+      <h4>More Tools</h4>
+      <a href="invoice.html" class="mobile-more-link"><span class="more-icon">📄</span> Invoice Maker</a>
+      <a href="forge.html" class="mobile-more-link"><span class="more-icon">🔧</span> File Forge</a>
+      <a href="logo.html" class="mobile-more-link"><span class="more-icon">🎨</span> Logo Maker</a>
+      <div class="mobile-more-divider"></div>
+      <h4>Company</h4>
+      <a href="index.html#about" class="mobile-more-link"><span class="more-icon">💡</span> About Us</a>
+      <a href="index.html#contact" class="mobile-more-link"><span class="more-icon">✉️</span> Get in Touch</a>
+      <div class="mobile-more-divider"></div>
+      <h4>Legal</h4>
+      <a href="privacy.html" class="mobile-more-link"><span class="more-icon">🔒</span> Privacy Policy</a>
+      <a href="terms.html" class="mobile-more-link"><span class="more-icon">📋</span> Terms of Service</a>
     </div>
   </div>
 
