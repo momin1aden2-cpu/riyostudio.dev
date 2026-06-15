@@ -631,8 +631,19 @@
 
             <!-- EFFECTS panel — speed, colour look, fade -->
             <div id="vs-effects-panel" class="vs-mode" style="display:none;">
-              <div class="vs-bar-head"><span><b>Speed</b> changes the selected clip · <b>Look</b> &amp; <b>Fade</b> apply to the whole video.</span></div>
-              <div class="vs-bar-head" style="margin-top:12px;"><span>⏩ Speed <span id="vs-fx-clip" class="vs-trim-sub"></span></span></div>
+              <div class="vs-bar-head"><span><b>Transition</b> &amp; <b>Speed</b> change the selected clip · <b>Look</b> &amp; <b>Fade</b> apply to the whole video.</span></div>
+              <div class="vs-bar-head" style="margin-top:12px;"><span>🎞️ How this clip appears <span id="vs-fx-clip" class="vs-trim-sub"></span></span></div>
+              <div class="vs-fx-filters">
+                <button class="vs-mini" data-anim="none">Cut (instant)</button>
+                <button class="vs-mini" data-anim="fade">✨ Fade in</button>
+                <button class="vs-mini" data-anim="slideUp">⬆ Slide up</button>
+                <button class="vs-mini" data-anim="slideDown">⬇ Slide down</button>
+                <button class="vs-mini" data-anim="slideLeft">⬅ Slide in</button>
+                <button class="vs-mini" data-anim="slideRight">➡ Slide in</button>
+                <button class="vs-mini" data-anim="zoom">🔍 Zoom in</button>
+              </div>
+              <p class="vs-hint">Each clip “enters” with this effect — like PowerPoint. Great for images &amp; screenshots.</p>
+              <div class="vs-bar-head" style="margin-top:14px;"><span>⏩ Speed</span></div>
               <div class="vs-pos-btns">
                 <button class="vs-mini" data-speed="0.25">🐢 0.25×</button>
                 <button class="vs-mini" data-speed="0.5">0.5×</button>
@@ -888,6 +899,6 @@
 
   <script src="bg.js?v=18"></script>
   <script src="script.js?v=24"></script>
-  <script src="video.js?v=54"></script>
+  <script src="video.js?v=55"></script>
 </body>
 </html>

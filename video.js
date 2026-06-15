@@ -112,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const actEffects = document.getElementById('vs-act-effects');
   const effectsPanel = document.getElementById('vs-effects-panel');
   const fxClipLabel = document.getElementById('vs-fx-clip');
+  const fxAnimBtns = document.querySelectorAll('[data-anim]');
   const fxSpeedBtns = document.querySelectorAll('[data-speed]');
   const fxFilterBtns = document.querySelectorAll('.vs-fx-filter');
   const fxFadeInBtn = document.getElementById('vs-fx-fadein');
@@ -148,7 +149,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Images / screenshots can be added as clips that show for a set time.
   const IMG_DEFAULT = 3;     // default seconds an image shows
   const IMG_MAX = 15;        // longest a single image can show
+  const ANIM_D = 0.5;        // entrance-animation length (seconds)
   const isImage = (s) => !!(s && s.kind === 'image');
+  const animOf = (s) => (s && s.anim) || 'none';
   // A virtual clock drives playback through image clips (they have no <video> time).
   let imgLocal = 0, imgRAF = null, imgStartPerf = 0, imgStartLocal = 0;
 
@@ -701,6 +704,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCaptionPreview(g);
     syncOverlayPreview(g);
     updateTextVisibility();
+    applyClipAnim(s, local);
   }
 
   // Global timeline: one proportional block per clip + the amber marker.
@@ -1447,9 +1451,45 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAll();
   }
 
+  function setClipAnim(a) {
+    const s = activeSource();
+    if (!s) { flashHint('Tap a clip below first, then pick how it appears.'); return; }
+    s.anim = a;
+    refreshFxButtons();
+    // Replay the entrance so it's visible right away.
+    if (isImage(s)) { imgLocal = 0; if (imgRAF) startImgClock(); else applyClipAnim(s, 0); }
+    else { try { video.currentTime = inOf(s); } catch (e) {} }
+    updatePlayhead();
+  }
+
+  // The Format rotate/flip transform (kept on the main video by applyFormatPreview).
+  const fmtTransform = () => {
+    const t = [];
+    if (outRotate === 'cw') t.push('rotate(90deg)'); else if (outRotate === 'ccw') t.push('rotate(-90deg)');
+    if (outFlipH) t.push('scaleX(-1)');
+    if (outFlipV) t.push('scaleY(-1)');
+    return t.join(' ');
+  };
+
+  // Apply a clip's entrance animation to its preview element, based on local time.
+  function applyClipAnim(s, local) {
+    const el = isImage(s) ? imgEl : video;
+    if (!el) return;
+    const base = isImage(s) ? '' : fmtTransform();   // compose with any Format rotate/flip
+    const a = animOf(s);
+    // Entrances only play during playback; a paused/scrubbed frame shows the settled clip.
+    if (a === 'none' || !previewPlaying) { el.style.opacity = '1'; el.style.transform = base; return; }
+    if (a === 'zoom') { el.style.opacity = '1'; el.style.transform = (base + ` scale(${(1 + 0.12 * Math.min(1, local / Math.max(0.1, keptDuration(s)))).toFixed(4)})`).trim(); return; }
+    const p = Math.min(1, local / ANIM_D), e = 1 - Math.pow(1 - p, 3), off = (1 - e) * 100;
+    el.style.opacity = e.toFixed(3);
+    const map = { fade: '', slideUp: `translateY(${off}%)`, slideDown: `translateY(${-off}%)`, slideLeft: `translateX(${off}%)`, slideRight: `translateX(${-off}%)` };
+    el.style.transform = (base + ' ' + (map[a] || '')).trim();
+  }
+
   function refreshFxButtons() {
     const s = activeSource();
     const sp = s ? speedOf(s) : 1;
+    fxAnimBtns.forEach((b) => b.classList.toggle('active', b.dataset.anim === animOf(s)));
     fxSpeedBtns.forEach((b) => b.classList.toggle('active', parseFloat(b.dataset.speed) === sp));
     fxFilterBtns.forEach((b) => b.classList.toggle('active', b.dataset.filter === vfilter));
     if (fxFadeInBtn) fxFadeInBtn.classList.toggle('active', fadeIn);
@@ -1769,6 +1809,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Effects controls
   if (actEffects) actEffects.addEventListener('click', () => setMode('effects'));
+  fxAnimBtns.forEach((b) => b.addEventListener('click', () => setClipAnim(b.dataset.anim)));
   fxSpeedBtns.forEach((b) => b.addEventListener('click', () => setClipSpeed(parseFloat(b.dataset.speed))));
   fxFilterBtns.forEach((b) => b.addEventListener('click', () => { vfilter = b.dataset.filter; applyLook(); refreshFxButtons(); }));
   if (fxFadeInBtn) fxFadeInBtn.addEventListener('click', () => { fadeIn = !fadeIn; refreshFxButtons(); });
@@ -2220,6 +2261,33 @@ document.addEventListener('DOMContentLoaded', () => {
         };
       };
 
+      // Entrance animation: wrap an already-fitted clip and slide/zoom/fade it in.
+      const animClip = (src, type, animSec, totalSec, ow, oh) => {
+        const cv = new OffscreenCanvas(ow, oh), cx = cv.getContext('2d');
+        return {
+          ready: src.ready, meta: src.meta,
+          async tick(tu) {
+            const r = await src.tick(tu);
+            if (!r) return { state: 'success' };
+            if (!r.video) return { audio: r.audio, state: r.state || 'success' };
+            const t = tu / 1e6;
+            let alpha = 1, tx = 0, ty = 0, sc = 1;
+            if (type === 'zoom') { sc = 1 + 0.12 * Math.min(1, t / Math.max(0.1, totalSec)); }
+            else { const p = Math.min(1, t / animSec), e = 1 - Math.pow(1 - p, 3), off = 1 - e; alpha = e;
+              if (type === 'slideUp') ty = off * oh; else if (type === 'slideDown') ty = -off * oh;
+              else if (type === 'slideLeft') tx = off * ow; else if (type === 'slideRight') tx = -off * ow; }
+            cx.clearRect(0, 0, ow, oh); cx.save(); cx.globalAlpha = Math.max(0, Math.min(1, alpha));
+            cx.translate(ow / 2 + tx, oh / 2 + ty); cx.scale(sc, sc); cx.translate(-ow / 2, -oh / 2);
+            cx.drawImage(r.video, 0, 0); cx.restore();
+            if (r.video.close) r.video.close();
+            return { video: cv.transferToImageBitmap(), audio: r.audio, state: r.state || 'success' };
+          },
+          async split(t) { const [a, b] = await src.split(t); return [animClip(a, type, animSec, totalSec, ow, oh), animClip(b, type, animSec, totalSec, ow, oh)]; },
+          async clone() { return animClip(await src.clone(), type, animSec, totalSec, ow, oh); },
+          destroy() { if (src.destroy) src.destroy(); }
+        };
+      };
+
       const needProc = !!lookCss || flipH || flipV || sbs;
       const mainFit = (outFill === 'crop' || sbs) ? 'cover' : 'contain';
       const useBlur = !sbs && outFill === 'blur';
@@ -2245,9 +2313,19 @@ document.addEventListener('DOMContentLoaded', () => {
         let c, cw, ch;
         if (image) { c = await imgClip(s); cw = (c.meta && c.meta.width) || s.w || W; ch = (c.meta && c.meta.height) || s.h || H; }
         else { const r = await trimClip(s.file, inUs, durUs, mainAudioOn); c = r.c; cw = (r.clip.meta && r.clip.meta.width) || s.w || W; ch = (r.clip.meta && r.clip.meta.height) || s.h || H; }
-        const spr = new OffscreenSprite(needProc ? frameProc(c, mainVP.w, mainVP.h, mainFit, lookCss, flipH, flipV) : c);
+        const anim = animOf(s);
+        let clipObj, rect;
+        if (anim !== 'none') {
+          const fitted = frameProc(c, mainVP.w, mainVP.h, mainFit, lookCss, flipH, flipV);
+          clipObj = animClip(fitted, anim, ANIM_D, durUs / 1e6, mainVP.w, mainVP.h);
+          rect = mainVP;
+        } else {
+          clipObj = needProc ? frameProc(c, mainVP.w, mainVP.h, mainFit, lookCss, flipH, flipV) : c;
+          rect = needProc ? mainVP : fitRect(cw, ch, mainVP, mainFit);
+        }
+        const spr = new OffscreenSprite(clipObj);
         spr.time = { offset: offsetUs, duration: durUs }; spr.zIndex = 1;
-        Object.assign(spr.rect, needProc ? mainVP : fitRect(cw, ch, mainVP, mainFit));
+        Object.assign(spr.rect, rect);
         await com.addSprite(spr);
         offsetUs += durUs;
       }
