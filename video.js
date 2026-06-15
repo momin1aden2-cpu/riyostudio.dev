@@ -191,6 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   const speedOf = (s) => s.speed || 1;
   let ffmpegInstance = null;  // single-threaded FFmpeg 0.12 engine, loaded on first export
+  let webavMod = null;        // WebCodecs (WebAV) fast-export engine, loaded on first use
   let ffLogs = [];            // recent FFmpeg log lines, for surfacing real errors
   let ffExpectedDur = 0;      // expected output seconds — for accurate progress when the wrapper can't tell (looped inputs)
   let exportStart = 0;
@@ -1733,6 +1734,331 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   }
 
+  // ── Fast export via WebCodecs (WebAV) — hardware-accelerated, minutes → seconds ──
+  // Covers the full editor: concat, every aspect/fill, colour looks, fades, flip,
+  // burned-in text + captions, voiceover/music, and the PiP / side-by-side merge.
+  // Falls back to the ffmpeg engine only for what WebAV can't reproduce: GIF/WebM
+  // output, per-clip speed (audio time-stretch), audio ducking, and 90° rotation.
+  function webavEligible() {
+    if (typeof VideoEncoder === 'undefined' || typeof OffscreenCanvas === 'undefined') return false;
+    if (formatSel.value !== 'mp4') return false;
+    if (outRotate !== 'none') return false;
+    if (sources.some((s) => (s.speed || 1) !== 1) || t2.some((s) => (s.speed || 1) !== 1)) return false;
+    if (duckMusic && audios.some((a) => a.kind === 'music')) return false;
+    const vids = sources.concat(t2);
+    return vids.every((s) => /(mp4|m4v|mov|quicktime)/i.test(((s.file && s.file.type) || '') + ' ' + (s.name || '')));
+  }
+
+  async function loadWebAV() {
+    if (webavMod) return webavMod;
+    webavMod = await import('https://esm.sh/@webav/av-cliper@1.2.8');
+    return webavMod;
+  }
+
+  async function ensureVSFonts() {
+    if (!document.fonts) return;
+    const fams = ["'VS Inter'", "'VS Anton'", "'VS Montserrat'"];
+    try { await Promise.all(fams.map((f) => document.fonts.load('80px ' + f))); } catch (e) {}
+    try { await document.fonts.ready; } catch (e) {}
+  }
+
+  // Word-wrap to a pixel width using the real font metrics.
+  function wrapTextPx(ctx, text, maxW) {
+    const words = (text || '').split(/\s+/).filter(Boolean);
+    if (!words.length) return [' '];
+    const lines = []; let cur = words[0];
+    for (let i = 1; i < words.length; i++) {
+      const t = cur + ' ' + words[i];
+      if (ctx.measureText(t).width <= maxW) cur = t; else { lines.push(cur); cur = words[i]; }
+    }
+    lines.push(cur); return lines;
+  }
+
+  // Render stacked, centred lines (caption or title) to a tight bitmap.
+  function renderTextBitmap(lines, fontCss, size, color, withBox) {
+    const probe = new OffscreenCanvas(8, 8).getContext('2d');
+    probe.font = size + 'px ' + fontCss;
+    let maxw = 1; lines.forEach((l) => { maxw = Math.max(maxw, probe.measureText(l).width); });
+    const lineH = size * 1.2;
+    const padX = withBox ? size * 0.45 : Math.max(8, size * 0.3);
+    const padY = withBox ? size * 0.28 : Math.max(8, size * 0.22);
+    const w = Math.max(2, Math.ceil(maxw + padX * 2)), h = Math.max(2, Math.ceil(lineH * lines.length + padY * 2));
+    const cv = new OffscreenCanvas(w, h), x = cv.getContext('2d');
+    x.font = size + 'px ' + fontCss; x.textAlign = 'center'; x.textBaseline = 'middle';
+    if (withBox) {
+      const r = Math.min(h / 2, size * 0.32);
+      x.fillStyle = 'rgba(0,0,0,0.6)'; x.beginPath();
+      x.moveTo(r, 0); x.arcTo(w, 0, w, h, r); x.arcTo(w, h, 0, h, r); x.arcTo(0, h, 0, 0, r); x.arcTo(0, 0, w, 0, r); x.closePath(); x.fill();
+    } else {
+      x.shadowColor = 'rgba(0,0,0,0.65)'; x.shadowOffsetX = 2; x.shadowOffsetY = 2; x.shadowBlur = Math.max(2, size * 0.08);
+    }
+    x.fillStyle = color || '#ffffff';
+    lines.forEach((l, i) => x.fillText(l, w / 2, padY + lineH * (i + 0.5)));
+    return { bitmap: cv.transferToImageBitmap(), w, h };
+  }
+
+  async function exportWebAV(exportClips) {
+    let mod;
+    try { mod = await loadWebAV(); } catch (e) { console.warn('[VideoStudio] WebAV load failed:', e); return false; }
+    const { Combinator, MP4Clip, OffscreenSprite, ImgClip, AudioClip } = mod;
+    try { if (!(await Combinator.isSupported())) return false; } catch (e) { return false; }
+
+    exporting = true; exportBtn.disabled = true;
+    progressWrap.style.display = 'block'; updateProgress(0);
+    exportStart = performance.now();
+    exportPhase = '⚡ Fast render';
+    if (exportHeartbeat) clearInterval(exportHeartbeat);
+    exportHeartbeat = setInterval(() => { if (!exporting) return; status(`${exportPhase}… ${fmtTime((performance.now() - exportStart) / 1000)}`); }, 500);
+
+    try {
+      const qual = QUALITY[qualitySel.value] || QUALITY.sd;
+      const { W, H } = computeWH(outAspect, qual.base);
+      const bitrate = qual.base >= 1080 ? 8e6 : (qual.base >= 720 ? 5e6 : 2.5e6);
+      const lookCss = (FILTERS[vfilter] && FILTERS[vfilter].css !== 'none') ? FILTERS[vfilter].css : '';
+      const flipH = outFlipH, flipV = outFlipV;
+      const com = new Combinator({ width: W, height: H, bitrate, bgColor: (outFill === 'color') ? bgColor : '#000' });
+
+      if (texts.length || captions.length) await ensureVSFonts();
+
+      // Side-by-side splits the frame into two viewports; PiP keeps the main full.
+      const full = { x: 0, y: 0, w: W, h: H };
+      const sbs = t2.length > 0 && pipLayout === 'sbs';
+      const pip = t2.length > 0 && pipLayout === 'pip';
+      let mainVP = full, t2VP = null;
+      if (sbs) {
+        if (sbsDir === 'tb') { const hh = Math.round(H / 2); const a = { x: 0, y: 0, w: W, h: hh }, b = { x: 0, y: hh, w: W, h: H - hh }; mainVP = sbsSwap ? b : a; t2VP = sbsSwap ? a : b; }
+        else { const ww = Math.round(W / 2); const a = { x: 0, y: 0, w: ww, h: H }, b = { x: ww, y: 0, w: W - ww, h: H }; mainVP = sbsSwap ? b : a; t2VP = sbsSwap ? a : b; }
+      }
+
+      // Trim one MP4Clip to its [in, in+dur] window via split.
+      const trimClip = async (file, inUs, durUs, withAudio) => {
+        const clip = new MP4Clip(file.stream(), { audio: withAudio });
+        await clip.ready;
+        let c = clip;
+        if (inUs > 5000) c = (await c.split(inUs))[1];
+        const total = (clip.meta && clip.meta.duration) || (c.meta && c.meta.duration) || durUs;
+        if (durUs < total - 2000) c = (await c.split(durUs))[0];
+        return { clip, c };
+      };
+
+      const fitRect = (cw, ch, vp, mode) => {
+        const sc = mode === 'cover' ? Math.max(vp.w / cw, vp.h / ch) : Math.min(vp.w / cw, vp.h / ch);
+        const dw = Math.round(cw * sc), dh = Math.round(ch * sc);
+        return { x: Math.round(vp.x + (vp.w - dw) / 2), y: Math.round(vp.y + (vp.h - dh) / 2), w: dw, h: dh };
+      };
+
+      // Per-frame processor: draws each frame into a fixed-size canvas with the colour
+      // look, flip and a cover/contain fit — used when the GPU can't just place the raw
+      // frame (a look or flip is on, or a side-by-side half must be hard-cropped).
+      const frameProc = (src, ow, oh, fit, look, fh, fv) => {
+        const cv = new OffscreenCanvas(ow, oh), cx = cv.getContext('2d');
+        return {
+          ready: src.ready, meta: src.meta,
+          async tick(t) {
+            const r = await src.tick(t);
+            if (!r) return { state: 'success' };
+            if (!r.video) return { audio: r.audio, state: r.state || 'success' };
+            const vw = r.video.displayWidth || r.video.codedWidth || ow;
+            const vh = r.video.displayHeight || r.video.codedHeight || oh;
+            const sc = fit === 'cover' ? Math.max(ow / vw, oh / vh) : Math.min(ow / vw, oh / vh);
+            const dw = vw * sc, dh = vh * sc;
+            cx.clearRect(0, 0, ow, oh); cx.save(); cx.filter = look || 'none';
+            cx.translate(ow / 2, oh / 2); cx.scale(fh ? -1 : 1, fv ? -1 : 1);
+            cx.drawImage(r.video, -dw / 2, -dh / 2, dw, dh); cx.restore();
+            if (r.video.close) r.video.close();
+            return { video: cv.transferToImageBitmap(), audio: r.audio, state: r.state || 'success' };
+          },
+          async split(t) { const [a, b] = await src.split(t); return [frameProc(a, ow, oh, fit, look, fh, fv), frameProc(b, ow, oh, fit, look, fh, fv)]; },
+          async clone() { return frameProc(await src.clone(), ow, oh, fit, look, fh, fv); },
+          destroy() { if (src.destroy) src.destroy(); }
+        };
+      };
+
+      // Blurred cover backdrop that fills the bars when a clip doesn't match the frame.
+      const blurBg = (src, w, h, look) => {
+        const cv = new OffscreenCanvas(w, h), cx = cv.getContext('2d');
+        return {
+          ready: src.ready, meta: src.meta,
+          async tick(t) {
+            const r = await src.tick(t);
+            if (!r || !r.video) return { state: (r && r.state) || 'success' };
+            const vw = r.video.displayWidth || r.video.codedWidth || w, vh = r.video.displayHeight || r.video.codedHeight || h;
+            const sc = Math.max(w / vw, h / vh), dw = vw * sc, dh = vh * sc;
+            cx.clearRect(0, 0, w, h); cx.filter = (look ? look + ' ' : '') + 'blur(26px)';
+            cx.drawImage(r.video, (w - dw) / 2, (h - dh) / 2, dw, dh); cx.filter = 'none';
+            if (r.video.close) r.video.close();
+            return { video: cv.transferToImageBitmap(), state: r.state || 'success' };
+          },
+          async split(t) { const [a, b] = await src.split(t); return [blurBg(a, w, h, look), blurBg(b, w, h, look)]; },
+          async clone() { return blurBg(await src.clone(), w, h, look); },
+          destroy() { if (src.destroy) src.destroy(); }
+        };
+      };
+
+      const needProc = !!lookCss || flipH || flipV || sbs;
+      const mainFit = (outFill === 'crop' || sbs) ? 'cover' : 'contain';
+      const useBlur = !sbs && outFill === 'blur';
+
+      // ── MAIN TRACK: trim each clip, lay them end to end ──
+      let offsetUs = 0;
+      for (const seg of exportClips) {
+        const s = sources.find((x) => x.id === seg.sourceId); if (!s) continue;
+        const inUs = Math.round(seg.start * 1e6);
+        const durUs = Math.max(1e5, Math.round((seg.end - seg.start) * 1e6));
+        if (useBlur) {
+          const { c: bgc } = await trimClip(s.file, inUs, durUs, false);
+          const bg = new OffscreenSprite(blurBg(bgc, W, H, lookCss));
+          bg.time = { offset: offsetUs, duration: durUs }; bg.zIndex = 0;
+          Object.assign(bg.rect, mainVP);
+          await com.addSprite(bg);
+        }
+        const { clip, c } = await trimClip(s.file, inUs, durUs, true);
+        const cw = (clip.meta && clip.meta.width) || s.w || W, ch = (clip.meta && clip.meta.height) || s.h || H;
+        const spr = new OffscreenSprite(needProc ? frameProc(c, mainVP.w, mainVP.h, mainFit, lookCss, flipH, flipV) : c);
+        spr.time = { offset: offsetUs, duration: durUs }; spr.zIndex = 1;
+        Object.assign(spr.rect, needProc ? mainVP : fitRect(cw, ch, mainVP, mainFit));
+        await com.addSprite(spr);
+        offsetUs += durUs;
+      }
+      const totalUs = offsetUs, total = totalUs / 1e6;
+
+      // ── SECOND VIDEO: PiP inset or side-by-side half ──
+      if (pip || sbs) {
+        const t2segs = [];
+        t2.forEach((s) => { const a = inOf(s), b = outOf(s); if (b > a + 0.05) t2segs.push({ s, start: a, end: b }); });
+        let t2off = 0;
+        for (const seg of t2segs) {
+          if (t2off >= totalUs) break;
+          const inUs = Math.round(seg.start * 1e6);
+          let durUs = Math.max(1e5, Math.round((seg.end - seg.start) * 1e6));
+          if (t2off + durUs > totalUs) durUs = totalUs - t2off;
+          const { clip, c } = await trimClip(seg.s.file, inUs, durUs, !pipMuted);
+          const tw = (clip.meta && clip.meta.width) || seg.s.w || 16, th = (clip.meta && clip.meta.height) || seg.s.h || 9;
+          let spr, rect;
+          if (pip) {
+            const pw = Math.max(2, Math.round(W * pipSize)), ph = Math.max(2, Math.round(pw * th / tw));
+            const px = Math.round(Math.max(0, Math.min(1 - pipSize, pipX)) * W);
+            const py = Math.round(Math.max(0, Math.min(0.98, pipY)) * H);
+            rect = { x: px, y: py, w: pw, h: ph };
+            spr = new OffscreenSprite(c); spr.zIndex = 40;
+          } else {
+            rect = t2VP;
+            spr = new OffscreenSprite(frameProc(c, t2VP.w, t2VP.h, 'cover', '', false, false)); spr.zIndex = 2;
+          }
+          spr.time = { offset: t2off, duration: durUs };
+          Object.assign(spr.rect, rect);
+          await com.addSprite(spr);
+          t2off += durUs;
+        }
+      }
+
+      // ── TEXT TITLES ──
+      for (const t of texts) {
+        const size = Math.max(8, Math.round(t.sizeFrac * H));
+        const probe = new OffscreenCanvas(8, 8).getContext('2d'); probe.font = size + 'px ' + FONTS_VS[t.font].css;
+        const lines = wrapTextPx(probe, t.content || ' ', W * 0.9);
+        const { bitmap, w, h } = renderTextBitmap(lines, FONTS_VS[t.font].css, size, t.color, !!t.bg);
+        const off = t.whole ? 0 : Math.max(0, Math.min(total, +t.start || 0));
+        const end = t.whole ? total : Math.min(total, Math.max(off, (+t.end || total)));
+        const dur = Math.max(0.05, (t.whole ? total : end - off));
+        const spr = new OffscreenSprite(new ImgClip(bitmap));
+        spr.time = { offset: Math.round(off * 1e6), duration: Math.round(dur * 1e6) }; spr.zIndex = 50;
+        Object.assign(spr.rect, { x: Math.round(t.cx * W - w / 2), y: Math.round(t.cy * H - h / 2), w, h });
+        await com.addSprite(spr);
+      }
+
+      // ── BURNED-IN CAPTIONS ──
+      if (captions.length) {
+        const capSize = Math.max(12, Math.round(capStyle.sizeFrac * Math.min(W, H)));
+        const probe = new OffscreenCanvas(8, 8).getContext('2d'); probe.font = capSize + 'px ' + FONTS_VS[capStyle.font].css;
+        for (const c of captions) {
+          const start = Math.max(0, Math.min(total, +c.start || 0));
+          const end = Math.max(start, Math.min(total, +c.end || total));
+          if (end - start < 0.03) continue;
+          const lines = wrapTextPx(probe, c.text || ' ', W * 0.9);
+          const { bitmap, w, h } = renderTextBitmap(lines, FONTS_VS[capStyle.font].css, capSize, capStyle.color, !!capStyle.bg);
+          const spr = new OffscreenSprite(new ImgClip(bitmap));
+          spr.time = { offset: Math.round(start * 1e6), duration: Math.round((end - start) * 1e6) }; spr.zIndex = 60;
+          Object.assign(spr.rect, { x: Math.round((W - w) / 2), y: Math.round(capStyle.cy * H - h / 2), w, h });
+          await com.addSprite(spr);
+        }
+      }
+
+      // ── VOICEOVER / MUSIC ──
+      if (audios.length) {
+        const ACtx = window.AudioContext || window.webkitAudioContext;
+        const actx = new ACtx();
+        for (const au of audios) {
+          let buf;
+          try { buf = await actx.decodeAudioData(await au.file.arrayBuffer()); }
+          catch (e) { console.warn('[VideoStudio] skipped undecodable audio', au.name, e); continue; }
+          const sr = buf.sampleRate;
+          const vol = Math.max(0, au.volume != null ? au.volume : 1);
+          const start = Math.max(0, Math.min(total, au.start || 0));
+          const loop = au.kind === 'music' && au.loop !== false;
+          const span = Math.max(0.05, total - start);
+          const outLen = Math.round(span * sr);
+          const nch = Math.max(1, Math.min(2, buf.numberOfChannels));
+          const chans = [];
+          for (let ch = 0; ch < nch; ch++) {
+            const data = buf.getChannelData(Math.min(ch, buf.numberOfChannels - 1));
+            const out = new Float32Array(outLen);
+            if (loop) { for (let i = 0; i < outLen; i++) out[i] = data[i % data.length] * vol; }
+            else { const n = Math.min(outLen, data.length); for (let i = 0; i < n; i++) out[i] = data[i] * vol; }
+            chans.push(out);
+          }
+          const aclip = new AudioClip(chans, { sampleRate: sr });
+          await aclip.ready;
+          const spr = new OffscreenSprite(aclip);
+          spr.time = { offset: Math.round(start * 1e6), duration: Math.round(span * 1e6) };
+          await com.addSprite(spr);
+        }
+        try { actx.close(); } catch (e) {}
+      }
+
+      // ── FADE IN / OUT (animated black overlay) ──
+      if ((fadeIn || fadeOut) && total > 0.1) {
+        const FADE_D = Math.min(0.6, Math.max(0.2, total / 4));
+        const fadeClip = (kind, dur) => {
+          const durU = dur * 1e6;
+          const cv = new OffscreenCanvas(W, H), cx = cv.getContext('2d');
+          return {
+            ready: Promise.resolve({ width: W, height: H, duration: durU }), meta: { width: W, height: H, duration: durU },
+            async tick(tUs) {
+              let a = kind === 'in' ? (1 - tUs / durU) : (tUs / durU); a = Math.min(1, Math.max(0, a));
+              cx.clearRect(0, 0, W, H);
+              if (a > 0.001) { cx.globalAlpha = a; cx.fillStyle = '#000'; cx.fillRect(0, 0, W, H); cx.globalAlpha = 1; }
+              return { video: cv.transferToImageBitmap(), state: tUs >= durU ? 'done' : 'success' };
+            },
+            async split() { return [fadeClip(kind, dur), fadeClip(kind, dur)]; },
+            async clone() { return fadeClip(kind, dur); }, destroy() {}
+          };
+        };
+        if (fadeIn) { const sp = new OffscreenSprite(fadeClip('in', FADE_D)); sp.time = { offset: 0, duration: FADE_D * 1e6 }; sp.zIndex = 90; Object.assign(sp.rect, full); await com.addSprite(sp); }
+        if (fadeOut) { const sp = new OffscreenSprite(fadeClip('out', FADE_D)); sp.time = { offset: Math.max(0, total - FADE_D) * 1e6, duration: FADE_D * 1e6 }; sp.zIndex = 90; Object.assign(sp.rect, full); await com.addSprite(sp); }
+      }
+
+      const reader = com.output().getReader();
+      const parts = []; let prog = 0;
+      while (true) { const { done, value } = await reader.read(); if (done) break; parts.push(value); prog = Math.min(0.95, prog + 0.04); updateProgress(prog); }
+      const blob = new Blob(parts, { type: 'video/mp4' });
+      if (!blob.size) throw new Error('empty output');
+      updateProgress(1);
+      triggerDownload(blob, 'riyo-video.mp4');
+      if (exportHeartbeat) { clearInterval(exportHeartbeat); exportHeartbeat = null; }
+      status(`Done! Saved to your downloads. (⚡ ${fmtTime((performance.now() - exportStart) / 1000)})`);
+      exportBtn.disabled = false; exporting = false;
+      setTimeout(() => { progressWrap.style.display = 'none'; }, 1500);
+      setTimeout(updateBanner, 2600);
+      return true;
+    } catch (e) {
+      console.warn('[VideoStudio] fast (WebAV) export failed — using the standard engine:', e);
+      if (exportHeartbeat) { clearInterval(exportHeartbeat); exportHeartbeat = null; }
+      exporting = false; exportBtn.disabled = false;
+      return false;
+    }
+  }
+
   exportBtn.addEventListener('click', async () => {
     if (editingTrack === 2) setEditingTrack(1);   // the main render is always Video 1
     const exportClips = [];
@@ -1741,6 +2067,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (b > a + 0.05) exportClips.push({ sourceId: s.id, start: a, end: b, speed: speedOf(s) });
     });
     if (!exportClips.length) { status('Nothing to export — add a clip first.'); return; }
+
+    // Try the hardware-accelerated fast path first; it returns false (and we fall
+    // through to the ffmpeg engine) for anything it doesn't yet handle.
+    if (webavEligible()) { if (await exportWebAV(exportClips)) return; }
 
     // atempo only spans 0.5–2.0, so chain it for speeds outside that range.
     const atempoChain = (speed) => {
