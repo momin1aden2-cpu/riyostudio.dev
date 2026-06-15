@@ -2338,40 +2338,38 @@ html.supernova body {
     gap: 1rem;
   }
   
-  .forge-sidebar {
-      display: flex;
-      flex-direction: row;
-      gap: 0.75rem;
-      padding: 0 0 10px 0;
+  /* Mobile: all tools visible at once in a compact grid (no horizontal swiping).
+     Selectors are scoped to .forge-dashboard to out-specify the desktop rules below. */
+  .forge-dashboard .forge-sidebar {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      flex-direction: unset;
+      gap: 8px;
+      padding: 0 0 4px 0;
       background: transparent;
       border: none;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-      -webkit-overflow-scrolling: touch;
+      position: static;
+      max-height: none;
+      overflow: visible;
+      backdrop-filter: none;
+      box-shadow: none;
     }
 
-    .forge-sidebar::-webkit-scrollbar {
-      height: 4px;
-    }
-    .forge-sidebar::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 4px;
-    }
-    
-    .forge-tab-btn {
-      flex: 0 0 auto;
-      width: 260px;
-      scroll-snap-align: start;
-      padding: 16px;
-      font-size: 1rem;
+    .forge-dashboard .forge-tab-btn {
+      width: auto;
+      padding: 11px 12px;
       background: rgba(10, 15, 25, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.06);
       border-radius: 12px;
+      gap: 0;
     }
-  
-  .forge-tab-btn.active {
-    border-color: rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.05);
+    .forge-dashboard .forge-tab-btn .btn-tagline { display: none; }
+    .forge-dashboard .forge-tab-btn .btn-title { font-size: 0.82rem; line-height: 1.25; }
+
+  .forge-dashboard .forge-tab-btn.active {
+    border-color: #10B981;
+    background: rgba(16, 185, 129, 0.12);
+    box-shadow: 0 4px 14px rgba(16,185,129,0.18);
   }
   
   .forge-sponsor-banner {

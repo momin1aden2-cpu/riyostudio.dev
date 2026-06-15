@@ -1303,18 +1303,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const forgeStage = document.querySelector('.forge-stage');
 
   function handleLayout() {
-    const isMobile = window.innerWidth <= 900;
-    const activeBtn = document.querySelector('.forge-tab-btn.active');
-    const targetId = activeBtn ? activeBtn.getAttribute('data-target') : null;
-    const activeView = targetId ? document.getElementById(targetId) : null;
-
-    if (isMobile && activeBtn && activeView) {
-      // Mobile Accordion: Move active view directly under the active button in the DOM
-      activeBtn.insertAdjacentElement('afterend', activeView);
-    } else if (!isMobile) {
-      // Desktop: Move all views back to forge-stage to preserve CSS Grid layout
-      toolViews.forEach(v => forgeStage.appendChild(v));
-    }
+    // Tool views always live in the stage (below the tool grid on mobile, beside it on
+    // desktop). The old mobile accordion injected the active view between the buttons,
+    // which buried the rest of the tools — so all tools now stay visible together.
+    if (forgeStage) toolViews.forEach(v => forgeStage.appendChild(v));
   }
 
   tabBtns.forEach(btn => {
