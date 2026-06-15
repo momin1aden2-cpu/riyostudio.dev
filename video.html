@@ -66,6 +66,7 @@
     .vs-tools::-webkit-scrollbar, .vs-stage::-webkit-scrollbar { width: 8px; }
     .vs-tools::-webkit-scrollbar-thumb, .vs-stage::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 8px; }
     #vs-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; display: block; transform-origin: center; }
+    #vs-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; z-index: 2; }
 
     .vs-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
     .vs-controls button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.12); color: #10B981; font-size: 1rem; cursor: pointer; flex-shrink: 0; }
@@ -376,14 +377,14 @@
 
       <!-- File picker lives OUTSIDE the dropzone so a programmatic .click() can't
            bubble back to the dropzone handler and wipe the insert target. -->
-      <input type="file" id="vs-file-input" accept="video/*" multiple hidden>
+      <input type="file" id="vs-file-input" accept="video/*,image/*" multiple hidden>
 
       <!-- Dropzone -->
       <div id="vs-dropzone" class="vs-dropzone">
         <div class="vs-dropzone-inner">
           <div style="font-size: 2.6rem;">🎬</div>
-          <h3>Drop video files here</h3>
-          <p>or click to browse · MP4, WebM, MOV · stays on your device</p>
+          <h3>Drop videos &amp; images here</h3>
+          <p>or click to browse · videos, screen recordings &amp; screenshots · stays on your device</p>
         </div>
       </div>
 
@@ -414,6 +415,7 @@
           <div class="vs-stage-wrap">
             <div class="vs-video-wrap" id="vs-video-wrap">
               <video id="vs-video" playsinline></video>
+              <img id="vs-image" alt="" style="display:none;">
               <video id="vs-ovl-video" playsinline muted style="display:none;"></video>
               <div class="vs-overlay" id="vs-overlay"></div>
             </div>
@@ -457,17 +459,34 @@
 
             <!-- TRIM panel -->
             <div id="vs-trim-panel" class="vs-mode" style="display:none;">
-              <div class="vs-bar-head">
-                <span>Drag the <b style="color:#34D399;">green edges</b> inwards to keep only the part you want</span>
-                <span id="vs-trim-sub" class="vs-trim-sub"></span>
+              <!-- VIDEO clip: drag the green edges to trim -->
+              <div id="vs-trim-video">
+                <div class="vs-bar-head">
+                  <span>Drag the <b style="color:#34D399;">green edges</b> inwards to keep only the part you want</span>
+                  <span id="vs-trim-sub" class="vs-trim-sub"></span>
+                </div>
+                <div id="vs-track" class="vs-track">
+                  <div id="vs-dim-l" class="vs-dim"></div>
+                  <div id="vs-dim-r" class="vs-dim"></div>
+                  <div id="vs-keep" class="vs-keepwin"></div>
+                  <div id="vs-handle-l" class="vs-handle"></div>
+                  <div id="vs-handle-r" class="vs-handle"></div>
+                  <div id="vs-playhead" class="vs-playhead"></div>
+                </div>
               </div>
-              <div id="vs-track" class="vs-track">
-                <div id="vs-dim-l" class="vs-dim"></div>
-                <div id="vs-dim-r" class="vs-dim"></div>
-                <div id="vs-keep" class="vs-keepwin"></div>
-                <div id="vs-handle-l" class="vs-handle"></div>
-                <div id="vs-handle-r" class="vs-handle"></div>
-                <div id="vs-playhead" class="vs-playhead"></div>
+              <!-- IMAGE clip: choose how long it shows -->
+              <div id="vs-trim-image" style="display:none;">
+                <div class="vs-bar-head"><span>⏱️ How long should this image show?</span></div>
+                <label class="vs-field" style="margin-top:12px;">
+                  <input type="range" id="vs-img-dur" min="0.5" max="15" step="0.5" value="3">
+                  <span id="vs-img-dur-val" style="min-width:46px;text-align:right;color:#fff;font-variant-numeric:tabular-nums;">3.0s</span>
+                </label>
+                <div class="vs-pos-btns" style="margin-top:8px;">
+                  <button class="vs-mini" data-imgdur="2">2s</button>
+                  <button class="vs-mini" data-imgdur="3">3s</button>
+                  <button class="vs-mini" data-imgdur="5">5s</button>
+                  <button class="vs-mini" data-imgdur="8">8s</button>
+                </div>
               </div>
               <div class="vs-clip-tools">
                 <button id="vs-reset-trim" class="vs-tool" title="Keep the whole clip again">↺ Use full clip</button>
@@ -851,6 +870,6 @@
 
   <script src="bg.js?v=18"></script>
   <script src="script.js?v=24"></script>
-  <script src="video.js?v=52"></script>
+  <script src="video.js?v=53"></script>
 </body>
 </html>

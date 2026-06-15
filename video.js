@@ -129,8 +129,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const scrubEl = document.getElementById('vs-scrub');
   const scrubFill = document.getElementById('vs-scrub-fill');
   const tabBtns = document.querySelectorAll('.vs-tab[data-mode]');
+  const imgEl = document.getElementById('vs-image');
+  const trimVideoBox = document.getElementById('vs-trim-video');
+  const trimImageBox = document.getElementById('vs-trim-image');
+  const imgDurInput = document.getElementById('vs-img-dur');
+  const imgDurVal = document.getElementById('vs-img-dur-val');
+  const imgDurBtns = document.querySelectorAll('[data-imgdur]');
 
   if (!dropzone) return;
+
+  // Images / screenshots can be added as clips that show for a set time.
+  const IMG_DEFAULT = 3;     // default seconds an image shows
+  const IMG_MAX = 15;        // longest a single image can show
+  const isImage = (s) => !!(s && s.kind === 'image');
+  // A virtual clock drives playback through image clips (they have no <video> time).
+  let imgLocal = 0, imgRAF = null, imgStartPerf = 0, imgStartLocal = 0;
 
   // Quality = the short side; the aspect ratio decides the other dimension. Kept
   // modest because the single-threaded WASM encoder is slow at 1080p.
@@ -315,14 +328,28 @@ document.addEventListener('DOMContentLoaded', () => {
     captureThumb(clip.url, time).then((t) => { if (t) { clip.thumb = t; renderAll(); } });
   }
 
+  function getImageMeta(url) {
+    return new Promise((resolve) => {
+      const im = new Image();
+      im.onload = () => resolve({ w: im.naturalWidth || 1280, h: im.naturalHeight || 720 });
+      im.onerror = () => resolve({ w: 1280, h: 720 });
+      im.src = url;
+    });
+  }
+
   async function addFiles(fileList) {
-    const files = Array.from(fileList).filter((f) => f.type.startsWith('video/'));
+    const files = Array.from(fileList).filter((f) => f.type.startsWith('video/') || f.type.startsWith('image/'));
     if (!files.length) { pendingInsert = null; return; }
     const added = [];
     for (const file of files) {
       const url = URL.createObjectURL(file);
-      const meta = await getMeta(url);
-      added.push({ id: ++uid, fileKey: 'f' + (++fileSeq), file, url, name: file.name, duration: meta.duration, w: meta.w, h: meta.h, thumb: meta.thumb, in: 0, out: meta.duration });
+      if (file.type.startsWith('image/')) {
+        const m = await getImageMeta(url);
+        added.push({ id: ++uid, kind: 'image', fileKey: 'f' + (++fileSeq), file, url, name: file.name, duration: IMG_MAX, w: m.w, h: m.h, thumb: url, in: 0, out: IMG_DEFAULT, speed: 1 });
+      } else {
+        const meta = await getMeta(url);
+        added.push({ id: ++uid, fileKey: 'f' + (++fileSeq), file, url, name: file.name, duration: meta.duration, w: meta.w, h: meta.h, thumb: meta.thumb, in: 0, out: meta.duration });
+      }
     }
 
     // Where do the new clips go? "Insert" records a spot inside a clip; split it there.
@@ -355,11 +382,64 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ── Selecting / positioning ───────────────────────────────────────
-  // Load a clip into the <video> and play it (used for whole-video playback).
+  // Show the right media element for a clip — the <video> or the <img>.
+  function showMedia(s) {
+    if (!imgEl || !video) return;
+    if (isImage(s)) {
+      if (imgEl.getAttribute('src') !== s.url) imgEl.src = s.url;
+      imgEl.style.display = 'block';
+      imgEl.style.objectFit = (outFill === 'crop') ? 'cover' : 'contain';
+      video.style.display = 'none';
+      if (!video.paused) video.pause();
+    } else {
+      imgEl.style.display = 'none';
+      video.style.display = '';
+    }
+  }
+
+  function stopImgClock() { if (imgRAF) { cancelAnimationFrame(imgRAF); imgRAF = null; } }
+
+  // Virtual playback clock for image clips (no native <video> time to follow).
+  function startImgClock() {
+    stopImgClock();
+    imgStartPerf = performance.now();
+    imgStartLocal = imgLocal;
+    previewPlaying = true;
+    if (playBtn) playBtn.textContent = '❚❚';
+    const tick = () => {
+      const s = activeSource();
+      if (!s || !isImage(s)) { imgRAF = null; return; }
+      imgLocal = imgStartLocal + (performance.now() - imgStartPerf) / 1000;
+      const dur = keptDuration(s);
+      if (imgLocal >= dur - 0.001) {
+        const next = nextClipId();
+        if (next != null) { stopImgClock(); gotoClip(next, true); return; }
+        imgLocal = dur; stopImgClock();
+        previewPlaying = false; if (playBtn) playBtn.textContent = '▶';
+        pauseAudioPreview(); updatePlayhead();
+        return;
+      }
+      updatePlayhead();
+      imgRAF = requestAnimationFrame(tick);
+    };
+    imgRAF = requestAnimationFrame(tick);
+  }
+
+  // Load a clip into the player and play it (used for whole-video playback).
   function gotoClip(id, autoplay) {
     activeId = id;
     const s = activeSource();
     if (!s) return;
+    stopImgClock();
+    if (isImage(s)) {
+      showMedia(s);
+      imgLocal = 0;
+      if (autoplay) startImgClock();
+      else { previewPlaying = false; if (playBtn) playBtn.textContent = '▶'; }
+      renderAll();
+      return;
+    }
+    showMedia(s);
     const start = () => {
       video.playbackRate = speedOf(s);
       try { video.currentTime = inOf(s); } catch (e) { /* not seekable yet */ }
@@ -379,14 +459,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const at = clipAtGlobal(dropGlobal);
     if (at) {
       const s = at.clip;
-      const ft = inOf(s) + at.local * speedOf(s);
-      if (video.src !== s.url) { video.pause(); video.src = s.url; }
       activeId = s.id;
-      if (seek) {
-        const apply = () => { try { video.currentTime = ft; } catch (e) { /* not seekable yet */ } };
-        if (video.readyState >= 1 && video.src === s.url) apply();
-        else video.addEventListener('loadedmetadata', apply, { once: true });
-        video.pause();
+      stopImgClock();
+      if (isImage(s)) {
+        showMedia(s); imgLocal = at.local;
+      } else {
+        showMedia(s);
+        const ft = inOf(s) + at.local * speedOf(s);
+        if (video.src !== s.url) { video.pause(); video.src = s.url; }
+        if (seek) {
+          const apply = () => { try { video.currentTime = ft; } catch (e) { /* not seekable yet */ } };
+          if (video.readyState >= 1 && video.src === s.url) apply();
+          else video.addEventListener('loadedmetadata', apply, { once: true });
+          video.pause();
+        }
       }
     }
     renderAll();
@@ -511,12 +597,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateBanner() {
     if (!banner || exporting) return;
-    if (!sources.length) { banner.innerHTML = 'Add a video to get started.'; return; }
+    if (!sources.length) { banner.innerHTML = 'Add a video or image to get started.'; return; }
     if (mode === 'trim') {
       const n = Math.max(1, sources.findIndex((x) => x.id === activeId) + 1);
       banner.innerHTML = `✂️ <b>Shortening clip ${n}.</b> Drag the <b style="color:#34D399;">green edges</b> in to keep only the part you want (dimmed = removed). Tap another clip below to shorten that one instead.`;
     } else if (mode === 'add') {
-      banner.innerHTML = '➕ <b>Add a video.</b> ① Drag the amber <b style="color:#FBBF24;">⬇</b> marker to the spot. ② Tap <b>“Choose video to add”</b> — it drops in right there.';
+      banner.innerHTML = '➕ <b>Add a video or image.</b> Mix camera clips, screen recordings &amp; screenshots into one video. ① Drag the amber <b style="color:#FBBF24;">⬇</b> marker to the spot. ② Tap <b>“Add video or image”</b> — it drops in right there (set how long an image shows under ✂️ Trim).';
     } else if (mode === 'cut') {
       banner.innerHTML = '🗑️ <b>Remove a section.</b> Drag the <b style="color:#f87171;">red edges</b> to mark the section to remove (e.g. 1:10 → 1:50), then <b>Remove</b> it (the rest joins up) or <b>Replace</b> it with another video.';
     } else if (mode === 'audio') {
@@ -539,8 +625,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function previewGlobal(g) {
     const at = clipAtGlobal(g);
     if (!at) return;
-    const s = at.clip, ft = inOf(s) + at.local * speedOf(s);
-    if (activeId !== s.id) { activeId = s.id; if (video.src !== s.url) video.src = s.url; }
+    const s = at.clip;
+    if (isImage(s)) { stopImgClock(); activeId = s.id; showMedia(s); imgLocal = at.local; return; }
+    const ft = inOf(s) + at.local * speedOf(s);
+    if (activeId !== s.id) { activeId = s.id; showMedia(s); if (video.src !== s.url) video.src = s.url; }
     const apply = () => { try { video.currentTime = ft; } catch (e) { /* ignore */ } };
     if (video.readyState >= 1 && video.src === s.url) apply();
     else video.addEventListener('loadedmetadata', apply, { once: true });
@@ -579,7 +667,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateInsertLabel() {
     if (!insertBtn) return;
-    insertBtn.textContent = sources.length ? `② 📁 Choose video to add at ${fmtTime(dropGlobal)}` : '📁 Choose a video';
+    insertBtn.textContent = sources.length ? `② 📁 Add video or image at ${fmtTime(dropGlobal)}` : '📁 Choose a video or image';
   }
 
   // The amber marker always sits where the preview is "looking" — scrub or play,
@@ -589,14 +677,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const T = totalDur() || 1;
     if (!s) { if (timeLabel) timeLabel.textContent = '0:00 / 0:00'; if (dropTag) dropTag.textContent = '⬇'; return; }
     const idx = sources.findIndex((x) => x.id === s.id);
-    if (video.playbackRate !== speedOf(s)) video.playbackRate = speedOf(s);
-    const local = Math.max(0, Math.min(keptDuration(s), (video.currentTime - inOf(s)) / speedOf(s)));
+    const img = isImage(s);
+    if (!img && video.playbackRate !== speedOf(s)) video.playbackRate = speedOf(s);
+    const local = img
+      ? Math.max(0, Math.min(keptDuration(s), imgLocal))
+      : Math.max(0, Math.min(keptDuration(s), (video.currentTime - inOf(s)) / speedOf(s)));
     const g = globalStartOf(idx) + local;
     dropGlobal = g;
     if (dropEl) dropEl.style.left = (g / T * 100) + '%';
     if (dropTag) dropTag.textContent = '⬇ ' + fmtTime(g);
     if (scrubFill) scrubFill.style.width = (g / T * 100) + '%';
-    if (s.duration && playhead) playhead.style.left = clamp01(video.currentTime / s.duration) * 100 + '%';
+    if (playhead) playhead.style.left = clamp01(img ? (local / Math.max(0.1, keptDuration(s))) : (video.currentTime / (s.duration || 1))) * 100 + '%';
     if (timeLabel) timeLabel.textContent = `${fmtTime(g)} / ${fmtTime(T)}`;
     updateInsertLabel();
     if (audios.length) syncAudioPreview(g);
@@ -624,6 +715,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // Per-clip trim bar: full footage of the selected clip; green = the part you keep.
   function renderTrim() {
     const s = activeSource();
+    // Images use a "show for N seconds" control; videos use the green-edge trim bar.
+    const img = isImage(s);
+    if (trimVideoBox) trimVideoBox.style.display = img ? 'none' : '';
+    if (trimImageBox) trimImageBox.style.display = img ? '' : 'none';
+    if (img) {
+      const dur = keptDuration(s);
+      if (imgDurInput) imgDurInput.value = Math.max(0.5, Math.min(IMG_MAX, dur));
+      if (imgDurVal) imgDurVal.textContent = dur.toFixed(1) + 's';
+      imgDurBtns.forEach((b) => b.classList.toggle('active', Math.abs(parseFloat(b.dataset.imgdur) - dur) < 0.01));
+      return;
+    }
     if (!s || !s.duration) { if (trimSub) trimSub.textContent = ''; return; }
     const d = s.duration;
     const pi = inOf(s) / d * 100, po = outOf(s) / d * 100;
@@ -633,6 +735,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (handleLEl) handleLEl.style.left = pi + '%';
     if (handleREl) handleREl.style.left = po + '%';
     if (trimSub) trimSub.textContent = `keeping ${fmtTime(winLen(s))} of ${fmtTime(d)}`;
+  }
+
+  // Set how long the active image clip shows.
+  function setImageDuration(sec) {
+    const s = activeSource();
+    if (!isImage(s)) return;
+    s.out = Math.max(0.5, Math.min(IMG_MAX, sec));
+    renderAll();
   }
 
   // ── Storyboard (reorder + remove + tap-to-select) ─────────────────
@@ -647,6 +757,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (s.thumb) card.style.backgroundImage = `url("${s.thumb}")`;
       const grad = document.createElement('div'); grad.className = 'vs-card-grad'; card.appendChild(grad);
       const num = document.createElement('div'); num.className = 'vs-card-num'; num.textContent = idx + 1; card.appendChild(num);
+      if (isImage(s)) { const ib = document.createElement('div'); ib.className = 'vs-card-num'; ib.style.left = 'auto'; ib.style.right = '6px'; ib.textContent = '🖼️'; card.appendChild(ib); }
       const dur = document.createElement('div'); dur.className = 'vs-card-dur'; dur.textContent = fmtTime(keptDuration(s)); card.appendChild(dur);
       const x = document.createElement('button'); x.className = 'vs-card-x'; x.innerHTML = '✕'; x.title = 'Remove clip';
       x.addEventListener('click', (e) => { e.stopPropagation(); removeSource(s.id); });
@@ -774,6 +885,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function resetTrim() {
     const s = activeSource();
     if (!s) return;
+    if (isImage(s)) { s.in = 0; s.out = IMG_DEFAULT; renderAll(); return; }
     s.in = 0; s.out = s.duration;
     renderAll();
   }
@@ -1416,6 +1528,11 @@ document.addEventListener('DOMContentLoaded', () => {
   playBtn.addEventListener('click', () => {
     const s = activeSource();
     if (!s) return;
+    if (isImage(s)) {
+      if (imgRAF) { stopImgClock(); previewPlaying = false; playBtn.textContent = '▶'; pauseAudioPreview(); }
+      else { if (imgLocal >= keptDuration(s) - 0.03) imgLocal = 0; startImgClock(); }
+      return;
+    }
     if (video.paused) {
       if (video.currentTime < inOf(s) || video.currentTime >= outOf(s) - 0.03) video.currentTime = inOf(s);
       video.play();
@@ -1436,7 +1553,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (scrubFill) scrubFill.style.width = (frac * 100) + '%';
       previewGlobal(frac * T);
     };
-    scrubEl.addEventListener('pointerdown', (e) => { scrubbing = true; try { scrubEl.setPointerCapture(e.pointerId); } catch (_) {} if (!video.paused) video.pause(); scrubTo(e.clientX); });
+    scrubEl.addEventListener('pointerdown', (e) => { scrubbing = true; try { scrubEl.setPointerCapture(e.pointerId); } catch (_) {} stopImgClock(); previewPlaying = false; if (playBtn) playBtn.textContent = '▶'; if (!video.paused) video.pause(); scrubTo(e.clientX); });
     scrubEl.addEventListener('pointermove', (e) => { if (scrubbing) scrubTo(e.clientX); });
     const endScrub = (e) => { scrubbing = false; try { scrubEl.releasePointerCapture(e.pointerId); } catch (_) {} };
     scrubEl.addEventListener('pointerup', endScrub);
@@ -1513,6 +1630,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (splitBtn) splitBtn.addEventListener('click', splitActive);
   if (resetTrimBtn) resetTrimBtn.addEventListener('click', resetTrim);
   if (removeClipBtn) removeClipBtn.addEventListener('click', () => { if (activeId != null) removeSource(activeId); });
+  if (imgDurInput) imgDurInput.addEventListener('input', () => setImageDuration(parseFloat(imgDurInput.value)));
+  imgDurBtns.forEach((b) => b.addEventListener('click', () => setImageDuration(parseFloat(b.dataset.imgdur))));
 
   // Tool tabs
   if (actAdd) actAdd.addEventListener('click', () => setMode('add'));
@@ -1877,7 +1996,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sources.some((s) => (s.speed || 1) !== 1) || t2.some((s) => (s.speed || 1) !== 1)) return false;
     if (duckMusic && audios.some((a) => a.kind === 'music')) return false;
     const vids = sources.concat(t2);
-    return vids.every((s) => /(mp4|m4v|mov|quicktime)/i.test(((s.file && s.file.type) || '') + ' ' + (s.name || '')));
+    return vids.every((s) => isImage(s) || /(mp4|m4v|mov|quicktime)/i.test(((s.file && s.file.type) || '') + ' ' + (s.name || '')));
   }
 
   async function loadWebAV() {
@@ -1972,6 +2091,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return { clip, c };
       };
 
+      // A still image as a clip — decoded once, shown for its set duration, no audio.
+      const imgClip = async (s) => { const c = new ImgClip(await createImageBitmap(s.file)); await c.ready; return c; };
+
       const fitRect = (cw, ch, vp, mode) => {
         const sc = mode === 'cover' ? Math.max(vp.w / cw, vp.h / ch) : Math.min(vp.w / cw, vp.h / ch);
         const dw = Math.round(cw * sc), dh = Math.round(ch * sc);
@@ -1989,8 +2111,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const r = await src.tick(t);
             if (!r) return { state: 'success' };
             if (!r.video) return { audio: r.audio, state: r.state || 'success' };
-            const vw = r.video.displayWidth || r.video.codedWidth || ow;
-            const vh = r.video.displayHeight || r.video.codedHeight || oh;
+            const vw = r.video.displayWidth || r.video.codedWidth || r.video.width || ow;
+            const vh = r.video.displayHeight || r.video.codedHeight || r.video.height || oh;
             const sc = fit === 'cover' ? Math.max(ow / vw, oh / vh) : Math.min(ow / vw, oh / vh);
             const dw = vw * sc, dh = vh * sc;
             cx.clearRect(0, 0, ow, oh); cx.save(); cx.filter = look || 'none';
@@ -2013,7 +2135,7 @@ document.addEventListener('DOMContentLoaded', () => {
           async tick(t) {
             const r = await src.tick(t);
             if (!r || !r.video) return { state: (r && r.state) || 'success' };
-            const vw = r.video.displayWidth || r.video.codedWidth || w, vh = r.video.displayHeight || r.video.codedHeight || h;
+            const vw = r.video.displayWidth || r.video.codedWidth || r.video.width || w, vh = r.video.displayHeight || r.video.codedHeight || r.video.height || h;
             const sc = Math.max(w / vw, h / vh), dw = vw * sc, dh = vh * sc;
             cx.clearRect(0, 0, w, h); cx.filter = (look ? look + ' ' : '') + 'blur(26px)';
             cx.drawImage(r.video, (w - dw) / 2, (h - dh) / 2, dw, dh); cx.filter = 'none';
@@ -2040,15 +2162,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const s = sources.find((x) => x.id === seg.sourceId); if (!s) continue;
         const inUs = Math.round(seg.start * 1e6);
         const durUs = Math.max(1e5, Math.round((seg.end - seg.start) * 1e6));
+        const image = isImage(s);
         if (useBlur) {
-          const { c: bgc } = await trimClip(s.file, inUs, durUs, false);
+          const bgc = image ? await imgClip(s) : (await trimClip(s.file, inUs, durUs, false)).c;
           const bg = new OffscreenSprite(blurBg(bgc, W, H, lookCss));
           bg.time = { offset: offsetUs, duration: durUs }; bg.zIndex = 0;
           Object.assign(bg.rect, mainVP);
           await com.addSprite(bg);
         }
-        const { clip, c } = await trimClip(s.file, inUs, durUs, mainAudioOn);
-        const cw = (clip.meta && clip.meta.width) || s.w || W, ch = (clip.meta && clip.meta.height) || s.h || H;
+        let c, cw, ch;
+        if (image) { c = await imgClip(s); cw = (c.meta && c.meta.width) || s.w || W; ch = (c.meta && c.meta.height) || s.h || H; }
+        else { const r = await trimClip(s.file, inUs, durUs, mainAudioOn); c = r.c; cw = (r.clip.meta && r.clip.meta.width) || s.w || W; ch = (r.clip.meta && r.clip.meta.height) || s.h || H; }
         const spr = new OffscreenSprite(needProc ? frameProc(c, mainVP.w, mainVP.h, mainFit, lookCss, flipH, flipV) : c);
         spr.time = { offset: offsetUs, duration: durUs }; spr.zIndex = 1;
         Object.assign(spr.rect, needProc ? mainVP : fitRect(cw, ch, mainVP, mainFit));
@@ -2264,6 +2388,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const capLineH = Math.round(capSize * 1.18);
     captions.forEach((c) => { c._lines = wrapToLines(c.text || '', capMaxChars); });
 
+    const imgExtOf = (s) => { const t = (s.file && s.file.type) || ''; if (/png/.test(t)) return 'png'; if (/webp/.test(t)) return 'webp'; if (/gif/.test(t)) return 'gif'; const m = (s.name || '').toLowerCase().match(/\.(png|jpe?g|webp|gif|bmp)$/); return m ? m[1] : 'jpg'; };
     const fileKeyToIndex = {};
     const inputs = [];
     exportClips.forEach((seg) => {
@@ -2271,7 +2396,8 @@ document.addEventListener('DOMContentLoaded', () => {
       seg._fk = src.fileKey;
       if (!(src.fileKey in fileKeyToIndex)) {
         fileKeyToIndex[src.fileKey] = inputs.length;
-        inputs.push({ fileKey: src.fileKey, name: `in_${src.fileKey}.${ext(src.name)}`, file: src.file });
+        const im = isImage(src);
+        inputs.push({ fileKey: src.fileKey, name: `in_${src.fileKey}.${im ? imgExtOf(src) : ext(src.name)}`, file: src.file, isImage: im, imgDur: im ? Math.max(0.5, keptDuration(src)) : 0 });
       }
     });
 
@@ -2412,6 +2538,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function probeAudio(ff) {
       for (let i = 0; i < inputs.length; i++) {
         const inp = inputs[i];
+        if (inp.isImage) { inp.hasAudio = false; continue; }   // still images never have audio
         const probeOut = `probe_${i}.m4a`;
         let has = false;
         ffLogs = [];
@@ -2490,7 +2617,10 @@ document.addEventListener('DOMContentLoaded', () => {
       let graphStr = g.graph;
       let vOut = g.vOut;
       const args = [];
-      inputs.forEach((inp) => args.push('-i', inp.name));
+      inputs.forEach((inp) => {
+        if (inp.isImage) args.push('-loop', '1', '-framerate', '30', '-t', (inp.imgDur + 0.2).toFixed(2));
+        args.push('-i', inp.name);
+      });
       overlayAudios.forEach((au) => {
         if (au.kind === 'music' && au.loop) args.push('-stream_loop', '-1');
         args.push('-i', au._fsName);
