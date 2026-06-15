@@ -452,9 +452,21 @@
                 <div id="vs-drop" class="vs-drop"><span id="vs-drop-tag" class="vs-drop-tag">⬇</span></div>
               </div>
               <div class="vs-clip-tools">
-                <button id="vs-insert-btn" class="vs-tool primary" title="Pick a video to drop in at the amber marker">② 📁 Choose video to add</button>
+                <button id="vs-insert-btn" class="vs-tool primary" title="Pick a video or image to drop in at the amber marker">② 📁 Choose video to add</button>
                 <button id="vs-split-btn" class="vs-tool" title="Split into two at the amber marker (no new video)">✂️ Just split here</button>
               </div>
+              <div class="vs-bar-head" style="margin-top:16px;"><span>🅰️ Or add a title card</span></div>
+              <textarea id="vs-card-text" rows="2" placeholder="e.g. ShiftCore — Isolation Lock Demo" style="width:100%;box-sizing:border-box;margin-top:10px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);color:#e7eef5;border-radius:9px;padding:9px 11px;font:inherit;font-size:0.85rem;outline:none;resize:vertical;"></textarea>
+              <div class="vs-pos-btns" id="vs-card-colors" style="margin-top:8px;">
+                <button class="vs-swatch active" data-cardbg="#0B1220" style="background:#0B1220;" title="Midnight"></button>
+                <button class="vs-swatch" data-cardbg="#10B981" style="background:#10B981;" title="Emerald"></button>
+                <button class="vs-swatch" data-cardbg="#000000" style="background:#000000;" title="Black"></button>
+                <button class="vs-swatch" data-cardbg="#ffffff" style="background:#ffffff;" title="White"></button>
+                <button class="vs-swatch" data-cardbg="#7c3aed" style="background:#7c3aed;" title="Violet"></button>
+                <button class="vs-swatch" data-cardbg="#f43f5e" style="background:#f43f5e;" title="Rose"></button>
+                <button class="vs-swatch" data-cardbg="#2563eb" style="background:#2563eb;" title="Blue"></button>
+              </div>
+              <button id="vs-card-add" class="vs-tool primary" style="margin-top:10px;">＋ Add title card</button>
             </div>
 
             <!-- TRIM panel -->
@@ -486,6 +498,12 @@
                   <button class="vs-mini" data-imgdur="3">3s</button>
                   <button class="vs-mini" data-imgdur="5">5s</button>
                   <button class="vs-mini" data-imgdur="8">8s</button>
+                </div>
+                <div class="vs-bar-head" style="margin-top:12px;"><span>↻ Rotate &amp; flip</span></div>
+                <div class="vs-pos-btns">
+                  <button class="vs-mini" id="vs-img-rot-l" title="Rotate left">↺ 90°</button>
+                  <button class="vs-mini" id="vs-img-rot-r" title="Rotate right">↻ 90°</button>
+                  <button class="vs-mini" id="vs-img-flip" title="Mirror">🔁 Flip</button>
                 </div>
               </div>
               <div class="vs-clip-tools">
@@ -870,6 +888,6 @@
 
   <script src="bg.js?v=18"></script>
   <script src="script.js?v=24"></script>
-  <script src="video.js?v=53"></script>
+  <script src="video.js?v=54"></script>
 </body>
 </html>

@@ -135,6 +135,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const imgDurInput = document.getElementById('vs-img-dur');
   const imgDurVal = document.getElementById('vs-img-dur-val');
   const imgDurBtns = document.querySelectorAll('[data-imgdur]');
+  const imgRotLBtn = document.getElementById('vs-img-rot-l');
+  const imgRotRBtn = document.getElementById('vs-img-rot-r');
+  const imgFlipBtn = document.getElementById('vs-img-flip');
+  const cardTextEl = document.getElementById('vs-card-text');
+  const cardAddBtn = document.getElementById('vs-card-add');
+  const cardColorBtns = document.querySelectorAll('[data-cardbg]');
+  let cardBg = '#0B1220';
 
   if (!dropzone) return;
 
@@ -693,6 +700,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (audios.length) syncAudioPreview(g);
     renderCaptionPreview(g);
     syncOverlayPreview(g);
+    updateTextVisibility();
   }
 
   // Global timeline: one proportional block per clip + the amber marker.
@@ -743,6 +751,65 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isImage(s)) return;
     s.out = Math.max(0.5, Math.min(IMG_MAX, sec));
     renderAll();
+  }
+
+  // Rotate / flip an image clip by re-rendering it — baked in, so it shows the same
+  // in the preview and the export with no special-case rotate logic anywhere else.
+  async function transformImageClip(kind) {   // 'l' | 'r' | 'flip'
+    const s = activeSource();
+    if (!isImage(s)) return;
+    try {
+      const bmp = await createImageBitmap(s.file);
+      const w = bmp.width, h = bmp.height;
+      const cv = document.createElement('canvas');
+      const cx = cv.getContext('2d');
+      if (kind === 'flip') {
+        cv.width = w; cv.height = h;
+        cx.translate(w, 0); cx.scale(-1, 1); cx.drawImage(bmp, 0, 0);
+      } else {
+        cv.width = h; cv.height = w;   // 90° swaps the dimensions
+        cx.translate(h / 2, w / 2);
+        cx.rotate((kind === 'r' ? 1 : -1) * Math.PI / 2);
+        cx.drawImage(bmp, -w / 2, -h / 2);
+      }
+      if (bmp.close) bmp.close();
+      const blob = await new Promise((res) => cv.toBlob(res, 'image/png'));
+      if (!blob) return;
+      const base = (s.name || 'image').replace(/\.[^.]+$/, '');
+      const old = s.url;
+      s.file = new File([blob], base + '.png', { type: 'image/png' });
+      s.url = URL.createObjectURL(blob);
+      s.thumb = s.url; s.w = cv.width; s.h = cv.height;
+      if (imgEl && imgEl.getAttribute('src') === old) imgEl.src = s.url;
+      renderAll();
+    } catch (e) { console.warn('[VideoStudio] image transform failed', e); }
+  }
+
+  const isLightColor = (hex) => {
+    const c = (hex || '#000').replace('#', '');
+    const r = parseInt(c.substr(0, 2), 16), g = parseInt(c.substr(2, 2), 16), b = parseInt(c.substr(4, 2), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) > 160;
+  };
+
+  // A title / section card = big text on a colour, added to the timeline as an image clip.
+  async function addTitleCard() {
+    const text = ((cardTextEl && cardTextEl.value) || '').trim() || 'Title';
+    const { W, H } = computeWH(outAspect, 720);
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const cx = cv.getContext('2d');
+    cx.fillStyle = cardBg; cx.fillRect(0, 0, W, H);
+    try { await ensureVSFonts(); } catch (e) { /* fonts optional */ }
+    const size = Math.round(Math.min(W, H) * 0.1);
+    cx.font = `${size}px 'VS Anton', sans-serif`;
+    cx.textAlign = 'center'; cx.textBaseline = 'middle';
+    cx.fillStyle = isLightColor(cardBg) ? '#0B1220' : '#ffffff';
+    const lines = wrapTextPx(cx, text, W * 0.84);
+    const lh = size * 1.22, y0 = H / 2 - (lines.length - 1) / 2 * lh;
+    lines.forEach((ln, i) => cx.fillText(ln, W / 2, y0 + i * lh));
+    const blob = await new Promise((res) => cv.toBlob(res, 'image/png'));
+    if (!blob) return;
+    await addFiles([new File([blob], 'title-card.png', { type: 'image/png' })]);
+    if (cardTextEl) cardTextEl.value = '';
   }
 
   // ── Storyboard (reorder + remove + tap-to-select) ─────────────────
@@ -1632,6 +1699,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (removeClipBtn) removeClipBtn.addEventListener('click', () => { if (activeId != null) removeSource(activeId); });
   if (imgDurInput) imgDurInput.addEventListener('input', () => setImageDuration(parseFloat(imgDurInput.value)));
   imgDurBtns.forEach((b) => b.addEventListener('click', () => setImageDuration(parseFloat(b.dataset.imgdur))));
+  if (imgRotLBtn) imgRotLBtn.addEventListener('click', () => transformImageClip('l'));
+  if (imgRotRBtn) imgRotRBtn.addEventListener('click', () => transformImageClip('r'));
+  if (imgFlipBtn) imgFlipBtn.addEventListener('click', () => transformImageClip('flip'));
+  cardColorBtns.forEach((b) => b.addEventListener('click', () => { cardBg = b.dataset.cardbg; cardColorBtns.forEach((x) => x.classList.remove('active')); b.classList.add('active'); }));
+  if (cardAddBtn) cardAddBtn.addEventListener('click', addTitleCard);
 
   // Tool tabs
   if (actAdd) actAdd.addEventListener('click', () => setMode('add'));
@@ -1805,7 +1877,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateTextVisibility() {
-    const now = video.currentTime || 0;
+    const now = dropGlobal || 0;   // whole-video time, so timing is consistent across clips (and over images)
     texts.forEach((t) => {
       if (!t._el) return;
       t._el.style.display = (t.whole || (now >= t.start && now <= (t.end || 1e9))) ? '' : 'none';
@@ -1856,12 +1928,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (tWhole) tWhole.addEventListener('change', () => {
     updateSelected((t) => {
       t.whole = tWhole.checked;
-      if (!t.whole && !t.end) { t.start = video.currentTime; const d = activeSource() ? activeSource().duration : t.start + 3; t.end = Math.min(d, t.start + 3); }
+      if (!t.whole && !t.end) { t.start = dropGlobal; t.end = Math.min(totalDur(), dropGlobal + 3); }
     });
     syncEditor();
   });
-  if (tSetIn) tSetIn.addEventListener('click', () => { updateSelected((t) => { t.start = video.currentTime; }); syncEditor(); });
-  if (tSetOut) tSetOut.addEventListener('click', () => { updateSelected((t) => { t.end = video.currentTime; }); syncEditor(); });
+  if (tSetIn) tSetIn.addEventListener('click', () => { updateSelected((t) => { t.start = dropGlobal; }); syncEditor(); });
+  if (tSetOut) tSetOut.addEventListener('click', () => { updateSelected((t) => { t.end = dropGlobal; }); syncEditor(); });
   if (tDelete) tDelete.addEventListener('click', () => {
     texts = texts.filter((t) => t.id !== selectedTextId);
     selectedTextId = texts.length ? texts[texts.length - 1].id : null;
