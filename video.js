@@ -122,6 +122,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const progressWrap = document.getElementById('vs-progress-wrap');
   const progressBar = document.getElementById('vs-progress-bar');
   const statusEl = document.getElementById('vs-status');
+  const textPanel = document.getElementById('vs-text-panel');
+  const toCutBtn = document.getElementById('vs-to-cut');
+  const toTrimBtn = document.getElementById('vs-to-trim');
+  const shareBtn = document.getElementById('vs-share');
+  const scrubEl = document.getElementById('vs-scrub');
+  const scrubFill = document.getElementById('vs-scrub-fill');
+  const tabBtns = document.querySelectorAll('.vs-tab[data-mode]');
 
   if (!dropzone) return;
 
@@ -329,6 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dropzone.style.display = 'none';
     editor.style.display = 'block';
     selectClip(added[added.length - 1].id);
+    if (mode === 'home') setMode('add');   // open the Media tab the first time
   }
 
   // ── Selecting / positioning ───────────────────────────────────────
@@ -458,7 +466,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Guided modes ──────────────────────────────────────────────────
   function setMode(m) {
-    mode = (mode === m && m !== 'home') ? 'home' : m;
+    // Tabs behave like tabs — a click always selects (no toggle-off).
+    mode = m;
     if (addPanel) addPanel.style.display = (mode === 'add') ? '' : 'none';
     if (trimPanel) trimPanel.style.display = (mode === 'trim') ? '' : 'none';
     if (cutPanel) cutPanel.style.display = (mode === 'cut') ? '' : 'none';
@@ -467,16 +476,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (formatPanel) formatPanel.style.display = (mode === 'format') ? '' : 'none';
     if (effectsPanel) effectsPanel.style.display = (mode === 'effects') ? '' : 'none';
     if (overlayPanel) overlayPanel.style.display = (mode === 'overlay') ? '' : 'none';
-    if (actFormat) actFormat.classList.toggle('active', mode === 'format');
-    if (actEffects) actEffects.classList.toggle('active', mode === 'effects');
-    if (actOverlay) actOverlay.classList.toggle('active', mode === 'overlay');
+    if (textPanel) textPanel.style.display = (mode === 'text') ? '' : 'none';
     if (mode === 'effects') refreshFxButtons();
     if (mode === 'overlay') refreshOverlayButtons();
-    if (actAdd) actAdd.classList.toggle('active', mode === 'add');
-    if (actTrim) actTrim.classList.toggle('active', mode === 'trim');
-    if (actCut) actCut.classList.toggle('active', mode === 'cut');
-    if (actAudio) actAudio.classList.toggle('active', mode === 'audio');
-    if (actCaptions) actCaptions.classList.toggle('active', mode === 'captions');
+    // Highlight the matching tab. Trim + Cut share the Trim tab.
+    if (tabBtns && tabBtns.length) {
+      tabBtns.forEach((b) => {
+        const dm = b.dataset.mode;
+        b.classList.toggle('active', dm === mode || (dm === 'trim' && mode === 'cut'));
+      });
+    }
     if (mode === 'cut') {
       // default selection: the middle third of the whole video
       const T = totalDur();
@@ -571,6 +580,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dropGlobal = g;
     if (dropEl) dropEl.style.left = (g / T * 100) + '%';
     if (dropTag) dropTag.textContent = '⬇ ' + fmtTime(g);
+    if (scrubFill) scrubFill.style.width = (g / T * 100) + '%';
     if (s.duration && playhead) playhead.style.left = clamp01(video.currentTime / s.duration) * 100 + '%';
     if (timeLabel) timeLabel.textContent = `${fmtTime(g)} / ${fmtTime(T)}`;
     updateInsertLabel();
@@ -1343,6 +1353,30 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   video.addEventListener('play', () => { playBtn.textContent = '❚❚'; previewPlaying = true; });
   video.addEventListener('pause', () => { playBtn.textContent = '▶'; pauseAudioPreview(); if (ovlVideo && !ovlVideo.paused) ovlVideo.pause(); });
+
+  // Transport scrubber — drag anywhere on the whole-video timeline to seek.
+  if (scrubEl) {
+    let scrubbing = false;
+    const scrubTo = (clientX) => {
+      const T = totalDur(); if (!T) return;
+      const r = scrubEl.getBoundingClientRect();
+      const frac = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+      if (scrubFill) scrubFill.style.width = (frac * 100) + '%';
+      previewGlobal(frac * T);
+    };
+    scrubEl.addEventListener('pointerdown', (e) => { scrubbing = true; try { scrubEl.setPointerCapture(e.pointerId); } catch (_) {} if (!video.paused) video.pause(); scrubTo(e.clientX); });
+    scrubEl.addEventListener('pointermove', (e) => { if (scrubbing) scrubTo(e.clientX); });
+    const endScrub = (e) => { scrubbing = false; try { scrubEl.releasePointerCapture(e.pointerId); } catch (_) {} };
+    scrubEl.addEventListener('pointerup', endScrub);
+    scrubEl.addEventListener('pointercancel', endScrub);
+  }
+
+  // Share — direct social sharing is a planned follow-up; guide the user for now.
+  if (shareBtn) shareBtn.addEventListener('click', async () => {
+    const msg = 'Download your video first, then share it from your photos/files. Direct sharing to socials is coming soon.';
+    if (navigator.share) { try { await navigator.share({ title: 'Made with Riyo Video Studio', text: 'Check out my video — made free at riyostudio.dev', url: 'https://riyostudio.dev/video.html' }); return; } catch (_) {} }
+    status(msg);
+  });
   video.addEventListener('timeupdate', () => {
     const s = activeSource();
     if (s) {
@@ -1407,12 +1441,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (resetTrimBtn) resetTrimBtn.addEventListener('click', resetTrim);
   if (removeClipBtn) removeClipBtn.addEventListener('click', () => { if (activeId != null) removeSource(activeId); });
 
-  // Guided action buttons
+  // Tool tabs
   if (actAdd) actAdd.addEventListener('click', () => setMode('add'));
   if (actTrim) actTrim.addEventListener('click', () => setMode('trim'));
   if (actCut) actCut.addEventListener('click', () => setMode('cut'));
-  if (actText) actText.addEventListener('click', () => { addTextOverlay('clean'); });
+  if (actText) actText.addEventListener('click', () => setMode('text'));
   if (actExport) actExport.addEventListener('click', () => { if (!exporting) exportBtn.click(); });
+  // Cross-links between Shorten (trim) and Remove-a-section (cut)
+  if (toCutBtn) toCutBtn.addEventListener('click', () => setMode('cut'));
+  if (toTrimBtn) toTrimBtn.addEventListener('click', () => setMode('trim'));
 
   // Cut-out-a-part controls
   if (cutLEl) cutLEl.addEventListener('pointerdown', cutHandleDrag('L'));
