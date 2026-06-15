@@ -87,15 +87,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let targetWidth = 1242;
     let targetHeight = 2688;
     
-    // Video & Audio globals
+    // Live-preview animation (auto-rotate tilt)
     let isAnimating = false;
     let autoRotate = false;
     let autoRotateAngle = 0;
-    let bgAudioElement = null;
-    let audioContext = null;
-    let audioDestination = null;
-    let mediaRecorder = null;
-    let recordedChunks = [];
     
     let bgType = 'gradient';
     let bgColor1 = '#FF6B6B';
@@ -199,7 +194,9 @@ document.addEventListener('DOMContentLoaded', () => {
         syncBgControls();
         updateCanvasSize();
         window.addEventListener('resize', scaleWrapperToFit);
-        render();
+        // Open on a finished template so the canvas is never blank.
+        if (layers.length === 0) loadTemplate('apple-minimal');
+        else render();
     }
 
     function generateId() { return Math.random().toString(36).substr(2, 9); }
@@ -303,8 +300,8 @@ document.addEventListener('DOMContentLoaded', () => {
         layers = [];
         selectedLayerId = null;
 
-        const phApp = new Image(); phApp.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="2340"><rect width="1080" height="2340" fill="%23222"/><text x="540" y="1170" font-family="Arial" font-size="50" fill="%23555" text-anchor="middle">App Screen</text></svg>';
-        const phMac = new Image(); phMac.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><rect width="1200" height="800" fill="%23222"/><text x="600" y="400" font-family="Arial" font-size="40" fill="%23555" text-anchor="middle">MacBook Screen</text></svg>';
+        const phApp = new Image(); phApp.onload = render; phApp.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="2340"><rect width="1080" height="2340" fill="%23222"/><text x="540" y="1170" font-family="Arial" font-size="50" fill="%23555" text-anchor="middle">App Screen</text></svg>';
+        const phMac = new Image(); phMac.onload = render; phMac.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><rect width="1200" height="800" fill="%23222"/><text x="600" y="400" font-family="Arial" font-size="40" fill="%23555" text-anchor="middle">MacBook Screen</text></svg>';
 
         // ==========================================
         // APPLE APP STORE — Premium Set (1242x2688)
@@ -650,62 +647,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     imageUpload.addEventListener('change', (e) => {
-        const files = Array.from(e.target.files);
+        const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
         if (files.length === 0) return;
-        
-        // Initialize Audio Context on user interaction if not exists
-        if (!audioContext) {
-            try {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                audioDestination = audioContext.createMediaStreamDestination();
-            } catch(e) { console.warn('AudioContext not supported'); }
-        }
 
         files.forEach((file, index) => {
             const url = URL.createObjectURL(file);
-            if (file.type.startsWith('video/')) {
-                const vid = document.createElement('video');
-                vid.src = url;
-                vid.muted = true; // start muted to satisfy autoplay policy, we will unmute later or rely on audio routing
-                vid.loop = true;
-                vid.autoplay = true;
-                vid.crossOrigin = 'anonymous';
-                vid.playsInline = true;
-                
-                vid.onloadeddata = () => {
-                    vid.play().then(() => {
-                        vid.muted = false; // Unmute after play to try getting audio
-                    }).catch(e => console.warn('Video autoplay failed', e));
-                    
-                    // Connect video audio to the audio destination for recording
-                    if (audioContext) {
-                        try {
-                            const source = audioContext.createMediaElementSource(vid);
-                            source.connect(audioContext.destination); // Play to speakers
-                            source.connect(audioDestination);         // Record
-                        } catch(e) { console.warn('Audio context error for video', e); }
-                    }
-                    
-                    addImageLayer(vid, index);
-                    
-                    if (!isAnimating) {
-                        isAnimating = true;
-                        render();
-                    }
-                };
-            } else {
-                const img = new Image();
-                img.onload = () => { addImageLayer(img, index); URL.revokeObjectURL(url); };
-                img.src = url;
-            }
+            const img = new Image();
+            img.onload = () => { addImageLayer(img, index); URL.revokeObjectURL(url); };
+            img.src = url;
         });
         e.target.value = ''; 
     });
     
 
-    const audioUploadBtn = document.getElementById('upload-audio-btn');
-    const audioUploadInput = document.getElementById('audio-upload-input');
-    const audioTrackName = document.getElementById('audio-track-name');
     const autoRotateToggle = document.getElementById('auto-rotate-toggle');
     const ambientGlowToggle = document.getElementById('ambient-glow-toggle');
     let ambientGlowEnabled = true;
@@ -716,155 +670,6 @@ document.addEventListener('DOMContentLoaded', () => {
             render();
         });
     }
-
-    if (audioUploadBtn) {
-        audioUploadBtn.addEventListener('click', () => audioUploadInput.click());
-        audioUploadInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            if (!audioContext) {
-                try {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    audioDestination = audioContext.createMediaStreamDestination();
-                } catch(err) { console.warn('AudioContext not supported'); }
-            }
-
-            const url = URL.createObjectURL(file);
-            if (bgAudioElement) {
-                bgAudioElement.pause();
-                bgAudioElement.src = '';
-            }
-            bgAudioElement = new Audio(url);
-            bgAudioElement.loop = true;
-            
-            if (audioContext) {
-                try {
-                    const source = audioContext.createMediaElementSource(bgAudioElement);
-                    source.connect(audioContext.destination);
-                    source.connect(audioDestination);
-                } catch(err) { console.warn('Audio context error for audio track', err); }
-            }
-
-            bgAudioElement.play().catch(e => console.warn('Audio play failed', e));
-            if (audioTrackName) {
-                audioTrackName.style.display = 'block';
-                audioTrackName.innerText = "Audio: " + file.name;
-            }
-            e.target.value = '';
-            
-            if (!isAnimating) {
-                isAnimating = true;
-                render();
-            }
-        });
-    }
-
-    // ElevenLabs Voiceover Logic
-    const voiceoverBtn = document.getElementById('generate-voiceover-btn');
-    const voiceoverSettingsBtn = document.getElementById('elevenlabs-settings-btn');
-    const voiceoverTextInput = document.getElementById('voiceover-text-input');
-    const voiceoverVoiceSelect = document.getElementById('voiceover-voice-select');
-    
-    const apiKeyModal = document.getElementById('api-key-modal');
-    const apiKeyInput = document.getElementById('api-key-input');
-    const closeModalBtn = document.getElementById('close-modal-btn');
-    const saveKeyBtn = document.getElementById('save-key-btn');
-
-    let elevenLabsApiKey = localStorage.getItem('elevenlabs_api_key') || '';
-    if (elevenLabsApiKey && apiKeyInput) apiKeyInput.value = elevenLabsApiKey;
-
-    function showApiKeyModal() { if (apiKeyModal) apiKeyModal.style.display = 'flex'; }
-    function hideApiKeyModal() { if (apiKeyModal) apiKeyModal.style.display = 'none'; }
-
-    if (voiceoverSettingsBtn) voiceoverSettingsBtn.addEventListener('click', showApiKeyModal);
-    if (closeModalBtn) closeModalBtn.addEventListener('click', hideApiKeyModal);
-    
-    if (saveKeyBtn) {
-        saveKeyBtn.addEventListener('click', () => {
-            elevenLabsApiKey = apiKeyInput.value.trim();
-            localStorage.setItem('elevenlabs_api_key', elevenLabsApiKey);
-            hideApiKeyModal();
-            if (voiceoverTextInput && voiceoverTextInput.value.trim()) generateVoiceover();
-        });
-    }
-
-    async function generateVoiceover() {
-        const text = voiceoverTextInput.value.trim();
-        if (!text) return alert("Please enter a script for the voiceover.");
-        if (!elevenLabsApiKey) { showApiKeyModal(); return; }
-
-        const voiceId = voiceoverVoiceSelect.value;
-        const originalBtnText = voiceoverBtn.innerText;
-        voiceoverBtn.innerText = "Generating...";
-        voiceoverBtn.disabled = true;
-
-        try {
-            const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'audio/mpeg',
-                    'Content-Type': 'application/json',
-                    'xi-api-key': elevenLabsApiKey
-                },
-                body: JSON.stringify({
-                    text: text,
-                    model_id: "eleven_monolingual_v1",
-                    voice_settings: { stability: 0.5, similarity_boost: 0.75 }
-                })
-            });
-
-            if (!response.ok) {
-                const err = await response.text();
-                throw new Error("ElevenLabs API Error: " + err);
-            }
-
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            
-            if (!audioContext) {
-                try {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    audioDestination = audioContext.createMediaStreamDestination();
-                } catch(err) { console.warn('AudioContext not supported'); }
-            }
-
-            if (bgAudioElement) {
-                bgAudioElement.pause();
-                bgAudioElement.src = '';
-            }
-            bgAudioElement = new Audio(url);
-            bgAudioElement.loop = false; // Voiceovers don't loop by default
-            
-            if (audioContext) {
-                try {
-                    const source = audioContext.createMediaElementSource(bgAudioElement);
-                    source.connect(audioContext.destination);
-                    source.connect(audioDestination);
-                } catch(err) { console.warn('Audio context error for voiceover', err); }
-            }
-
-            bgAudioElement.play().catch(e => console.warn('Audio play failed', e));
-            if (audioTrackName) {
-                audioTrackName.style.display = 'block';
-                audioTrackName.innerText = "Audio: AI Voiceover";
-            }
-            
-            if (!isAnimating) {
-                isAnimating = true;
-                render();
-            }
-        } catch (e) {
-            console.error(e);
-            alert("Failed to generate voiceover. Check your API key or network connection.\n\nDetails: " + e.message);
-            if (e.message.includes("api_key") || e.message.includes("Unauthorized")) showApiKeyModal();
-        } finally {
-            voiceoverBtn.innerText = originalBtnText;
-            voiceoverBtn.disabled = false;
-        }
-    }
-
-    if (voiceoverBtn) voiceoverBtn.addEventListener('click', generateVoiceover);
 
     if (autoRotateToggle) {
         autoRotateToggle.addEventListener('change', (e) => {
@@ -1349,7 +1154,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
 
-    wrapper.addEventListener('mousedown', (e) => {
+    // Drag on the canvas itself rather than scrolling it (mobile + desktop).
+    wrapper.style.touchAction = 'none';
+
+    wrapper.addEventListener('pointerdown', (e) => {
         const { x, y } = getMouseCoords(e);
         if (selectedLayerId) {
             const layer = layers.find(l => l.id === selectedLayerId);
@@ -1371,7 +1179,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedLayerId = null; updatePropsPanel(); render();
     });
 
-    window.addEventListener('mousemove', (e) => {
+    window.addEventListener('pointermove', (e) => {
         if (!isDragging && !isScaling) return;
         const { x, y } = getMouseCoords(e);
         const layer = layers.find(l => l.id === selectedLayerId);
@@ -1386,7 +1194,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    window.addEventListener('mouseup', () => { isDragging = false; isScaling = false; });
+    window.addEventListener('pointerup', () => { isDragging = false; isScaling = false; });
+    window.addEventListener('pointercancel', () => { isDragging = false; isScaling = false; });
 
     // --- Properties Panel Sync ---
     function updatePropsPanel() {
@@ -1524,23 +1333,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Layer Ordering & Deletion
     const deleteLayer = () => { 
         if(selectedLayerId) { 
-            const layerToDelete = layers.find(l => l.id === selectedLayerId);
-            if (layerToDelete && layerToDelete.img instanceof HTMLVideoElement) {
-                layerToDelete.img.pause();
-                layerToDelete.img.src = '';
-                layerToDelete.img.remove();
-            }
-            layers = layers.filter(l => l.id !== selectedLayerId); 
-            selectedLayerId = null; 
-            
-            const hasVideo = layers.some(l => l.img instanceof HTMLVideoElement);
-            const hasAudio = bgAudioElement && !bgAudioElement.paused;
-            if (!hasVideo && !hasAudio && !autoRotate) {
-                isAnimating = false;
-            }
-            
-            updatePropsPanel(); 
-            render(); 
+            layers = layers.filter(l => l.id !== selectedLayerId);
+            selectedLayerId = null;
+            if (!autoRotate) isAnimating = false;
+
+            updatePropsPanel();
+            render();
         } 
     };
     const bringForward = () => { if(selectedLayerId) { const i = layers.findIndex(l => l.id === selectedLayerId); if(i < layers.length - 1){ const t = layers[i]; layers[i] = layers[i+1]; layers[i+1] = t; render(); } } };
@@ -1659,74 +1457,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-
-    const exportVideoBtn = document.getElementById('export-video-btn');
-    if (exportVideoBtn) {
-        exportVideoBtn.addEventListener('click', () => {
-            if (mediaRecorder && mediaRecorder.state === 'recording') {
-                // Stop recording
-                mediaRecorder.stop();
-                exportVideoBtn.innerText = 'RECORD VIDEO';
-                exportVideoBtn.style.background = '#f43f5e';
-                exportVideoBtn.style.animation = '';
-                return;
-            }
-            
-            // Start recording
-            const prevSelected = selectedLayerId; 
-            selectedLayerId = null; 
-            if (!isAnimating) {
-                isAnimating = true; // force animation on to record frames
-                render();
-            }
-            
-            const canvasStream = canvas.captureStream(30);
-            let finalStream = canvasStream;
-            
-            if (audioDestination) {
-                const audioTracks = audioDestination.stream.getAudioTracks();
-                if (audioTracks.length > 0) {
-                    finalStream = new MediaStream([canvasStream.getVideoTracks()[0], ...audioTracks]);
-                }
-            }
-
-            recordedChunks = [];
-            try {
-                mediaRecorder = new MediaRecorder(finalStream, { mimeType: 'video/webm;codecs=vp9' });
-            } catch (e) {
-                try {
-                    mediaRecorder = new MediaRecorder(finalStream, { mimeType: 'video/webm' }); // fallback
-                } catch(e2) {
-                    alert('MediaRecorder is not supported in your browser.');
-                    return;
-                }
-            }
-
-            mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) recordedChunks.push(e.data);
-            };
-
-            mediaRecorder.onstop = () => {
-                const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'mockup-video.webm';
-                a.click();
-                URL.revokeObjectURL(url);
-                selectedLayerId = prevSelected;
-                // Optional: Stop animating if no video/audio is active, but keeping it true is fine
-                // isAnimating = false;
-                render();
-            };
-
-            mediaRecorder.start();
-            exportVideoBtn.innerText = 'STOP RECORDING';
-            exportVideoBtn.style.background = '#ef4444';
-            // We can rely on CSS animation or just a visual change
-            exportVideoBtn.style.animation = 'pulse 1.5s infinite';
-        });
-    }
 
     init();
 });

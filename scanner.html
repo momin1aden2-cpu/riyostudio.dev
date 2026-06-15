@@ -212,8 +212,8 @@
             </div>
           </div>
           
-          <input type="file" id="image-upload-input" accept="image/*,video/*" multiple style="display: none;">
-          <button id="add-device-btn" class="cyber-button" style="padding: 8px 16px; font-size: 0.9rem;">+ Image/Device</button>
+          <input type="file" id="image-upload-input" accept="image/*" multiple style="display: none;">
+          <button id="add-device-btn" class="cyber-button" style="padding: 8px 16px; font-size: 0.9rem;">+ Screenshot</button>
           
           <select id="preset-size-select" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none; margin-left: 12px;">
             <option value="1242x2688">App Store (6.5")</option>
@@ -234,7 +234,6 @@
         <div style="display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap;">
           <button id="export-zip-btn" class="cyber-button" style="background: #10B981; color: #04140d; font-weight: 700; border: none; padding: 8px 14px; font-size: 0.85rem; white-space: nowrap;">⬇ Kit .zip</button>
           <button id="export-png-btn" class="cyber-button" style="background: #10B981; color: #04140d; font-weight: 700; border: none; padding: 8px 14px; font-size: 0.85rem; white-space: nowrap;">⬇ PNG</button>
-          <button id="export-video-btn" class="cyber-button" style="background: #f43f5e; color: #fff; font-weight: 700; border: none; padding: 8px 14px; font-size: 0.85rem; white-space: nowrap;">● Record</button>
         </div>
       </div>
 
@@ -291,30 +290,6 @@
               <input type="range" id="grain-amount" min="0" max="100" value="35" style="width: 110px;">
             </div>
 
-            <label class="cyber-label" style="margin-top: 16px; display: block;">Audio Track (Music/Voice)</label>
-            <div style="margin-top: 8px; display: flex; gap: 8px;">
-              <button id="upload-audio-btn" class="cyber-button" style="flex: 1; padding: 6px; font-size: 0.8rem;">Upload Audio</button>
-              <input type="file" id="audio-upload-input" accept="audio/*" style="display: none;">
-            </div>
-            <div id="audio-track-name" style="color: var(--text-dim); font-size: 0.75rem; margin-top: 4px; display: none;">No audio selected</div>
-
-            <div style="margin-top: 16px; border-top: 1px solid rgba(16,185,129,0.2); padding-top: 16px;">
-                <label class="cyber-label" style="display: flex; justify-content: space-between; align-items: center;">
-                    AI Voiceover (Free)
-                    <button id="elevenlabs-settings-btn" style="background:none; border:none; color: var(--text-dim); cursor: pointer;" title="API Settings">⚙️</button>
-                </label>
-                <textarea id="voiceover-text-input" placeholder="Type your script here..." style="width: 100%; height: 60px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none; margin-top: 8px; font-family: inherit; font-size: 0.85rem; resize: vertical;"></textarea>
-                <div style="display: flex; gap: 8px; margin-top: 8px;">
-                    <select id="voiceover-voice-select" style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px; border-radius: 6px; outline: none; font-size: 0.8rem;">
-                        <option value="pNInz6obpgDQGcFmaJgB">Adam (Professional)</option>
-                        <option value="21m00Tcm4TlvDq8ikWAM">Rachel (Calm)</option>
-                        <option value="AZnzlk1XvdvUeBnXmlld">Domi (Energetic)</option>
-                        <option value="MF3mGyEYCl7XYWbV9V6O">Elli (Emotional)</option>
-                    </select>
-                    <button id="generate-voiceover-btn" class="cyber-button" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(16,185,129,0.1); border-color: #10B981; color: #10B981;">Generate</button>
-                </div>
-            </div>
-
             <label class="cyber-label" style="margin-top: 16px; display: block;">Auto-Rotate Animation</label>
             <div style="margin-top: 8px;">
                <label style="display: flex; gap: 8px; align-items: center; color: #fff; font-size: 0.9rem; cursor: pointer;">
@@ -322,7 +297,7 @@
                </label>
             </div>
 
-            <label class="cyber-label" style="margin-top: 16px; display: block;">Ambient Video Glow</label>
+            <label class="cyber-label" style="margin-top: 16px; display: block;">Ambient Glow</label>
             <div style="margin-top: 8px;">
                <label style="display: flex; gap: 8px; align-items: center; color: #fff; font-size: 0.9rem; cursor: pointer;">
                  <input type="checkbox" id="ambient-glow-toggle" checked> Enable Dynamic Background
@@ -557,29 +532,6 @@
     </div>
   </footer>
 
-  <!-- API Key Modal -->
-  <div id="api-key-modal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
-    <div class="modal-content" style="background: #111; border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 24px; max-width: 400px; width: 90%; text-align: center;">
-      <h3 style="color: #fff; margin-top: 0;">ElevenLabs API Key</h3>
-      <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 16px;">Enter your free ElevenLabs API key to generate ultra-realistic voiceovers directly on the canvas.</p>
-      
-      <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; padding: 12px; margin-bottom: 16px; text-align: left;">
-        <span style="font-size: 0.8rem; color: #10B981; font-weight: bold; display: block; margin-bottom: 4px;">🔒 Privacy Guarantee</span>
-        <span style="font-size: 0.75rem; color: rgba(255,255,255,0.8);">RiyoStudio is 100% private and offline. Your videos and images never leave your computer. This AI Voiceover tool is the ONLY feature that securely sends your text script to ElevenLabs to generate audio. Your key is saved locally in your browser.</span>
-      </div>
-
-      <input type="password" id="api-key-input" placeholder="xi-api-key..." style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 12px; border-radius: 6px; outline: none; margin-bottom: 16px;">
-      
-      <div style="display: flex; gap: 12px;">
-        <button id="close-modal-btn" class="cyber-button" style="flex: 1; background: transparent; color: #fff;">Cancel</button>
-        <button id="save-key-btn" class="cyber-button" style="flex: 1; background: #10B981; color: #000; border: none; font-weight: bold;">Save & Generate</button>
-      </div>
-      <div style="margin-top: 16px;">
-        <a href="https://elevenlabs.io" target="_blank" style="color: #10B981; font-size: 0.8rem; text-decoration: none;">Get a free API key here</a>
-      </div>
-    </div>
-  </div>
-
   <!-- Mobile Bottom Tab Bar -->
   <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Mobile navigation">
     <a href="index.html" class="mobile-tab" data-page="home"><span class="mobile-tab-icon">🏠</span><span class="mobile-tab-label">Home</span></a>
@@ -610,6 +562,6 @@
 
   <script src="bg.js?v=16"></script>
   <script defer src="script.js?v=26"></script>
-  <script src="scanner.js?v=33"></script>
+  <script src="scanner.js?v=35"></script>
 </body>
 </html>
