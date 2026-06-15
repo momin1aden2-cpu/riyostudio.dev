@@ -1,4 +1,4 @@
-const CACHE_NAME = 'riyo-studio-v33';
+const CACHE_NAME = 'riyo-studio-v34';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -49,27 +49,50 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Ignore non-GET requests and cross-origin requests
-  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
+  const request = event.request;
+
+  // Ignore non-GET and cross-origin requests
+  if (request.method !== 'GET' || !request.url.startsWith(self.location.origin)) {
     return;
   }
 
+  const url = new URL(request.url);
+  const isVersioned = url.search.indexOf('v=') !== -1;
+
+  // Versioned assets (?v=...) are content-addressed and immutable.
+  // Serve cache-first for instant loads; only hit the network on a miss.
+  if (isVersioned) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          }
+          return networkResponse;
+        });
+      })
+    );
+    return;
+  }
+
+  // Pages and unversioned assets: stale-while-revalidate.
+  // Render instantly from cache, refresh the copy in the background.
   event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        // If it's a good response, save a copy in the cache!
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return networkResponse;
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.match(request).then((cached) => {
+        const network = fetch(request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+              cache.put(request, networkResponse.clone());
+            }
+            return networkResponse;
+          })
+          .catch(() => cached);
+        return cached || network;
       })
-      .catch(() => {
-        // Network failed (offline). Fallback to cache!
-        return caches.match(event.request);
-      })
+    )
   );
 });
 
