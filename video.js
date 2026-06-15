@@ -476,7 +476,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (recScreenRec || recCamRec) return;
     const needsScreen = (mode === 'screen' || mode === 'both');
     const needsCam = (mode === 'cam' || mode === 'both');
-    if (needsScreen && !(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia)) { flashHint('Screen recording needs a desktop browser — try 📷 Camera instead.'); return; }
+    if (needsScreen && !(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia)) {
+      const m = '🖥️ <b>Screen recording is desktop-only</b> — phones don’t let a web page capture the screen. Use your phone’s <b>built-in screen recorder</b> (swipe to Control Centre / Quick Settings → Record), then tap <b>＋ Add → 📹 Video</b> to drop it in. <b>📷 Camera</b> records right here.';
+      const rh = document.getElementById('vs-rec-hint'); if (rh) rh.innerHTML = m;   // shown right by the buttons
+      flashHint(m);
+      return;
+    }
     if (needsCam && !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) { flashHint('This browser can’t access the camera.'); return; }
     revealEditor(); setMode('add');
     recMode = mode;
@@ -1948,6 +1953,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (addRecBtn) addRecBtn.addEventListener('click', () => { const on = recSection && recSection.style.display === 'none'; if (recSection) recSection.style.display = on ? '' : 'none'; if (cardSection) cardSection.style.display = 'none'; });
   if (addCardBtn) addCardBtn.addEventListener('click', () => { const on = cardSection && cardSection.style.display === 'none'; if (cardSection) cardSection.style.display = on ? '' : 'none'; if (recSection) recSection.style.display = 'none'; });
   recModeBtns.forEach((b) => b.addEventListener('click', () => startRecording(b.dataset.rec)));
+  // Screen capture is desktop-only. Keep the buttons visible but mark them "PC" so
+  // mobile users aren't confused — tapping explains how to use the phone's own recorder.
+  if (!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia)) {
+    document.querySelectorAll('[data-rec="both"], [data-rec="screen"]').forEach((b) => { b.classList.add('vs-pc-only'); b.title = 'Screen recording is a desktop feature'; });
+  }
   if (recPauseBtn) recPauseBtn.addEventListener('click', toggleRecPause);
   if (recStopBtn) recStopBtn.addEventListener('click', stopRecording);
   if (recDropBtn) recDropBtn.addEventListener('click', () => { revealEditor(); setRailMode('global'); setMode('add'); if (recSection) recSection.style.display = ''; if (cardSection) cardSection.style.display = 'none'; flashHint('Pick what to record: 🖥️＋📷 Screen + Cam, 🖥️ Screen, or 📷 Camera.'); });
