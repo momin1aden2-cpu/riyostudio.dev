@@ -1428,13 +1428,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportZipBtn = document.getElementById('export-zip-btn');
     if (exportZipBtn) {
         exportZipBtn.addEventListener('click', async () => {
-            if (!window.JSZip) return alert("JSZip library is still loading. Please try again in a second.");
-            
+            const iosShare = isIOS() && navigator.canShare;
+            if (!iosShare && !window.JSZip) return alert("JSZip library is still loading. Please try again in a second.");
+
             exportZipBtn.innerText = "GENERATING...";
             const prevSelected = selectedLayerId;
             selectedLayerId = null;
 
-            const zip = new JSZip();
             const formats = [
                 { name: "Apple_6.5_inch", w: 1284, h: 2778 },
                 { name: "Apple_5.5_inch", w: 1242, h: 2208 },
@@ -1444,10 +1444,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
 
+            // Render every format/screen up front and SYNCHRONOUSLY. iOS only lets
+            // navigator.share() run while the tap's user activation is still live,
+            // and any await (like zip.generateAsync) before it voids that — so we
+            // build the blobs first and keep the share call gesture-bound.
+            const files = [];
             for (let fmt of formats) {
                 tempCanvas.width = fmt.w; tempCanvas.height = fmt.h;
                 const scale = Math.max(fmt.w / baseWidth, fmt.h / targetHeight);
-                
+
                 for (let i = 0; i < screenCount; i++) {
                     const actualBaseW = baseWidth * scale;
                     const actualH = targetHeight * scale;
@@ -1455,14 +1460,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     const offsetX = ((fmt.w - actualBaseW) / 2) - (actualBaseW * i);
 
                     renderSceneToContext(tempCtx, fmt.w, fmt.h, false, scale, offsetX, offsetY);
-                    
                     const blob = base64ToBlob(tempCanvas.toDataURL('image/png', 1.0));
-                    if (screenCount === 1) zip.file(`${fmt.name}.png`, blob);
-                    else zip.file(`Panoramic_${fmt.name}/Screen_${i + 1}.png`, blob);
+                    const flat = screenCount === 1 ? `${fmt.name}.png` : `${fmt.name}_Screen_${i + 1}.png`;
+                    const zipPath = screenCount === 1 ? `${fmt.name}.png` : `Panoramic_${fmt.name}/Screen_${i + 1}.png`;
+                    files.push({ blob, name: flat, zipPath, type: 'image/png' });
                 }
             }
 
             selectedLayerId = prevSelected; render();
+
+            // iOS can't usefully open a .zip on-device, and zipping needs an async
+            // build that would kill the share gesture — so push the PNGs straight
+            // to the share sheet (Save to Photos / Files). Desktop & Android get the zip.
+            const fileObjs = files.map(f => new File([f.blob], f.name, { type: f.type }));
+            if (iosShare && navigator.canShare({ files: fileObjs })) {
+                try {
+                    await navigator.share({ files: fileObjs, title: 'App Store Kit' });
+                } catch (e) {
+                    if (!(e && e.name === 'AbortError')) showToast("Couldn't open the share sheet, mate — try Export PNG instead.", "error");
+                }
+                exportZipBtn.innerText = "EXPORT KIT (.ZIP)";
+                return;
+            }
+
+            const zip = new JSZip();
+            files.forEach(f => zip.file(f.zipPath, f.blob));
             const zipBlob = await zip.generateAsync({ type: "blob" });
             await saveBlob(zipBlob, `AppStore_Kit.zip`, 'application/zip');
             exportZipBtn.innerText = "EXPORT KIT (.ZIP)";
