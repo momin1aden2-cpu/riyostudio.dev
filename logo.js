@@ -976,7 +976,6 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
     { h: 'Outfit', s: 'Inter' },
     { h: 'Bricolage Grotesque', s: 'DM Sans' }
   ];
-  const GEN_KEYWORDS = ['abstract', 'geometric', 'leaf', 'rocket', 'star', 'mountain', 'wave', 'spark', 'shield', 'globe', 'crown', 'flame', 'diamond', 'hexagon'];
   const pickRand = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
   // Turn a business name into something worth searching an icon library for, so
@@ -990,6 +989,96 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
       .split(/\s+/)
       .filter((w) => w.length > 2 && !BRAND_STOPWORDS.has(w) && !/^\d+$/.test(w));
     return words.slice(0, 2).join(' ');
+  }
+
+  // Iconify matches icon NAMES, not sentences — "panel beating" / "butcher"
+  // return nothing. So map what a business DOES (matched against its name +
+  // description) to concrete terms we know surface strong, on-theme icons.
+  // `match` phrases are tested with substring includes; `terms` are searched.
+  const ICON_CATEGORIES = [
+    { match: ['security', 'alarm', 'cctv', 'surveillance', ' alert', 'alert360', 'locksmith', 'access control', 'guarding', 'patrol'], terms: ['shield', 'lock', 'cctv', 'security-camera', 'alarm', 'fingerprint', 'key', 'padlock', 'eye-security'] },
+    { match: ['panel beat', 'smash repair', 'auto body', 'bodywork', 'spray paint', 'mechanic', 'automotive', 'car repair', 'car service', 'tyre', 'tire shop', 'muffler', 'detailing'], terms: ['car', 'car-repair', 'car-wrench', 'wrench', 'spray', 'garage', 'tire', 'engine', 'steering-wheel'] },
+    { match: ['car wash', 'carwash'], terms: ['car-wash', 'car', 'water', 'bubbles', 'spray', 'soap'] },
+    { match: ['plumb', 'pipe', 'drain', 'leak', 'hot water', 'gasfit'], terms: ['pipe', 'pipe-wrench', 'tap', 'faucet', 'plumbing', 'valve', 'water-pump'] },
+    { match: ['electric', 'electrician', 'wiring', 'switchboard', 'solar', 'lighting'], terms: ['bolt', 'flash', 'power-plug', 'light-bulb', 'solar-power', 'wiring', 'battery'] },
+    { match: ['butcher', 'meat', 'abattoir', 'smallgoods', 'deli ', 'smokehouse'], terms: ['meat', 'knife', 'cleaver', 'sausage', 'steak', 'cow', 'pig'] },
+    { match: ['bakery', 'baker', 'patisser', 'pastry', 'cake', 'donut'], terms: ['bread', 'cake', 'croissant', 'cupcake', 'cookie', 'wheat'] },
+    { match: ['cafe', 'coffee', 'espresso', 'barista', 'roaster'], terms: ['coffee', 'coffee-maker', 'cup', 'mug', 'coffee-bean'] },
+    { match: ['restaurant', 'diner', 'bistro', 'catering', 'takeaway', 'chef', 'kitchen', 'grill'], terms: ['restaurant', 'fork-knife', 'chef-hat', 'plate', 'pot'] },
+    { match: ['software', 'tech', ' it ', 'i.t', 'app', 'web', 'digital', 'cyber', 'cloud', 'data', 'computer', 'network', 'developer', 'saas'], terms: ['code', 'cpu', 'cloud', 'server', 'database', 'laptop', 'chip', 'rocket', 'terminal'] },
+    { match: ['clean', 'janitor', 'housekeep', 'laundry', 'carpet'], terms: ['broom', 'spray-bottle', 'bucket', 'soap', 'vacuum', 'mop'] },
+    { match: ['construct', 'builder', 'building', 'carpent', 'renovat', 'concret', 'roofing', 'plaster', 'tiling', 'brick', 'scaffold'], terms: ['hammer', 'wrench', 'hard-hat', 'crane', 'brick', 'ruler', 'saw', 'trowel'] },
+    { match: ['fitness', 'gym', 'personal train', 'workout', 'crossfit', 'pilates', 'yoga'], terms: ['dumbbell', 'barbell', 'weight-lifter', 'heart-pulse', 'run', 'yoga'] },
+    { match: ['beauty', 'salon', 'hairdress', 'barber', 'nail', 'spa', 'makeup', 'cosmetic', 'lashes'], terms: ['scissors', 'comb', 'hair-dryer', 'lipstick', 'spa', 'razor'] },
+    { match: ['law ', 'lawyer', 'legal', 'attorney', 'solicitor', 'barrister', 'notary', 'conveyanc'], terms: ['scale-balance', 'gavel', 'justice', 'bank', 'book'] },
+    { match: ['account', 'bookkeep', ' tax', 'finance', 'audit', 'invoic', 'mortgage broker'], terms: ['calculator', 'chart-line', 'coins', 'receipt', 'bank', 'briefcase'] },
+    { match: ['medical', 'clinic', 'dental', 'dentist', 'doctor', 'health', 'physio', 'pharmac', 'chiro', 'optometr', 'veterin', ' vet'], terms: ['stethoscope', 'heart-pulse', 'medical-bag', 'tooth', 'pill', 'medical-cross'] },
+    { match: ['real estate', 'realty', 'property', 'letting', 'estate agent'], terms: ['home', 'house', 'key', 'building', 'home-search'] },
+    { match: ['photograph', 'photo studio', 'videograph', 'film', 'media product'], terms: ['camera', 'aperture', 'film', 'video', 'focus'] },
+    { match: ['transport', 'logistic', 'freight', 'courier', 'delivery', 'removal', 'haulage', 'trucking'], terms: ['truck', 'box', 'delivery', 'package', 'forklift'] },
+    { match: ['landscap', 'garden', 'lawn', 'mowing', 'arborist', 'tree service', 'nursery'], terms: ['tree', 'leaf', 'flower', 'grass', 'watering-can', 'shovel'] },
+    { match: ['pet ', 'dog ', 'grooming', 'kennel', 'cattery'], terms: ['dog', 'cat', 'paw', 'bone'] },
+    { match: ['travel agen', 'tour ', 'holiday', 'tourism', 'adventure tour'], terms: ['compass', 'map', 'plane', 'globe', 'suitcase', 'mountain'] },
+    { match: ['school', 'tutor', 'academy', 'training', 'coaching', 'education', 'learning'], terms: ['graduation-cap', 'book', 'pencil', 'lightbulb', 'brain'] },
+    { match: [' music', 'band', ' dj ', 'audio', 'sound', 'recording'], terms: ['music-note', 'headphones', 'microphone', 'guitar', 'speaker'] },
+    { match: ['pest', 'exterminat', 'termite'], terms: ['bug', 'spray-bottle', 'ant', 'spider'] },
+    { match: ['painter', 'painting', 'decorat'], terms: ['paint-roller', 'paint-bucket', 'brush', 'palette'] },
+    { match: ['florist', 'flower'], terms: ['flower', 'flower-tulip', 'rose', 'leaf'] },
+    { match: ['jewel', 'diamond ring', 'goldsmith'], terms: ['diamond', 'ring', 'gem', 'crown'] }
+  ];
+
+  // Turn the brand name + description into the icon search terms to use.
+  // Description wins over the name (the name may be unrelated, e.g. "Safari"
+  // panel-beating). Falls back to plain keywords, then nothing (→ procedural).
+  function resolveIconTerms(brandName, description) {
+    const desc = ' ' + (description || '').toLowerCase() + ' ';
+    const brand = ' ' + (brandName || '').toLowerCase() + ' ';
+    const descHits = [], brandHits = [];
+    ICON_CATEGORIES.forEach((cat) => {
+      if (cat.match.some((m) => desc.indexOf(m) !== -1)) descHits.push(cat);
+      else if (cat.match.some((m) => brand.indexOf(m) !== -1)) brandHits.push(cat);
+    });
+    const hits = descHits.length ? descHits : brandHits;
+    if (hits.length) {
+      const terms = [];
+      hits.slice(0, 2).forEach((c) => terms.push(...c.terms));
+      return [...new Set(terms)];
+    }
+    // No category — search the meaningful words the user actually wrote.
+    const words = []
+      .concat(brandKeyword(description).split(' '))
+      .concat(brandKeyword(brandName).split(' '))
+      .filter(Boolean);
+    return [...new Set(words)];
+  }
+
+  // Build a pool of relevant icon ids ("prefix:name") from the resolved terms.
+  // Pull a few icons from EACH term and interleave them, so the six concepts
+  // get a spread of on-theme icons (shield, lock, cctv, camera…) rather than
+  // six near-identical results from whichever term happened to come first.
+  async function fetchIconPool(terms) {
+    const lists = await Promise.all(terms.slice(0, 8).map(async (term) => {
+      try {
+        const res = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(term)}&limit=6`);
+        const data = await res.json();
+        return (data && data.icons ? data.icons : []).slice(0, 4);
+      } catch (e) { return []; }
+    }));
+    const pool = [], seen = new Set();
+    for (let round = 0; round < 4; round++) {
+      for (const list of lists) {
+        const ic = list[round];
+        if (ic && !seen.has(ic)) { seen.add(ic); pool.push(ic); }
+      }
+    }
+    return pool;
+  }
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+    return arr;
+  }
+  function loadSvgGroup(svg) {
+    return new Promise((r) => fabric.loadSVGFromString(svg, (o, op) => r(fabric.util.groupSVGElements(o, op))));
   }
 
   // Procedural mark generator — builds a unique, editable vector mark from
@@ -1098,34 +1187,30 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
       brand.set({ originX: 'left', originY: 'center', left: tx, top: cy });
     }
   }
-  function makeConcept(brandName) {
+  function makeConcept(brandName, iconId) {
     return {
       brandName,
       palette: pickRand(GEN_PALETTES),
       fp: pickRand(GEN_FONTS),
       layout: pickRand(['stack', 'left']),
       gradient: Math.random() < 0.5,
-      useIcon: Math.random() < 0.85,
       recipeIndex: Math.floor(Math.random() * 8),
-      kw: (magicKeywordInput && magicKeywordInput.value.trim()) || brandKeyword(brandName) || pickRand(GEN_KEYWORDS),
+      iconId: iconId || null,
       iconSvg: null
     };
   }
   async function getConceptIcon(concept) {
-    if (concept.iconSvg) {
-      return await new Promise((r) => fabric.loadSVGFromString(concept.iconSvg, (o, op) => r(fabric.util.groupSVGElements(o, op))));
-    }
-    if (concept.useIcon) {
+    if (concept.iconSvg) return await loadSvgGroup(concept.iconSvg);
+    // A relevant icon was assigned from the pool — fetch it in the palette colour.
+    if (concept.iconId) {
       try {
-        const res = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(concept.kw)}&limit=30`);
-        const data = await res.json();
-        if (data && data.icons && data.icons.length) {
-          const [prefix, name] = pickRand(data.icons).split(':');
-          const svgRes = await fetch(`https://api.iconify.design/${prefix}/${name}.svg?color=${encodeURIComponent(concept.palette.icon)}`);
-          concept.iconSvg = await svgRes.text();
-          return await new Promise((r) => fabric.loadSVGFromString(concept.iconSvg, (o, op) => r(fabric.util.groupSVGElements(o, op))));
+        const [prefix, name] = concept.iconId.split(':');
+        const svgRes = await fetch(`https://api.iconify.design/${prefix}/${name}.svg?color=${encodeURIComponent(concept.palette.icon)}`);
+        if (svgRes.ok) {
+          const txt = await svgRes.text();
+          if (txt && txt.indexOf('<svg') !== -1) { concept.iconSvg = txt; return await loadSvgGroup(txt); }
         }
-      } catch (e) { /* fall through to procedural */ }
+      } catch (e) { /* fall through to a generated mark */ }
     }
     const mark = buildMark(concept.palette, concept.fp, concept.brandName, concept.recipeIndex);
     if (concept.gradient) applyGradient(mark, concept.palette.icon);
@@ -1169,20 +1254,36 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
     saveHistory();
     if (conceptModal) conceptModal.style.display = 'none';
   }
-  function openConceptGrid() {
+  async function openConceptGrid() {
     if (!conceptModal || !conceptGrid) return;
-    const brandName = (magicBrandInput.value.trim() || 'BRAND').toUpperCase();
+    const brandRaw = magicBrandInput.value.trim();
+    const descRaw = magicKeywordInput ? magicKeywordInput.value.trim() : '';
+    const brandName = (brandRaw || 'BRAND').toUpperCase();
+
     conceptGrid.innerHTML = '';
     conceptModal.style.display = 'flex';
-    Array.from({ length: 6 }, () => makeConcept(brandName)).forEach((c) => {
+
+    // Show the 6 cards immediately so it feels instant, then fill them in.
+    const cards = Array.from({ length: 6 }, () => {
       const card = document.createElement('div');
       card.style.cssText = 'cursor:pointer;border:1px solid rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;background:#05080f;aspect-ratio:2/1;display:flex;align-items:center;justify-content:center;color:#3a4656;font-size:0.78rem;transition:border-color .15s,transform .15s;';
       card.textContent = 'rendering…';
       card.addEventListener('mouseenter', () => { card.style.borderColor = '#10B981'; card.style.transform = 'translateY(-2px)'; });
       card.addEventListener('mouseleave', () => { card.style.borderColor = 'rgba(255,255,255,0.1)'; card.style.transform = 'none'; });
-      card.addEventListener('click', () => applyConcept(c));
       conceptGrid.appendChild(card);
-      renderConceptThumb(c).then((url) => {
+      return card;
+    });
+
+    // Resolve a relevant icon pool from what the business is, then give each
+    // concept a DIFFERENT icon so the six results are on-theme yet varied.
+    let pool = [];
+    try { pool = shuffle(await fetchIconPool(resolveIconTerms(brandRaw, descRaw))); } catch (e) { pool = []; }
+
+    cards.forEach((card, i) => {
+      const iconId = pool.length ? pool[i % pool.length] : null;
+      const concept = makeConcept(brandName, iconId);
+      card.onclick = () => applyConcept(concept);
+      renderConceptThumb(concept).then((url) => {
         card.textContent = '';
         const img = document.createElement('img');
         img.src = url;
