@@ -3284,3 +3284,7 @@ body.drawer-open { overflow: hidden; }
   .card-note-desktop { display: none; }
   .card-note-mobile { display: block; color: var(--text-dim); font-weight: 500; }
 }
+
+/* File Forge: two-column result panels that stack on narrow screens */
+.forge-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+@media (max-width: 760px) { .forge-2col { grid-template-columns: 1fr; } }

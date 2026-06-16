@@ -1008,7 +1008,7 @@ function initScreenRecorder() {
       placeholder.style.display = 'none';
       
       indicator.innerHTML = `<div class="recording-dot"></div><span id="recorder-time" style="color: #EF4444; font-family: 'JetBrains Mono'; font-size: 0.8rem; font-weight: bold;">00:00</span>` + 
-                            (isMicActive ? `<span style="color:#10B981; font-size: 0.7rem; margin-left: 5px;">ðŸŽ¤ ON</span>` : `<span style="color:#6B7280; font-size: 0.7rem; margin-left: 5px;">ðŸŽ¤ OFF</span>`);
+                            (isMicActive ? `<span style="color:#10B981; font-size: 0.7rem; margin-left: 5px;">🎤 ON</span>` : `<span style="color:#6B7280; font-size: 0.7rem; margin-left: 5px;">🎤 OFF</span>`);
       // re-fetch timeDisplay reference because we replaced innerHTML
       const newTimeDisplay = indicator.querySelector('#recorder-time');
       
@@ -1455,22 +1455,22 @@ function initGhostMaker() {
         threatBadge.style.color = '#EF4444'; // Red
         threatBadge.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
         threatBadge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
-        threatBadge.textContent = 'ðŸ”´ CRITICAL RISK: Exact GPS Coordinates Found';
+        threatBadge.textContent = '🔴 CRITICAL RISK: Exact GPS Coordinates Found';
       } else if (hasHardwareInfo || Object.keys(output).length > 0) {
         threatBadge.style.color = '#F59E0B'; // Yellow
         threatBadge.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
         threatBadge.style.borderColor = 'rgba(245, 158, 11, 0.3)';
-        threatBadge.textContent = 'ðŸŸ¡ MODERATE RISK: Tracking Metadata Found';
+        threatBadge.textContent = '🟡 MODERATE RISK: Tracking Metadata Found';
       } else {
         threatBadge.style.color = '#10B981'; // Green
         threatBadge.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
         threatBadge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
-        threatBadge.textContent = 'ðŸŸ¢ SAFE: No Tracking Data Found';
+        threatBadge.textContent = '🟢 SAFE: No Tracking Data Found';
       }
 
       metaList.innerHTML = '';
       if (Object.keys(output).length === 0) {
-         metaList.innerHTML = `<div style="color: #10B981; margin-bottom: 1rem;">[âœ“] File is pristine. Zero tracking metadata found.</div>`;
+         metaList.innerHTML = `<div style="color: #10B981; margin-bottom: 1rem;">[✓] File is pristine. Zero tracking metadata found.</div>`;
          document.getElementById('ghost-map-parent').style.display = 'none';
       } else {
          let html = '<ul>';
@@ -1737,7 +1737,7 @@ function initDataConverter() {
     textarea.style.display = 'none';
     parseBtn.style.display = 'none';
     controls.style.display = 'block';
-    statusEl.textContent = `âœ… Successfully parsed ${dataArray.length} rows. Ready for export.`;
+    statusEl.textContent = `✅ Successfully parsed ${dataArray.length} rows. Ready for export.`;
     statusEl.dataset.filenameHint = filenameHint;
   }
 
