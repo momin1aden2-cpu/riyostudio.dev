@@ -979,6 +979,19 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
   const GEN_KEYWORDS = ['abstract', 'geometric', 'leaf', 'rocket', 'star', 'mountain', 'wave', 'spark', 'shield', 'globe', 'crown', 'flame', 'diamond', 'hexagon'];
   const pickRand = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
+  // Turn a business name into something worth searching an icon library for, so
+  // "Carwash Business" finds car/wash icons instead of a random generic mark.
+  // Drops common company filler words and keeps the descriptive terms.
+  const BRAND_STOPWORDS = new Set(['business', 'businesses', 'company', 'co', 'corp', 'corporation', 'inc', 'incorporated', 'llc', 'ltd', 'limited', 'pty', 'plc', 'group', 'holdings', 'enterprise', 'enterprises', 'industries', 'industry', 'services', 'service', 'solutions', 'solution', 'systems', 'system', 'studio', 'studios', 'works', 'agency', 'global', 'international', 'national', 'the', 'and', 'of', 'for', 'your', 'our', 'official', 'app', 'online']);
+  function brandKeyword(name) {
+    const words = (name || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length > 2 && !BRAND_STOPWORDS.has(w) && !/^\d+$/.test(w));
+    return words.slice(0, 2).join(' ');
+  }
+
   // Procedural mark generator — builds a unique, editable vector mark from
   // geometry/initials. 100% client-side, no network, no AI, no cost.
   function buildMark(palette, fp, brandName, idx) {
@@ -1092,9 +1105,9 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
       fp: pickRand(GEN_FONTS),
       layout: pickRand(['stack', 'left']),
       gradient: Math.random() < 0.5,
-      useIcon: Math.random() < 0.4,
+      useIcon: Math.random() < 0.85,
       recipeIndex: Math.floor(Math.random() * 8),
-      kw: (magicKeywordInput && magicKeywordInput.value.trim()) || pickRand(GEN_KEYWORDS),
+      kw: (magicKeywordInput && magicKeywordInput.value.trim()) || brandKeyword(brandName) || pickRand(GEN_KEYWORDS),
       iconSvg: null
     };
   }
