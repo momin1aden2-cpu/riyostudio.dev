@@ -66,7 +66,7 @@
       <p style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--brand-accent);">Last Updated: June 2026</p>
 
       <div class="highlight-box">
-        <strong>The TL;DR on Zero-Server Privacy:</strong> The tools on Riyo Studio (File Forge, Mockup Studio, QR Hub, Invoice Maker, Logo Maker) are designed to run <strong>entirely in your web browser</strong>. We do not upload, process, or store your files, PDF documents, screenshots, logos, invoices, or QR code payloads on any remote servers — that content never leaves your device. For full transparency, the website itself does use a few standard third-party services (analytics, fonts, hosting); these are detailed in Section&nbsp;3 below.
+        <strong>The TL;DR on Zero-Server Privacy:</strong> The tools on Riyo Studio (File Forge, Mockup Studio, QR Hub, Invoice Maker, Logo Maker) are designed to run <strong>entirely in your web browser</strong>. We do not upload, process, or store your files, PDF documents, screenshots, logos, invoices, or QR code payloads on any remote servers — that content never leaves your device. For full transparency, loading the website does involve a few standard third-party services (privacy-friendly cookieless analytics, fonts, hosting, and code libraries); these are detailed in Section&nbsp;3 below.
       </div>
 
       <h2>1. Introduction</h2>
@@ -85,25 +85,26 @@
       <h2>3. Analytics &amp; Third-Party Services</h2>
       <p>To understand how the site is used and to keep it running, we rely on a small number of third-party services. These operate at the website level and are separate from the client-side tools described above — none of them receive the content you process in the tools:</p>
       <ul>
-        <li><strong>Google Analytics:</strong> Every page on this site (including this one) loads Google Analytics — measurement ID <code>G-6P5C0ZYLE0</code>, provided by Google LLC. It collects standard, largely aggregated usage data such as pages visited, approximate location derived from your IP address, device and browser type, and the link that referred you, and it sets first-party analytics cookies (e.g. <code>_ga</code>). You can opt out across all sites with the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener" style="color: var(--accent);">Google Analytics Opt-out Browser Add-on</a>.</li>
+        <li><strong>Analytics (Cloudflare Web Analytics):</strong> We use Cloudflare Web Analytics to understand overall site usage, such as page views and referring links. It is <strong>privacy-first and cookieless</strong> — it sets no cookies, does not fingerprint your device, and does not collect personally identifiable information or track you across other websites. We do not use Google Analytics or any advertising trackers.</li>
         <li><strong>Google Fonts:</strong> Pages load typefaces from Google Fonts (<code>fonts.googleapis.com</code> / <code>fonts.gstatic.com</code>). As a result, Google receives your IP address when the fonts are fetched.</li>
-        <li><strong>Contact by email:</strong> The "Get in Touch" section is a plain email link to <code>support@riyostudio.dev</code> — there is no contact form and no third-party form processor. When you email us, we receive only your message and email address, and use them solely to reply.</li>
+        <li><strong>Contact by email:</strong> The "Get in Touch" section is a plain email link to <code>admin@riyostudio.dev</code> — there is no contact form and no third-party form processor. When you email us, we receive only your message and email address, and use them solely to reply.</li>
         <li><strong>Hosting (Cloudflare):</strong> The site is hosted on Cloudflare Pages. Like any web host, Cloudflare automatically logs standard connection data such as IP addresses, request times, and user-agent strings for security and performance.</li>
-        <li><strong>Content delivery networks:</strong> Some tools download open-source libraries and AI models from public CDNs (such as jsDelivr, cdnjs, unpkg, and esm.sh). Your browser contacts these CDNs directly, so they may see your IP address. The downloaded code and models then run locally on your device.</li>
+        <li><strong>Code libraries (CDNs):</strong> To run the tools, your browser loads open-source libraries from public CDNs (such as jsDelivr, cdnjs, unpkg, and esm.sh). Your browser contacts these CDNs directly, so they may see your IP address. The downloaded code then runs locally on your device.</li>
+        <li><strong>Optional per-tool services:</strong> A few features reach out to external services <em>only when you choose to use them</em>: Logo Maker icon search (Iconify), File Forge's GPS-map preview (OpenStreetMap), and on-device AI models for OCR, audio transcription and background removal (downloaded from providers such as Hugging&nbsp;Face). These fetch a resource using your IP address; your files are still processed on your device. The one exception is the optional <strong>AI voiceover</strong> (in Video Studio / Mockup Studio): when you use it, the script text you type is sent to ElevenLabs using an API key <em>you</em> provide — so for that feature the text leaves your device to be turned into audio.</li>
       </ul>
 
       <h2>4. Cookies and Local Storage</h2>
-      <p>We do not use cookies for advertising or to build cross-site profiles of you. The only cookies set are the first-party Google Analytics cookies described in Section&nbsp;3. You can block or delete these at any time through your browser settings or the Google opt-out add-on.</p>
-      <p>We also use your browser's <code>localStorage</code> to save your own work and preferences — for example saved invoice and company details, Logo Maker projects, and UI settings. This data stays on your device and is never transmitted to us.</p>
+      <p>We set <strong>no cookies</strong> — none for advertising, analytics, or cross-site tracking. (Our analytics provider, Cloudflare Web Analytics, is cookieless, as described in Section&nbsp;3.)</p>
+      <p>We do use your browser's <code>localStorage</code> to save your own work and preferences — for example saved invoice and company details, Logo Maker projects, UI settings, and (only if you use AI voiceover) the ElevenLabs API key you enter. This data stays on your device and is never transmitted to us; you can clear it any time through your browser settings.</p>
 
       <h2>5. Sharing Your Information</h2>
       <p>We do not sell, trade, or rent your personal information to third parties. We will only disclose information if required to do so by Australian law (e.g., via a court order).</p>
 
       <h2>6. Your Rights</h2>
-      <p>Under the APPs, you have the right to request access to the personal information we hold about you and to ask that we correct it. Since we do not retain user data from our tools, this generally only applies to direct email correspondence or contact form submissions.</p>
+      <p>Under the APPs, you have the right to request access to the personal information we hold about you and to ask that we correct it. Since we do not retain user data from our tools, in practice this only applies to any direct email correspondence you send us.</p>
 
       <h2>7. Contact Us</h2>
-      <p>If you have any questions about this Privacy Policy or our zero-server architecture, please contact us via the form on our homepage.</p>
+      <p>If you have any questions about this Privacy Policy or our zero-server architecture, email us at <a href="mailto:admin@riyostudio.dev" style="color: var(--accent);">admin@riyostudio.dev</a>.</p>
 
     </div>
   </main>
