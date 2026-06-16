@@ -305,6 +305,43 @@ function initUniversalConverter() {
     document.head.appendChild(script);
   }
 
+  // Pre-fetch the ~24 MB engine core with a visible progress bar so the first
+  // conversion doesn't sit on a blank spinner. This warms the cache, so the
+  // ffmpeg.load() that follows reads the wasm back instead of re-downloading.
+  async function downloadEngineWithProgress() {
+    const wasmUrl = new URL('/assets/ffmpeg/ffmpeg-core.wasm', window.location.href).href;
+    const btn = document.getElementById('forge-btn');
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'margin:10px 0;height:8px;background:rgba(255,255,255,0.1);border-radius:5px;overflow:hidden;';
+    const bar = document.createElement('div');
+    bar.style.cssText = 'height:100%;width:0;background:linear-gradient(90deg,#10B981,#34D399);transition:width .15s ease;';
+    wrap.appendChild(bar);
+    terminal.appendChild(wrap);
+    terminal.scrollTop = terminal.scrollHeight;
+    try {
+      const resp = await fetch(wasmUrl);
+      if (!resp.ok || !resp.body) throw new Error('no stream');
+      // Use Content-Length when present, else fall back to the known ~24 MB core
+      // size so the bar still fills when the server omits the header (or gzips).
+      const headerLen = parseInt(resp.headers.get('Content-Length') || '0', 10);
+      const total = headerLen > 1000000 ? headerLen : 24 * 1024 * 1024;
+      const reader = resp.body.getReader();
+      let received = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        received += value.length;
+        const pct = Math.min(100, Math.round((received / total) * 100));
+        bar.style.width = pct + '%';
+        if (btn) btn.textContent = `[ DOWNLOADING ENGINE… ${pct}% ]`;
+      }
+      bar.style.width = '100%';
+      logTerminal(`Engine ready (${(received / 1048576).toFixed(1)} MB). Initialising…`);
+    } catch (e) {
+      logTerminal('Loading engine…');
+    }
+  }
+
   async function convertMedia() {
     terminal.style.display = 'block';
     terminal.innerHTML = '';
@@ -341,8 +378,11 @@ function initUniversalConverter() {
             if (btn) btn.textContent = `[ FORGING... ${Math.round(ratio * 100)}% ]`;
           }
         });
-        
+
+        await downloadEngineWithProgress();
         await ffmpegInstance.load();
+        const _btn = document.getElementById('forge-btn');
+        if (_btn) _btn.textContent = '[ FORGING... ]';
       }
 
       const { fetchFile } = FFmpeg;
