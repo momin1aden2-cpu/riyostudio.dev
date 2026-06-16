@@ -1323,6 +1323,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (targetView) {
         targetView.classList.add('active');
         handleLayout(); // Shuffle DOM if needed
+        // On mobile the tool views sit below the 2-column tool grid, so bring the
+        // selected tool's work area into view instead of leaving it off-screen.
+        if (window.matchMedia('(max-width: 900px)').matches) {
+          targetView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       }
     });
   });

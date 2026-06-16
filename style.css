@@ -2424,6 +2424,7 @@ html.supernova body {
 .tool-view {
   display: none;
   animation: fadeStage 0.3s ease forwards;
+  scroll-margin-top: 84px; /* clear the fixed nav when scrolled into view */
 }
 
 .tool-view.active {
@@ -3238,9 +3239,29 @@ body.drawer-open { overflow: hidden; }
   .nav-burger { display: inline-flex; }
   .drawer-nav .nav-links,
   .drawer-nav .nav-inner > .nav-cta-btn { display: none !important; }
-  /* Burger in the top-left corner, brand pushed to the opposite corner */
-  .drawer-nav .nav-inner { justify-content: space-between; gap: 14px; }
+  /* Burger hard in the top-left corner, brand pushed to the opposite corner */
+  .drawer-nav .nav-inner { justify-content: space-between; gap: 14px; padding-left: 14px; padding-right: 16px; }
   /* The performance HUD sits bottom-right and would cover the bottom bar */
   #perf-hud { display: none !important; }
 }
 
+
+/* File Forge: compact, simpler header on small screens */
+@media (max-width: 768px) {
+  body:has(.forge-dashboard) .tool-header { margin-top: 1rem !important; margin-bottom: 14px; }
+  body:has(.forge-dashboard) .tool-header-title { margin-bottom: 6px; }
+  body:has(.forge-dashboard) .tool-header-subtitle { font-size: 0.82rem; line-height: 1.5; margin-bottom: 14px; }
+}
+
+/* Visually-hidden helper (screen-reader-only labels) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

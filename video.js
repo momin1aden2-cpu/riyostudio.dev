@@ -1960,10 +1960,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (recPauseBtn) recPauseBtn.addEventListener('click', toggleRecPause);
   if (recStopBtn) recStopBtn.addEventListener('click', stopRecording);
-  if (recDropBtn) recDropBtn.addEventListener('click', () => { revealEditor(); setRailMode('global'); setMode('add'); if (recSection) recSection.style.display = ''; if (cardSection) cardSection.style.display = 'none'; flashHint('Pick what to record: 🖥️＋📷 Screen + Cam, 🖥️ Screen, or 📷 Camera.'); });
+  if (recDropBtn) recDropBtn.addEventListener('click', () => { revealEditor(); setRailMode('global'); setMode('add'); if (addPanel) addPanel.classList.add('rec-only'); if (recSection) recSection.style.display = ''; if (cardSection) cardSection.style.display = 'none'; if (recSection) recSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); flashHint('Pick what to record: 🖥️＋📷 Screen + Cam, 🖥️ Screen, or 📷 Camera.'); });
 
   // Tool tabs
-  if (actAdd) actAdd.addEventListener('click', () => setMode('add'));
+  if (actAdd) actAdd.addEventListener('click', () => { setMode('add'); if (addPanel) addPanel.classList.remove('rec-only'); if (recSection) recSection.style.display = 'none'; if (cardSection) cardSection.style.display = 'none'; });
   if (actTrim) actTrim.addEventListener('click', () => setMode('trim'));
   if (actCut) actCut.addEventListener('click', () => setMode('cut'));
   if (actText) actText.addEventListener('click', () => setMode('text'));

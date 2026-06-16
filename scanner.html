@@ -28,7 +28,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg?v=2">
   <link rel="apple-touch-icon" href="assets/icon.svg?v=2">
-  <link rel="stylesheet" href="style.css?v=20260616e">
+  <link rel="stylesheet" href="style.css?v=20260616f">
   <link rel="stylesheet" href="scanner.css?v=5">
 
   <!-- Mobile: pin the canvas preview to the top of the screen (matching the Logo,
@@ -36,9 +36,6 @@
        you scroll. !important overrides the inline desktop styles. -->
   <style>
     @media (max-width: 900px) {
-      /* The header text gives the canvas the top of the screen, like the other tools. */
-      .mockup-main .tool-header { display: none !important; }
-
       /* The canvas wrapper is laid out at full resolution and only scaled visually,
          so min-width:0 down the chain stops it forcing a desktop-width editor. */
       .container.fluid.editor-fluid { width: 100% !important; max-width: 100% !important; min-width: 0 !important; padding: 0 12px 92px !important; box-sizing: border-box !important; overflow-x: hidden !important; }
@@ -102,11 +99,8 @@
   <main class="mockup-main" style="padding-top: 100px; padding-bottom: 80px; min-height: calc(100vh - 100px); position: relative; z-index: 10; display: flex; flex-direction: column;">
     <div class="container fluid editor-fluid" style="flex: 1; display: flex; flex-direction: column;">
 
-      <!-- Page Header -->
-      <div class="tool-header">
-        <h1 class="tool-header-title">🎨 Mockup <span class="accent">Studio</span></h1>
-        <p class="tool-header-subtitle">Wrap your screenshots in premium device frames and mesh-gradient backgrounds, then export a full App Store &amp; Play Store kit — entirely in your browser.</p>
-      </div>
+      <!-- Accessible page title (kept for screen readers / SEO; the editor itself is the focus) -->
+      <h1 class="sr-only">Mockup Studio</h1>
 
       <!-- Top Toolbar -->
       <div class="editor-toolbar" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; position: relative; z-index: 50; backdrop-filter: blur(16px); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), 0 8px 32px rgba(0,0,0,0.3);">
@@ -533,7 +527,7 @@
   </footer>
 
   <script src="bg.js?v=19"></script>
-  <script src="nav.js?v=5"></script>
+  <script src="nav.js?v=6"></script>
   <script defer src="script.js?v=28"></script>
   <script src="scanner.js?v=36"></script>
 </body>

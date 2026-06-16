@@ -18,8 +18,7 @@
   ];
 
   var COMPANY = [
-    { href: 'index.html#about',   icon: '💡', label: 'About Us' },
-    { href: 'index.html#contact', icon: '✉️', label: 'Get in Touch' }
+    { href: 'index.html#about', icon: '💡', label: 'About Us' }
   ];
 
   var LEGAL = [
@@ -117,7 +116,7 @@
         groupHtml('Company', COMPANY, page) +
         groupHtml('Legal', LEGAL, page) +
       '</nav>' +
-      '<a class="drawer-cta" href="index.html#contact">Start a project →</a>' +
+      '<a class="drawer-cta" href="index.html#contact">Get in Touch</a>' +
       '<p class="drawer-foot">100% client-side · your files never leave your browser</p>';
 
     document.body.appendChild(overlay);
