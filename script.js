@@ -708,7 +708,7 @@
   // The ambient "ethernet" lights are a homepage flourish — they create 25
   // animated nodes on timers, which is wasted work on the focused tool pages.
   const page = (location.pathname || '').split('/').pop().toLowerCase();
-  const isHome = page === '' || page === 'index.html';
+  const isHome = page === '' || page === 'index' || page === 'index.html';
 
   function initDecor() {
     if (isHome) initPingingLights();

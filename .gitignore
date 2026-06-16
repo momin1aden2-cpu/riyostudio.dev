@@ -1,5 +1,6 @@
 # Local dev helpers / scratch
 .devserver.js
+.devserver.log
 chrome-dom*.html
 chrome-err.log
 chrome-stderr.log

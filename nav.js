@@ -7,33 +7,38 @@
 (function () {
   'use strict';
 
+  // Hosting serves canonical clean URLs (/qr, not /qr.html) and 308-redirects
+  // the .html form. iOS WebKit refuses a redirected response served from a
+  // service worker, so every internal link points at the clean URL — no
+  // redirect ever happens. match[] accepts both forms so the active state is
+  // correct whether a page is opened as /qr or the legacy /qr.html.
   var TOOLS = [
-    { href: 'index.html',   icon: '🏠', label: 'Home',          match: ['', 'index.html'] },
-    { href: 'qr.html',      icon: '📱', label: 'QR Hub',        match: ['qr.html'] },
-    { href: 'invoice.html', icon: '📄', label: 'Invoice Maker', match: ['invoice.html'] },
-    { href: 'scanner.html', icon: '🎨', label: 'Mockup Studio', match: ['scanner.html'] },
-    { href: 'video.html',   icon: '🎬', label: 'Video Studio',  match: ['video.html'] },
-    { href: 'forge.html',   icon: '🔧', label: 'File Forge',    match: ['forge.html'] },
-    { href: 'logo.html',    icon: '✨',       label: 'Logo Maker',    match: ['logo.html'] }
+    { href: '/',        icon: '🏠', label: 'Home',          match: ['', 'index', 'index.html'] },
+    { href: '/qr',      icon: '📱', label: 'QR Hub',        match: ['qr', 'qr.html'] },
+    { href: '/invoice', icon: '📄', label: 'Invoice Maker', match: ['invoice', 'invoice.html'] },
+    { href: '/scanner', icon: '🎨', label: 'Mockup Studio', match: ['scanner', 'scanner.html'] },
+    { href: '/video',   icon: '🎬', label: 'Video Studio',  match: ['video', 'video.html'] },
+    { href: '/forge',   icon: '🔧', label: 'File Forge',    match: ['forge', 'forge.html'] },
+    { href: '/logo',    icon: '✨',       label: 'Logo Maker',    match: ['logo', 'logo.html'] }
   ];
 
   var COMPANY = [
-    { href: 'index.html#about', icon: '💡', label: 'About Us' }
+    { href: '/#about', icon: '💡', label: 'About Us' }
   ];
 
   var LEGAL = [
-    { href: 'privacy.html',    icon: '🔒', label: 'Privacy Policy',  match: ['privacy.html'] },
-    { href: 'terms.html',      icon: '📋', label: 'Terms of Service', match: ['terms.html'] },
-    { href: 'disclaimer.html', icon: '⚠️', label: 'Disclaimer',      match: ['disclaimer.html'] }
+    { href: '/privacy',    icon: '🔒', label: 'Privacy Policy',  match: ['privacy', 'privacy.html'] },
+    { href: '/terms',      icon: '📋', label: 'Terms of Service', match: ['terms', 'terms.html'] },
+    { href: '/disclaimer', icon: '⚠️', label: 'Disclaimer',      match: ['disclaimer', 'disclaimer.html'] }
   ];
 
   // Mobile bottom quick-access bar (the full list still lives in the drawer)
   var BOTTOM = [
-    { href: 'index.html',   icon: '🏠', label: 'Home',    match: ['', 'index.html'] },
-    { href: 'invoice.html', icon: '📄', label: 'Invoice', match: ['invoice.html'] },
-    { href: 'qr.html',      icon: '📱', label: 'QR Hub',  match: ['qr.html'] },
-    { href: 'video.html',   icon: '🎬', label: 'Video',   match: ['video.html'] },
-    { href: 'forge.html',   icon: '🔧', label: 'Forge',   match: ['forge.html'] }
+    { href: '/',        icon: '🏠', label: 'Home',    match: ['', 'index', 'index.html'] },
+    { href: '/invoice', icon: '📄', label: 'Invoice', match: ['invoice', 'invoice.html'] },
+    { href: '/qr',      icon: '📱', label: 'QR Hub',  match: ['qr', 'qr.html'] },
+    { href: '/video',   icon: '🎬', label: 'Video',   match: ['video', 'video.html'] },
+    { href: '/forge',   icon: '🔧', label: 'Forge',   match: ['forge', 'forge.html'] }
   ];
 
   function currentPage() {
@@ -102,7 +107,7 @@
     drawer.setAttribute('aria-label', 'Site menu');
     drawer.innerHTML =
       '<div class="drawer-head">' +
-        '<a class="drawer-brand" href="index.html" aria-label="Riyo Studio home">' +
+        '<a class="drawer-brand" href="/" aria-label="Riyo Studio home">' +
           '<img src="assets/icon.svg?v=2" alt="" width="34" height="34">' +
           '<span class="drawer-brand-text"><span class="drawer-brand-name">Riyo Studio</span>' +
           '<span class="drawer-brand-tag">Local Developer Tools</span></span>' +
@@ -116,7 +121,7 @@
         groupHtml('Company', COMPANY, page) +
         groupHtml('Legal', LEGAL, page) +
       '</nav>' +
-      '<a class="drawer-cta" href="index.html#contact">Get in Touch</a>' +
+      '<a class="drawer-cta" href="/#contact">Get in Touch</a>' +
       '<p class="drawer-foot">100% client-side · your files never leave your browser</p>';
 
     document.body.appendChild(overlay);

@@ -1,13 +1,15 @@
-const CACHE_NAME = 'riyo-studio-v35';
+const CACHE_NAME = 'riyo-studio-v36';
+// Use the canonical clean URLs only. Requesting the .html form 308-redirects to
+// the clean URL, and caching that redirected response makes iOS WebKit refuse
+// to render it ("Response served by service worker has redirections").
 const PRECACHE_ASSETS = [
   '/',
-  '/index.html',
-  '/logo.html',
-  '/forge.html',
-  '/scanner.html',
-  '/qr.html',
-  '/invoice.html',
-  '/video.html',
+  '/logo',
+  '/forge',
+  '/scanner',
+  '/qr',
+  '/invoice',
+  '/video',
   '/style.css',
   '/script.js',
   '/bg.js',
@@ -82,7 +84,7 @@ self.addEventListener('fetch', (event) => {
           }
           return resp;
         })
-        .catch(() => caches.match(request).then((c) => clean(c) || caches.match('/index.html').then(clean)))
+        .catch(() => caches.match(request).then((c) => clean(c) || caches.match('/').then(clean)))
     );
     return;
   }

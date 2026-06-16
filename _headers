@@ -12,3 +12,14 @@
   Cache-Control: public, max-age=31536000, immutable
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Service workers must never be frozen at the edge — they ARE the update
+# mechanism. A stale, cached sw.js can pin every visitor to an old worker
+# forever (this is exactly what stranded iOS on a broken worker). Always
+# revalidate these so a new deploy takes over immediately.
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+/coi-serviceworker.js
+  Cache-Control: no-cache, no-store, must-revalidate
+/manifest.json
+  Cache-Control: no-cache

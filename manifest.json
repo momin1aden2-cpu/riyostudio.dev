@@ -2,7 +2,7 @@
   "name": "Riyo Studio",
   "short_name": "Riyo Studio",
   "description": "Zero-Server Developer and Business Tools",
-  "start_url": "/index.html",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#060B14",
   "theme_color": "#060B14",
@@ -22,28 +22,28 @@
       "name": "Invoice Maker",
       "short_name": "Invoice",
       "description": "Generate sleek PDF invoices",
-      "url": "/invoice.html",
+      "url": "/invoice",
       "icons": [{ "src": "assets/icon.svg?v=2", "sizes": "any" }]
     },
     {
       "name": "Logo Maker",
       "short_name": "Logo",
       "description": "Design premium logos",
-      "url": "/logo.html",
+      "url": "/logo",
       "icons": [{ "src": "assets/icon.svg?v=2", "sizes": "any" }]
     },
     {
       "name": "QR Hub",
       "short_name": "QR Hub",
       "description": "Create custom QR codes",
-      "url": "/qr.html",
+      "url": "/qr",
       "icons": [{ "src": "assets/icon.svg?v=2", "sizes": "any" }]
     },
     {
       "name": "Video Studio",
       "short_name": "Video",
       "description": "Trim, cut and merge video locally",
-      "url": "/video.html",
+      "url": "/video",
       "icons": [{ "src": "assets/icon.svg?v=2", "sizes": "any" }]
     }
   ]
