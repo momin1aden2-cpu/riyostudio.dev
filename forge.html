@@ -362,7 +362,7 @@
             <p style="font-size: 0.8rem; color: #10B981; margin-top: 5px;"><strong>Tip:</strong> Keep this tab open while recording. Open a new tab to record other websites, or minimize the browser entirely to record games, PowerPoints, and desktop apps!</p>
           </div>
           <div class="bento-card-body" style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
-            <div id="recorder-container" style="width: 100%; height: 200px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; overflow: hidden; position: relative;">
+            <div id="recorder-container" style="width: 100%; aspect-ratio: 16 / 9; max-height: 56vh; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; overflow: hidden; position: relative;">
               <video id="recorder-preview" autoplay muted style="width: 100%; height: 100%; object-fit: contain; display: none; border-radius: 8px;"></video>
               <div id="recorder-placeholder" style="color: var(--text-muted); font-family: 'JetBrains Mono'; font-size: 0.9rem;">Camera OFF</div>
               
@@ -587,7 +587,7 @@
 
             <!-- Extracted Text Area -->
             <div id="ocr-workspace" style="display: none; margin-top: 1rem; position: relative;">
-              <textarea id="ocr-textarea" class="cyber-input" style="width: 100%; height: 200px; resize: vertical; padding: 1rem; font-family: 'Inter', sans-serif; font-size: 0.9rem; line-height: 1.5;" placeholder="Extracted text will appear here..."></textarea>
+              <textarea id="ocr-textarea" class="cyber-input" style="width: 100%; height: 200px; resize: vertical; padding: 1rem 1rem 48px; font-family: 'Inter', sans-serif; font-size: 0.9rem; line-height: 1.5;" placeholder="Extracted text will appear here..."></textarea>
               
               <button id="ocr-copy-btn" class="nav-link" style="position: absolute; bottom: 10px; right: 10px; border: 1px solid var(--border); background: rgba(0,0,0,0.8); color: var(--text-main); padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
@@ -685,7 +685,7 @@
       <div id="signature-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); align-items: center; justify-content: center; z-index: 99999;">
         <div class="bento-card" style="background: var(--bg-surface); padding: 24px; border-radius: 12px; width: 90%; max-width: 500px; border: 1px solid var(--border);">
           <h3 style="margin-bottom: 16px; color: var(--text-main);">Draw Your Signature</h3>
-          <canvas id="signature-pad" width="450" height="200" style="background: #fff; border-radius: 8px; border: 2px dashed #ccc; cursor: crosshair; touch-action: none; width: 100%; height: auto;"></canvas>
+          <canvas id="signature-pad" width="450" height="200" style="background: #fff; border-radius: 8px; border: 2px dashed #ccc; cursor: crosshair; touch-action: none; width: 100%; aspect-ratio: 9 / 4; height: auto;"></canvas>
           <div style="display: flex; justify-content: space-between; margin-top: 16px;">
             <button id="sig-clear-btn" class="nav-link" style="border: 1px solid var(--border); background: transparent; color: var(--text-main); padding: 8px 16px; border-radius: 4px;">Clear</button>
             <div style="display: flex; gap: 10px;">
@@ -781,7 +781,7 @@
   <script src="bg.js?v=19"></script>
   <script src="nav.js?v=6"></script>
   <script defer src="script.js?v=28"></script>
-  <script src="forge.js?v=36"></script>
+  <script src="forge.js?v=37"></script>
   <!-- Heavy tool libraries are lazy-loaded on demand by forge.js (see ensureScript) -->
 </body>
 </html>

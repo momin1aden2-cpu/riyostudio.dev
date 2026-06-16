@@ -680,6 +680,10 @@ function initPdfSigner() {
   // Signature Pad Logic
   drawBtn.addEventListener('click', () => {
     sigModal.style.display = 'flex';
+    // Match the drawing resolution to the on-screen size so strokes aren't
+    // stretched/offset (the canvas is displayed at 100% width, esp. on mobile).
+    const r = sigPad.getBoundingClientRect();
+    if (r.width) { sigPad.width = Math.round(r.width); sigPad.height = Math.round(r.height); }
     sigPadCtx.clearRect(0, 0, sigPad.width, sigPad.height);
   });
   sigCancelBtn.addEventListener('click', () => sigModal.style.display = 'none');
@@ -710,17 +714,18 @@ function initPdfSigner() {
       signatureBlob = blob;
       overlay.src = URL.createObjectURL(blob);
       overlay.style.display = 'block';
-      overlay.style.width = '200px'; // Initial scale
-      
+
       const containerRect = document.getElementById('pdf-render-container').getBoundingClientRect();
+      // Size & position the signature relative to the page so it fits narrow screens
+      overlay.style.width = Math.round(Math.min(200, containerRect.width * 0.4)) + 'px';
       const viewportMiddleY = window.innerHeight / 2;
       let relativeTop = (viewportMiddleY - containerRect.top) - 50;
-      
+
       if (relativeTop < 0) relativeTop = 50;
       if (relativeTop > containerRect.height - 100) relativeTop = containerRect.height - 100;
-      
+
       overlay.style.top = `${relativeTop}px`;
-      overlay.style.left = '50px';
+      overlay.style.left = Math.round(containerRect.width * 0.1) + 'px';
 
       drawBtn.textContent = '[ REDRAW SIGNATURE ]';
       sigModal.style.display = 'none';
@@ -894,7 +899,7 @@ function initExpenseFlattener() {
       const controls = document.createElement('div');
       
       const upBtn = document.createElement('button');
-      upBtn.textContent = 'â†‘';
+      upBtn.textContent = '↑';
       upBtn.className = 'nav-link';
       upBtn.style.padding = '2px 8px';
       upBtn.onclick = () => { if (i > 0) { const t = files[i]; files[i] = files[i-1]; files[i-1] = t; renderList(); } };
@@ -998,7 +1003,7 @@ function initScreenRecorder() {
   const preview = document.getElementById('recorder-preview');
   const placeholder = document.getElementById('recorder-placeholder');
   const indicator = document.getElementById('recorder-indicator');
-  const timeDisplay = document.getElementById('recorder-time');
+  let timeDisplay = document.getElementById('recorder-time');
   
   let mediaRecorder = null;
   let recordedChunks = [];
@@ -1020,6 +1025,12 @@ function initScreenRecorder() {
     if (stream) stream.getTracks().forEach(t => t.stop());
     if (rawDisplayStream) rawDisplayStream.getTracks().forEach(t => t.stop());
     if (rawMicStream) rawMicStream.getTracks().forEach(t => t.stop());
+  }
+
+  // Screen capture is desktop-only — tell phone users up front instead of on tap
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+    if (placeholder) placeholder.textContent = '🖥️ Screen recording works on desktop';
+    if (startBtn) { startBtn.disabled = true; startBtn.style.opacity = '0.5'; startBtn.title = 'Screen recording is a desktop feature'; }
   }
 
   startBtn.addEventListener('click', async () => {
@@ -1074,9 +1085,9 @@ function initScreenRecorder() {
       
       indicator.innerHTML = `<div class="recording-dot"></div><span id="recorder-time" style="color: #EF4444; font-family: 'JetBrains Mono'; font-size: 0.8rem; font-weight: bold;">00:00</span>` + 
                             (isMicActive ? `<span style="color:#10B981; font-size: 0.7rem; margin-left: 5px;">🎤 ON</span>` : `<span style="color:#6B7280; font-size: 0.7rem; margin-left: 5px;">🎤 OFF</span>`);
-      // re-fetch timeDisplay reference because we replaced innerHTML
-      const newTimeDisplay = indicator.querySelector('#recorder-time');
-      
+      // re-point timeDisplay at the freshly-created element (innerHTML replaced it)
+      timeDisplay = indicator.querySelector('#recorder-time');
+
       indicator.style.display = 'flex';
       
       startBtn.style.display = 'none';
@@ -2433,7 +2444,6 @@ function initBackgroundRemover() {
       console.error(err);
       statusText.textContent = 'Error processing image: ' + err.message;
       progressText.textContent = 'Failed';
-      controls.style.display = 'flex';
       downloadBtn.style.display = 'none'; // hide download button on error
     }
   }
