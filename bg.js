@@ -27,8 +27,16 @@
   // A subtle floating orb that drifts around
   let orb = { x: width / 2, y: height / 2, angle: 0 };
 
-  function animate() {
-    requestAnimationFrame(animate);
+  // Cap this decorative backdrop at ~30fps and stop it when the tab is hidden,
+  // so it never competes with the active tool for the main thread.
+  let rafId = null;
+  let lastFrame = 0;
+  const FRAME_MS = 1000 / 30;
+
+  function animate(now) {
+    rafId = requestAnimationFrame(animate);
+    if (now - lastFrame < FRAME_MS) return;
+    lastFrame = now;
 
     // Smooth mouse interpolation
     mouse.x += (mouse.targetX - mouse.x) * 0.05;
@@ -58,5 +66,12 @@
     ctx.fillRect(0, 0, width, height);
   }
 
-  animate();
+  function start() { if (rafId === null) { lastFrame = 0; rafId = requestAnimationFrame(animate); } }
+  function stop() { if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; } }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stop(); else start();
+  });
+
+  start();
 })();

@@ -143,32 +143,6 @@
     }
   }
 
-  // Context Dropdown Menu
-  const navMenuBtn = document.getElementById('nav-menu-open');
-  const navDropdown = document.getElementById('nav-dropdown');
-
-  if (navMenuBtn && navDropdown) {
-    navMenuBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      navDropdown.classList.toggle('open');
-    });
-
-    // Close when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!navDropdown.contains(e.target) && !navMenuBtn.contains(e.target)) {
-        navDropdown.classList.remove('open');
-      }
-    });
-
-    // Close when a link is clicked
-    const menuLinks = navDropdown.querySelectorAll('a');
-    menuLinks.forEach(link => {
-      link.addEventListener('click', () => {
-        navDropdown.classList.remove('open');
-      });
-    });
-  }
-
   window.addEventListener('scroll', updateNavScroll, { passive: true });
   updateNavScroll();
 
@@ -294,43 +268,6 @@
       setTimeout(() => { this.style.transition = 'transform 0.2s, box-shadow 0.25s'; }, 300);
     });
   });
-
-  // Mobile Bottom Nav "More" Drawer Logic
-  const moreBtn = document.getElementById('mobile-more-btn');
-  const moreOverlay = document.getElementById('mobile-more-overlay');
-  const moreDrawer = document.querySelector('.mobile-more-drawer');
-
-  if (moreBtn && moreOverlay) {
-    moreBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      moreOverlay.classList.add('open');
-      document.body.style.overflow = 'hidden'; // prevent background scrolling
-    });
-
-    moreOverlay.addEventListener('click', function(e) {
-      // Close if clicking outside the drawer
-      if (e.target === moreOverlay) {
-        moreOverlay.classList.remove('open');
-        document.body.style.overflow = '';
-      }
-    });
-
-    // Optional: Add swipe down to close
-    let touchStartY = 0;
-    if (moreDrawer) {
-      moreDrawer.addEventListener('touchstart', e => {
-        touchStartY = e.changedTouches[0].screenY;
-      }, {passive: true});
-      moreDrawer.addEventListener('touchend', e => {
-        const touchEndY = e.changedTouches[0].screenY;
-        if (touchEndY - touchStartY > 50) { // Swipe down threshold
-          moreOverlay.classList.remove('open');
-          document.body.style.overflow = '';
-        }
-      }, {passive: true});
-    }
-  }
-
 
   // Command palette logic
   const cmdPalette = document.getElementById('cmd-palette');
@@ -768,15 +705,20 @@
     }
   }
 
-  // Initialize once fully loaded to ensure dimensions are correct
+  // The ambient "ethernet" lights are a homepage flourish — they create 25
+  // animated nodes on timers, which is wasted work on the focused tool pages.
+  const page = (location.pathname || '').split('/').pop().toLowerCase();
+  const isHome = page === '' || page === 'index.html';
+
+  function initDecor() {
+    if (isHome) initPingingLights();
+    initInteractiveTerminal(); // no-ops on pages without the terminal element
+  }
+
   if (document.readyState === 'complete') {
-    initPingingLights();
-    initInteractiveTerminal();
+    initDecor();
   } else {
-    window.addEventListener('load', () => {
-      initPingingLights();
-      initInteractiveTerminal();
-    });
+    window.addEventListener('load', initDecor);
   }
 
 })();

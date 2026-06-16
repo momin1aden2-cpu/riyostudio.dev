@@ -696,7 +696,7 @@ document.addEventListener('DOMContentLoaded', () => {
         img.src = url; e.target.value = '';
     });
     
-    bgBlurInput.addEventListener('input', (e) => { bgBlur = parseInt(e.target.value); render(); });
+    bgBlurInput.addEventListener('input', (e) => { bgBlur = parseInt(e.target.value); scheduleRender(); });
 
     // --- Background Studio controls ---
     function syncBgControls() {
@@ -715,10 +715,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.bg-btn').forEach(b => b.classList.remove('active'));
     };
     if (bgTypeSelect) bgTypeSelect.addEventListener('change', () => { bgType = bgTypeSelect.value; render(); });
-    if (bgColor1Input) bgColor1Input.addEventListener('input', () => { bgColor1 = bgColor1Input.value; ensureCustomBg(); render(); });
-    if (bgColor2Input) bgColor2Input.addEventListener('input', () => { bgColor2 = bgColor2Input.value; ensureCustomBg(); render(); });
+    if (bgColor1Input) bgColor1Input.addEventListener('input', () => { bgColor1 = bgColor1Input.value; ensureCustomBg(); scheduleRender(); });
+    if (bgColor2Input) bgColor2Input.addEventListener('input', () => { bgColor2 = bgColor2Input.value; ensureCustomBg(); scheduleRender(); });
     if (grainToggle) grainToggle.addEventListener('change', () => { grainEnabled = grainToggle.checked; render(); });
-    if (grainAmount) grainAmount.addEventListener('input', () => { grainVal = parseInt(grainAmount.value) || 0; render(); });
+    if (grainAmount) grainAmount.addEventListener('input', () => { grainVal = parseInt(grainAmount.value) || 0; scheduleRender(); });
 
     // --- Rendering Core ---
     let lastRenderTime = 0;
@@ -757,6 +757,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isAnimating) {
             requestAnimationFrame(render);
         }
+    }
+
+    // Coalesce rapid interactions (drag/scale fire ~120/s) into one render per frame
+    let renderQueued = false;
+    function scheduleRender() {
+        if (renderQueued) return;
+        renderQueued = true;
+        requestAnimationFrame(() => { renderQueued = false; render(); });
     }
 
     function renderSceneToContext(tCtx, w, h, drawHandles = false, layoutScale = 1, offsetX = 0, offsetY = 0) {
@@ -1186,11 +1194,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!layer) return;
 
         if (isDragging) {
-            layer.x = originalLayerX + (x - dragStartX); layer.y = originalLayerY + (y - dragStartY); render();
+            layer.x = originalLayerX + (x - dragStartX); layer.y = originalLayerY + (y - dragStartY); scheduleRender();
         } else if (isScaling) {
             const distStart = Math.hypot(dragStartX - layer.x, dragStartY - layer.y);
             const distCurrent = Math.hypot(x - layer.x, y - layer.y);
-            layer.scale = Math.max(0.05, originalScale * (distCurrent / distStart)); render();
+            layer.scale = Math.max(0.05, originalScale * (distCurrent / distStart)); scheduleRender();
         }
     });
 
@@ -1286,7 +1294,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!element) return;
         element.addEventListener('input', (e) => {
             const l = layers.find(x => x?.id === selectedLayerId);
-            if (l) { l[propName] = isInt ? parseInt(e.target.value) || 0 : e.target.value; render(); }
+            if (l) { l[propName] = isInt ? parseInt(e.target.value) || 0 : e.target.value; scheduleRender(); }
         });
     };
 
