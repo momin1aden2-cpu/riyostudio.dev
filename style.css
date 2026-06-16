@@ -2815,13 +2815,16 @@ html.supernova body {
 
 /* --- PWA Standalone Mode Fixes --- */
 @media (display-mode: standalone) {
-  /* Keep the nav solid & compact in installed-app mode */
+  /* Keep the nav solid in installed-app mode. NOTE: do NOT set display:flex on
+     .nav here — that makes .nav-inner (margin:0 auto) shrink-wrap and centre
+     itself, which clustered the menu button + logo in the middle of the bar. */
   .nav {
-    display: flex !important;
     background: rgb(6, 11, 20) !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
     backdrop-filter: none !important;
   }
+  /* Belt-and-braces: keep the bar's inner row full-width so burger/logo stay in the corners. */
+  .nav-inner { width: 100% !important; }
 }
 
 /* --- Mobile: Always solid nav bar (no transparency on mobile) --- */
@@ -3241,11 +3244,11 @@ body.drawer-open { overflow: hidden; }
   .drawer-nav .nav-inner > .nav-cta-btn { display: none !important; }
   /* Burger hard in the top-left corner, brand pushed to the opposite corner */
   .drawer-nav .nav-inner { justify-content: space-between; gap: 14px; padding-left: 14px; padding-right: 16px; }
-  /* On phones show ONLY the logo icon (no name/tagline) so the brand is a small
-     mark pinned in the right corner, with the menu button in the left corner. */
-  .drawer-nav .nav-brand-tag,
-  .drawer-nav .nav-brand-name { display: none; }
-  .drawer-nav .nav-brand-icon-img { height: 30px; width: 30px; }
+  /* Phones: logo + "Riyo Studio" name pinned in the right corner (tagline hidden
+     to keep it one compact line); menu button in the left corner. */
+  .drawer-nav .nav-brand-tag { display: none; }
+  .drawer-nav .nav-brand-name { font-size: 16px; }
+  .drawer-nav .nav-brand-icon-img { height: 28px; width: 28px; }
   /* The performance HUD sits bottom-right and would cover the bottom bar */
   #perf-hud { display: none !important; }
 }
