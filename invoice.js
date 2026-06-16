@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
     row.innerHTML = `
       <input type="text" class="cyber-input desc" placeholder="Item description...">
       <input type="number" class="cyber-input qty" value="1" min="1">
-      <input type="number" class="cyber-input price" value="0.00" step="0.01">
+      <input type="number" class="cyber-input price" value="0.00" min="0" step="0.01">
       <button class="btn-small btn-del">X</button>
     `;
 
@@ -155,8 +155,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const item = lineItems.find(i => i.id === id);
     if (item) {
       if (field === 'desc') item.desc = val;
-      else if (field === 'qty') item.qty = parseFloat(val) || 0;
-      else if (field === 'price') item.price = parseFloat(val) || 0;
+      else if (field === 'qty') item.qty = Math.max(0, parseFloat(val) || 0);
+      else if (field === 'price') item.price = Math.max(0, parseFloat(val) || 0);
     }
   }
 
@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
       outputs.tableBody.appendChild(tr);
     });
 
-    const taxRate = parseFloat(inputs.invTaxRate.value) || 0;
+    const taxRate = Math.min(100, Math.max(0, parseFloat(inputs.invTaxRate.value) || 0));
     const taxAmount = subtotal * (taxRate / 100);
     const total = subtotal + taxAmount;
 
