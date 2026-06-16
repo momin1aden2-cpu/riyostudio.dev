@@ -72,6 +72,11 @@
     document.body.classList.add('drawer-nav');
     var page = currentPage();
 
+    // The drawer lists only what the bottom bar doesn't already cover, so the
+    // two menus never duplicate each other on mobile.
+    var bottomHrefs = BOTTOM.map(function (b) { return b.href; });
+    var drawerTools = TOOLS.filter(function (t) { return bottomHrefs.indexOf(t.href) === -1; });
+
     // 1. Hamburger button into the existing top bar (first child of nav-inner)
     var inner = nav.querySelector('.nav-inner') || nav;
     if (!document.getElementById('nav-burger')) {
@@ -108,7 +113,7 @@
         '</button>' +
       '</div>' +
       '<nav class="drawer-nav" aria-label="All pages">' +
-        groupHtml('Tools', TOOLS, page) +
+        groupHtml('More tools', drawerTools, page) +
         groupHtml('Company', COMPANY, page) +
         groupHtml('Legal', LEGAL, page) +
       '</nav>' +
