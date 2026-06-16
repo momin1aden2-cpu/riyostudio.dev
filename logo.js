@@ -1394,27 +1394,53 @@ if (previewMockupBtn && mockupModal && closeMockupBtn) {
   const svgExportBtn = document.getElementById('logo-export-svg-btn');
   const pdfExportBtn = document.getElementById('logo-export-pdf-btn');
 
-  exportBtn.addEventListener('click', () => {
+  function logoIsIOS() {
+    return /iP(hone|ad|od)/.test(navigator.userAgent) ||
+           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+  function dataURLToBlob(dataURL) {
+    const parts = dataURL.split(',');
+    const mime = (parts[0].match(/:(.*?);/) || [])[1] || 'application/octet-stream';
+    const bin = atob(parts[1]); const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  }
+  // iOS Safari ignores the <a download> attribute for blob URLs (the file saves
+  // with no name/extension and is unusable), so route saves through the native
+  // share sheet there — Save to Files/Photos with the real name. Direct download
+  // everywhere else. Returns false only if an iOS share was blocked (not aborted),
+  // so a caller whose build was slow can offer a second tap.
+  async function saveFile(blob, name, type) {
+    if (logoIsIOS() && navigator.canShare) {
+      const file = new File([blob], name, { type: type || blob.type || 'application/octet-stream' });
+      if (navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file] }); return true; }
+        catch (e) { return !!(e && e.name === 'AbortError'); }
+      }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = name; a.style.display = 'none';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+    return true;
+  }
+
+  exportBtn.addEventListener('click', async () => {
     canvas.discardActiveObject(); canvas.renderAll();
-    const dataURL = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 3 });
-    const link = document.createElement('a'); link.download = 'riyo-logo-export.png';
-    link.href = dataURL; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    const blob = dataURLToBlob(canvas.toDataURL({ format: 'png', quality: 1, multiplier: 3 }));
+    await saveFile(blob, 'riyo-logo-export.png', 'image/png');
   });
 
   if (svgExportBtn) {
-    svgExportBtn.addEventListener('click', () => {
+    svgExportBtn.addEventListener('click', async () => {
       canvas.discardActiveObject(); canvas.renderAll();
-      const svg = canvas.toSVG();
-      const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a'); link.download = 'riyo-logo-vector.svg';
-      link.href = url; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+      const blob = new Blob([canvas.toSVG()], { type: 'image/svg+xml;charset=utf-8' });
+      await saveFile(blob, 'riyo-logo-vector.svg', 'image/svg+xml');
     });
   }
 
   if (pdfExportBtn) {
-    pdfExportBtn.addEventListener('click', () => {
-      // Very basic jsPDF implementation if loaded, otherwise fallback
+    pdfExportBtn.addEventListener('click', async () => {
       if (typeof jspdf === 'undefined') {
         alert('PDF library is not loaded. Please use SVG or PNG export.');
         return;
@@ -1424,7 +1450,7 @@ if (previewMockupBtn && mockupModal && closeMockupBtn) {
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width, canvas.height] });
       pdf.addImage(dataURL, 'JPEG', 0, 0, canvas.width, canvas.height);
-      pdf.save('riyo-logo-print.pdf');
+      await saveFile(pdf.output('blob'), 'riyo-logo-print.pdf', 'application/pdf');
     });
   }
 
@@ -1511,22 +1537,21 @@ if (previewMockupBtn && mockupModal && closeMockupBtn) {
     tc.renderAll();
     return tc;
   }
-  function triggerDownload(url, name) {
-    const a = document.createElement('a'); a.href = url; a.download = name;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  }
   async function downloadVariation(key, fmt) {
     const transparent = brandkitTransparent && brandkitTransparent.checked;
     const tc = await buildVariation(key, transparent);
+    let blob, name;
     if (fmt === 'svg') {
-      const blob = new Blob([tc.toSVG()], { type: 'image/svg+xml;charset=utf-8' });
-      triggerDownload(URL.createObjectURL(blob), `riyo-logo-${key}.svg`);
+      blob = new Blob([tc.toSVG()], { type: 'image/svg+xml;charset=utf-8' });
+      name = `riyo-logo-${key}.svg`;
     } else {
       let mult = 2, suffix = '';
       if (isSquare(key)) { const px = parseInt((brandkitSize && brandkitSize.value) || '512', 10) || 512; mult = px / 1024; suffix = `-${px}`; }
-      triggerDownload(tc.toDataURL({ format: 'png', multiplier: mult }), `riyo-logo-${key}${suffix}.png`);
+      blob = dataURLToBlob(tc.toDataURL({ format: 'png', multiplier: mult }));
+      name = `riyo-logo-${key}${suffix}.png`;
     }
     tc.dispose();
+    await saveFile(blob, name, fmt === 'svg' ? 'image/svg+xml' : 'image/png');
   }
   function miniBtnStyle() { return 'padding:5px 10px;background:rgba(16,185,129,0.12);color:#10B981;border:1px solid rgba(16,185,129,0.4);border-radius:6px;font-size:0.72rem;font-weight:600;cursor:pointer;'; }
   function openBrandKit() {
@@ -1564,7 +1589,18 @@ if (previewMockupBtn && mockupModal && closeMockupBtn) {
       }).catch((err) => { console.error('Variation failed:', err); thumb.style.fontSize = '0.6rem'; thumb.style.padding = '6px'; thumb.style.textAlign = 'center'; thumb.textContent = '⚠ ' + ((err && err.message) || 'error'); });
     });
   }
+  let pendingKitZip = null;
+  const ZIP_LABEL = '⬇ Download All (ZIP) — logo set + favicon + app icons';
+  function resetKitZip() { pendingKitZip = null; if (brandkitZip) brandkitZip.textContent = ZIP_LABEL; }
   async function downloadBrandKitZip() {
+    // iOS step 2: a built zip is waiting — share it on THIS fresh tap, while the
+    // gesture's activation is live (a share right after the slow build is blocked).
+    if (pendingKitZip) {
+      const blob = pendingKitZip; pendingKitZip = null;
+      if (brandkitZip) brandkitZip.textContent = ZIP_LABEL;
+      await saveFile(blob, 'riyo-brand-kit.zip', 'application/zip');
+      return;
+    }
     if (typeof JSZip === 'undefined') { alert('ZIP library is not loaded — download files individually instead.'); return; }
     const transparent = brandkitTransparent && brandkitTransparent.checked;
     if (brandkitZip) brandkitZip.textContent = 'Packaging…';
@@ -1583,16 +1619,23 @@ if (previewMockupBtn && mockupModal && closeMockupBtn) {
         tc.dispose();
       }
       const blob = await zip.generateAsync({ type: 'blob' });
-      triggerDownload(URL.createObjectURL(blob), 'riyo-brand-kit.zip');
+      // iOS: the build consumed the tap's activation, so a direct share would be
+      // blocked — stash the zip and prompt one more tap to hand it to the share sheet.
+      if (logoIsIOS() && navigator.canShare) {
+        pendingKitZip = blob;
+        if (brandkitZip) brandkitZip.textContent = '💾 Tap again to save the ZIP';
+        return;
+      }
+      await saveFile(blob, 'riyo-brand-kit.zip', 'application/zip');
     } catch (err) {
       console.error('ZIP failed:', err);
       alert('Could not build the ZIP. Try downloading files individually.');
     }
-    if (brandkitZip) brandkitZip.textContent = '⬇ Download All (ZIP) — logo set + favicon + app icons';
+    if (brandkitZip) brandkitZip.textContent = ZIP_LABEL;
   }
   if (brandkitBtn) brandkitBtn.addEventListener('click', openBrandKit);
-  if (brandkitClose) brandkitClose.addEventListener('click', () => { brandkitModal.style.display = 'none'; });
-  if (brandkitModal) brandkitModal.addEventListener('click', (e) => { if (e.target === brandkitModal) brandkitModal.style.display = 'none'; });
+  if (brandkitClose) brandkitClose.addEventListener('click', () => { brandkitModal.style.display = 'none'; resetKitZip(); });
+  if (brandkitModal) brandkitModal.addEventListener('click', (e) => { if (e.target === brandkitModal) { brandkitModal.style.display = 'none'; resetKitZip(); } });
   if (brandkitZip) brandkitZip.addEventListener('click', downloadBrandKitZip);
 
   document.fonts.ready.then(() => { addText(); });
