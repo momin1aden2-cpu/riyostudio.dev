@@ -2076,59 +2076,100 @@ function initBulkOptimizer() {
     executeBtn.textContent = '[ OPTIMIZE & DOWNLOAD ZIP ]';
   });
 
+  // Decode + resize + re-encode happens in a worker pool (OffscreenCanvas) so the
+  // UI never freezes while batch-processing up to 100 images.
+  const BULK_WORKER_SRC =
+    "self.onmessage=async(e)=>{const{id,blob,type,quality}=e.data;" +
+    "try{const bmp=await createImageBitmap(blob);const c=new OffscreenCanvas(bmp.width,bmp.height);" +
+    "const x=c.getContext('2d');x.drawImage(bmp,0,0);bmp.close();" +
+    "const out=await c.convertToBlob({type:type,quality:quality});" +
+    "self.postMessage({id:id,ok:true,blob:out});}" +
+    "catch(err){self.postMessage({id:id,ok:false,error:String((err&&err.message)||err)});}};";
+
   executeBtn.addEventListener('click', async () => {
     if (bulkFiles.length === 0) return;
-    
+
     executeBtn.disabled = true;
     executeBtn.textContent = '[ PROCESSING... ]';
     statusArea.style.display = 'block';
 
-    try { await ensureScript('jszip'); } catch (e) { showToast('Could not load the zip library. Check your connection.', 'error'); executeBtn.disabled = false; executeBtn.textContent = '[ OPTIMIZE & DOWNLOAD ]'; return; }
+    try { await ensureScript('jszip'); } catch (e) { showToast('Could not load the zip library. Check your connection.', 'error'); executeBtn.disabled = false; executeBtn.textContent = '[ OPTIMIZE & DOWNLOAD ZIP ]'; return; }
     const zip = new JSZip();
     const folder = zip.folder("optimized_images");
-    
-    const targetFormat = formatSelect.value;
-    const quality = parseInt(qualitySlider.value, 10) / 100;
-    
-    // Canvas context for drawing
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
 
-    for (let i = 0; i < bulkFiles.length; i++) {
-      let file = bulkFiles[i];
+    const targetFormat = formatSelect.value;
+    const quality = targetFormat === 'image/png' ? undefined : parseInt(qualitySlider.value, 10) / 100;
+    let ext = targetFormat.split('/')[1];
+    if (ext === 'jpeg') ext = 'jpg';
+
+    const total = bulkFiles.length;
+    let done = 0;
+    const bump = () => { done++; progressEl.textContent = Math.round((done / total) * 100); };
+    const nameFor = (file) => `${file.name.substring(0, file.name.lastIndexOf('.')) || file.name}_optimized.${ext}`;
+
+    // HEIC needs heic2any on the main thread (worker can't); everything else goes straight to the worker.
+    async function prep(file) {
       let t = file.type;
       if (!t && file.name.toLowerCase().endsWith('.heic')) t = 'image/heic';
+      if (t === 'image/heic') {
+        await ensureScript('heic2any');
+        const c = await heic2any({ blob: file, toType: 'image/jpeg', quality: 1.0 });
+        return Array.isArray(c) ? c[0] : c;
+      }
+      return file;
+    }
 
-      progressEl.textContent = Math.round((i / bulkFiles.length) * 100);
+    const canWorker = (typeof Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined');
 
-      try {
-        let blobToDraw = file;
-        
-        if (t === 'image/heic') {
-          // Convert HEIC first via heic2any
-          const convertedBlob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 1.0 });
-          blobToDraw = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+    if (canWorker) {
+      const wurl = URL.createObjectURL(new Blob([BULK_WORKER_SRC], { type: 'text/javascript' }));
+      const poolSize = Math.min(4, navigator.hardwareConcurrency || 4);
+      const pool = Array.from({ length: poolSize }, () => new Worker(wurl));
+      let next = 0;
+      const runWorker = (w) => new Promise((resolveWorker) => {
+        const step = async () => {
+          const i = next++;
+          if (i >= total) { resolveWorker(); return; }
+          const file = bulkFiles[i];
+          try {
+            const blob = await prep(file);
+            const result = await new Promise((res) => {
+              const onMsg = (ev) => { if (ev.data.id === i) { w.removeEventListener('message', onMsg); res(ev.data); } };
+              w.addEventListener('message', onMsg);
+              w.postMessage({ id: i, blob, type: targetFormat, quality });
+            });
+            if (result.ok) folder.file(nameFor(file), result.blob);
+            else console.error('Failed to process', file.name, result.error);
+          } catch (err) {
+            console.error('Failed to process', file.name, err);
+          }
+          bump();
+          step();
+        };
+        step();
+      });
+      await Promise.all(pool.map(runWorker));
+      pool.forEach(w => w.terminate());
+      URL.revokeObjectURL(wurl);
+    } else {
+      // Fallback for browsers without OffscreenCanvas/Worker — main thread.
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      for (let i = 0; i < bulkFiles.length; i++) {
+        const file = bulkFiles[i];
+        try {
+          const blob = await prep(file);
+          const bmp = await createImageBitmap(blob);
+          canvas.width = bmp.width; canvas.height = bmp.height;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(bmp, 0, 0);
+          const out = await new Promise(r => canvas.toBlob(r, targetFormat, quality));
+          folder.file(nameFor(file), out);
+          bmp.close();
+        } catch (err) {
+          console.error('Failed to process', file.name, err);
         }
-
-        // Draw onto canvas
-        const bmp = await createImageBitmap(blobToDraw);
-        canvas.width = bmp.width;
-        canvas.height = bmp.height;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(bmp, 0, 0);
-
-        // Convert canvas to target format blob
-        const optimizedBlob = await new Promise(resolve => canvas.toBlob(resolve, targetFormat, targetFormat === 'image/png' ? undefined : quality));
-        
-        let ext = targetFormat.split('/')[1];
-        if (ext === 'jpeg') ext = 'jpg';
-        
-        const originalNameBase = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
-        folder.file(`${originalNameBase}_optimized.${ext}`, optimizedBlob);
-
-        bmp.close(); // free memory
-      } catch (err) {
-        console.error("Failed to process", file.name, err);
+        bump();
       }
     }
 
