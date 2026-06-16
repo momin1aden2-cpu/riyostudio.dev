@@ -30,6 +30,64 @@ function triggerDownload(blob, filename) {
 }
 
 // ---------------------------------------------------------
+// LAZY DEPENDENCY LOADER
+// Heavy libraries load only when the tool that needs them is used, instead of
+// ~600 KB downloading on every page load. Each script loads once (promise cached).
+// ---------------------------------------------------------
+const FORGE_CDN = {
+  heic2any: 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js',
+  imageCompression: 'https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js',
+  pdfLib: 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js',
+  pdfjs: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+  tesseract: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js',
+  piexif: 'https://unpkg.com/piexifjs@1.0.6/piexif.js',
+  leaflet: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+  exifr: 'https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js',
+  jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+  json5: 'https://unpkg.com/json5@2/dist/index.min.js',
+  papaparse: 'papaparse.min.js',
+  xlsx: 'xlsx.full.min.js'
+};
+const _scriptPromises = {};
+function ensureScript(key) {
+  if (_scriptPromises[key]) return _scriptPromises[key];
+  const src = FORGE_CDN[key];
+  _scriptPromises[key] = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => { _scriptPromises[key] = null; reject(new Error('Failed to load ' + key)); };
+    document.head.appendChild(s);
+  });
+  return _scriptPromises[key];
+}
+function ensureLeafletCss() {
+  if (document.getElementById('leaflet-css')) return;
+  const l = document.createElement('link');
+  l.id = 'leaflet-css';
+  l.rel = 'stylesheet';
+  l.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+  l.crossOrigin = '';
+  document.head.appendChild(l);
+}
+// Warm a tool's dependencies the moment its tab is opened (before the user acts)
+const TOOL_LIBS = {
+  'view-data': ['papaparse', 'xlsx', 'json5'],
+  'view-heic': ['heic2any'],
+  'view-compressor': ['imageCompression'],
+  'view-pdf': ['pdfLib', 'pdfjs'],
+  'view-expense': ['pdfLib'],
+  'view-ghost': ['exifr'],
+  'view-ocr': ['tesseract'],
+  'view-bulk-optimizer': ['jszip']
+};
+function preloadTool(viewId) {
+  (TOOL_LIBS[viewId] || []).forEach(k => { ensureScript(k).catch(() => {}); });
+  if (viewId === 'view-ghost') ensureLeafletCss();
+}
+
+// ---------------------------------------------------------
 // 1. UNIVERSAL MEDIA CONVERTER
 // ---------------------------------------------------------
 function initUniversalConverter() {
@@ -368,12 +426,13 @@ function initHeicDecoder() {
   }
 
   btn.addEventListener('click', async () => {
-    if (!currentFile || !window.heic2any) return;
+    if (!currentFile) return;
     btn.disabled = true;
     btn.textContent = '[ DECODING... ]';
     status.textContent = 'Processing HEIC via WASM...';
-    
+
     try {
+      await ensureScript('heic2any');
       const format = formatSelect.value;
       const ext = format === 'image/jpeg' ? 'jpg' : 'png';
       
@@ -438,7 +497,7 @@ function initTargetCompressor() {
   }
 
   btn.addEventListener('click', async () => {
-    if (!currentFile || !window.imageCompression) return;
+    if (!currentFile) return;
     const targetMB = parseFloat(targetInput.value);
     if (isNaN(targetMB) || targetMB <= 0) return;
 
@@ -455,6 +514,7 @@ function initTargetCompressor() {
     status.style.color = '#10B981';
     
     try {
+      await ensureScript('imageCompression');
       const options = {
         maxSizeMB: targetMB,
         useWebWorker: true,
@@ -514,12 +574,6 @@ function initPdfSigner() {
   let sigPadCtx = sigPad.getContext('2d');
   let isDrawing = false;
 
-  // Setup pdf.js worker
-  if (window['pdfjs-dist/build/pdf']) {
-    const pdfjsLib = window['pdfjs-dist/build/pdf'];
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  }
-
   dropzone.addEventListener('click', () => fileInput.click());
   dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#34D399'; });
   dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = 'rgba(16, 185, 129, 0.3)');
@@ -541,7 +595,17 @@ function initPdfSigner() {
     dropzone.style.display = 'none';
     workspace.style.display = 'block';
     saveBtn.style.display = 'block';
-    
+
+    try {
+      await ensureScript('pdfLib');
+      await ensureScript('pdfjs');
+    } catch (e) {
+      showToast('Could not load the PDF engine. Check your connection.', 'error');
+      return;
+    }
+    const _pdfjs = window['pdfjs-dist/build/pdf'];
+    if (_pdfjs) _pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
     if (validFiles.length === 1) {
       currentFileBytes = await validFiles[0].arrayBuffer();
     } else {
@@ -851,12 +915,13 @@ function initExpenseFlattener() {
   }
 
   btn.addEventListener('click', async () => {
-    if (files.length === 0 || !window.PDFLib) return;
+    if (files.length === 0) return;
     btn.disabled = true;
     btn.textContent = '[ MERGING... ]';
     status.textContent = 'Generating PDF...';
-    
+
     try {
+      await ensureScript('pdfLib');
       const { PDFDocument } = PDFLib;
       const pdfDoc = await PDFDocument.create();
       
@@ -1165,8 +1230,6 @@ function initTextExtractor() {
   const workspace = document.getElementById('ocr-workspace');
   const textarea = document.getElementById('ocr-textarea');
   const copyBtn = document.getElementById('ocr-copy-btn');
-  
-  if (!window.Tesseract) return;
 
   dropzone.addEventListener('click', () => fileInput.click());
   
@@ -1217,6 +1280,7 @@ function initTextExtractor() {
     
     try {
       if (file.type.startsWith('image/')) {
+        await ensureScript('tesseract');
         const worker = await Tesseract.createWorker('eng', 1, {
           workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
           corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.0/tesseract-core.wasm.js',
@@ -1319,7 +1383,8 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.add('active');
       const targetId = btn.getAttribute('data-target');
       const targetView = document.getElementById(targetId);
-      
+      preloadTool(targetId); // warm this tool's libraries on first open
+
       if (targetView) {
         targetView.classList.add('active');
         handleLayout(); // Shuffle DOM if needed
@@ -1401,6 +1466,7 @@ function initGhostMaker() {
       
       if (ext === 'pdf') {
         // Parse PDF Metadata
+        await ensureScript('pdfLib');
         const arrayBuffer = await firstFile.arrayBuffer();
         const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer, { updateMetadata: false });
         
@@ -1424,6 +1490,7 @@ function initGhostMaker() {
         // Image Processing (JPG, PNG, WEBP, HEIC)
         let parseFile = firstFile;
         
+        if (ext === 'heic') { try { await ensureScript('heic2any'); } catch (e) {} }
         if (ext === 'heic' && window.heic2any) {
            metaList.innerHTML = '<div style="color: #10B981;">Decoding HEIC container...</div>';
            try {
@@ -1435,6 +1502,7 @@ function initGhostMaker() {
         }
         
         try {
+          await ensureScript('exifr');
           let parsedExif = await exifr.parse(parseFile);
           if (parsedExif) output = parsedExif;
           const gps = await exifr.gps(parseFile);
@@ -1489,6 +1557,8 @@ function initGhostMaker() {
 
          // Init Map if GPS exists
          if (hasGPS && output.latitude && output.longitude) {
+           ensureLeafletCss();
+           try { await ensureScript('leaflet'); } catch (e) {}
            if (leafletMap) {
              leafletMap.remove();
              leafletMap = null;
@@ -1560,6 +1630,7 @@ function initGhostMaker() {
       
       if (ext === 'pdf') {
          // PDF Scrubbing
+         await ensureScript('pdfLib');
          const arrayBuffer = await file.arrayBuffer();
          const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
          pdfDoc.setTitle('');
@@ -1573,6 +1644,7 @@ function initGhostMaker() {
       } else {
          // Image Scrubbing / Spoofing
          let imgBlob = file;
+         if (ext === 'heic') { try { await ensureScript('heic2any'); } catch (e) {} }
          if (ext === 'heic' && window.heic2any) {
             try {
               // Extract preview from HEIC to speed it up or convert full
@@ -1605,6 +1677,7 @@ function initGhostMaker() {
          });
 
          // Inject EXIF if Spoofing
+         if (action.startsWith('spoof-') && (ext === 'jpg' || ext === 'jpeg')) { try { await ensureScript('piexif'); } catch (e) {} }
          if (action.startsWith('spoof-') && window.piexif && (ext === 'jpg' || ext === 'jpeg')) {
             const coords = spoofer[action];
             if (coords) {
@@ -1671,6 +1744,7 @@ function initGhostMaker() {
     }
     
     // Download logic
+    if (processedBlobs.length > 1) { try { await ensureScript('jszip'); } catch (e) {} }
     if (processedBlobs.length === 1) {
        triggerDownload(processedBlobs[0].blob, processedBlobs[0].name);
     } else if (processedBlobs.length > 1 && window.JSZip) {
@@ -1761,9 +1835,11 @@ function initDataConverter() {
     try {
       if (ext === 'json') {
         const text = await file.text();
+        await ensureScript('json5').catch(() => {});
         const json = window.JSON5 ? JSON5.parse(text) : JSON.parse(text);
         handleSuccess(Array.isArray(json) ? json : [json], baseName);
       } else if (ext === 'csv') {
+        await ensureScript('papaparse');
         Papa.parse(file, {
           header: true,
           skipEmptyLines: true,
@@ -1773,6 +1849,7 @@ function initDataConverter() {
           error: function(err) { showToast("CSV Parse Error: " + err.message, "error"); }
         });
       } else if (ext === 'xlsx' || ext === 'xls') {
+        await ensureScript('xlsx');
         const buffer = await file.arrayBuffer();
         const workbook = XLSX.read(buffer, { type: 'array' });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -1787,16 +1864,18 @@ function initDataConverter() {
   }
 
   // --- Raw Text Logic ---
-  parseBtn.addEventListener('click', () => {
+  parseBtn.addEventListener('click', async () => {
     const text = textarea.value.trim();
     if (!text) { showToast("Mate, you gotta paste some data in first.", "error"); return; }
 
+    await ensureScript('json5').catch(() => {});
     try {
       const json = window.JSON5 ? JSON5.parse(text) : JSON.parse(text);
       handleSuccess(Array.isArray(json) ? json : [json], 'pasted_data');
       return;
     } catch (e) {
       // Fall back to CSV
+      await ensureScript('papaparse');
       Papa.parse(text, {
         header: true,
         skipEmptyLines: true,
@@ -1819,15 +1898,17 @@ function initDataConverter() {
     triggerDownload(blob, `${statusEl.dataset.filenameHint}_converted.json`);
   });
 
-  exportCsvBtn.addEventListener('click', () => {
+  exportCsvBtn.addEventListener('click', async () => {
     if (!parsedData) return;
+    await ensureScript('papaparse');
     const csvStr = Papa.unparse(parsedData);
     const blob = new Blob([csvStr], { type: 'text/csv;charset=utf-8;' });
     triggerDownload(blob, `${statusEl.dataset.filenameHint}_converted.csv`);
   });
 
-  exportXlsxBtn.addEventListener('click', () => {
+  exportXlsxBtn.addEventListener('click', async () => {
     if (!parsedData) return;
+    await ensureScript('xlsx');
     const worksheet = XLSX.utils.json_to_sheet(parsedData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
@@ -1990,7 +2071,8 @@ function initBulkOptimizer() {
     executeBtn.disabled = true;
     executeBtn.textContent = '[ PROCESSING... ]';
     statusArea.style.display = 'block';
-    
+
+    try { await ensureScript('jszip'); } catch (e) { showToast('Could not load the zip library. Check your connection.', 'error'); executeBtn.disabled = false; executeBtn.textContent = '[ OPTIMIZE & DOWNLOAD ]'; return; }
     const zip = new JSZip();
     const folder = zip.folder("optimized_images");
     
