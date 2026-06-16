@@ -485,6 +485,182 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // ── Editor power: duplicate / group / lock / nudge ───────────────
+  const CLONE_PROPS = ['id', 'name', 'origProps', 'selectable', 'evented', 'locked'];
+
+  function duplicateSelected() {
+    const active = canvas.getActiveObject();
+    if (!active) return;
+    active.clone((cloned) => {
+      canvas.discardActiveObject();
+      cloned.set({ left: (active.left || 0) + 30, top: (active.top || 0) + 30, evented: true });
+      if (cloned.type === 'activeSelection') {
+        cloned.canvas = canvas;
+        cloned.forEachObject((o) => canvas.add(o));
+        cloned.setCoords();
+      } else {
+        canvas.add(cloned);
+      }
+      canvas.setActiveObject(cloned);
+      canvas.requestRenderAll();
+      saveHistory();
+    }, CLONE_PROPS);
+  }
+
+  function groupSelected() {
+    const active = canvas.getActiveObject();
+    if (!active || active.type !== 'activeSelection') return;
+    active.toGroup();
+    canvas.requestRenderAll();
+    saveHistory();
+  }
+
+  function ungroupSelected() {
+    const active = canvas.getActiveObject();
+    if (!active || active.type !== 'group') return;
+    active.toActiveSelection();
+    canvas.requestRenderAll();
+    saveHistory();
+  }
+
+  function refreshLockBtn() {
+    const lockBtn = document.getElementById('lock-btn');
+    if (!lockBtn) return;
+    const a = canvas.getActiveObject();
+    lockBtn.textContent = (a && a.locked) ? '🔒 Unlock' : '🔓 Lock';
+  }
+
+  function toggleLockSelected() {
+    const objs = canvas.getActiveObjects();
+    if (!objs.length) return;
+    const locking = !objs[0].locked;
+    objs.forEach((o) => {
+      o.locked = locking;
+      o.lockMovementX = locking; o.lockMovementY = locking;
+      o.lockScalingX = locking; o.lockScalingY = locking;
+      o.lockRotation = locking;
+      o.hasControls = !locking;
+      if (o.type === 'i-text' || o.type === 'text') o.editable = !locking;
+    });
+    canvas.requestRenderAll();
+    refreshLockBtn();
+    saveHistory();
+  }
+
+  let nudgeSaveTimer = null;
+  function nudge(dx, dy) {
+    const active = canvas.getActiveObject();
+    if (!active || active.locked) return;
+    active.set({ left: active.left + dx, top: active.top + dy });
+    active.setCoords();
+    canvas.requestRenderAll();
+    clearTimeout(nudgeSaveTimer);
+    nudgeSaveTimer = setTimeout(saveHistory, 400);
+  }
+
+  const duplicateBtn = document.getElementById('duplicate-btn');
+  const groupBtn = document.getElementById('group-btn');
+  const ungroupBtn = document.getElementById('ungroup-btn');
+  const lockBtn = document.getElementById('lock-btn');
+  if (duplicateBtn) duplicateBtn.addEventListener('click', duplicateSelected);
+  if (groupBtn) groupBtn.addEventListener('click', groupSelected);
+  if (ungroupBtn) ungroupBtn.addEventListener('click', ungroupSelected);
+  if (lockBtn) lockBtn.addEventListener('click', toggleLockSelected);
+  canvas.on('selection:created', refreshLockBtn);
+  canvas.on('selection:updated', refreshLockBtn);
+  canvas.on('selection:cleared', refreshLockBtn);
+
+  // Shortcuts: Ctrl/Cmd+D duplicate, Ctrl/Cmd+G group, +Shift ungroup, arrows nudge.
+  window.addEventListener('keydown', (e) => {
+    const tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    const a = canvas.getActiveObject();
+    if (a && a.isEditing) return;
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && (e.key === 'd' || e.key === 'D')) { e.preventDefault(); duplicateSelected(); return; }
+    if (mod && (e.key === 'g' || e.key === 'G')) { e.preventDefault(); if (e.shiftKey) ungroupSelected(); else groupSelected(); return; }
+    if (e.key.indexOf('Arrow') === 0) {
+      if (!a) return;
+      e.preventDefault();
+      const step = e.shiftKey ? 10 : 1;
+      if (e.key === 'ArrowLeft') nudge(-step, 0);
+      else if (e.key === 'ArrowRight') nudge(step, 0);
+      else if (e.key === 'ArrowUp') nudge(0, -step);
+      else if (e.key === 'ArrowDown') nudge(0, step);
+    }
+  });
+
+  // ── Canvas zoom & pan (wheel + buttons on desktop, pinch on touch) ──
+  const zoomLevelEl = document.getElementById('zoom-level');
+  function clampZoom(z) { return Math.min(5, Math.max(0.2, z)); }
+  function showZoom() { if (zoomLevelEl) zoomLevelEl.textContent = Math.round(canvas.getZoom() * 100) + '%'; }
+  function canvasPoint(clientX, clientY) {
+    const rect = canvas.upperCanvasEl.getBoundingClientRect();
+    return {
+      x: (clientX - rect.left) * (canvas.width / rect.width),
+      y: (clientY - rect.top) * (canvas.height / rect.height)
+    };
+  }
+  function zoomAt(clientX, clientY, zoom) {
+    canvas.zoomToPoint(canvasPoint(clientX, clientY), clampZoom(zoom));
+    showZoom();
+  }
+  function resetView() {
+    canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+    canvas.requestRenderAll();
+    showZoom();
+  }
+  const resetViewBtn = document.getElementById('reset-view-btn');
+  const zoomInBtn = document.getElementById('zoom-in-btn');
+  const zoomOutBtn = document.getElementById('zoom-out-btn');
+  if (resetViewBtn) resetViewBtn.addEventListener('click', resetView);
+  function centerZoom(factor) {
+    const rect = canvas.upperCanvasEl.getBoundingClientRect();
+    zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, canvas.getZoom() * factor);
+  }
+  if (zoomInBtn) zoomInBtn.addEventListener('click', () => centerZoom(1.2));
+  if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => centerZoom(1 / 1.2));
+
+  canvas.on('mouse:wheel', (opt) => {
+    const e = opt.e;
+    zoomAt(e.clientX, e.clientY, canvas.getZoom() * Math.pow(0.999, e.deltaY));
+    e.preventDefault(); e.stopPropagation();
+  });
+  // Alt+drag to pan on desktop without disturbing selection.
+  let panning = false, panLast = null;
+  canvas.on('mouse:down', (opt) => {
+    if (opt.e && opt.e.altKey) { panning = true; canvas.selection = false; panLast = { x: opt.e.clientX, y: opt.e.clientY }; }
+  });
+  canvas.on('mouse:move', (opt) => {
+    if (!panning || !panLast) return;
+    const e = opt.e;
+    canvas.relativePan({ x: e.clientX - panLast.x, y: e.clientY - panLast.y });
+    panLast = { x: e.clientX, y: e.clientY };
+  });
+  canvas.on('mouse:up', () => { panning = false; panLast = null; canvas.selection = true; });
+
+  // Pinch-zoom + two-finger pan on touch devices.
+  (function () {
+    const el = canvas.upperCanvasEl;
+    let pinchDist = 0, pinchMid = null, twoFinger = false;
+    const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    const mid = (t) => ({ x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 });
+    el.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) { twoFinger = true; pinchDist = dist(e.touches); pinchMid = mid(e.touches); canvas.selection = false; canvas.discardActiveObject(); canvas.requestRenderAll(); }
+    }, { passive: true });
+    el.addEventListener('touchmove', (e) => {
+      if (!twoFinger || e.touches.length !== 2) return;
+      e.preventDefault();
+      const d = dist(e.touches), m = mid(e.touches);
+      if (pinchDist) zoomAt(m.x, m.y, canvas.getZoom() * (d / pinchDist));
+      if (pinchMid) canvas.relativePan({ x: m.x - pinchMid.x, y: m.y - pinchMid.y });
+      pinchDist = d; pinchMid = m;
+    }, { passive: false });
+    const endTouch = (e) => { if (e.touches.length < 2) { twoFinger = false; pinchDist = 0; pinchMid = null; canvas.selection = true; } };
+    el.addEventListener('touchend', endTouch);
+    el.addEventListener('touchcancel', endTouch);
+  })();
+
   function updatePropertyPanel() {
     const activeObj = canvas.getActiveObject();
     if (!activeObj) {

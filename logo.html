@@ -251,6 +251,28 @@
                 <button id="preview-mockup-btn" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px dashed var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                     🕶️ 3D Mockup
                 </button>
+
+                <button id="duplicate-btn" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem;">
+                    ⧉ Duplicate
+                </button>
+                <button id="lock-btn" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem;">
+                    🔓 Lock
+                </button>
+                <button id="group-btn" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem;">
+                    ⊞ Group
+                </button>
+                <button id="ungroup-btn" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem;">
+                    ⊟ Ungroup
+                </button>
+                <button id="zoom-out-btn" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem;">
+                    ➖ Zoom
+                </button>
+                <button id="zoom-in-btn" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem;">
+                    ➕ Zoom
+                </button>
+                <button id="reset-view-btn" style="grid-column: span 2; padding: 10px; background: rgba(255,255,255,0.05); border: 1px dashed var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem;">
+                    🔍 Reset View · <span id="zoom-level">100%</span>
+                </button>
               </div>
 
             </div>
@@ -537,7 +559,7 @@
   📥 <span>Save Logo</span>
 </button>
 
-  <script src="logo.js?v=26"></script>
+  <script src="logo.js?v=27"></script>
 
     <!-- Mockup Modal -->
     <div id="mockup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
