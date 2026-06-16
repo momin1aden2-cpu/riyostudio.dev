@@ -89,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const actOverlay = document.getElementById('vs-act-overlay');
   const overlayPanel = document.getElementById('vs-overlay-panel');
   const ovlVideo = document.getElementById('vs-ovl-video');
+  const ovlImg = document.getElementById('vs-ovl-image');
   const ovlAddBtn = document.getElementById('vs-ovl-add');
   const ovlRemoveBtn = document.getElementById('vs-ovl-remove');
   const ovlInput = document.getElementById('vs-ovl-input');
@@ -1712,61 +1713,86 @@ document.addEventListener('DOMContentLoaded', () => {
   // download. Video 2 is edited fullscreen on its own tab (tap the inset to jump there).
   const compositeOn = () => editingTrack === 1 && t2.length > 0 && pipLayout !== 'off';
 
+  // Apply the PiP / side-by-side position + size to an overlay element (video OR image).
+  function setOverlayLayout(el) {
+    if (!el) return;
+    el.style.filter = video.style.filter || '';   // match the colour look
+    el.style.objectFit = 'cover';
+    if (pipLayout === 'pip') {
+      el.classList.add('draggable'); el.classList.remove('dimmed');
+      el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.height = 'auto';
+      el.style.width = (clamp01(pipSize) * 100).toFixed(2) + '%';
+      el.style.left = (clamp01(pipX) * 100).toFixed(2) + '%';
+      el.style.top = (clamp01(pipY) * 100).toFixed(2) + '%';
+      el.style.borderRadius = '10px';
+      el.style.boxShadow = '0 4px 16px rgba(0,0,0,0.55)';
+    } else {   // side-by-side: the overlay takes one cropped half of the frame
+      el.classList.remove('draggable', 'dimmed');
+      el.style.borderRadius = '0'; el.style.boxShadow = 'none';
+      if (sbsDir === 'tb') {
+        const ot = sbsSwap ? '0%' : '50%';
+        Object.assign(el.style, { left: '0', top: ot, right: 'auto', bottom: 'auto', width: '100%', height: '50%' });
+      } else {
+        const ol = sbsSwap ? '0%' : '50%';
+        Object.assign(el.style, { left: ol, top: '0', right: 'auto', bottom: 'auto', width: '50%', height: '100%' });
+      }
+    }
+  }
+
   function applyOverlayPreview() {
-    if (!ovlVideo || !video || recording) return;
+    if ((!ovlVideo && !ovlImg) || !video || recording) return;
     // Reset the main video to a full, centred frame.
     video.style.left = ''; video.style.top = ''; video.style.right = ''; video.style.bottom = '';
     video.style.width = ''; video.style.height = '';
     video.style.objectFit = (outFill === 'crop') ? 'cover' : 'contain';
     if (!compositeOn()) {
-      ovlVideo.style.display = 'none';
-      ovlVideo.classList.remove('draggable', 'dimmed');
-      if (!ovlVideo.paused) ovlVideo.pause();
-      video.muted = false; ovlVideo.muted = true;
+      [ovlVideo, ovlImg].forEach((el) => { if (el) { el.style.display = 'none'; el.classList.remove('draggable', 'dimmed'); } });
+      if (ovlVideo && !ovlVideo.paused) ovlVideo.pause();
+      video.muted = false; if (ovlVideo) ovlVideo.muted = true;
       return;
     }
     // Preview audio follows the "Which video's sound?" choice so you can hear it.
     video.muted = (mergeAudio === 'v2');
-    ovlVideo.muted = (mergeAudio === 'v1');
-    ovlVideo.style.filter = video.style.filter || '';   // match the colour look
-    ovlVideo.style.display = 'block';
-    ovlVideo.style.objectFit = 'cover';
-    if (pipLayout === 'pip') {
-      ovlVideo.classList.add('draggable'); ovlVideo.classList.remove('dimmed');
-      ovlVideo.style.right = 'auto'; ovlVideo.style.bottom = 'auto'; ovlVideo.style.height = 'auto';
-      ovlVideo.style.width = (clamp01(pipSize) * 100).toFixed(2) + '%';
-      ovlVideo.style.left = (clamp01(pipX) * 100).toFixed(2) + '%';
-      ovlVideo.style.top = (clamp01(pipY) * 100).toFixed(2) + '%';
-      ovlVideo.style.borderRadius = '10px';
-      ovlVideo.style.boxShadow = '0 4px 16px rgba(0,0,0,0.55)';
-    } else {   // side-by-side: split the frame, both halves cropped to fill
-      ovlVideo.classList.remove('draggable', 'dimmed');
-      ovlVideo.style.borderRadius = '0'; ovlVideo.style.boxShadow = 'none';
+    if (ovlVideo) ovlVideo.muted = (mergeAudio === 'v1');
+    if (pipLayout !== 'pip') {   // side-by-side: the main video takes the other half
       video.style.objectFit = 'cover';
       if (sbsDir === 'tb') {
-        const mt = sbsSwap ? '50%' : '0%', ot = sbsSwap ? '0%' : '50%';
+        const mt = sbsSwap ? '50%' : '0%';
         Object.assign(video.style, { left: '0', top: mt, right: 'auto', bottom: 'auto', width: '100%', height: '50%' });
-        Object.assign(ovlVideo.style, { left: '0', top: ot, right: 'auto', bottom: 'auto', width: '100%', height: '50%' });
       } else {
-        const ml = sbsSwap ? '50%' : '0%', ol = sbsSwap ? '0%' : '50%';
+        const ml = sbsSwap ? '50%' : '0%';
         Object.assign(video.style, { left: ml, top: '0', right: 'auto', bottom: 'auto', width: '50%', height: '100%' });
-        Object.assign(ovlVideo.style, { left: ol, top: '0', right: 'auto', bottom: 'auto', width: '50%', height: '100%' });
       }
     }
-    syncOverlayPreview(dropGlobal);
+    setOverlayLayout(ovlVideo);
+    setOverlayLayout(ovlImg);
+    syncOverlayPreview(dropGlobal);   // shows the right element (video or image) for the current clip
   }
 
-  // Seek the 2nd-video element to its frame at the whole-video time, and keep it
-  // playing/paused in step with the main preview.
+  // Show track 2's frame at the whole-video time — a <video> for video clips, an
+  // <img> for image clips (a <video> can't display an image → it went black before).
   function syncOverlayPreview(g) {
-    if (!ovlVideo || recording) return;
-    if (!compositeOn()) { if (!ovlVideo.paused) ovlVideo.pause(); return; }
+    if ((!ovlVideo && !ovlImg) || recording) return;
+    if (!compositeOn()) { if (ovlVideo && !ovlVideo.paused) ovlVideo.pause(); return; }
     const total = trackKept(t2);
     const gg = (g == null) ? dropGlobal : g;
-    if (gg >= total - 0.02) { if (!ovlVideo.paused) ovlVideo.pause(); return; }   // Video 2 ended → freeze
+    if (gg >= total - 0.02) { if (ovlVideo && !ovlVideo.paused) ovlVideo.pause(); return; }   // Video 2 ended → freeze
     const at = clipAtGlobalIn(t2, gg);
     if (!at) return;
     const s = at.clip;
+    if (isImage(s)) {
+      if (ovlImg) {
+        if (ovlImg.src !== s.url) ovlImg.src = s.url;
+        ovlImg.style.filter = video.style.filter || '';
+        ovlImg.style.display = 'block';
+      }
+      if (ovlVideo) { ovlVideo.style.display = 'none'; if (!ovlVideo.paused) ovlVideo.pause(); }
+      return;
+    }
+    // Video clip on track 2
+    if (ovlImg) ovlImg.style.display = 'none';
+    if (!ovlVideo) return;
+    ovlVideo.style.display = 'block';
     const ft = inOf(s) + at.local * speedOf(s);
     if (ovlVideo.src !== s.url) {
       ovlVideo.src = s.url;
@@ -1802,10 +1828,11 @@ document.addEventListener('DOMContentLoaded', () => {
     ovlPointerMoved = false;
     if (pipLayout !== 'pip') return;   // side-by-side isn't draggable; the click handler switches tracks
     e.preventDefault();
+    const dragEl = e.currentTarget || ovlVideo;   // the visible overlay (video or image)
     const wrap = videoWrap.getBoundingClientRect();
     const move = (ev) => {
       ovlPointerMoved = true;
-      const r = ovlVideo.getBoundingClientRect();
+      const r = dragEl.getBoundingClientRect();
       const x = (ev.clientX - wrap.left - r.width / 2) / wrap.width;
       const y = (ev.clientY - wrap.top - r.height / 2) / wrap.height;
       pipX = Math.max(0, Math.min(1 - r.width / wrap.width, x));
@@ -1821,7 +1848,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function setPipCorner(corner) {
     const m = 0.03;
     let hFrac = pipSize * 0.6;
-    if (ovlVideo && videoWrap) { const wr = videoWrap.getBoundingClientRect(); const r = ovlVideo.getBoundingClientRect(); if (wr.height && r.height) hFrac = r.height / wr.height; }
+    const ovlEl = (ovlImg && ovlImg.style.display !== 'none') ? ovlImg : ovlVideo;
+    if (ovlEl && videoWrap) { const wr = videoWrap.getBoundingClientRect(); const r = ovlEl.getBoundingClientRect(); if (wr.height && r.height) hFrac = r.height / wr.height; }
     pipX = (corner === 'tl' || corner === 'bl') ? m : (1 - pipSize - m);
     pipY = (corner === 'tl' || corner === 'tr') ? m : Math.max(0, 1 - hFrac - m);
     applyOverlayPreview();
@@ -2050,8 +2078,9 @@ document.addEventListener('DOMContentLoaded', () => {
   mergeAudioBtns.forEach((b) => b.addEventListener('click', () => { mergeAudio = b.dataset.mergeAudio; applyOverlayPreview(); refreshOverlayButtons(); }));
   if (ovlHandleL) ovlHandleL.addEventListener('pointerdown', ovlTrimHandle('L'));
   if (ovlHandleR) ovlHandleR.addEventListener('pointerdown', ovlTrimHandle('R'));
-  if (ovlVideo) ovlVideo.addEventListener('pointerdown', pipDragStart);
-  if (ovlVideo) ovlVideo.addEventListener('click', () => { if (!ovlPointerMoved && otherTrackClips().length) setEditingTrack(editingTrack === 1 ? 2 : 1); });
+  const ovlSwitchTrack = () => { if (!ovlPointerMoved && otherTrackClips().length) setEditingTrack(editingTrack === 1 ? 2 : 1); };
+  if (ovlVideo) { ovlVideo.addEventListener('pointerdown', pipDragStart); ovlVideo.addEventListener('click', ovlSwitchTrack); }
+  if (ovlImg) { ovlImg.addEventListener('pointerdown', pipDragStart); ovlImg.addEventListener('click', ovlSwitchTrack); }
 
   // Track switcher (Video 1 / Video 2)
   tsBtns.forEach((b) => b.addEventListener('click', () => setEditingTrack(parseInt(b.dataset.track, 10))));
