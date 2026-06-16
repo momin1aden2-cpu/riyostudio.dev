@@ -3241,11 +3241,11 @@ body.drawer-open { overflow: hidden; }
   .drawer-nav .nav-inner > .nav-cta-btn { display: none !important; }
   /* Burger hard in the top-left corner, brand pushed to the opposite corner */
   .drawer-nav .nav-inner { justify-content: space-between; gap: 14px; padding-left: 14px; padding-right: 16px; }
-  /* Compact the brand on phones so the wide tagline doesn't drag the logo toward
-     the centre — keep a tight logo + name pinned in the right corner. */
-  .drawer-nav .nav-brand-tag { display: none; }
-  .drawer-nav .nav-brand-name { font-size: 16px; }
-  .drawer-nav .nav-brand-icon-img { height: 28px; width: 28px; }
+  /* On phones show ONLY the logo icon (no name/tagline) so the brand is a small
+     mark pinned in the right corner, with the menu button in the left corner. */
+  .drawer-nav .nav-brand-tag,
+  .drawer-nav .nav-brand-name { display: none; }
+  .drawer-nav .nav-brand-icon-img { height: 30px; width: 30px; }
   /* The performance HUD sits bottom-right and would cover the bottom bar */
   #perf-hud { display: none !important; }
 }
