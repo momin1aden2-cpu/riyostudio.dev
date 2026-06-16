@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(resizeCanvas, 500);
   setTimeout(resizeCanvas, 1500);
   
-  const addBrandTextBtn = document.getElementById('add-brand-text-btn');
   const toggleGridBtn = document.getElementById('toggle-grid-btn');
   const previewMockupBtn = document.getElementById('preview-mockup-btn');
   
@@ -32,12 +31,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const magicBrandInput = document.getElementById('magic-brand-input');
   const magicKeywordInput = document.getElementById('magic-keyword-input');
   const magicGenerateBtn = document.getElementById('magic-generate-btn');
-  const motionSelector = document.getElementById('motion-selector');
 
   const mockupModal = document.getElementById('mockup-modal');
   const closeMockupBtn = document.getElementById('close-mockup-btn');
   const mockupImage = document.getElementById('mockup-image');
-  const paletteSelector = document.getElementById('palette-selector');
 
   const addShapeBtn = document.getElementById('add-shape-btn');
   const addImageBtn = document.getElementById('add-image-btn');
@@ -76,7 +73,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const shadowBlur = document.getElementById('shadow-blur');
   const shadowOffset = document.getElementById('shadow-offset');
   const shadowColor = document.getElementById('shadow-color');
-
 
   const fontBoldBtn = document.getElementById('font-bold-btn');
   const fontItalicBtn = document.getElementById('font-italic-btn');
@@ -697,6 +693,34 @@ document.addEventListener('DOMContentLoaded', () => {
   if (shadowOffset) shadowOffset.addEventListener('input', updateShadow);
   if (shadowColor) shadowColor.addEventListener('input', updateShadow);
 
+  // One-tap curated recolour of every text + icon
+  const paletteSelector = document.getElementById('palette-selector');
+  if (paletteSelector) {
+      paletteSelector.addEventListener('change', (e) => {
+          const theme = e.target.value;
+          if (theme === 'none') return;
+          let colors = [];
+          if (theme === 'luxury') colors = ['#D4AF37', '#ffffff', '#aaaaaa'];
+          if (theme === 'tech') colors = ['#06b6d4', '#e0f2fe', '#38bdf8'];
+          if (theme === 'eco') colors = ['#10b981', '#a7f3d0', '#047857'];
+          if (theme === 'sunset') colors = ['#f43f5e', '#fb923c', '#fde047'];
+          let colorIndex = 0;
+          canvas.getObjects().forEach(obj => {
+              if (obj === bgRect) return;
+              if (obj.type === 'i-text' || obj.type === 'text') {
+                  obj.set('fill', colors[colorIndex % colors.length]); colorIndex++;
+              } else if (obj.type === 'group' || obj.type === 'path') {
+                  if (obj.set) obj.set('fill', colors[colorIndex % colors.length]);
+                  if (obj._objects) {
+                      obj._objects.forEach(child => { if (child.set && child.fill) child.set('fill', colors[colorIndex % colors.length]); });
+                  }
+                  colorIndex++;
+              }
+          });
+          canvas.renderAll();
+          if (typeof saveHistory === 'function') saveHistory();
+      });
+  }
 
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -727,14 +751,32 @@ document.addEventListener('DOMContentLoaded', () => {
       imageUploadInput.value = '';
   });
 
+  // Load the on-device background-removal model only when it's first needed.
+  let _imglyBgP = null;
+  function ensureImglyBg() {
+    if (typeof imglyRemoveBackground !== 'undefined') return Promise.resolve();
+    if (_imglyBgP) return _imglyBgP;
+    _imglyBgP = new Promise((resolve, reject) => {
+      const sc = document.createElement('script');
+      sc.src = 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.3/dist/imgly-background-removal.browser.min.js';
+      sc.onload = () => resolve();
+      sc.onerror = () => { _imglyBgP = null; reject(new Error('imgly load failed')); };
+      document.head.appendChild(sc);
+    });
+    return _imglyBgP;
+  }
+
   if (removeBgBtn) {
       removeBgBtn.addEventListener('click', async () => {
           const activeObj = canvas.getActiveObject();
           if (activeObj && activeObj.type === 'image') {
+              removeBgBtn.disabled = true;
               if (typeof imglyRemoveBackground === 'undefined') {
-                  alert('Background removal model is still loading. Please try again in a moment.'); return;
+                  removeBgBtn.textContent = '⏳ Loading AI…';
+                  try { await ensureImglyBg(); }
+                  catch (e) { alert('Could not load the background remover. Check your connection.'); removeBgBtn.textContent = '✨ Remove Background (AI)'; removeBgBtn.disabled = false; return; }
               }
-              removeBgBtn.textContent = '⏳ Processing (AI)...'; removeBgBtn.disabled = true;
+              removeBgBtn.textContent = '⏳ Processing (AI)...';
               try {
                   const blob = await fetch(activeObj.getSrc()).then(r => r.blob());
                   const imageBlob = await imglyRemoveBackground(blob);
@@ -817,7 +859,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  
   const iconSearchInput = document.getElementById('icon-search-input');
   const iconSearchBtn = document.getElementById('icon-search-btn');
   const iconSearchResults = document.getElementById('icon-search-results');
@@ -892,27 +933,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  
-  // --- Logo Science Features ---
-  if (addBrandTextBtn) {
-      addBrandTextBtn.addEventListener('click', () => {
-          const brandText = new fabric.IText('RIYO', {
-              left: canvas.width / 2, top: canvas.height / 2 - 20,
-              fontFamily: 'Inter', fontWeight: 'bold', fontSize: 64, fill: '#ffffff',
-              originX: 'center', originY: 'center', charSpacing: 0
-          });
-          const subText = new fabric.IText('STUDIO', {
-              left: canvas.width / 2, top: canvas.height / 2 + 30,
-              fontFamily: 'Space Grotesk', fontWeight: 'normal', fontSize: 24, fill: '#ffffff',
-              originX: 'center', originY: 'center', charSpacing: 400
-          });
-          canvas.add(brandText, subText);
-          canvas.renderAll();
-      });
-  }
-
-  
-  if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
+if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
       const json = canvas.toJSON(['id', 'selectable', 'evented', 'shadow']);
       localStorage.setItem('riyo_logo_project', JSON.stringify(json));
       alert('Project saved to browser memory! 💾');
@@ -1176,59 +1197,7 @@ document.addEventListener('DOMContentLoaded', () => {
       saveHistory();
   });
 
-  let animationFrame;
-  let animTime = 0;
-  function animateCanvas() {
-      if (!motionSelector) return;
-      const type = motionSelector.value;
-      animTime += 0.05;
-      
-      if (type !== 'none') {
-          canvas.getObjects().forEach(obj => {
-              if (obj === bgRect) return;
-              if (!obj.origProps) {
-                  obj.origProps = { scaleX: obj.scaleX, scaleY: obj.scaleY, top: obj.top, angle: obj.angle };
-              }
-              if (type === 'pulse') {
-                  const scale = 1 + Math.sin(animTime) * 0.05;
-                  obj.set('scaleX', obj.origProps.scaleX * scale);
-                  obj.set('scaleY', obj.origProps.scaleY * scale);
-              } else if (type === 'float') {
-                  const offset = Math.sin(animTime) * 10;
-                  obj.set('top', obj.origProps.top + offset);
-              } else if (type === 'spin') {
-                  obj.set('angle', obj.angle + 1);
-              }
-          });
-          canvas.renderAll();
-          animationFrame = requestAnimationFrame(animateCanvas);
-      } else {
-          canvas.getObjects().forEach(obj => {
-              if (obj !== bgRect && obj.origProps) {
-                  obj.set('scaleX', obj.origProps.scaleX);
-                  obj.set('scaleY', obj.origProps.scaleY);
-                  obj.set('top', obj.origProps.top);
-                  obj.set('angle', obj.origProps.angle);
-                  delete obj.origProps;
-              }
-          });
-          canvas.renderAll();
-      }
-  }
-  
-  if (motionSelector) {
-      motionSelector.addEventListener('change', () => {
-          if (motionSelector.value !== 'none') {
-              if (!animationFrame) animateCanvas();
-          } else {
-              if (animationFrame) { cancelAnimationFrame(animationFrame); animationFrame = null; }
-              animateCanvas(); // run once to reset
-          }
-      });
-  }
-
-
-  let showGrid = false;
+let showGrid = false;
   if (toggleGridBtn) {
       toggleGridBtn.addEventListener('click', () => {
           showGrid = !showGrid;
@@ -1265,39 +1234,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   });
 
-  if (paletteSelector) {
-      paletteSelector.addEventListener('change', (e) => {
-          const theme = e.target.value;
-          if (theme === 'none') return;
-          
-          let colors = [];
-          if (theme === 'luxury') colors = ['#D4AF37', '#ffffff', '#aaaaaa'];
-          if (theme === 'tech') colors = ['#06b6d4', '#e0f2fe', '#38bdf8'];
-          if (theme === 'eco') colors = ['#10b981', '#a7f3d0', '#047857'];
-          if (theme === 'sunset') colors = ['#f43f5e', '#fb923c', '#fde047'];
-          
-          let colorIndex = 0;
-          canvas.getObjects().forEach(obj => {
-              if (obj === bgRect) return; // Skip background
-              
-              if (obj.type === 'i-text' || obj.type === 'text') {
-                  obj.set('fill', colors[colorIndex % colors.length]);
-                  colorIndex++;
-              } else if (obj.type === 'group' || obj.type === 'path') {
-                  if (obj.set) obj.set('fill', colors[colorIndex % colors.length]);
-                  if (obj._objects) {
-                      obj._objects.forEach(child => { 
-                          if (child.set && child.fill) child.set('fill', colors[colorIndex % colors.length]); 
-                      });
-                  }
-                  colorIndex++;
-              }
-          });
-          canvas.renderAll();
-      });
-  }
-
-  if (previewMockupBtn && mockupModal && closeMockupBtn) {
+if (previewMockupBtn && mockupModal && closeMockupBtn) {
       previewMockupBtn.addEventListener('click', () => {
           canvas.discardActiveObject();
           

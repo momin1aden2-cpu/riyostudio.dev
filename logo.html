@@ -204,6 +204,19 @@
                 </div>
             </div>
 
+            <!-- RECOLOUR PALETTE PANEL -->
+            <div class="tool-bento-panel tint-emerald" style="margin-bottom: 8px;">
+                <label style="display: block; font-size: 1.05rem; color: #10B981; margin-bottom: 12px; font-weight: bold;">🎨 Quick Recolour</label>
+                <select id="palette-selector" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 6px; padding: 10px; color: var(--text-main); font-family: inherit; font-size: 1.0rem; cursor: pointer;">
+                    <option value="none">Choose a palette…</option>
+                    <option value="luxury">✨ Luxury (gold)</option>
+                    <option value="tech">💎 Tech (cyan)</option>
+                    <option value="eco">🌿 Eco (green)</option>
+                    <option value="sunset">🌅 Sunset</option>
+                </select>
+                <p style="font-size: 0.72rem; color: var(--text-dim); margin: 8px 0 0;">Recolours all text &amp; icons in one tap.</p>
+            </div>
+
             <!-- LAYERS PANEL -->
             <div class="tool-bento-panel tint-blue" style="margin-bottom: 8px;">
                 <label style="display: block; font-size: 1.05rem; color: #10B981; margin-bottom: 12px; font-weight: bold;">📚 Layers</label>
@@ -292,6 +305,44 @@
                 <div style="display: flex; gap: 8px;">
                   <input type="color" id="obj-color-picker" value="#ffffff" style="height: 32px; width: 48px; cursor: pointer; background: none; border: none; padding: 0;">
                   <input type="text" id="obj-color-hex" value="#ffffff" style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text-main); font-family: 'JetBrains Mono'; font-size: 1.0rem;">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Opacity <span id="opacity-val">100%</span></label>
+                <input type="range" id="obj-opacity-slider" min="0" max="100" value="100" style="width: 100%;">
+              </div>
+
+              <div class="form-group">
+                <label style="display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Outline</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <input type="color" id="obj-stroke-color" value="#000000" style="height: 32px; width: 48px; cursor: pointer; background: none; border: none; padding: 0;">
+                  <input type="range" id="obj-stroke-width" min="0" max="40" value="0" style="flex: 1;" title="Outline thickness">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label style="display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Drop Shadow</label>
+                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+                  <input type="color" id="shadow-color" value="#000000" style="height: 32px; width: 48px; cursor: pointer; background: none; border: none; padding: 0;">
+                  <span style="font-size: 0.78rem; color: var(--text-dim); width: 44px;">Blur</span>
+                  <input type="range" id="shadow-blur" min="0" max="60" value="0" style="flex: 1;">
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <span style="font-size: 0.78rem; color: var(--text-dim); width: 52px;">Offset</span>
+                  <input type="range" id="shadow-offset" min="0" max="40" value="0" style="flex: 1;">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label style="display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Arrange</label>
+                <div style="display: flex; gap: 4px;">
+                  <button id="align-center-h" title="Center horizontally" style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 4px; color: var(--text-main); cursor: pointer; font-size: 0.8rem;">↔ Center</button>
+                  <button id="align-center-v" title="Center vertically" style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 4px; color: var(--text-main); cursor: pointer; font-size: 0.8rem;">↕ Center</button>
+                </div>
+                <div style="display: flex; gap: 4px; margin-top: 6px;">
+                  <button id="layer-up-btn" title="Bring forward" style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 4px; color: var(--text-main); cursor: pointer; font-size: 0.8rem;">⬆ Forward</button>
+                  <button id="layer-down-btn" title="Send backward" style="flex: 1; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 4px; color: var(--text-main); cursor: pointer; font-size: 0.8rem;">⬇ Back</button>
                 </div>
               </div>
             </div>
@@ -486,7 +537,7 @@
   📥 <span>Save Logo</span>
 </button>
 
-  <script src="logo.js?v=21"></script>
+  <script src="logo.js?v=23"></script>
 
     <!-- Mockup Modal -->
     <div id="mockup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
