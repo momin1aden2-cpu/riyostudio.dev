@@ -3270,3 +3270,17 @@ body.drawer-open { overflow: hidden; }
   white-space: nowrap;
   border: 0;
 }
+
+/* Home: device-aware capability note on tool cards (e.g. Video Studio recording) */
+.card-note {
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--accent-bright);
+}
+.card-note-mobile { display: none; }
+@media (max-width: 768px) {
+  .card-note-desktop { display: none; }
+  .card-note-mobile { display: block; color: var(--text-dim); font-weight: 500; }
+}
