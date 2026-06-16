@@ -1,4 +1,4 @@
-const CACHE_NAME = 'riyo-studio-v34';
+const CACHE_NAME = 'riyo-studio-v35';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -59,6 +59,34 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   const isVersioned = url.search.indexOf('v=') !== -1;
 
+  // Safari refuses a redirected response served from a service worker
+  // ("Response served by service worker has redirections"), which breaks
+  // navigations. Rebuild any redirected response as a plain, non-redirected one.
+  const clean = (resp) => {
+    if (!resp || !resp.redirected) return resp;
+    return resp.blob().then((body) => new Response(body, {
+      status: resp.status, statusText: resp.statusText, headers: resp.headers
+    }));
+  };
+
+  // Page navigations → network-first, so the latest page always loads and the
+  // worker never serves a stale layout. Falls back to cache only when offline.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then(clean)
+        .then((resp) => {
+          if (resp && resp.status === 200 && resp.type === 'basic') {
+            const copy = resp.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          }
+          return resp;
+        })
+        .catch(() => caches.match(request).then((c) => clean(c) || caches.match('/index.html').then(clean)))
+    );
+    return;
+  }
+
   // Versioned assets (?v=...) are content-addressed and immutable.
   // Serve cache-first for instant loads; only hit the network on a miss.
   if (isVersioned) {
@@ -77,7 +105,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Pages and unversioned assets: stale-while-revalidate.
+  // Other unversioned assets: stale-while-revalidate.
   // Render instantly from cache, refresh the copy in the background.
   event.respondWith(
     caches.open(CACHE_NAME).then((cache) =>

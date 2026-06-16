@@ -2929,13 +2929,13 @@ html.supernova body {
 
 /* Hamburger — desktop hides it (the link row is shown); mobile reveals it below */
 .nav-burger {
-  --burger-w: 22px;
+  --burger-w: 18px;
   display: none;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  margin-left: -8px;
+  width: 38px;
+  height: 38px;
+  margin-left: -6px;
   padding: 0;
   border: 1px solid transparent;
   border-radius: 12px;
@@ -2958,7 +2958,7 @@ html.supernova body {
 .nav-burger-box {
   position: relative;
   width: var(--burger-w);
-  height: 16px;
+  height: 14px;
 }
 .nav-burger-line,
 .nav-burger-line::before,
@@ -2971,15 +2971,15 @@ html.supernova body {
   background: currentColor;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s, width 0.3s;
 }
-.nav-burger-line { top: 7px; }
-.nav-burger-line::before { content: ''; top: -6px; }
-.nav-burger-line::after { content: ''; top: 6px; }
-.nav-burger:hover .nav-burger-line::after { width: 15px; }
+.nav-burger-line { top: 6px; }
+.nav-burger-line::before { content: ''; top: -5px; }
+.nav-burger-line::after { content: ''; top: 5px; }
+.nav-burger:hover .nav-burger-line::after { width: 12px; }
 /* Animate to an X while the drawer is open */
 .nav-burger.is-open { color: var(--accent-bright); }
 .nav-burger.is-open .nav-burger-line { transform: rotate(45deg); }
-.nav-burger.is-open .nav-burger-line::before { transform: translateY(6px) rotate(-90deg); width: var(--burger-w); }
-.nav-burger.is-open .nav-burger-line::after { transform: translateY(-6px) rotate(-90deg); width: var(--burger-w); opacity: 0; }
+.nav-burger.is-open .nav-burger-line::before { transform: translateY(5px) rotate(-90deg); width: var(--burger-w); }
+.nav-burger.is-open .nav-burger-line::after { transform: translateY(-5px) rotate(-90deg); width: var(--burger-w); opacity: 0; }
 
 /* Overlay scrim */
 .site-drawer-overlay {
