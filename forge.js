@@ -1,5 +1,13 @@
 // forge.js
 
+// Escape anything sourced from a user file (names, EXIF tags, error text)
+// before it touches innerHTML, so a crafted file can't inject markup/script.
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initUniversalConverter();
   initDataConverter();
@@ -117,7 +125,7 @@ function initUniversalConverter() {
 
   function handleFile(file) {
     currentFile = file;
-    dropzone.querySelector('p').innerHTML = `Loaded: <span style="color: #10B981;">${file.name}</span> (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+    dropzone.querySelector('p').innerHTML = `Loaded: <span style="color: #10B981;">${escapeHtml(file.name)}</span> (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
     
     formatOptions.innerHTML = '';
     forgeBtn.textContent = '[ SELECT A FORMAT ]';
@@ -460,7 +468,7 @@ function initHeicDecoder() {
       return;
     }
     currentFile = file;
-    dropzone.querySelector('p').innerHTML = `Loaded: <span style="color: #10B981;">${file.name}</span>`;
+    dropzone.querySelector('p').innerHTML = `Loaded: <span style="color: #10B981;">${escapeHtml(file.name)}</span>`;
     controls.style.display = 'block';
     status.textContent = '';
   }
@@ -529,7 +537,7 @@ function initTargetCompressor() {
     }
     currentFile = file;
     const mbSize = (file.size / 1024 / 1024).toFixed(2);
-    dropzone.querySelector('p').innerHTML = `Loaded: <span style="color: #10B981;">${file.name}</span>`;
+    dropzone.querySelector('p').innerHTML = `Loaded: <span style="color: #10B981;">${escapeHtml(file.name)}</span>`;
     fileInfo.textContent = `Current Size: ${mbSize} MB`;
     targetInput.value = (Math.max(0.1, mbSize * 0.5)).toFixed(2); // Default to half size
     controls.style.display = 'block';
@@ -1597,7 +1605,7 @@ function initGhostMaker() {
            if (typeof value === 'object' && value !== null && !Array.isArray(value)) continue;
            let displayVal = value;
            if (displayVal instanceof Date) displayVal = displayVal.toLocaleString();
-           html += `<li style="margin-bottom: 4px;"><strong>${key}:</strong> ${displayVal}</li>`;
+           html += `<li style="margin-bottom: 4px;"><strong>${escapeHtml(key)}:</strong> ${escapeHtml(displayVal)}</li>`;
          }
          html += '</ul>';
          metaList.innerHTML = html;
@@ -1644,7 +1652,7 @@ function initGhostMaker() {
          }
       }
     } catch (err) {
-      metaList.innerHTML = '<div style="color: #EF4444;">Error parsing metadata: ' + err.message + '</div>';
+      metaList.innerHTML = '<div style="color: #EF4444;">Error parsing metadata: ' + escapeHtml(err.message) + '</div>';
     }
   }
 

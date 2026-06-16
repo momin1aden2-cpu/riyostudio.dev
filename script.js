@@ -6,6 +6,15 @@
 (function () {
   'use strict';
 
+  // Escape values before they go anywhere near innerHTML. Used for anything
+  // derived from user input or file contents (filenames, typed commands,
+  // error messages) so a crafted string can't inject markup.
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
   // Register Service Worker for Offline PWA Support
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -541,7 +550,7 @@
       if (e.key === 'Enter') {
         const cmd = input.value.trim();
         if (cmd) {
-          printLine(`<span style="color:var(--accent);">guest@riyostudio:~$</span> ${cmd}`);
+          printLine(`<span style="color:var(--accent);">guest@riyostudio:~$</span> ${escapeHtml(cmd)}`);
           processCommand(cmd);
         }
         input.value = '';
@@ -592,7 +601,7 @@
                   printLine(`[ERROR] Could not read ${filename}: ${err.message}`, 'error');
                 });
             } else {
-              printLine(`cat: ${filename}: Permission denied or file not found`, 'error');
+              printLine(`cat: ${escapeHtml(filename)}: Permission denied or file not found`, 'error');
             }
           }
           break;
@@ -733,7 +742,8 @@ window.showToast = function(message, type = 'error') {
   }
   const toast = document.createElement('div');
   toast.className = 'riyo-toast ' + type;
-  toast.innerHTML = `<div class="riyo-toast-icon">${type === 'error' ? '⚠️' : '✅'}</div><div class="riyo-toast-msg">${message}</div><button class="riyo-toast-close">&times;</button>`;
+  toast.innerHTML = `<div class="riyo-toast-icon">${type === 'error' ? '⚠️' : '✅'}</div><div class="riyo-toast-msg"></div><button class="riyo-toast-close">&times;</button>`;
+  toast.querySelector('.riyo-toast-msg').textContent = message;
   container.appendChild(toast);
   
   // Trigger animation
