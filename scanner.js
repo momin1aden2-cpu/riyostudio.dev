@@ -1390,6 +1390,41 @@ document.addEventListener('DOMContentLoaded', () => {
         return new Blob([uInt8Array], { type: parts[0].split(':')[1] });
     }
 
+    function isIOS() {
+        return /iP(hone|ad|od)/.test(navigator.userAgent) ||
+               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    // iOS Safari ignores the <a download> attribute for blob URLs — the file
+    // saves to Files with no name or extension (so a .zip can't be opened).
+    // Hand those off to the native share sheet instead, which keeps the real
+    // filename; everywhere else the direct download is faster and quieter.
+    async function saveBlobs(files) {
+        if (isIOS() && navigator.canShare) {
+            try {
+                const fileObjs = files.map(f => new File([f.blob], f.name, { type: f.type || f.blob.type || 'application/octet-stream' }));
+                if (navigator.canShare({ files: fileObjs })) {
+                    await navigator.share({ files: fileObjs });
+                    return;
+                }
+            } catch (e) {
+                if (e && e.name === 'AbortError') return;
+            }
+        }
+        files.forEach(f => {
+            const url = URL.createObjectURL(f.blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = f.name; a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+        });
+    }
+
+    function saveBlob(blob, name, type) {
+        return saveBlobs([{ blob, name, type }]);
+    }
+
     const exportZipBtn = document.getElementById('export-zip-btn');
     if (exportZipBtn) {
         exportZipBtn.addEventListener('click', async () => {
@@ -1429,39 +1464,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
             selectedLayerId = prevSelected; render();
             const zipBlob = await zip.generateAsync({ type: "blob" });
-            const link = document.createElement('a');
-            link.download = `AppStore_Kit.zip`; link.href = URL.createObjectURL(zipBlob);
-            link.click();
+            await saveBlob(zipBlob, `AppStore_Kit.zip`, 'application/zip');
             exportZipBtn.innerText = "EXPORT KIT (.ZIP)";
         });
     }
 
     const exportPngBtn = document.getElementById('export-png-btn');
     if (exportPngBtn) {
-        exportPngBtn.addEventListener('click', () => {
+        exportPngBtn.addEventListener('click', async () => {
             const prevSelected = selectedLayerId; selectedLayerId = null; render();
-            
+
+            const files = [];
             if (screenCount > 1) {
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = baseWidth;
                 tempCanvas.height = targetHeight;
                 const tempCtx = tempCanvas.getContext('2d');
-                
+
                 for (let i = 0; i < screenCount; i++) {
                     tempCtx.clearRect(0, 0, baseWidth, targetHeight);
                     tempCtx.drawImage(canvas, -i * baseWidth, 0);
-                    const link = document.createElement('a');
-                    link.download = `mockup-screen-${i + 1}-${baseWidth}x${targetHeight}.png`;
-                    link.href = tempCanvas.toDataURL('image/png', 1.0);
-                    link.click();
+                    files.push({ blob: base64ToBlob(tempCanvas.toDataURL('image/png', 1.0)), name: `mockup-screen-${i + 1}-${baseWidth}x${targetHeight}.png`, type: 'image/png' });
                 }
             } else {
-                const link = document.createElement('a');
-                link.download = `mockup-${targetWidth}x${targetHeight}.png`; link.href = canvas.toDataURL('image/png', 1.0);
-                link.click();
+                files.push({ blob: base64ToBlob(canvas.toDataURL('image/png', 1.0)), name: `mockup-${targetWidth}x${targetHeight}.png`, type: 'image/png' });
             }
-            
+
             selectedLayerId = prevSelected; render();
+            await saveBlobs(files);
         });
     }
 

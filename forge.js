@@ -463,10 +463,24 @@ function initHeicDecoder() {
   });
 
   function handleFile(file) {
-    if (!file.name.toLowerCase().endsWith('.heic')) {
-      showToast("Righto, you need to upload a .heic file for this one mate.", "error");
+    const name = (file.name || '').toLowerCase();
+    const type = (file.type || '').toLowerCase();
+    const isHeic = /\.(heic|heif)$/.test(name) || type.indexOf('heic') !== -1 || type.indexOf('heif') !== -1;
+    const isOtherImage = !isHeic && type.indexOf('image/') === 0;
+
+    if (isOtherImage) {
+      // iPhones usually hand the web a JPEG they already converted from HEIC,
+      // so there's nothing to decode — explain that rather than just refusing.
+      showToast("Good news mate — your phone already saved this as a standard image, so it's ready to use as-is. The HEIC Decoder is only for raw .HEIC files.", "error");
       return;
     }
+    if (!isHeic && type && type.indexOf('image/') !== 0) {
+      showToast("Righto, that's not an image — drop a .HEIC photo here mate.", "error");
+      return;
+    }
+
+    // HEIC, or an unlabelled file (iOS sometimes sends HEIC with no MIME type) —
+    // let the decoder have a go; it'll surface an error if it really can't read it.
     currentFile = file;
     dropzone.querySelector('p').innerHTML = `Loaded: <span style="color: #10B981;">${escapeHtml(file.name)}</span>`;
     controls.style.display = 'block';
