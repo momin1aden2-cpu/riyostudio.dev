@@ -651,6 +651,23 @@ function initPdfSigner() {
   let dragOffset = { x: 0, y: 0 };
   let sigPadCtx = sigPad.getContext('2d');
   let isDrawing = false;
+  let signaturePageNum = 1;   // which page the signature belongs to
+  let sigPlacement = null;    // {page, x, y, w, h} in PDF points, captured as it's moved
+
+  // Convert the floating overlay's current position into PDF-space points and
+  // remember which page it's on. Captured live so the signature stamps onto the
+  // page it was placed on, regardless of which page is shown when you export.
+  function captureSignatureRect() {
+    if (!signatureBlob || overlay.style.display === 'none') return;
+    const overlayRect = overlay.getBoundingClientRect();
+    const canvasRect = renderCanvas.getBoundingClientRect();
+    const pdfW = overlayRect.width / pdfRenderScale;
+    const pdfH = overlayRect.height / pdfRenderScale;
+    const pdfX = (overlayRect.left - canvasRect.left) / pdfRenderScale;
+    const pageHeightPts = renderCanvas.height / pdfRenderScale; // pdf-lib y-axis is bottom-up
+    const pdfY = pageHeightPts - ((overlayRect.top - canvasRect.top) / pdfRenderScale) - pdfH;
+    sigPlacement = { page: signaturePageNum, x: pdfX, y: pdfY, w: pdfW, h: pdfH };
+  }
 
   dropzone.addEventListener('click', () => fileInput.click());
   dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#34D399'; });
@@ -741,8 +758,12 @@ function initPdfSigner() {
     }
   }
 
-  prevBtn.addEventListener('click', () => { if (pageNum <= 1) return; pageNum--; renderPage(pageNum); });
-  nextBtn.addEventListener('click', () => { if (pageNum >= pdfDoc.numPages) return; pageNum++; renderPage(pageNum); });
+  // The signature lives on one page; show its overlay only while that page is in view.
+  function syncSignatureVisibility() {
+    if (signatureBlob) overlay.style.display = (pageNum === signaturePageNum) ? 'block' : 'none';
+  }
+  prevBtn.addEventListener('click', () => { if (pageNum <= 1) return; pageNum--; renderPage(pageNum); syncSignatureVisibility(); });
+  nextBtn.addEventListener('click', () => { if (pageNum >= pdfDoc.numPages) return; pageNum++; renderPage(pageNum); syncSignatureVisibility(); });
   
   closeBtn.addEventListener('click', () => {
     workspace.style.display = 'none';
@@ -753,6 +774,7 @@ function initPdfSigner() {
     currentFileBytes = null;
     pdfDoc = null;
     signatureBlob = null;
+    sigPlacement = null;
   });
 
   // Signature Pad Logic
@@ -790,6 +812,7 @@ function initPdfSigner() {
     // Trim canvas (simplification: just use entire canvas data)
     sigPad.toBlob((blob) => {
       signatureBlob = blob;
+      if (overlay.src && overlay.src.startsWith('blob:')) URL.revokeObjectURL(overlay.src);
       overlay.src = URL.createObjectURL(blob);
       overlay.style.display = 'block';
 
@@ -804,6 +827,9 @@ function initPdfSigner() {
 
       overlay.style.top = `${relativeTop}px`;
       overlay.style.left = Math.round(containerRect.width * 0.1) + 'px';
+
+      signaturePageNum = pageNum; // bind to the page currently in view
+      captureSignatureRect();
 
       drawBtn.textContent = '[ REDRAW SIGNATURE ]';
       sigModal.style.display = 'none';
@@ -832,7 +858,7 @@ function initPdfSigner() {
 
   overlay.addEventListener('mousedown', (e) => handleDragStart(e.clientX, e.clientY));
   window.addEventListener('mousemove', (e) => handleDragMove(e.clientX, e.clientY));
-  window.addEventListener('mouseup', () => isDragging = false);
+  window.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; captureSignatureRect(); } });
 
   // Mobile Touch Support
   overlay.addEventListener('touchstart', (e) => {
@@ -856,9 +882,10 @@ function initPdfSigner() {
     }
   }, { passive: false });
 
-  window.addEventListener('touchend', () => { 
-    isDragging = false; 
-    initialPinchDistance = null; 
+  window.addEventListener('touchend', () => {
+    if (isDragging || initialPinchDistance) captureSignatureRect();
+    isDragging = false;
+    initialPinchDistance = null;
   });
 
   // Resize overlay with wheel
@@ -867,6 +894,7 @@ function initPdfSigner() {
     const currentWidth = parseFloat(getComputedStyle(overlay).width);
     const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1; // scroll down = shrink, scroll up = enlarge
     overlay.style.width = `${currentWidth * scaleFactor}px`;
+    captureSignatureRect();
   });
 
   // Flatten and Save
@@ -879,36 +907,22 @@ function initPdfSigner() {
       // Pass a clone of the buffer as a Uint8Array to prevent buffer exhaustion issues
       const doc = await PDFDocument.load(new Uint8Array(currentFileBytes.slice(0)), { ignoreEncryption: true });
       
-      if (signatureBlob && overlay.style.display !== 'none') {
+      // If we're currently viewing the signature's page, refresh the captured
+      // placement so the latest position/size is used.
+      if (pageNum === signaturePageNum) captureSignatureRect();
+
+      if (signatureBlob && sigPlacement) {
         const pages = doc.getPages();
-        const page = pages[pageNum - 1]; // 0-indexed
-
-        const sigImage = await doc.embedPng(await signatureBlob.arrayBuffer());
-        
-        // Calculate coordinates relative to unscaled PDF
-        const overlayRect = overlay.getBoundingClientRect();
-        const canvasRect = renderCanvas.getBoundingClientRect();
-        
-        // Top left offset in HTML pixels
-        const htmlX = overlayRect.left - canvasRect.left;
-        const htmlY = overlayRect.top - canvasRect.top;
-        
-        // Convert HTML pixels to PDF points using the scale
-        const pdfX = htmlX / pdfRenderScale;
-        const htmlH = overlayRect.height;
-        const pdfW = overlayRect.width / pdfRenderScale;
-        const pdfH = htmlH / pdfRenderScale;
-        
-        // pdf-lib y-axis starts from BOTTOM left
-        const pageHeight = page.getHeight();
-        const pdfY = pageHeight - (htmlY / pdfRenderScale) - pdfH;
-
-        page.drawImage(sigImage, {
-          x: pdfX,
-          y: pdfY,
-          width: pdfW,
-          height: pdfH,
-        });
+        const page = pages[sigPlacement.page - 1]; // stamp onto the page it was placed on
+        if (page) {
+          const sigImage = await doc.embedPng(await signatureBlob.arrayBuffer());
+          page.drawImage(sigImage, {
+            x: sigPlacement.x,
+            y: sigPlacement.y,
+            width: sigPlacement.w,
+            height: sigPlacement.h,
+          });
+        }
       }
 
       const pdfBytes = await doc.save({ updateFieldAppearances: false });
@@ -1009,53 +1023,57 @@ function initExpenseFlattener() {
       const pdfDoc = await PDFDocument.create();
       
       // A4 size: 595.28 x 841.89
-      const page = pdfDoc.addPage([595.28, 841.89]);
+      const A4W = 595.28, A4H = 841.89;
       const margin = 20;
-      const usableWidth = 595.28 - (margin * 2);
-      const usableHeight = 841.89 - (margin * 2);
+      const usableWidth = A4W - (margin * 2);
+      const usableHeight = A4H - (margin * 2);
 
-      // Smart Grid Calculation to fit all on one page
-      const cols = Math.ceil(Math.sqrt(files.length));
-      const rows = Math.ceil(files.length / cols);
-      
-      const cellWidth = usableWidth / cols;
-      const cellHeight = usableHeight / rows;
-      
-      for (let i = 0; i < files.length; i++) {
-        const f = files[i];
-        const bytes = await f.arrayBuffer();
-        let img;
-        if (f.type === 'image/jpeg') img = await pdfDoc.embedJpg(bytes);
-        else if (f.type === 'image/png') img = await pdfDoc.embedPng(bytes);
-        else {
-          const bmp = await createImageBitmap(f);
-          const canvas = document.createElement('canvas');
-          canvas.width = bmp.width; canvas.height = bmp.height;
-          canvas.getContext('2d').drawImage(bmp, 0, 0);
-          const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
-          img = await pdfDoc.embedPng(await blob.arrayBuffer());
+      // Cap receipts per page so they stay legible, then add as many A4 pages as
+      // needed. Within each page the grid adapts to that page's count (1 fills
+      // the page, 2 split it, 3–4 → 2×2), so a single receipt isn't shrunk.
+      const PER_PAGE = 4;
+      for (let start = 0; start < files.length; start += PER_PAGE) {
+        const chunk = files.slice(start, start + PER_PAGE);
+        const page = pdfDoc.addPage([A4W, A4H]);
+        const cols = Math.ceil(Math.sqrt(chunk.length));
+        const rows = Math.ceil(chunk.length / cols);
+        const cellWidth = usableWidth / cols;
+        const cellHeight = usableHeight / rows;
+
+        for (let j = 0; j < chunk.length; j++) {
+          const f = chunk[j];
+          const bytes = await f.arrayBuffer();
+          let img;
+          if (f.type === 'image/jpeg') img = await pdfDoc.embedJpg(bytes);
+          else if (f.type === 'image/png') img = await pdfDoc.embedPng(bytes);
+          else {
+            const bmp = await createImageBitmap(f);
+            const canvas = document.createElement('canvas');
+            canvas.width = bmp.width; canvas.height = bmp.height;
+            canvas.getContext('2d').drawImage(bmp, 0, 0);
+            const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+            img = await pdfDoc.embedPng(await blob.arrayBuffer());
+          }
+
+          const colIndex = j % cols;
+          const rowIndex = Math.floor(j / cols);
+
+          // Scale to fit inside the grid cell without distortion
+          const { width, height } = img.scaleToFit(cellWidth - 10, cellHeight - 10);
+
+          // pdf-lib Y axis starts from the bottom!
+          const cellX = margin + (colIndex * cellWidth);
+          const cellY = A4H - margin - (rowIndex * cellHeight) - cellHeight;
+
+          page.drawImage(img, {
+            x: cellX + (cellWidth / 2 - width / 2),
+            y: cellY + (cellHeight / 2 - height / 2),
+            width,
+            height,
+          });
         }
-        
-        // Calculate grid position
-        const colIndex = i % cols;
-        const rowIndex = Math.floor(i / cols);
-        
-        // Scale to fit inside the grid cell perfectly without distortion
-        const { width, height } = img.scaleToFit(cellWidth - 10, cellHeight - 10);
-        
-        // Calculate X and Y to center the image within its specific cell
-        // pdf-lib Y axis starts from the bottom!
-        const cellX = margin + (colIndex * cellWidth);
-        const cellY = 841.89 - margin - (rowIndex * cellHeight) - cellHeight; // Bottom of the cell
-        
-        page.drawImage(img, {
-          x: cellX + (cellWidth / 2 - width / 2),
-          y: cellY + (cellHeight / 2 - height / 2),
-          width,
-          height,
-        });
       }
-      
+
       const pdfBytes = await pdfDoc.save();
       triggerDownload(new Blob([pdfBytes], { type: 'application/pdf' }), 'expenses.pdf');
       status.textContent = 'Done!';
