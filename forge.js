@@ -360,6 +360,7 @@ function initUniversalConverter() {
       return;
     }
 
+    let inputName = null, outputName = null;
     try {
       if (!ffmpegInstance) {
         logTerminal(`Allocating buffer...`);
@@ -394,8 +395,8 @@ function initUniversalConverter() {
       }
 
       const { fetchFile } = FFmpeg;
-      const inputName = `input_${Date.now()}.${currentFile.name.split('.').pop()}`;
-      const outputName = `output_${Date.now()}.${targetFormat}`;
+      inputName = `input_${Date.now()}.${currentFile.name.split('.').pop()}`;
+      outputName = `output_${Date.now()}.${targetFormat}`;
 
       ffmpegInstance.FS('writeFile', inputName, await fetchFile(currentFile));
       
@@ -419,14 +420,19 @@ function initUniversalConverter() {
       triggerDownload(blob, `forged_${currentFile.name.split('.')[0]}.${targetFormat}`);
       
       logTerminal(`[200 OK] Media Forging Complete!`);
-      ffmpegInstance.FS('unlink', inputName);
-      ffmpegInstance.FS('unlink', outputName);
 
       forgeBtn.textContent = `[ FORGE ANOTHER ]`;
       forgeBtn.disabled = false;
     } catch (err) {
       logTerminal(`[ERROR] ${err.message}`);
       forgeBtn.disabled = false;
+    } finally {
+      // Always clear the in-memory FS so repeated (and failed) conversions
+      // don't grow MEMFS until the tab runs out of memory.
+      if (ffmpegInstance) {
+        try { if (inputName) ffmpegInstance.FS('unlink', inputName); } catch (e) {}
+        try { if (outputName) ffmpegInstance.FS('unlink', outputName); } catch (e) {}
+      }
     }
   }
 
