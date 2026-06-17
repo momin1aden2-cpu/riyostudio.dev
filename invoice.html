@@ -239,7 +239,31 @@
       transform-origin: top center;
       transition: background 0.3s, color 0.3s;
       flex-shrink: 0;
+      position: relative;
     }
+
+    /* PAID / OVERDUE stamp */
+    .inv-stamp {
+      position: absolute;
+      top: 38%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-14deg);
+      font-family: 'Inter', sans-serif;
+      font-weight: 800;
+      font-size: 4.2rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      padding: 0.1em 0.35em;
+      border: 6px solid currentColor;
+      border-radius: 12px;
+      opacity: 0.16;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 5;
+      display: none;
+    }
+    .inv-stamp.paid { color: #059669; display: block; }
+    .inv-stamp.overdue { color: #dc2626; display: block; }
 
     /* ── DARK THEME ── */
     #a4-paper.dark-invoice {
@@ -669,6 +693,24 @@
             <input type="date" id="in-inv-date" class="cyber-input">
           </div>
           <div class="input-group">
+            <label class="input-label">Payment Terms</label>
+            <select id="in-inv-terms" class="cyber-input">
+              <option value="0">Due on receipt</option>
+              <option value="7">Net 7 days</option>
+              <option value="14" selected>Net 14 days</option>
+              <option value="30">Net 30 days</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Status</label>
+            <select id="in-inv-status" class="cyber-input">
+              <option value="auto" selected>Auto (Overdue past due date)</option>
+              <option value="none">None</option>
+              <option value="paid">Paid</option>
+              <option value="overdue">Overdue</option>
+            </select>
+          </div>
+          <div class="input-group">
             <label class="input-label">Tax/GST Rate (%)</label>
             <input type="number" id="in-inv-taxrate" class="cyber-input" value="10" min="0" step="0.1">
           </div>
@@ -751,6 +793,7 @@
         </button>
       </div>
       <div id="a4-paper">
+        <div class="inv-stamp" id="inv-stamp"></div>
         <!-- INVOICE CONTENT -->
         <div class="inv-header">
           <div class="inv-logo-area" id="out-logo-container">
@@ -779,9 +822,10 @@
             </div>
           </div>
           <div class="inv-details">
-            <h1>INVOICE</h1>
+            <h1 id="out-inv-title">INVOICE</h1>
             <p><span class="inv-label">Invoice No: </span><span id="out-inv-num">INV-0001</span></p>
             <p><span class="inv-label">Date Issued: </span><span id="out-inv-date">Oct 24, 2026</span></p>
+            <p id="wrap-inv-due"><span class="inv-label">Due Date: </span><span id="out-inv-due"></span></p>
           </div>
         </div>
 
@@ -836,6 +880,6 @@ Please pay within 14 days.</div>
   📥 <span>Download PDF</span>
 </button>
 
-  <script src="invoice.js?v=2a272807"></script>
+  <script src="invoice.js?v=5241c542"></script>
 </body>
 </html>

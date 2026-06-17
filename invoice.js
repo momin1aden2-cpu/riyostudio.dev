@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     invNum: document.getElementById('in-inv-num'),
     invDate: document.getElementById('in-inv-date'),
+    invTerms: document.getElementById('in-inv-terms'),
+    invStatus: document.getElementById('in-inv-status'),
     invTaxRate: document.getElementById('in-inv-taxrate'),
     invCur: document.getElementById('in-inv-cur'),
     invColor: document.getElementById('in-inv-color'),
@@ -41,6 +43,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     invNum: document.getElementById('out-inv-num'),
     invDate: document.getElementById('out-inv-date'),
+    invTitle: document.getElementById('out-inv-title'),
+    invDue: document.getElementById('out-inv-due'),
+    wrapInvDue: document.getElementById('wrap-inv-due'),
+    stamp: document.getElementById('inv-stamp'),
     
     clientName: document.getElementById('out-client-name'),
     clientAddr: document.getElementById('out-client-addr'),
@@ -64,6 +70,14 @@ document.addEventListener('DOMContentLoaded', () => {
   let logoDataUrl = null;
 
   // 2. LocalStorage Auto-Save System
+  // INV-0007 → INV-0008 (preserves prefix + zero-padding width).
+  function nextInvNum(prev) {
+    if (!prev) return 'INV-0001';
+    const m = String(prev).match(/^(.*?)(\d+)(\D*)$/);
+    if (!m) return prev;
+    return m[1] + String(parseInt(m[2], 10) + 1).padStart(m[2].length, '0') + m[3];
+  }
+
   function loadPrefs() {
     try {
       const prefs = JSON.parse(localStorage.getItem('riyo_inv_prefs'));
@@ -76,6 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (prefs.compWeb) inputs.compWeb.value = prefs.compWeb;
         if (prefs.invColor) inputs.invColor.value = prefs.invColor;
         if (prefs.invStyle) inputs.invStyle.value = prefs.invStyle;
+        if (prefs.invTerms && inputs.invTerms) inputs.invTerms.value = prefs.invTerms;
+        if (prefs.invStatus && inputs.invStatus) inputs.invStatus.value = prefs.invStatus;
         if (prefs.payDetails) inputs.payDetails.value = prefs.payDetails;
         if (prefs.logo) {
           logoDataUrl = prefs.logo;
@@ -88,6 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set default date
     const today = new Date().toISOString().split('T')[0];
     inputs.invDate.value = today;
+
+    // Auto-fill the next invoice number, continuing from the last one exported.
+    if (!inputs.invNum.value) inputs.invNum.value = nextInvNum(localStorage.getItem('riyo_inv_lastnum'));
   }
 
   function savePrefs() {
@@ -100,10 +119,18 @@ document.addEventListener('DOMContentLoaded', () => {
       compWeb: inputs.compWeb.value,
       invColor: inputs.invColor.value,
       invStyle: inputs.invStyle.value,
+      invTerms: inputs.invTerms ? inputs.invTerms.value : '14',
+      invStatus: inputs.invStatus ? inputs.invStatus.value : 'auto',
       payDetails: inputs.payDetails.value,
       logo: logoDataUrl
     };
-    localStorage.setItem('riyo_inv_prefs', JSON.stringify(prefs));
+    try {
+      localStorage.setItem('riyo_inv_prefs', JSON.stringify(prefs));
+    } catch (e) {
+      // savePrefs runs on every keystroke; a large logo dataURL can blow the ~5MB
+      // quota and would otherwise throw on every edit. Retry without the logo.
+      try { delete prefs.logo; localStorage.setItem('riyo_inv_prefs', JSON.stringify(prefs)); } catch (e2) { /* ignore */ }
+    }
   }
 
   // 3. Logo Upload
@@ -178,7 +205,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 5. Core Math & Preview Update
   function updatePreview() {
-    const cur = inputs.invCur.value || '$';
+    const curRaw = inputs.invCur.value || '$';
+    const curHtml = curRaw.replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c])); // table rows use innerHTML
+    // Thousands separators + 2 decimals → "$1,250.00" instead of "$1250.00".
+    const grp = (n) => new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+    const moneyHtml = (n) => curHtml + grp(n);   // for innerHTML sinks
+    const moneyText = (n) => curRaw + grp(n);     // for textContent sinks
     const paper = document.getElementById('a4-paper');
     paper.style.setProperty('--inv-primary', inputs.invColor.value);
     
@@ -220,9 +252,31 @@ document.addEventListener('DOMContentLoaded', () => {
     outputs.wrapClientPhone.style.display = inputs.clientPhone.value ? 'inline-flex' : 'none';
     
     // Date formatting
+    const fmtDate = (d) => d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    let issueDate = null, dueDate = null;
     if (inputs.invDate.value) {
-      const d = new Date(inputs.invDate.value);
-      outputs.invDate.textContent = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+      // Parse as LOCAL date — `new Date('YYYY-MM-DD')` is UTC midnight and prints
+      // a day early for users west of UTC.
+      const p = inputs.invDate.value.split('-');
+      issueDate = new Date(+p[0], (+p[1] || 1) - 1, +p[2] || 1);
+      outputs.invDate.textContent = fmtDate(issueDate);
+    }
+
+    // Due date from payment terms (Net N days; 0 = due on receipt).
+    const termDays = inputs.invTerms ? parseInt(inputs.invTerms.value, 10) : NaN;
+    if (outputs.wrapInvDue && outputs.invDue) {
+      if (issueDate && !isNaN(termDays)) {
+        if (termDays === 0) {
+          outputs.invDue.textContent = 'Due on receipt';
+        } else {
+          dueDate = new Date(issueDate.getTime());
+          dueDate.setDate(dueDate.getDate() + termDays);
+          outputs.invDue.textContent = fmtDate(dueDate);
+        }
+        outputs.wrapInvDue.style.display = '';
+      } else {
+        outputs.wrapInvDue.style.display = 'none';
+      }
     }
     
     outputs.payDetails.innerHTML = parseMD(inputs.payDetails.value || 'Payment Instructions here...');
@@ -232,27 +286,43 @@ document.addEventListener('DOMContentLoaded', () => {
     outputs.tableBody.innerHTML = '';
     
     lineItems.forEach(item => {
-      const amount = item.qty * item.price;
+      // Round each line to cents so the printed rows sum exactly to the subtotal.
+      const amount = Math.round(item.qty * item.price * 100) / 100;
       subtotal += amount;
-      
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="rich-text">${parseMD(item.desc) || 'Item'}</td>
         <td class="right">${item.qty}</td>
-        <td class="right">${cur}${item.price.toFixed(2)}</td>
-        <td class="right">${cur}${amount.toFixed(2)}</td>
+        <td class="right">${moneyHtml(item.price)}</td>
+        <td class="right">${moneyHtml(amount)}</td>
       `;
       outputs.tableBody.appendChild(tr);
     });
 
+    subtotal = Math.round(subtotal * 100) / 100;
     const taxRate = Math.min(100, Math.max(0, parseFloat(inputs.invTaxRate.value) || 0));
-    const taxAmount = subtotal * (taxRate / 100);
-    const total = subtotal + taxAmount;
+    const taxAmount = Math.round(subtotal * taxRate) / 100; // = round(subtotal * rate/100, 2c)
+    const total = Math.round((subtotal + taxAmount) * 100) / 100;
 
-    outputs.subtotal.textContent = `${cur}${subtotal.toFixed(2)}`;
-    outputs.taxLabel.textContent = `Tax (${taxRate}%)`;
-    outputs.tax.textContent = `${cur}${taxAmount.toFixed(2)}`;
-    outputs.total.textContent = `${cur}${total.toFixed(2)}`;
+    outputs.subtotal.textContent = moneyText(subtotal);
+    outputs.taxLabel.textContent = `${taxRate > 0 ? 'GST' : 'Tax'} (${taxRate}%)`;
+    outputs.tax.textContent = moneyText(taxAmount);
+    outputs.total.textContent = moneyText(total);
+
+    // AU compliance: a GST invoice must be titled "TAX INVOICE".
+    if (outputs.invTitle) outputs.invTitle.textContent = taxRate > 0 ? 'TAX INVOICE' : 'INVOICE';
+
+    // PAID / OVERDUE stamp. "auto" → overdue once the due date has passed.
+    if (outputs.stamp) {
+      let st = inputs.invStatus ? inputs.invStatus.value : 'auto';
+      if (st === 'auto') {
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        st = (dueDate && dueDate < today) ? 'overdue' : 'none';
+      }
+      outputs.stamp.className = 'inv-stamp' + (st === 'paid' ? ' paid' : st === 'overdue' ? ' overdue' : '');
+      outputs.stamp.textContent = st === 'paid' ? 'PAID' : st === 'overdue' ? 'OVERDUE' : '';
+    }
 
     savePrefs();
     // Re-scale after content changes
@@ -273,6 +343,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Dark mode toggle uses 'change' event
   inputs.invDark.addEventListener('change', updatePreview);
   inputs.invStyle.addEventListener('change', updatePreview);
+  if (inputs.invTerms) inputs.invTerms.addEventListener('change', updatePreview);
+  if (inputs.invStatus) inputs.invStatus.addEventListener('change', updatePreview);
 
   // Dynamic scaling: fit the 210mm A4 paper into the available column width
   function resizePreview() {
@@ -366,6 +438,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Give browser a moment to paint the absolute layout
     await new Promise(r => setTimeout(r, 150));
+
+    // Remember this number so the next invoice auto-increments from it.
+    try { if (inputs.invNum.value) localStorage.setItem('riyo_inv_lastnum', inputs.invNum.value); } catch (e) { /* ignore */ }
 
     const filename = `${inputs.invNum.value || 'Invoice'}_${inputs.clientName.value || 'Client'}.pdf`;
     const opt = {
