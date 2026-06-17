@@ -415,6 +415,10 @@ function initUniversalConverter() {
         runArgs.push('-vcodec', 'libx264', '-preset', 'ultrafast');
       } else if (targetFormat === 'webm') {
         runArgs.push('-c:v', 'libvpx-vp9', '-deadline', 'realtime', '-cpu-used', '8');
+      } else if (targetFormat === 'gif') {
+        // Generate a per-clip optimised palette in one pass — without this the
+        // default 256-colour quantiser produces banded, dithered, oversized GIFs.
+        runArgs.push('-vf', 'fps=12,scale=480:-1:flags=lanczos,split[s0][s1];[s0]palettegen=stats_mode=diff[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5');
       }
       runArgs.push(outputName);
 
@@ -2181,12 +2185,12 @@ function initBulkOptimizer() {
   function handleBulkFiles(files) {
     // Only accept up to 100 images
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/svg+xml'];
-    let added = 0;
+    let added = 0, skippedType = 0, skippedCap = 0;
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       let t = file.type;
-      
+
       // Fallback for .heic on Windows/Chrome which might lack type
       if (!t && file.name.toLowerCase().endsWith('.heic')) {
         t = 'image/heic';
@@ -2196,7 +2200,11 @@ function initBulkOptimizer() {
         if (bulkFiles.length < 100) {
           bulkFiles.push(file);
           added++;
+        } else {
+          skippedCap++;
         }
+      } else {
+        skippedType++;
       }
     }
 
@@ -2205,6 +2213,14 @@ function initBulkOptimizer() {
       controls.style.display = 'block';
       fileCountEl.textContent = bulkFiles.length;
     }
+
+    // Never silently drop files — tell the user what didn't make it in.
+    const notes = [];
+    if (skippedType) notes.push(`${skippedType} unsupported file${skippedType > 1 ? 's' : ''} skipped`);
+    if (skippedCap) notes.push(`${skippedCap} over the 100-image limit skipped`);
+    if (notes.length) showToast(notes.join(' · '), 'error');
+    else if (added === 0) showToast('No supported images found (JPG, PNG, WEBP, HEIC, SVG).', 'error');
+
     input.value = ''; // reset
   }
 
@@ -2244,9 +2260,18 @@ function initBulkOptimizer() {
     if (ext === 'jpeg') ext = 'jpg';
 
     const total = bulkFiles.length;
-    let done = 0;
+    let done = 0, failed = 0;
     const bump = () => { done++; progressEl.textContent = Math.round((done / total) * 100); };
-    const nameFor = (file) => `${file.name.substring(0, file.name.lastIndexOf('.')) || file.name}_optimized.${ext}`;
+    // Dedupe entry names so two inputs that map to the same name (e.g. photo.jpg
+    // and photo.png → photo_optimized.webp) don't overwrite each other in the ZIP.
+    const usedNames = new Set();
+    const nameFor = (file) => {
+      const base = (file.name.substring(0, file.name.lastIndexOf('.')) || file.name) + '_optimized';
+      let name = `${base}.${ext}`, n = 1;
+      while (usedNames.has(name)) name = `${base}_${n++}.${ext}`;
+      usedNames.add(name);
+      return name;
+    };
 
     // HEIC needs heic2any on the main thread (worker can't); everything else goes straight to the worker.
     async function prep(file) {
@@ -2280,8 +2305,9 @@ function initBulkOptimizer() {
               w.postMessage({ id: i, blob, type: targetFormat, quality });
             });
             if (result.ok) folder.file(nameFor(file), result.blob);
-            else console.error('Failed to process', file.name, result.error);
+            else { failed++; console.error('Failed to process', file.name, result.error); }
           } catch (err) {
+            failed++;
             console.error('Failed to process', file.name, err);
           }
           bump();
@@ -2308,6 +2334,7 @@ function initBulkOptimizer() {
           folder.file(nameFor(file), out);
           bmp.close();
         } catch (err) {
+          failed++;
           console.error('Failed to process', file.name, err);
         }
         bump();
@@ -2315,15 +2342,24 @@ function initBulkOptimizer() {
     }
 
     progressEl.textContent = 100;
-    executeBtn.textContent = '[ PACKAGING ZIP... ]';
 
+    const ok = total - failed;
+    if (ok === 0) {
+      showToast('None of the images could be optimised — try different files.', 'error');
+      executeBtn.disabled = false;
+      executeBtn.textContent = '[ OPTIMIZE & DOWNLOAD ZIP ]';
+      return;
+    }
+
+    executeBtn.textContent = '[ PACKAGING ZIP... ]';
     const zipBlob = await zip.generateAsync({ type: 'blob' });
     triggerDownload(zipBlob, 'bulk_optimized_images.zip');
 
-    executeBtn.textContent = '[ DONE! ]';
+    if (failed) showToast(`${ok} of ${total} optimised — ${failed} could not be processed.`, 'error');
+    executeBtn.textContent = failed ? `[ ${ok}/${total} DONE — ${failed} FAILED ]` : '[ DONE! ]';
     setTimeout(() => {
       resetBtn.click();
-    }, 2000);
+    }, failed ? 4000 : 2000);
   });
 }
 // 10. AI BACKGROUND REMOVER
