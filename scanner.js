@@ -269,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
             id: generateId(), type: 'image', img: imgObj, frameStyle: 'iphone',
             x: (targetWidth / 2) + (offset * 80), y: (targetHeight / 2) + (offset * 80),
             scale: initialScale, width: w, height: h,
-            rotation: 0, tiltY: 0, shadowBlur: 80, shadowOp: 50, hasGlare: false, hasFloorShadow: false
+            rotation: 0, persY: 0, shadowBlur: 80, shadowOp: 50, hasGlare: false, hasFloorShadow: false
         });
         selectedLayerId = layers[layers.length - 1].id;
         updatePropsPanel();
@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
             id: generateId(), type: 'sticker', stickerId: stickerId, img: imgObj,
             x: targetWidth / 2, y: targetHeight / 2, scale: 2.0,
             width: imgObj.width || 240, height: imgObj.height || 80,
-            rotation: 0, tiltY: 0, shadowBlur: 40, shadowOp: 30
+            rotation: 0, persY: 0, shadowBlur: 40, shadowOp: 30
         });
         selectedLayerId = layers[layers.length - 1].id;
         document.getElementById('sticker-dropdown').style.display = 'none';
@@ -316,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
             presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'color'; bgColor1 = '#f5f5f7';
             const tOpt = { type: 'text', color: '#1d1d1f', fontFamily: 'Inter', fontWeight: '600', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 78, width: 1050, height: 240, y: 360 };
-            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.92, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 90, shadowOp: 18, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1620 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.92, width: 1080, height: 2340, rotation: 0, persY: 0, shadowBlur: 90, shadowOp: 18, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1620 };
             const t = ['Everything in one place.', 'Beautifully simple.', 'Designed for focus.', 'Private by default.', 'Get started free.'];
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
             presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#6a11cb'; bgColor2 = '#2575fc';
             const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'rgba(0,0,0,0.25)', shadowBlur: 20, scale: 1, rotation: 0, fontSize: 90, width: 1050, height: 280, y: 380 };
-            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.9, width: 1080, height: 2340, rotation: 0, tiltY: 12, shadowBlur: 140, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1650 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.9, width: 1080, height: 2340, rotation: 0, persY: 12, shadowBlur: 140, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1650 };
             const t = ['Power in your pocket.', 'Faster than ever.', 'Made to move.', 'Insights that matter.', 'Start today.'];
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
@@ -334,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
             presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#0b0f17'; bgColor2 = '#020409';
             const tOpt = { type: 'text', color: '#34d399', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: '#34d399', shadowBlur: 30, scale: 1, rotation: 0, fontSize: 80, width: 1050, height: 240, y: 360 };
-            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.9, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 160, shadowOp: 70, shadowColor: '#34d399', hasGlare: true, hasFloorShadow: false, y: 1640 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.9, width: 1080, height: 2340, rotation: 0, persY: 0, shadowBlur: 160, shadowOp: 70, shadowColor: '#34d399', hasGlare: true, hasFloorShadow: false, y: 1640 };
             const t = ['Precision, engineered.', 'Real-time control.', 'Bank-grade security.', 'Built to scale.', 'Upgrade to Pro.'];
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
             bgType = 'gradient'; bgColor1 = '#111827'; bgColor2 = '#0b1220';
             layers.push({ id: generateId(), type: 'text', content: 'GO FURTHER', color: 'rgba(255,255,255,0.06)', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 520, width: 9000, height: 700, x: targetWidth/2, y: 1344 });
             const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'Inter', fontWeight: '700', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 54, width: 1000, height: 160, y: 320 };
-            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.82, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 120, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1750 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.82, width: 1080, height: 2340, rotation: 0, persY: 0, shadowBlur: 120, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1750 };
             const t = ['Set your goals', 'Track progress', 'Stay consistent', 'Crush milestones', 'Go further'];
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
@@ -357,13 +357,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const t = ['Share the moment.', 'Connect instantly.', 'Your story, yours.', 'Find your people.', 'Join the fun.'];
             const tilts = [15, -15, 15, -15, 15];
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
-            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt, tiltY: tilts[i] });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt, persY: tilts[i] });
         }
         else if (type === 'apple-spotlight') {
             presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#1f2937'; bgColor2 = '#000000';
             const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'Inter', fontWeight: '300', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 62, width: 1050, height: 200, y: 2350 };
-            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.95, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 180, shadowOp: 70, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true, y: 1450 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.95, width: 1080, height: 2340, rotation: 0, persY: 0, shadowBlur: 180, shadowOp: 70, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true, y: 1450 };
             const t = ['Introducing.', 'Crafted to perfection.', 'Every detail counts.', 'Simply powerful.', 'Experience it.'];
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
@@ -372,7 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
             presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#f12711'; bgColor2 = '#f5af19';
             const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'rgba(0,0,0,0.3)', shadowBlur: 15, scale: 1, rotation: -6, fontSize: 92, width: 1100, height: 300, y: 380 };
-            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.88, width: 1080, height: 2340, rotation: -8, tiltY: 10, shadowBlur: 130, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1680 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.88, width: 1080, height: 2340, rotation: -8, persY: 10, shadowBlur: 130, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1680 };
             const t = ['GO HARDER.', 'TRACK EVERY REP.', 'BEAT YOUR BEST.', 'TRAIN SMARTER.', 'WIN THE DAY.'];
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
             presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#1e3c72'; bgColor2 = '#2a5298';
             const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'Inter', fontWeight: '700', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 68, width: 1050, height: 240, y: 350 };
-            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.9, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 100, shadowOp: 40, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1640 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.9, width: 1080, height: 2340, rotation: 0, persY: 0, shadowBlur: 100, shadowOp: 40, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1640 };
             const t = ['Run your business better.', 'Insights in real time.', 'Collaborate seamlessly.', 'Secure and compliant.', 'Scale with confidence.'];
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
@@ -390,7 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
             presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'color'; bgColor1 = '#fafafa';
             const tOpt = { type: 'text', color: '#111827', fontFamily: 'Inter', fontWeight: '600', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 56, width: 1050, height: 240, y: 520 };
-            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.82, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 90, shadowOp: 20, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1720 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.82, width: 1080, height: 2340, rotation: 0, persY: 0, shadowBlur: 90, shadowOp: 20, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1720 };
             const q = ['"Changed how I work."', '"A daily essential."', '"Worth every penny."', '"Simply the best."', '"Five stars, easily."'];
             for (let i = 0; i < 5; i++) {
                 layers.push({ id: generateId(), type: 'sticker', stickerId: 'stars', img: stickers['stars'], x: baseWidth*(i+0.5), y: 280, scale: 1.4, width: 250, height: 50, rotation: 0 });
@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
             presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#c9d6ff'; bgColor2 = '#e2e2e2';
             const tOpt = { type: 'text', color: '#1f2937', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 76, width: 1050, height: 240, y: 360 };
-            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.95, width: 1080, height: 2340, rotation: -6, tiltY: 24, shadowBlur: 150, shadowOp: 45, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true, y: 1680 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'iphone', scale: 0.95, width: 1080, height: 2340, rotation: -6, persY: 24, shadowBlur: 150, shadowOp: 45, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true, y: 1680 };
             const t = ['Right at your fingertips.', 'Take it anywhere.', 'Tap. Done.', 'On the go.', 'Try it now.'];
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
@@ -415,7 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
             presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'color'; bgColor1 = '#f1f3f4';
             const tOpt = { type: 'text', color: '#202124', fontFamily: 'Inter', fontWeight: '700', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 64, width: 950, height: 220, y: 280 };
-            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.72, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 90, shadowOp: 20, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1350 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.72, width: 1080, height: 2340, rotation: 0, persY: 0, shadowBlur: 90, shadowOp: 20, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1350 };
             const t = ['Simple. Powerful.', 'All your tools.', 'Work anywhere.', 'Stay in sync.', 'Free to start.'];
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
@@ -424,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
             presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#0f2027'; bgColor2 = '#203a43';
             const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 58, width: 950, height: 240, y: 250 };
-            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.72, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 120, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1380 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.72, width: 1080, height: 2340, rotation: 0, persY: 0, shadowBlur: 120, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1380 };
             const t = ['Cinematic by\ndefault', 'Capture every\nmoment', 'Edit like\na pro', 'Share\ninstantly', 'Go further'];
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
@@ -433,7 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
             presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#d7e3ff'; bgColor2 = '#e8def8';
             const tOpt = { type: 'text', color: '#1b1b1f', fontFamily: 'Inter', fontWeight: '700', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 60, width: 950, height: 220, y: 300 };
-            const dOpt = { type: 'image', img: phApp, frameStyle: 'clay', scale: 0.72, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 80, shadowOp: 18, shadowColor: '#000000', hasGlare: false, hasFloorShadow: true, y: 1380 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'clay', scale: 0.72, width: 1080, height: 2340, rotation: 0, persY: 0, shadowBlur: 80, shadowOp: 18, shadowColor: '#000000', hasGlare: false, hasFloorShadow: true, y: 1380 };
             const t = ['Made for you.', 'Personal & private.', 'Smooth & fast.', 'Beautifully native.', 'Get it on Play.'];
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
@@ -442,7 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
             presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#11998e'; bgColor2 = '#38ef7d';
             const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'rgba(0,0,0,0.2)', shadowBlur: 12, scale: 1, rotation: 0, fontSize: 64, width: 950, height: 240, y: 300 };
-            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.72, width: 1080, height: 2340, rotation: 0, tiltY: 8, shadowBlur: 120, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1380 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.72, width: 1080, height: 2340, rotation: 0, persY: 8, shadowBlur: 120, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1380 };
             const t = ['Save hours daily.', 'Automate the boring.', 'See it all at once.', 'Built for teams.', 'Try it free.'];
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
@@ -455,13 +455,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const t = ['Beautiful design', 'Intuitive flow', 'Powerful tools', 'Seamless sync', 'Download today'];
             const tilts = [15, -15, 15, -15, 15];
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
-            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt, tiltY: tilts[i] });
+            for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt, persY: tilts[i] });
         }
         else if (type === 'gplay-neon') {
             presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#3a1c71'; bgColor2 = '#d76d77';
             const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'JetBrains Mono', fontWeight: '800', textAlign: 'center', shadowColor: '#000000', shadowBlur: 15, scale: 1, rotation: 0, fontSize: 68, width: 950, height: 200, y: 250 };
-            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.72, width: 1080, height: 2340, rotation: 8, tiltY: 12, shadowBlur: 150, shadowOp: 80, shadowColor: '#d76d77', hasGlare: true, hasFloorShadow: false, y: 1380 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.72, width: 1080, height: 2340, rotation: 8, persY: 12, shadowBlur: 150, shadowOp: 80, shadowColor: '#d76d77', hasGlare: true, hasFloorShadow: false, y: 1380 };
             const t = ['LEVEL UP', 'NO LIMITS', 'PLAY FREE', 'JOIN GUILDS', 'WIN BIG'];
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
@@ -470,7 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
             presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#1e293b'; bgColor2 = '#020617';
             const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'Inter', fontWeight: '300', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 54, width: 950, height: 180, y: 1720 };
-            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.75, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 180, shadowOp: 70, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true, y: 1150 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.75, width: 1080, height: 2340, rotation: 0, persY: 0, shadowBlur: 180, shadowOp: 70, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true, y: 1150 };
             const t = ['Introducing.', 'Refined.', 'Powerful.', 'Effortless.', 'Yours.'];
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
@@ -479,7 +479,7 @@ document.addEventListener('DOMContentLoaded', () => {
             presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#f12711'; bgColor2 = '#f5af19';
             const tOpt = { type: 'text', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'rgba(0,0,0,0.3)', shadowBlur: 15, scale: 1, rotation: -6, fontSize: 70, width: 980, height: 260, y: 280 };
-            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.7, width: 1080, height: 2340, rotation: -8, tiltY: 10, shadowBlur: 130, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1400 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.7, width: 1080, height: 2340, rotation: -8, persY: 10, shadowBlur: 130, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1400 };
             const t = ['GO HARDER.', 'TRACK IT ALL.', 'BEAT YOUR BEST.', 'TRAIN SMART.', 'WIN TODAY.'];
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
@@ -488,7 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
             presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'color'; bgColor1 = '#fafafa';
             const tOpt = { type: 'text', color: '#202124', fontFamily: 'Inter', fontWeight: '600', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 50, width: 950, height: 200, y: 420 };
-            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.64, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 90, shadowOp: 20, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1450 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.64, width: 1080, height: 2340, rotation: 0, persY: 0, shadowBlur: 90, shadowOp: 20, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false, y: 1450 };
             const q = ['"Love this app!"', '"Use it every day."', '"Best in class."', '"Highly recommend."', '"Five stars."'];
             for (let i = 0; i < 5; i++) {
                 layers.push({ id: generateId(), type: 'sticker', stickerId: 'stars', img: stickers['stars'], x: baseWidth*(i+0.5), y: 220, scale: 1.4, width: 250, height: 50, rotation: 0 });
@@ -500,7 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
             presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#c9d6ff'; bgColor2 = '#e2e2e2';
             const tOpt = { type: 'text', color: '#1f2937', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 64, width: 950, height: 220, y: 300 };
-            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.74, width: 1080, height: 2340, rotation: -6, tiltY: 22, shadowBlur: 150, shadowOp: 45, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true, y: 1420 };
+            const dOpt = { type: 'image', img: phApp, frameStyle: 'android', scale: 0.74, width: 1080, height: 2340, rotation: -6, persY: 22, shadowBlur: 150, shadowOp: 45, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true, y: 1420 };
             const t = ['In your hand.', 'On the go.', 'Tap. Done.', 'Anywhere.', 'Try it now.'];
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), content: t[i], x: baseWidth*(i+0.5), ...tOpt });
             for (let i = 0; i < 5; i++) layers.push({ id: generateId(), x: baseWidth*(i+0.5), ...dOpt });
@@ -514,13 +514,13 @@ document.addEventListener('DOMContentLoaded', () => {
             bgType = 'color'; bgColor1 = '#0052ff';
             layers.push({ id: generateId(), type: 'text', content: 'NEW', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 300, scale: 1, rotation: 0, fontSize: 300, width: 1000, height: 380 });
             layers.push({ id: generateId(), type: 'text', content: 'Big feature, zero effort.', color: '#ffffff', fontFamily: 'Inter', fontWeight: '700', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 560, scale: 1, rotation: 0, fontSize: 62, width: 900, height: 160 });
-            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'clay', x: baseWidth/2, y: 880, scale: 0.44, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 120, shadowOp: 50, shadowColor: '#000000', hasGlare: false, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'clay', x: baseWidth/2, y: 880, scale: 0.44, width: 1080, height: 2340, rotation: 0, persY: 0, shadowBlur: 120, shadowOp: 50, shadowColor: '#000000', hasGlare: false, hasFloorShadow: true });
         }
         else if (type === 'sq-feature') {
             presetSelect.value = '1080x1080'; screensSelect.value = '1'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#6a11cb'; bgColor2 = '#2575fc';
             layers.push({ id: generateId(), type: 'text', content: 'One tap. Done.', color: '#ffffff', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'rgba(0,0,0,0.25)', shadowBlur: 15, x: baseWidth/2, y: 250, scale: 1, rotation: 0, fontSize: 80, width: 950, height: 180 });
-            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: baseWidth/2, y: 720, scale: 0.5, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 130, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: baseWidth/2, y: 720, scale: 0.5, width: 1080, height: 2340, rotation: 0, persY: 0, shadowBlur: 130, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
         }
         else if (type === 'sq-quote') {
             presetSelect.value = '1080x1080'; screensSelect.value = '1'; updateCanvasSize();
@@ -528,41 +528,41 @@ document.addEventListener('DOMContentLoaded', () => {
             layers.push({ id: generateId(), type: 'shape', shapeType: 'circle', color: '#f5af19', x: 250, y: 540, width: 600, height: 600, scale: 1, rotation: 0, shadowBlur: 200, shadowColor: '#f12711', opacity: 30 });
             layers.push({ id: generateId(), type: 'text', content: '"This app completely\nchanged how I work."', color: '#ffffff', fontFamily: 'Inter', fontWeight: '600', textAlign: 'left', shadowColor: 'transparent', shadowBlur: 0, x: 110, y: 380, scale: 1, rotation: 0, fontSize: 48, width: 560, height: 300 });
             layers.push({ id: generateId(), type: 'text', content: '★★★★★', color: '#f5af19', fontFamily: 'Inter', fontWeight: '900', textAlign: 'left', shadowColor: 'transparent', shadowBlur: 0, x: 110, y: 640, scale: 1, rotation: 0, fontSize: 60, width: 400, height: 100 });
-            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: 820, y: 600, scale: 0.45, width: 1080, height: 2340, rotation: 0, tiltY: 15, shadowBlur: 100, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: 820, y: 600, scale: 0.45, width: 1080, height: 2340, rotation: 0, persY: 15, shadowBlur: 100, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
         }
         else if (type === 'sq-compare') {
             presetSelect.value = '1080x1080'; screensSelect.value = '2'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#ffffff'; bgColor2 = '#111111';
             layers.push({ id: generateId(), type: 'text', content: 'BEFORE', color: '#000000', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 200, scale: 1, rotation: 0, fontSize: 70, width: 500, height: 120 });
-            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: baseWidth/2, y: 660, scale: 0.42, width: 1080, height: 2340, rotation: 0, tiltY: -10, shadowBlur: 80, shadowOp: 30, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: baseWidth/2, y: 660, scale: 0.42, width: 1080, height: 2340, rotation: 0, persY: -10, shadowBlur: 80, shadowOp: 30, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false });
             layers.push({ id: generateId(), type: 'text', content: 'AFTER', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth*1.5, y: 200, scale: 1, rotation: 0, fontSize: 70, width: 500, height: 120 });
-            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: baseWidth*1.5, y: 660, scale: 0.42, width: 1080, height: 2340, rotation: 0, tiltY: 10, shadowBlur: 80, shadowOp: 80, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: baseWidth*1.5, y: 660, scale: 0.42, width: 1080, height: 2340, rotation: 0, persY: 10, shadowBlur: 80, shadowOp: 80, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false });
         }
         else if (type === 'sq-promo') {
             presetSelect.value = '1080x1080'; screensSelect.value = '1'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#f12711'; bgColor2 = '#f5af19';
             layers.push({ id: generateId(), type: 'text', content: 'LAUNCH WEEK', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'rgba(0,0,0,0.25)', shadowBlur: 15, x: baseWidth/2, y: 230, scale: 1, rotation: 0, fontSize: 92, width: 1000, height: 160 });
             layers.push({ id: generateId(), type: 'text', content: 'Limited-time offer inside.', color: '#ffffff', fontFamily: 'Inter', fontWeight: '600', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 370, scale: 1, rotation: 0, fontSize: 42, width: 900, height: 100 });
-            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: baseWidth/2, y: 760, scale: 0.48, width: 1080, height: 2340, rotation: 0, tiltY: -8, shadowBlur: 130, shadowOp: 55, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: baseWidth/2, y: 760, scale: 0.48, width: 1080, height: 2340, rotation: 0, persY: -8, shadowBlur: 130, shadowOp: 55, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
         }
         else if (type === 'sq-minimal') {
             presetSelect.value = '1080x1080'; screensSelect.value = '1'; updateCanvasSize();
             bgType = 'color'; bgColor1 = '#f5f5f7';
-            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'clay', x: baseWidth/2, y: 470, scale: 0.5, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 90, shadowOp: 18, shadowColor: '#000000', hasGlare: false, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'clay', x: baseWidth/2, y: 470, scale: 0.5, width: 1080, height: 2340, rotation: 0, persY: 0, shadowBlur: 90, shadowOp: 18, shadowColor: '#000000', hasGlare: false, hasFloorShadow: true });
             layers.push({ id: generateId(), type: 'text', content: 'Designed for you.', color: '#1d1d1f', fontFamily: 'Inter', fontWeight: '600', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 940, scale: 1, rotation: 0, fontSize: 46, width: 800, height: 100 });
         }
         else if (type === 'sq-gradient') {
             presetSelect.value = '1080x1080'; screensSelect.value = '1'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#ff9a9e'; bgColor2 = '#fecfef';
             layers.push({ id: generateId(), type: 'text', content: 'Made to delight.', color: '#4a154b', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 240, scale: 1, rotation: 0, fontSize: 76, width: 900, height: 160 });
-            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: baseWidth/2, y: 720, scale: 0.48, width: 1080, height: 2340, rotation: -8, tiltY: 18, shadowBlur: 120, shadowOp: 40, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: baseWidth/2, y: 720, scale: 0.48, width: 1080, height: 2340, rotation: -8, persY: 18, shadowBlur: 120, shadowOp: 40, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
         }
         else if (type === 'sq-stat') {
             presetSelect.value = '1080x1080'; screensSelect.value = '1'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#11998e'; bgColor2 = '#38ef7d';
             layers.push({ id: generateId(), type: 'text', content: '1M+', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'rgba(0,0,0,0.2)', shadowBlur: 15, x: baseWidth/2, y: 300, scale: 1, rotation: 0, fontSize: 260, width: 1000, height: 320 });
             layers.push({ id: generateId(), type: 'text', content: 'downloads and counting', color: '#ffffff', fontFamily: 'Inter', fontWeight: '600', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 560, scale: 1, rotation: 0, fontSize: 48, width: 900, height: 100 });
-            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'clay', x: baseWidth/2, y: 870, scale: 0.4, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 110, shadowOp: 45, shadowColor: '#000000', hasGlare: false, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'clay', x: baseWidth/2, y: 870, scale: 0.4, width: 1080, height: 2340, rotation: 0, persY: 0, shadowBlur: 110, shadowOp: 45, shadowColor: '#000000', hasGlare: false, hasFloorShadow: true });
         }
 
         // ==========================================
@@ -574,52 +574,52 @@ document.addEventListener('DOMContentLoaded', () => {
             layers.push({ id: generateId(), type: 'shape', shapeType: 'rectangle', color: '#0f172a', x: 480, y: 540, width: 960, height: 1080, scale: 1, rotation: 0, shadowBlur: 0, shadowColor: '#000000', opacity: 100 });
             layers.push({ id: generateId(), type: 'text', content: 'Transform your\nworkflow.', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'left', shadowColor: 'transparent', shadowBlur: 0, x: 200, y: 380, scale: 1, rotation: 0, fontSize: 78, width: 700, height: 300 });
             layers.push({ id: generateId(), type: 'text', content: 'The fastest way to build and ship.', color: '#94a3b8', fontFamily: 'Inter', fontWeight: '400', textAlign: 'left', shadowColor: 'transparent', shadowBlur: 0, x: 200, y: 660, scale: 1, rotation: 0, fontSize: 34, width: 600, height: 120 });
-            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'macbook', x: 1320, y: 550, scale: 0.72, width: 1200, height: 800, rotation: 0, tiltY: -15, shadowBlur: 120, shadowOp: 45, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'macbook', x: 1320, y: 550, scale: 0.72, width: 1200, height: 800, rotation: 0, persY: -15, shadowBlur: 120, shadowOp: 45, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
         }
         else if (type === 'ls-macbook') {
             presetSelect.value = '1920x1080'; screensSelect.value = '1'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#0f172a'; bgColor2 = '#1e1b4b';
-            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'macbook', x: baseWidth/2, y: 580, scale: 0.92, width: 1200, height: 800, rotation: 0, tiltY: 0, shadowBlur: 150, shadowOp: 70, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'macbook', x: baseWidth/2, y: 580, scale: 0.92, width: 1200, height: 800, rotation: 0, persY: 0, shadowBlur: 150, shadowOp: 70, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
         }
         else if (type === 'ls-ecosystem') {
             presetSelect.value = '1920x1080'; screensSelect.value = '1'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#f8fafc'; bgColor2 = '#e2e8f0';
             layers.push({ id: generateId(), type: 'text', content: 'WORKS EVERYWHERE', color: '#0f172a', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 160, scale: 1, rotation: 0, fontSize: 70, width: 1200, height: 120 });
-            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'macbook', x: baseWidth/2, y: 620, scale: 0.62, width: 1200, height: 800, rotation: 0, tiltY: 0, shadowBlur: 100, shadowOp: 40, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
-            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: 430, y: 600, scale: 0.5, width: 1080, height: 2340, rotation: 0, tiltY: -15, shadowBlur: 80, shadowOp: 30, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
-            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: 1490, y: 600, scale: 0.5, width: 1080, height: 2340, rotation: 0, tiltY: 15, shadowBlur: 80, shadowOp: 30, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'macbook', x: baseWidth/2, y: 620, scale: 0.62, width: 1200, height: 800, rotation: 0, persY: 0, shadowBlur: 100, shadowOp: 40, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: 430, y: 600, scale: 0.5, width: 1080, height: 2340, rotation: 0, persY: -15, shadowBlur: 80, shadowOp: 30, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: 1490, y: 600, scale: 0.5, width: 1080, height: 2340, rotation: 0, persY: 15, shadowBlur: 80, shadowOp: 30, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
         }
         else if (type === 'ls-cascade') {
             presetSelect.value = '1920x1080'; screensSelect.value = '1'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#c31432'; bgColor2 = '#240b36';
-            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'browser', x: 620, y: 560, scale: 0.6, width: 1200, height: 800, rotation: 0, tiltY: 25, shadowBlur: 120, shadowOp: 70, shadowColor: '#000000', hasGlare: false, hasFloorShadow: false });
-            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'browser', x: 960, y: 560, scale: 0.6, width: 1200, height: 800, rotation: 0, tiltY: 25, shadowBlur: 120, shadowOp: 70, shadowColor: '#000000', hasGlare: false, hasFloorShadow: false });
-            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'browser', x: 1300, y: 560, scale: 0.6, width: 1200, height: 800, rotation: 0, tiltY: 25, shadowBlur: 120, shadowOp: 70, shadowColor: '#000000', hasGlare: false, hasFloorShadow: false });
+            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'browser', x: 620, y: 560, scale: 0.6, width: 1200, height: 800, rotation: 0, persY: 25, shadowBlur: 120, shadowOp: 70, shadowColor: '#000000', hasGlare: false, hasFloorShadow: false });
+            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'browser', x: 960, y: 560, scale: 0.6, width: 1200, height: 800, rotation: 0, persY: 25, shadowBlur: 120, shadowOp: 70, shadowColor: '#000000', hasGlare: false, hasFloorShadow: false });
+            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'browser', x: 1300, y: 560, scale: 0.6, width: 1200, height: 800, rotation: 0, persY: 25, shadowBlur: 120, shadowOp: 70, shadowColor: '#000000', hasGlare: false, hasFloorShadow: false });
             layers.push({ id: generateId(), type: 'text', content: 'POWERFUL WEB APPS', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 150, scale: 1, rotation: 0, fontSize: 80, width: 1400, height: 120 });
         }
         else if (type === 'ls-banner') {
             presetSelect.value = '1920x1080'; screensSelect.value = '1'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#6a11cb'; bgColor2 = '#2575fc';
             layers.push({ id: generateId(), type: 'text', content: 'The all-in-one platform.', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'center', shadowColor: 'rgba(0,0,0,0.25)', shadowBlur: 20, x: baseWidth/2, y: 230, scale: 1, rotation: 0, fontSize: 92, width: 1600, height: 160 });
-            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'macbook', x: baseWidth/2, y: 760, scale: 0.72, width: 1200, height: 800, rotation: 0, tiltY: 0, shadowBlur: 130, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'macbook', x: baseWidth/2, y: 760, scale: 0.72, width: 1200, height: 800, rotation: 0, persY: 0, shadowBlur: 130, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
         }
         else if (type === 'ls-darkglow') {
             presetSelect.value = '1920x1080'; screensSelect.value = '1'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#020617'; bgColor2 = '#0b1020';
-            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'browser', x: baseWidth/2, y: 560, scale: 0.88, width: 1200, height: 800, rotation: 0, tiltY: 0, shadowBlur: 180, shadowOp: 80, shadowColor: '#34d399', hasGlare: true, hasFloorShadow: false });
+            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'browser', x: baseWidth/2, y: 560, scale: 0.88, width: 1200, height: 800, rotation: 0, persY: 0, shadowBlur: 180, shadowOp: 80, shadowColor: '#34d399', hasGlare: true, hasFloorShadow: false });
         }
         else if (type === 'ls-trio') {
             presetSelect.value = '1920x1080'; screensSelect.value = '1'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#1e293b'; bgColor2 = '#020617';
             layers.push({ id: generateId(), type: 'text', content: 'YOUR APP, EVERYWHERE', color: '#ffffff', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, x: baseWidth/2, y: 150, scale: 1, rotation: 0, fontSize: 70, width: 1400, height: 120 });
-            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: 560, y: 640, scale: 0.5, width: 1080, height: 2340, rotation: 0, tiltY: 18, shadowBlur: 100, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false });
-            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: 1360, y: 640, scale: 0.5, width: 1080, height: 2340, rotation: 0, tiltY: -18, shadowBlur: 100, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false });
-            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: baseWidth/2, y: 600, scale: 0.6, width: 1080, height: 2340, rotation: 0, tiltY: 0, shadowBlur: 140, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: 560, y: 640, scale: 0.5, width: 1080, height: 2340, rotation: 0, persY: 18, shadowBlur: 100, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: 1360, y: 640, scale: 0.5, width: 1080, height: 2340, rotation: 0, persY: -18, shadowBlur: 100, shadowOp: 50, shadowColor: '#000000', hasGlare: true, hasFloorShadow: false });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: baseWidth/2, y: 600, scale: 0.6, width: 1080, height: 2340, rotation: 0, persY: 0, shadowBlur: 140, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
         }
         else if (type === 'ls-feature') {
             presetSelect.value = '1920x1080'; screensSelect.value = '1'; updateCanvasSize();
             bgType = 'gradient'; bgColor1 = '#0f172a'; bgColor2 = '#111827';
-            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'macbook', x: 600, y: 560, scale: 0.66, width: 1200, height: 800, rotation: 0, tiltY: 12, shadowBlur: 130, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+            layers.push({ id: generateId(), type: 'image', img: phMac, frameStyle: 'macbook', x: 600, y: 560, scale: 0.66, width: 1200, height: 800, rotation: 0, persY: 12, shadowBlur: 130, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
             layers.push({ id: generateId(), type: 'text', content: 'Built for teams.', color: '#ffffff', fontFamily: 'Inter', fontWeight: '900', textAlign: 'left', shadowColor: 'transparent', shadowBlur: 0, x: 1180, y: 300, scale: 1, rotation: 0, fontSize: 72, width: 680, height: 160 });
             layers.push({ id: generateId(), type: 'text', content: 'Real-time sync\nGranular permissions\nAudit logs & SSO', color: '#94a3b8', fontFamily: 'Inter', fontWeight: '500', textAlign: 'left', shadowColor: 'transparent', shadowBlur: 0, x: 1180, y: 560, scale: 1, rotation: 0, fontSize: 40, width: 680, height: 280 });
         }
@@ -751,9 +751,9 @@ document.addEventListener('DOMContentLoaded', () => {
             let needsPanelUpdate = false;
             layers.forEach(l => {
                 if(l.type === 'image' && l.frameStyle !== 'none') {
-                    // Smooth back and forth between -15 and 15
-                    l.tiltY = Math.sin(autoRotateAngle) * 15;
-                    l.tiltX = Math.cos(autoRotateAngle) * 5;
+                    // Smooth 3D wobble back and forth
+                    l.persY = Math.sin(autoRotateAngle) * 18;
+                    l.persX = Math.cos(autoRotateAngle) * 6;
                     if (l.id === selectedLayerId) needsPanelUpdate = true;
                 }
             });
@@ -761,8 +761,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tyInput = document.getElementById('img-tilt-y-input');
                 const txInput = document.getElementById('img-tilt-x-input');
                 const selected = layers.find(l => l.id === selectedLayerId);
-                if (tyInput && selected) tyInput.value = Math.round(selected.tiltY);
-                if (txInput && selected) txInput.value = Math.round(selected.tiltX);
+                if (tyInput && selected) tyInput.value = Math.round(selected.persY);
+                if (txInput && selected) txInput.value = Math.round(selected.persX);
             }
         }
 
@@ -894,13 +894,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Apply Tilt & Rotation to ALL layers
-            tCtx.transform(1, ty, tx, 1, 0, 0);
+            // 3D perspective replaces the flat skew when set (image layers only).
+            const use3D = layer.type === 'image' && ((layer.persX || 0) !== 0 || (layer.persY || 0) !== 0);
+            // Apply Tilt & Rotation to ALL layers (skip the flat skew when using 3D).
+            if (!use3D) tCtx.transform(1, ty, tx, 1, 0, 0);
             tCtx.rotate(r);
             tCtx.scale(layer.scale, layer.scale);
 
             if (layer.type === 'image') {
-                drawImageLayer(tCtx, layer);
+                if (use3D) draw3DDevice(tCtx, layer);
+                else drawImageLayer(tCtx, layer);
                 if (layer.hasReflection) {
                     // Partial mirror hugging the device's bottom edge (stays on-canvas)
                     tCtx.save();
@@ -1043,6 +1046,60 @@ document.addEventListener('DOMContentLoaded', () => {
         rim.addColorStop(1, light ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.20)');
         tCtx.strokeStyle = rim; tCtx.lineWidth = Math.max(2, w * 0.008);
         tCtx.beginPath(); tCtx.roundRect(0, 0, w, h, bodyR); tCtx.stroke();
+    }
+
+    // Affine-map a source triangle of `img` onto a destination triangle (with a
+    // hair of inflation to hide seams between adjacent triangles).
+    function textureTriangle(tCtx, img, s, d) {
+        const cx = (d[0].x + d[1].x + d[2].x) / 3, cy = (d[0].y + d[1].y + d[2].y) / 3;
+        const D = d.map(p => { const dx = p.x - cx, dy = p.y - cy, l = Math.hypot(dx, dy) || 1; return { x: p.x + dx / l * 0.7, y: p.y + dy / l * 0.7 }; });
+        tCtx.save();
+        tCtx.beginPath(); tCtx.moveTo(D[0].x, D[0].y); tCtx.lineTo(D[1].x, D[1].y); tCtx.lineTo(D[2].x, D[2].y); tCtx.closePath(); tCtx.clip();
+        const x0 = s[0].x, y0 = s[0].y, x1 = s[1].x, y1 = s[1].y, x2 = s[2].x, y2 = s[2].y;
+        const u0 = d[0].x, v0 = d[0].y, u1 = d[1].x, v1 = d[1].y, u2 = d[2].x, v2 = d[2].y;
+        const delta = x0 * (y1 - y2) - x1 * (y0 - y2) + x2 * (y0 - y1);
+        if (delta) {
+            const a = (u0 * (y1 - y2) - u1 * (y0 - y2) + u2 * (y0 - y1)) / delta;
+            const b = (v0 * (y1 - y2) - v1 * (y0 - y2) + v2 * (y0 - y1)) / delta;
+            const c = (x0 * (u1 - u2) - x1 * (u0 - u2) + x2 * (u0 - u1)) / delta;
+            const dd = (x0 * (v1 - v2) - x1 * (v0 - v2) + x2 * (v0 - v1)) / delta;
+            const e = (x0 * (y1 * u2 - y2 * u1) - x1 * (y0 * u2 - y2 * u0) + x2 * (y0 * u1 - y1 * u0)) / delta;
+            const ff = (x0 * (y1 * v2 - y2 * v1) - x1 * (y0 * v2 - y2 * v0) + x2 * (y0 * v1 - y1 * v0)) / delta;
+            tCtx.transform(a, b, c, dd, e, ff); tCtx.drawImage(img, 0, 0);
+        }
+        tCtx.restore();
+    }
+
+    // True 3D perspective: draw the flat device to an offscreen, then warp it onto
+    // the scene through a 3D-rotated, perspective-projected grid (export-accurate).
+    function draw3DDevice(tCtx, layer) {
+        const w = layer.width, h = layer.height;
+        const padX = w * 0.14, padY = h * 0.20;
+        const ow = Math.ceil(w + padX * 2), oh = Math.ceil(h + padY * 2);
+        const off = document.createElement('canvas'); off.width = ow; off.height = oh;
+        const octx = off.getContext('2d');
+        octx.translate(ow / 2, oh / 2);
+        drawImageLayer(octx, Object.assign({}, layer, { shadowOp: 0 })); // device drawn flat, no baked shadow
+
+        const rx = (layer.persX || 0) * Math.PI / 180, ry = (layer.persY || 0) * Math.PI / 180;
+        const f = Math.max(ow, oh) * 1.9; // focal length — higher = gentler perspective
+        const project = (u, v) => {
+            const x = (u - 0.5) * ow, y = (v - 0.5) * oh;
+            const x1 = x * Math.cos(ry);
+            const z1 = -x * Math.sin(ry);
+            const y1 = y * Math.cos(rx) - z1 * Math.sin(rx);
+            const z2 = y * Math.sin(rx) + z1 * Math.cos(rx);
+            const s = f / (f + z2);
+            return { x: x1 * s, y: y1 * s };
+        };
+        const N = 10, g = [];
+        for (let i = 0; i <= N; i++) { g[i] = []; for (let j = 0; j <= N; j++) g[i][j] = project(i / N, j / N); }
+        for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+            const sx0 = i / N * ow, sy0 = j / N * oh, sx1 = (i + 1) / N * ow, sy1 = (j + 1) / N * oh;
+            const a = g[i][j], b = g[i + 1][j], c = g[i + 1][j + 1], d = g[i][j + 1];
+            textureTriangle(tCtx, off, [{ x: sx0, y: sy0 }, { x: sx1, y: sy0 }, { x: sx1, y: sy1 }], [a, b, c]);
+            textureTriangle(tCtx, off, [{ x: sx0, y: sy0 }, { x: sx1, y: sy1 }, { x: sx0, y: sy1 }], [a, c, d]);
+        }
     }
 
     function drawImageLayer(tCtx, layer) {
@@ -1334,9 +1391,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(frameColorInput) frameColorInput.value = layer.frameColor || defColour;
                 if(typeof syncColourSwatches === 'function') syncColourSwatches();
                 if(tiltYInput && tiltYInput.parentElement) tiltYInput.parentElement.style.display = 'flex';
-                if(tiltYInput) tiltYInput.value = layer.tiltY || 0;
+                if(tiltYInput) tiltYInput.value = layer.persY || 0;
                 if(tiltXInput && tiltXInput.parentElement) tiltXInput.parentElement.style.display = 'flex';
-                if(tiltXInput) tiltXInput.value = layer.tiltX || 0;
+                if(tiltXInput) tiltXInput.value = layer.persX || 0;
                 if(glareToggle) glareToggle.checked = layer.hasGlare || false;
                 if(floorShadowToggle) floorShadowToggle.checked = layer.hasFloorShadow || false;
                 if(reflectionToggle) reflectionToggle.checked = layer.hasReflection || false;
@@ -1402,8 +1459,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     bindLayerSync(rotateInput, 'rotation', true);
-    bindLayerSync(tiltYInput, 'tiltY', true);
-    bindLayerSync(tiltXInput, 'tiltX', true);
+    // The single Tilt control now drives the true 3D perspective.
+    bindLayerSync(tiltYInput, 'persY', true);
+    bindLayerSync(tiltXInput, 'persX', true);
     bindLayerSync(shadowBlurInput, 'shadowBlur', true);
     bindLayerSync(shadowOpInput, 'shadowOp', true);
     bindLayerSync(shadowAngleInput, 'shadowAngle', true);
