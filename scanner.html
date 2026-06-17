@@ -405,13 +405,21 @@
             <div id="frame-style-container">
               <label class="cyber-label">Frame Style</label>
               <select id="frame-style-select" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none;">
-                <option value="none">No Frame (Raw Image)</option>
-                <option value="browser">Mac Browser Window</option>
-                <option value="iphone">iPhone Notch Frame</option>
-                <option value="ipad">iPad Pro (Tablet)</option>
-                <option value="macbook">MacBook Pro</option>
-                <option value="android">Android (Punch-hole)</option>
-                <option value="clay">Clay (Minimalist)</option>
+                <optgroup label="📱 Phones">
+                  <option value="iphone">iPhone (Dynamic Island)</option>
+                  <option value="pixel">Google Pixel</option>
+                  <option value="galaxy">Samsung Galaxy</option>
+                  <option value="android">Android (Punch-hole)</option>
+                </optgroup>
+                <optgroup label="💻 Tablets & Computers">
+                  <option value="ipad">iPad Pro (Tablet)</option>
+                  <option value="macbook">MacBook Pro</option>
+                  <option value="browser">Mac Browser Window</option>
+                </optgroup>
+                <optgroup label="✨ Minimal">
+                  <option value="clay">Clay (Minimalist)</option>
+                  <option value="none">No Frame (Raw Image)</option>
+                </optgroup>
               </select>
               
               <div id="frame-color-container" style="display: none; margin-top: 12px;">
@@ -529,6 +537,6 @@
   <script src="bg.js?v=9185d9aa"></script>
   <script src="nav.js?v=25f778f4"></script>
   <script defer src="script.js?v=67c2f523"></script>
-  <script src="scanner.js?v=2f58b157"></script>
+  <script src="scanner.js?v=a0dd9589"></script>
 </body>
 </html>

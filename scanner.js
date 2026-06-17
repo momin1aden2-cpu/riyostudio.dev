@@ -163,7 +163,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const prefs = JSON.parse(localStorage.getItem('riyo_mockup_prefs'));
             if (prefs) {
                 if (prefs.frameStyle) frameSelect.value = prefs.frameStyle;
-                if (prefs.bgType) bgType = prefs.bgType;
+                // 'image' can't be restored (the uploaded image is gone) → would render blank; fall back to gradient.
+                if (prefs.bgType) bgType = (prefs.bgType === 'image') ? 'gradient' : prefs.bgType;
                 if (prefs.bgColor1) bgColor1 = prefs.bgColor1;
                 if (prefs.bgColor2) bgColor2 = prefs.bgColor2;
                 if (typeof prefs.grain === 'boolean') grainEnabled = prefs.grain;
@@ -185,8 +186,11 @@ document.addEventListener('DOMContentLoaded', () => {
             preset: presetSelect.value,
             screens: screensSelect.value
         };
-        localStorage.setItem('riyo_mockup_prefs', JSON.stringify(prefs));
+        try { localStorage.setItem('riyo_mockup_prefs', JSON.stringify(prefs)); } catch (e) { /* quota — ignore */ }
     }
+    // render() runs on every frame (and during auto-rotate/drag), so coalesce saves.
+    let _saveTimer = null;
+    function saveSoon() { clearTimeout(_saveTimer); _saveTimer = setTimeout(savePrefs, 400); }
 
     // --- Initialization ---
     function init() {
@@ -237,8 +241,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const scaleW = availableW / targetWidth;
         const scaleH = availableH / targetHeight;
-        const scale = Math.min(scaleW, scaleH);
-        
+        // Guard against a transient zero/negative container (mid-layout, narrow splits)
+        // flipping or hiding the canvas.
+        const scale = Math.max(0.02, Math.min(scaleW, scaleH));
+
         wrapper.style.transform = `scale(${scale})`;
     }
 
@@ -654,9 +660,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = URL.createObjectURL(file);
             const img = new Image();
             img.onload = () => { addImageLayer(img, index); URL.revokeObjectURL(url); };
+            img.onerror = () => {
+                URL.revokeObjectURL(url);
+                if (window.showToast) showToast("Couldn't load that image — if it's an iPhone HEIC, save/export it as JPG or PNG first.", 'error');
+            };
             img.src = url;
         });
-        e.target.value = ''; 
+        e.target.value = '';
     });
     
 
@@ -674,8 +684,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (autoRotateToggle) {
         autoRotateToggle.addEventListener('change', (e) => {
             autoRotate = e.target.checked;
-            if (autoRotate && !isAnimating) {
-                isAnimating = true;
+            if (autoRotate) {
+                if (!isAnimating) { isAnimating = true; render(); }
+            } else {
+                isAnimating = false; // stop the animation loop — was running (and draining CPU) forever
                 render();
             }
         });
@@ -746,8 +758,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             if (needsPanelUpdate) {
-                const tyInput = document.getElementById('tilt-y-input');
-                const txInput = document.getElementById('tilt-x-input');
+                const tyInput = document.getElementById('img-tilt-y-input');
+                const txInput = document.getElementById('img-tilt-x-input');
                 const selected = layers.find(l => l.id === selectedLayerId);
                 if (tyInput && selected) tyInput.value = Math.round(selected.tiltY);
                 if (txInput && selected) txInput.value = Math.round(selected.tiltX);
@@ -918,8 +930,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         tCtx.restore();
 
-        // 5. Film grain overlay over the whole composed scene
-        if (grainEnabled && grainVal > 0) {
+        // 5. Film grain overlay over the whole composed scene (skip on transparent
+        // backgrounds — overlay-composited noise bakes grey haze into the alpha).
+        if (grainEnabled && grainVal > 0 && bgType !== 'transparent') {
             tCtx.save();
             tCtx.globalCompositeOperation = 'overlay';
             tCtx.globalAlpha = (grainVal / 100) * 0.55;
@@ -928,7 +941,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tCtx.restore();
         }
 
-        savePrefs();
+        saveSoon();
     }
 
     function drawShapeLayer(tCtx, layer) {
@@ -977,6 +990,52 @@ document.addEventListener('DOMContentLoaded', () => {
         tCtx.shadowColor = 'transparent';
     }
 
+    // Data-driven phone device library. radius/bezel are fractions of the screen
+    // width; cutout = the top sensor housing drawn on the screen like a real device.
+    const PHONE_DEVICES = {
+        iphone:  { radius: 0.135, bezel: 0.022, cutout: 'island' },     // iPhone 15/16 — Dynamic Island
+        android: { radius: 0.11,  bezel: 0.022, cutout: 'punch' },      // generic Android
+        pixel:   { radius: 0.105, bezel: 0.020, cutout: 'punch' },      // Google Pixel — centred punch-hole
+        galaxy:  { radius: 0.085, bezel: 0.014, cutout: 'punch-sm' }    // Samsung Galaxy — slim bezel
+    };
+    const isPhoneFrame = (fs) => Object.prototype.hasOwnProperty.call(PHONE_DEVICES, fs);
+
+    // Realistic phone: body → inset screen → on-screen cutout → metallic rim.
+    function drawPhoneFrame(tCtx, layer, w, h) {
+        const dev = PHONE_DEVICES[layer.frameStyle] || PHONE_DEVICES.iphone;
+        const bodyR = w * dev.radius;
+        const bezel = Math.max(6, w * dev.bezel);
+        tCtx.beginPath(); tCtx.roundRect(0, 0, w, h, bodyR); tCtx.closePath();
+        tCtx.fillStyle = layer.frameColor || '#0b0b0d';
+        tCtx.fill();
+        tCtx.shadowColor = 'transparent';
+
+        const sx = bezel, sy = bezel, sw = w - bezel * 2, sh = h - bezel * 2;
+        const sr = Math.max(0, bodyR - bezel);
+        tCtx.save();
+        tCtx.beginPath(); tCtx.roundRect(sx, sy, sw, sh, sr); tCtx.closePath(); tCtx.clip();
+        tCtx.drawImage(layer.img, sx, sy, sw, sh);
+        // On-screen sensor housing
+        tCtx.fillStyle = '#000';
+        if (dev.cutout === 'island') {
+            const iw = w * 0.30, ih = w * 0.085, iy = sy + w * 0.035;
+            tCtx.beginPath(); tCtx.roundRect((w - iw) / 2, iy, iw, ih, ih / 2); tCtx.fill();
+        } else if (dev.cutout === 'punch' || dev.cutout === 'punch-sm') {
+            const pr = w * (dev.cutout === 'punch-sm' ? 0.018 : 0.024);
+            const py = sy + w * (dev.cutout === 'punch-sm' ? 0.04 : 0.05);
+            tCtx.beginPath(); tCtx.arc(w / 2, py, pr, 0, Math.PI * 2); tCtx.fill();
+        }
+        tCtx.restore();
+
+        // Metallic edge highlight
+        const rim = tCtx.createLinearGradient(0, 0, w, h);
+        rim.addColorStop(0, 'rgba(255,255,255,0.28)');
+        rim.addColorStop(0.5, 'rgba(255,255,255,0.03)');
+        rim.addColorStop(1, 'rgba(255,255,255,0.20)');
+        tCtx.strokeStyle = rim; tCtx.lineWidth = Math.max(2, w * 0.008);
+        tCtx.beginPath(); tCtx.roundRect(0, 0, w, h, bodyR); tCtx.stroke();
+    }
+
     function drawImageLayer(tCtx, layer) {
         const w = layer.width;
         const h = layer.height;
@@ -995,32 +1054,21 @@ document.addEventListener('DOMContentLoaded', () => {
         tCtx.shadowOffsetX = Math.cos(sRad) * sDist;
         tCtx.shadowOffsetY = Math.sin(sRad) * sDist;
 
-        if (layer.frameStyle === 'iphone' || layer.frameStyle === 'android' || layer.frameStyle === 'clay') {
+        if (isPhoneFrame(layer.frameStyle)) {
+            drawPhoneFrame(tCtx, layer, w, h);
+
+        } else if (layer.frameStyle === 'clay') {
             const rad = Math.min(w, h) * 0.1;
             tCtx.beginPath(); tCtx.roundRect(0, 0, w, h, rad); tCtx.closePath();
-            tCtx.fillStyle = layer.frameStyle === 'clay' ? (layer.frameColor || '#f8f9fa') : '#000';
+            tCtx.fillStyle = layer.frameColor || '#f8f9fa';
             tCtx.fill(); tCtx.shadowColor = 'transparent';
-
             tCtx.save();
-            if (layer.frameStyle === 'clay') {
-                const pad = w * 0.06;
-                tCtx.beginPath(); tCtx.roundRect(pad, pad, w - pad*2, h - pad*2, rad*0.8); tCtx.clip();
-                tCtx.drawImage(layer.img, pad, pad, w - pad*2, h - pad*2);
-            } else {
-                tCtx.clip(); tCtx.drawImage(layer.img, 0, 0, w, h);
-            }
+            const pad = w * 0.06;
+            tCtx.beginPath(); tCtx.roundRect(pad, pad, w - pad*2, h - pad*2, rad*0.8); tCtx.clip();
+            tCtx.drawImage(layer.img, pad, pad, w - pad*2, h - pad*2);
             tCtx.restore();
-
-            if (layer.frameStyle === 'iphone') {
-                const notchW = w * 0.4; const notchH = notchW * 0.2;
-                if (notchImg.complete) tCtx.drawImage(notchImg, (w - notchW)/2, 0, notchW, notchH);
-            } else if (layer.frameStyle === 'android') {
-                const punchW = w * 0.05;
-                if (punchHoleImg.complete) tCtx.drawImage(punchHoleImg, w/2 - punchW/2, h * 0.03, punchW, punchW);
-            }
-            
-            if (layer.frameStyle !== 'clay') { tCtx.strokeStyle = '#000'; tCtx.lineWidth = w * 0.02; tCtx.stroke(); } 
-            else { tCtx.strokeStyle = 'rgba(0,0,0,0.1)'; tCtx.lineWidth = w * 0.01; tCtx.stroke(); }
+            tCtx.strokeStyle = 'rgba(0,0,0,0.1)'; tCtx.lineWidth = w * 0.01;
+            tCtx.beginPath(); tCtx.roundRect(0, 0, w, h, rad); tCtx.stroke();
 
         } else if (layer.frameStyle === 'ipad') {
             const padW = w * 0.05; const rad = Math.min(w, h) * 0.05;
@@ -1055,7 +1103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (layer.hasGlare) {
             tCtx.save();
             let renderH = layer.renderHeight || h;
-            if (layer.frameStyle === 'iphone' || layer.frameStyle === 'android' || layer.frameStyle === 'clay') { tCtx.beginPath(); tCtx.roundRect(0, 0, w, h, Math.min(w, h) * 0.1); tCtx.clip(); } 
+            if (isPhoneFrame(layer.frameStyle) || layer.frameStyle === 'clay') { tCtx.beginPath(); tCtx.roundRect(0, 0, w, h, Math.min(w, h) * 0.1); tCtx.clip(); }
             else if (layer.frameStyle === 'browser') { tCtx.beginPath(); tCtx.roundRect(0, 0, w, renderH, 16); tCtx.clip(); } 
             else if (layer.frameStyle === 'ipad') { tCtx.beginPath(); tCtx.roundRect(-w*0.05, -w*0.05, w*1.1, h + w*0.1, Math.min(w, h)*0.05 + w*0.05); tCtx.clip(); } 
             else if (layer.frameStyle === 'macbook') { tCtx.beginPath(); tCtx.roundRect(-w*0.02, -h*0.05, w*1.04, h*1.17, 16); tCtx.clip(); }
@@ -1197,6 +1245,7 @@ document.addEventListener('DOMContentLoaded', () => {
             layer.x = originalLayerX + (x - dragStartX); layer.y = originalLayerY + (y - dragStartY); scheduleRender();
         } else if (isScaling) {
             const distStart = Math.hypot(dragStartX - layer.x, dragStartY - layer.y);
+            if (distStart < 1) return; // grabbed at the layer centre → avoid /0 → NaN scale (wipes the layer)
             const distCurrent = Math.hypot(x - layer.x, y - layer.y);
             layer.scale = Math.max(0.05, originalScale * (distCurrent / distStart)); scheduleRender();
         }
