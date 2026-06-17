@@ -221,7 +221,7 @@ function initUniversalConverter() {
         await new Promise((resolve, reject) => {
           canvas.toBlob((blob) => {
             if (!blob) { reject(new Error("Canvas encoding failed")); return; }
-            triggerDownload(blob, `forged_${currentFile.name.split('.')[0]}.${targetFormat}`);
+            triggerDownload(blob, `forged_${currentFile.name.replace(/\.[^.]+$/, '')}.${targetFormat}`);
             logTerminal(`[200 OK] Forging Complete!`);
             resolve();
           }, mimeType, quality);
@@ -240,11 +240,11 @@ function initUniversalConverter() {
         }
         
         const blob = await encodeICO(icoCanvas);
-        triggerDownload(blob, `forged_${currentFile.name.split('.')[0]}.ico`);
+        triggerDownload(blob, `forged_${currentFile.name.replace(/\.[^.]+$/, '')}.ico`);
         logTerminal(`[200 OK] ICO Forging Complete!`);
       } else if (targetFormat === 'bmp') {
         const blob = encodeBMP(canvas);
-        triggerDownload(blob, `forged_${currentFile.name.split('.')[0]}.bmp`);
+        triggerDownload(blob, `forged_${currentFile.name.replace(/\.[^.]+$/, '')}.bmp`);
         logTerminal(`[200 OK] BMP Forging Complete!`);
       }
       forgeBtn.textContent = `[ FORGE ANOTHER ]`;
@@ -350,13 +350,23 @@ function initUniversalConverter() {
     }
   }
 
-  async function convertMedia() {
-    terminal.style.display = 'block';
-    terminal.innerHTML = '';
-    logTerminal(`Waking up FFmpeg...`);
-    
+  async function convertMedia(tries = 0) {
+    if (tries === 0) {
+      terminal.style.display = 'block';
+      terminal.innerHTML = '';
+      logTerminal(`Waking up FFmpeg...`);
+    }
+
     if (!window.FFmpeg) {
-      setTimeout(convertMedia, 2000);
+      loadFFmpeg(); // make sure the engine script is actually being fetched
+      if (tries >= 15) { // ~30s with no engine → the CDN is unreachable
+        logTerminal('[ERROR] Could not load the conversion engine. Check your connection and try again.');
+        showToast('Could not load the conversion engine — check your connection.', 'error');
+        forgeBtn.disabled = false;
+        forgeBtn.textContent = `[ CONVERT TO ${targetFormat ? targetFormat.toUpperCase() : 'FORMAT'} ]`;
+        return;
+      }
+      setTimeout(() => convertMedia(tries + 1), 2000);
       return;
     }
 
@@ -417,7 +427,7 @@ function initUniversalConverter() {
       if (targetFormat === 'webm') mimeType = 'video/webm';
 
       const blob = new Blob([data.buffer], { type: mimeType });
-      triggerDownload(blob, `forged_${currentFile.name.split('.')[0]}.${targetFormat}`);
+      triggerDownload(blob, `forged_${currentFile.name.replace(/\.[^.]+$/, '')}.${targetFormat}`);
       
       logTerminal(`[200 OK] Media Forging Complete!`);
 
@@ -512,7 +522,7 @@ function initHeicDecoder() {
       
       // If multiple images are returned (e.g. animation sequence), take the first
       const outBlob = Array.isArray(blob) ? blob[0] : blob;
-      triggerDownload(outBlob, `decoded_${currentFile.name.split('.')[0]}.${ext}`);
+      triggerDownload(outBlob, `decoded_${currentFile.name.replace(/\.[^.]+$/, '')}.${ext}`);
       
       status.textContent = 'Done! File downloaded.';
     } catch (err) {
@@ -1081,6 +1091,8 @@ function initScreenRecorder() {
   let finalBlob = null;
   let timerInterval = null;
   let startTime = 0;
+  let audioCtx = null;
+  let previewUrl = null;
 
   function updateTimer() {
     const diff = Math.floor((Date.now() - startTime) / 1000);
@@ -1129,7 +1141,7 @@ function initScreenRecorder() {
       let isMicActive = false;
       if (rawMicStream && rawMicStream.getAudioTracks().length > 0) {
         isMicActive = true;
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const dest = audioCtx.createMediaStreamDestination();
         
         if (rawDisplayStream.getAudioTracks().length > 0) {
@@ -1163,7 +1175,10 @@ function initScreenRecorder() {
       actionsDiv.style.display = 'none';
       
       recordedChunks = [];
-      mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+      // Not every browser supports VP9 in WebM — fall back gracefully.
+      const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', '']
+        .find(t => t === '' || (window.MediaRecorder && MediaRecorder.isTypeSupported(t)));
+      mediaRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
       
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) recordedChunks.push(e.data);
@@ -1172,18 +1187,21 @@ function initScreenRecorder() {
       mediaRecorder.onstop = () => {
         clearInterval(timerInterval);
         finalBlob = new Blob(recordedChunks, { type: 'video/webm' });
-        
+
         // Change UI to post-recording state
         stopBtn.style.display = 'none';
         actionsDiv.style.display = 'flex';
         indicator.style.display = 'none';
-        
+
         // Unbind live stream from preview and bind recorded blob to allow playback
         preview.srcObject = null;
-        preview.src = URL.createObjectURL(finalBlob);
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        previewUrl = URL.createObjectURL(finalBlob);
+        preview.src = previewUrl;
         preview.controls = true; // allow them to play it back
-        
+
         stopAllTracks();
+        if (audioCtx) { try { audioCtx.close(); } catch (e) {} audioCtx = null; }
       };
       
       // Listen for browser native stop button (e.g. Chrome's "Stop sharing" banner)
@@ -1192,15 +1210,25 @@ function initScreenRecorder() {
       };
       
       startTime = Date.now();
-      timerInterval = setInterval(() => {
-        const diff = Math.floor((Date.now() - startTime) / 1000);
-        const mins = String(Math.floor(diff / 60)).padStart(2, '0');
-        const secs = String(diff % 60).padStart(2, '0');
-        if (newTimeDisplay) newTimeDisplay.textContent = `${mins}:${secs}`;
-      }, 1000);
+      updateTimer();
+      timerInterval = setInterval(updateTimer, 1000);
       mediaRecorder.start(1000); // 1-second chunks to prevent memory bloat
     } catch (err) {
-      showToast("Screen recording went belly up: " + err.message, "error");
+      // Reset everything: a half-started recording must not strand the UI or
+      // leave the screen-share / mic active.
+      clearInterval(timerInterval);
+      stopAllTracks();
+      if (audioCtx) { try { audioCtx.close(); } catch (e) {} audioCtx = null; }
+      if (preview) { preview.srcObject = null; preview.style.display = 'none'; }
+      if (placeholder) placeholder.style.display = 'block';
+      if (indicator) indicator.style.display = 'none';
+      if (startBtn) startBtn.style.display = 'block';
+      if (stopBtn) stopBtn.style.display = 'none';
+      if (actionsDiv) actionsDiv.style.display = 'none';
+      const msg = (err && err.name === 'NotAllowedError')
+        ? "No worries — screen recording was cancelled."
+        : "Screen recording went belly up: " + (err && err.message);
+      showToast(msg, "error");
     }
   });
 
@@ -1291,6 +1319,8 @@ function initScreenRecorder() {
     clearInterval(timerInterval);
     finalBlob = null;
     recordedChunks = [];
+    if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = null; }
+    if (audioCtx) { try { audioCtx.close(); } catch (e) {} audioCtx = null; }
 
     preview.srcObject = null;
   }
@@ -1337,9 +1367,13 @@ function initTextExtractor() {
 
   async function decodeAudioFile(file) {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-    const arrayBuffer = await file.arrayBuffer();
-    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-    return audioBuffer.getChannelData(0);
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      return audioBuffer.getChannelData(0); // copied out, so the context can close
+    } finally {
+      try { await audioContext.close(); } catch (e) {}
+    }
   }
 
   async function handleOcrFile(file) {
@@ -1376,9 +1410,13 @@ function initTextExtractor() {
         });
         
         statusText.textContent = 'Processing Image...';
-        const { data: { text } } = await worker.recognize(file);
-        await worker.terminate();
-        
+        let text;
+        try {
+          ({ data: { text } } = await worker.recognize(file));
+        } finally {
+          await worker.terminate(); // always free the worker + WASM core, even on failure
+        }
+
         progressContainer.style.display = 'none';
         workspace.style.display = 'block';
         textarea.value = text;
@@ -1578,6 +1616,7 @@ function initGhostMaker() {
            metaList.innerHTML = '<div style="color: #10B981;">Decoding HEIC container...</div>';
            try {
               parseFile = await heic2any({ blob: firstFile, toType: "image/jpeg", quality: 0.9 });
+              parseFile = Array.isArray(parseFile) ? parseFile[0] : parseFile; // multi-image HEIC → first frame
               parseFile.name = firstFile.name.replace(/\.heic$/i, '.jpg');
            } catch(e) {
               console.warn("Failed to decode HEIC to JPG for parsing", e);
@@ -1826,11 +1865,19 @@ function initGhostMaker() {
       }
     }
     
-    // Download logic
+    // Download logic. Never claim success when nothing was produced — this is a
+    // privacy tool, so a false "JOB COMPLETE" would let the user think a file was
+    // scrubbed when it wasn't even created.
+    if (processedBlobs.length === 0) {
+      showToast('Nothing was scrubbed — those files could not be processed.', 'error');
+      stripBtn.disabled = false;
+      stripBtn.innerText = '[ EXECUTE & DOWNLOAD ]';
+      return;
+    }
     if (processedBlobs.length > 1) { try { await ensureScript('jszip'); } catch (e) {} }
     if (processedBlobs.length === 1) {
        triggerDownload(processedBlobs[0].blob, processedBlobs[0].name);
-    } else if (processedBlobs.length > 1 && window.JSZip) {
+    } else if (window.JSZip) {
        stripBtn.innerText = '[ ZIPPING FILES... ]';
        const zip = new JSZip();
        processedBlobs.forEach(pb => {
@@ -1838,6 +1885,10 @@ function initGhostMaker() {
        });
        const zipBlob = await zip.generateAsync({type:"blob"});
        triggerDownload(zipBlob, 'ghost_scrubbed_files.zip');
+    } else {
+       // ZIP library unavailable — download each scrubbed file individually
+       // rather than silently producing nothing.
+       processedBlobs.forEach(pb => triggerDownload(pb.blob, pb.name));
     }
 
     stripBtn.style.background = 'rgba(16, 185, 129, 0.2)';
@@ -2466,6 +2517,7 @@ function initBackgroundRemover() {
       // Handle HEIC fallback
       if (file.name.toLowerCase().endsWith('.heic')) {
         statusText.textContent = 'Decoding HEIC image first...';
+        await ensureScript('heic2any');
         const convertedBlob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 1.0 });
         processFile = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
       }
