@@ -2713,5 +2713,24 @@ if (previewMockupBtn && mockupModal && closeMockupBtn) {
   if (templatesClose) templatesClose.addEventListener('click', () => { templatesModal.style.display = 'none'; });
   if (templatesModal) templatesModal.addEventListener('click', (e) => { if (e.target === templatesModal) templatesModal.style.display = 'none'; });
 
+  // On mobile the canvas is pinned at the top; keep the four export buttons OUT of
+  // that pinned box (so the canvas keeps its full size) by moving them into the
+  // scrolling form. Desktop keeps them under the canvas, where they belong.
+  function placeExportButtons() {
+    var actions = document.getElementById('logo-export-actions');
+    var canvasC = document.querySelector('.canvas-container');
+    var panel = document.querySelector('.tool-panel');
+    if (!actions || !canvasC || !panel) return;
+    var mobile = window.matchMedia('(max-width: 900px)').matches;
+    if (mobile) {
+      if (actions.parentElement !== panel) panel.insertBefore(actions, panel.firstChild);
+    } else if (actions.parentElement !== canvasC) {
+      canvasC.appendChild(actions);
+    }
+  }
+  placeExportButtons();
+  var _pebTimer;
+  window.addEventListener('resize', function () { clearTimeout(_pebTimer); _pebTimer = setTimeout(placeExportButtons, 150); });
+
   document.fonts.ready.then(() => { addText(); });
 });

@@ -41,36 +41,41 @@
         padding: 0 1rem;
         display: flex !important;
         flex-direction: column !important;
-        /* Push the form below the fixed canvas (matches the capped preview height) */
-        padding-top: 49vh !important;
+        /* Pinned box is just the canvas now (buttons moved into the form), so the
+           form starts much higher than the old 370px. Matches the capped box height. */
+        padding-top: 292px !important;
         margin-top: 0 !important;
       }
 
-      /* Canvas pinned on top, capped to ~half the screen so the form below has
-         real room. Its own scroll is a safety net on very small phones. */
-      .logo-maker-grid > div:nth-child(2),
-      .canvas-container {
+      /* Pin ONLY the OUTER panel via its direct-child class (the grid also holds a
+         <style> node, so :nth-child math is unreliable; and bare `.canvas-container`
+         would also hit Fabric's inner wrapper and break the canvas). A fixed height
+         keeps the box from collapsing now that the buttons live in the form. */
+      .logo-maker-grid > .canvas-container {
         order: -1 !important;
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
         right: 0 !important;
         width: 100vw !important;
-        max-height: 48vh !important;
-        overflow-y: auto !important;
+        min-height: 0 !important;
+        max-height: 286px !important;
+        overflow: hidden !important;
         z-index: 100 !important;
         background: rgba(6, 11, 20, 0.95) !important;
         backdrop-filter: blur(16px) !important;
         -webkit-backdrop-filter: blur(16px) !important;
         padding: 1rem !important;
-        padding-top: 80px !important; /* To clear the top navbar */
+        padding-top: 80px !important; /* clear the top navbar */
         border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
         box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
+        box-sizing: border-box !important;
       }
 
-      /* Compact canvas */
+      /* Full-size canvas (override the global 0.65 shrink). */
       #logo-render-wrapper {
-        max-height: 150px !important;
+        zoom: 1 !important;
+        max-height: 190px !important;
         margin: 0 auto;
       }
 
@@ -79,20 +84,18 @@
       #logo-local-note { display: none !important; }              /* "Rendered locally…" */
       .logo-maker-grid .tool-header { display: none !important; } /* page title + subtitle */
 
-      /* Compact export buttons into a tidy 2×2 */
-      .canvas-container > div:last-child {
+      /* Export buttons (moved into the scrolling form on mobile): tidy 2×2 */
+      #logo-export-actions {
         flex-direction: row !important;
         flex-wrap: wrap !important;
+        max-width: none !important;
         gap: 0.5rem !important;
-        margin-top: 0.6rem !important;
+        margin: 0 0 1.25rem !important;
       }
-      /* The inner flex div needs to be unset to let items flow */
-      .canvas-container > div:last-child > div {
-        display: contents !important;
-      }
+      #logo-export-actions > div { display: contents !important; } /* the SVG/PDF inner row */
       #logo-export-btn, #brandkit-btn, #logo-export-svg-btn, #logo-export-pdf-btn {
-        padding: 0.55rem 0.6rem !important;
-        font-size: 0.78rem !important;
+        padding: 0.7rem 0.6rem !important;
+        font-size: 0.82rem !important;
         flex: 1 1 calc(50% - 0.5rem) !important;
         min-width: 0 !important;
         justify-content: center;
@@ -453,7 +456,7 @@
             </div>
 
             <!-- Export Button -->
-            <div style="margin-top: 1rem; width: 100%; max-width: 480px; z-index: 1; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.5rem;">
+            <div id="logo-export-actions" style="margin-top: 1rem; width: 100%; max-width: 480px; z-index: 1; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.5rem;">
                 <button id="logo-export-btn" class="nav-cta-btn" style="width: 100%; padding: 13px; background: linear-gradient(135deg, #34D399, #10B981); border: 1px solid rgba(16, 185, 129, 0.6); border-radius: 10px; color: #04140d; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 8px 24px rgba(16,185,129,0.35);">
                     📥 Download 4K PNG
                 </button>
@@ -673,7 +676,7 @@
   📥 <span>Save Logo</span>
 </button>
 
-  <script src="logo.js?v=8677a8ba"></script>
+  <script src="logo.js?v=4c07ade4"></script>
 
     <!-- Mockup Modal -->
     <div id="mockup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
