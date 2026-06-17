@@ -272,9 +272,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Canvas Sizing ---
     let canvasInitialized = false;
+    // Panorama (multi-screen) only reads well on tall phone screenshots — a 5-wide
+    // strip of iPads or square social posts just sprawls. Gate it to portrait phones.
+    function isPanoramaFormat() {
+        const [w, h] = presetSelect.value.split('x').map(Number);
+        return (h / w) >= 1.6;
+    }
+    function syncPanoramaAvailability() {
+        const allow = isPanoramaFormat();
+        Array.from(screensSelect.options).forEach(o => {
+            if (o.value !== '1') { o.disabled = !allow; o.hidden = !allow; }
+        });
+        if (!allow && screensSelect.value !== '1') screensSelect.value = '1';
+        screensSelect.style.opacity = allow ? '1' : '0.55';
+        screensSelect.title = allow
+            ? 'Lay your screenshots out as a continuous multi-screen panorama'
+            : 'Panorama is for tall phone screenshots — single screen for this format';
+    }
+
     function updateCanvasSize() {
         const [w, h] = presetSelect.value.split('x').map(Number);
         baseWidth = w;
+        syncPanoramaAvailability();
         screenCount = parseInt(screensSelect.value);
         targetWidth = baseWidth * screenCount;
         targetHeight = h;
@@ -399,23 +418,38 @@ document.addEventListener('DOMContentLoaded', () => {
         // ==========================================
         // PREMIUM HERO TEMPLATES — premium bg + coloured 3D device + headline
         // ==========================================
-        const buildHero = (presetIdx, angle, frame, frameColor, persY, head, sub) => {
-            presetSelect.value = '1290x2796'; screensSelect.value = '1'; updateCanvasSize();
+        // Reads the chosen Screens count and lays the look out across that many
+        // panels — one framed device + headline + subtitle per screen, sharing one
+        // continuous background. `copy` cycles if there are fewer lines than screens.
+        const buildHero = (presetIdx, angle, frame, frameColor, persY, copy) => {
+            let n = parseInt(screensSelect.value) || 1; n = Math.max(1, Math.min(5, n));
+            presetSelect.value = '1290x2796'; screensSelect.value = String(n); updateCanvasSize();
             bgType = 'preset'; bgPresetIdx = presetIdx; bgAngle = angle;
             const light = hexLuminance(BG_PRESETS[presetIdx].colors[0]) > 0.58;
             const ink = light ? '#0b0b0d' : '#ffffff';
             const muted = light ? 'rgba(11,11,13,0.72)' : 'rgba(255,255,255,0.82)';
-            const cx = baseWidth / 2;
-            layers.push({ id: generateId(), type: 'text', content: head, color: ink, fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 104, width: 1140, height: 280, x: cx, y: 330 });
-            layers.push({ id: generateId(), type: 'text', content: sub, color: muted, fontFamily: 'Inter', fontWeight: '500', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 50, width: 1080, height: 160, x: cx, y: 520 });
-            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: frame, frameColor: frameColor, scale: 0.82, width: 1080, height: 2340, rotation: 0, persY: persY, persX: 0, shadowBlur: 130, shadowOp: 45, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true, x: cx, y: 1760 });
+            for (let i = 0; i < n; i++) {
+                const cx = baseWidth * (i + 0.5);
+                const c = copy[i % copy.length];
+                layers.push({ id: generateId(), type: 'text', content: c.h, color: ink, fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 104, width: 1140, height: 280, x: cx, y: 330 });
+                layers.push({ id: generateId(), type: 'text', content: c.s, color: muted, fontFamily: 'Inter', fontWeight: '500', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 50, width: 1080, height: 160, x: cx, y: 520 });
+                layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: frame, frameColor: frameColor, scale: 0.82, width: 1080, height: 2340, rotation: 0, persY: persY, persX: 0, shadowBlur: 130, shadowOp: 45, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true, x: cx, y: 1760 });
+            }
         };
-        if (type === 'pro-light')        buildHero(17, 135, 'iphone', '#0b0b0d', 0,   'Designed to impress',     'Your tagline goes right here');
-        else if (type === 'pro-indigo')  buildHero(0, 135,  'iphone', '#ece9e2', 14,  'Built for speed',         "Everything you need, nothing you don't");
-        else if (type === 'pro-aurora')  buildHero(11, 135, 'iphone', '#0b0b0d', -16, 'Meet the future',         'Beautifully simple, seriously powerful');
-        else if (type === 'pro-emerald') buildHero(10, 135, 'iphone', '#0b0b0d', 0,   'Private by design',       'Your data never leaves your device');
-        else if (type === 'pro-sunset')  buildHero(1, 135,  'iphone', '#0b0b0d', 12,  'Go further',              'The app that keeps up with you');
-        else if (type === 'pro-dark')    buildHero(14, 135, 'iphone', '#d6d7da', -10, 'Pro tools, zero clutter', 'Crafted for people who ship');
+        const HERO_COPY = {
+            'pro-light':   [{h:'Designed to impress',s:'Your tagline goes right here'},{h:'Beautifully simple',s:'Everything in its right place'},{h:'Built for clarity',s:'See more, do more, think less'},{h:'Effortless by design',s:'Powerful where it counts'},{h:'Start in seconds',s:'No setup, no clutter'}],
+            'pro-indigo':  [{h:'Built for speed',s:"Everything you need, nothing you don't"},{h:'Move faster',s:'From idea to done in moments'},{h:'Stay in flow',s:'No friction, no waiting'},{h:'Work smarter',s:'Automations do the heavy lifting'},{h:'Ship with confidence',s:'Reliable, every single time'}],
+            'pro-aurora':  [{h:'Meet the future',s:'Beautifully simple, seriously powerful'},{h:'Reimagined',s:'A fresh take on what you do daily'},{h:'Made to delight',s:'Every detail, considered'},{h:'Powerfully simple',s:'Depth without the complexity'},{h:'Yours to explore',s:'Endless possibilities, one tap away'}],
+            'pro-emerald': [{h:'Private by design',s:'Your data never leaves your device'},{h:'Secure by default',s:'Encrypted, end to end'},{h:"You're in control",s:'No tracking, no surprises'},{h:'Built on trust',s:'Transparent and open'},{h:'Peace of mind',s:'Privacy you can actually verify'}],
+            'pro-sunset':  [{h:'Go further',s:'The app that keeps up with you'},{h:'Chase the day',s:'Momentum from morning to night'},{h:'Always with you',s:'On every device you own'},{h:'Made to move',s:'Fast, fluid, fun'},{h:'Reach higher',s:'Your goals, within reach'}],
+            'pro-dark':    [{h:'Pro tools, zero clutter',s:'Crafted for people who ship'},{h:'Power, refined',s:"Everything you need, nothing you don't"},{h:'Built for focus',s:'Distraction-free by design'},{h:'Serious about speed',s:'Engineered to fly'},{h:'Made for makers',s:'Works as hard as you do'}]
+        };
+        if (type === 'pro-light')        buildHero(17, 135, 'iphone', '#0b0b0d', 0,   HERO_COPY['pro-light']);
+        else if (type === 'pro-indigo')  buildHero(0, 135,  'iphone', '#ece9e2', 14,  HERO_COPY['pro-indigo']);
+        else if (type === 'pro-aurora')  buildHero(11, 135, 'iphone', '#0b0b0d', -16, HERO_COPY['pro-aurora']);
+        else if (type === 'pro-emerald') buildHero(10, 135, 'iphone', '#0b0b0d', 0,   HERO_COPY['pro-emerald']);
+        else if (type === 'pro-sunset')  buildHero(1, 135,  'iphone', '#0b0b0d', 12,  HERO_COPY['pro-sunset']);
+        else if (type === 'pro-dark')    buildHero(14, 135, 'iphone', '#d6d7da', -10, HERO_COPY['pro-dark']);
 
         // ==========================================
         // APPLE APP STORE — Premium Set (1242x2688)
