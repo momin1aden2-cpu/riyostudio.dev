@@ -1,4 +1,4 @@
-const CACHE_NAME = 'riyo-studio-v36';
+const CACHE_NAME = 'riyo-studio-v37';
 // Use the canonical clean URLs only. Requesting the .html form 308-redirects to
 // the clean URL, and caching that redirected response makes iOS WebKit refuse
 // to render it ("Response served by service worker has redirections").
@@ -71,6 +71,22 @@ self.addEventListener('fetch', (event) => {
     }));
   };
 
+  // Forge runs multi-threaded FFmpeg, which needs a cross-origin-isolated context
+  // (SharedArrayBuffer). Rather than a second, conflicting COI service worker that
+  // forces a reload on every visit, we add the isolation headers here — but ONLY to
+  // the Forge document, so the rest of the site (and Video Studio's single-threaded
+  // engine, which breaks under isolation) stays non-isolated. credentialless lets
+  // cross-origin CDN/font resources still load.
+  const isForgeDoc = url.pathname === '/forge' || url.pathname === '/forge.html';
+  const addCoi = (resp) => {
+    if (!resp || !isForgeDoc) return resp;
+    const h = new Headers(resp.headers);
+    h.set('Cross-Origin-Embedder-Policy', 'credentialless');
+    h.set('Cross-Origin-Opener-Policy', 'same-origin');
+    const body = (resp.status === 204 || resp.status === 205 || resp.status === 304) ? null : resp.body;
+    return new Response(body, { status: resp.status, statusText: resp.statusText, headers: h });
+  };
+
   // Page navigations → network-first, so the latest page always loads and the
   // worker never serves a stale layout. Falls back to cache only when offline.
   if (request.mode === 'navigate') {
@@ -82,9 +98,11 @@ self.addEventListener('fetch', (event) => {
             const copy = resp.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
           }
-          return resp;
+          return addCoi(resp);
         })
-        .catch(() => caches.match(request).then((c) => clean(c) || caches.match('/').then(clean)))
+        .catch(() => caches.match(request)
+          .then((c) => c ? clean(c) : caches.match('/').then(clean))
+          .then(addCoi))
     );
     return;
   }

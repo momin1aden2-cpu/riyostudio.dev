@@ -17,7 +17,22 @@
   <style>html,body{background-color:#060B14!important}</style>
   <!-- PWA: Capture install event as early as possible before any other scripts -->
   <script>window._pwaPrompt=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window._pwaPrompt=e;});</script>
-  <script src="coi-serviceworker.js"></script>
+  <!-- Forge's multi-threaded FFmpeg needs a cross-origin-isolated context. The
+       site's single sw.js adds the COOP/COEP headers to this page, so once the
+       worker controls the page we're isolated with no second worker thrashing.
+       On the very first visit the worker isn't controlling yet — reload once
+       (guarded against loops) so it can serve the isolated document. -->
+  <script>
+    (function () {
+      if (window.crossOriginIsolated || !('serviceWorker' in navigator)) return;
+      if (sessionStorage.getItem('forgeCoiReload')) return;
+      navigator.serviceWorker.ready.then(function () {
+        if (window.crossOriginIsolated) return;
+        sessionStorage.setItem('forgeCoiReload', '1');
+        window.location.reload();
+      }).catch(function () {});
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>The Forge — Universal File Converter | Riyo Studio</title>
