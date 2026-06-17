@@ -2251,6 +2251,227 @@ if (previewMockupBtn && mockupModal && closeMockupBtn) {
   if (brandkitClose) brandkitClose.addEventListener('click', resetStyleGuide);
   if (brandkitModal) brandkitModal.addEventListener('click', (e) => { if (e.target === brandkitModal) resetStyleGuide(); });
 
+  // ── Business Card: front + back, vCard QR ("scan to save"), .vcf ──
+  const cardModal = document.getElementById('card-modal');
+  const cardBtn = document.getElementById('card-btn');
+  const cardClose = document.getElementById('card-close');
+  const cardStyle = document.getElementById('card-style');
+  const cardPreview = document.getElementById('card-preview');
+  const cardBackPreview = document.getElementById('card-back-preview');
+  const cardName = document.getElementById('card-name');
+  const cardTitle = document.getElementById('card-title');
+  const cardPhone = document.getElementById('card-phone');
+  const cardEmail = document.getElementById('card-email');
+  const cardWeb = document.getElementById('card-web');
+  const cardLinkedin = document.getElementById('card-linkedin');
+  const cardInstagram = document.getElementById('card-instagram');
+  const cardPngBtn = document.getElementById('card-png');
+  const cardPdfBtn = document.getElementById('card-pdf');
+  const cardVcfBtn = document.getElementById('card-vcf');
+  const cardFrontBg = document.getElementById('card-front-bg');
+  const cardFrontText = document.getElementById('card-front-text');
+  const cardBackBg = document.getElementById('card-back-bg');
+  const cardBackText = document.getElementById('card-back-text');
+  const cardAccent = document.getElementById('card-accent');
+  const cardQrAction = document.getElementById('card-qr-action');
+  const cardLink = document.getElementById('card-link');
+  let cardLogo = null, cardCtx = { headFont: 'Sora', brandName: 'Your Brand' }, cardSplit = false;
+  let cardFrontUrl = null, cardBackUrl = null, cardVcardStr = '';
+
+  function readCardFields() {
+    return {
+      name: (cardName && cardName.value.trim()) || '', title: (cardTitle && cardTitle.value.trim()) || '',
+      phone: (cardPhone && cardPhone.value.trim()) || '', email: (cardEmail && cardEmail.value.trim()) || '',
+      web: (cardWeb && cardWeb.value.trim()) || '', linkedin: (cardLinkedin && cardLinkedin.value.trim()) || '',
+      instagram: (cardInstagram && cardInstagram.value.trim()) || ''
+    };
+  }
+  function cardUrlNorm(u) { return !u ? '' : (/^https?:\/\//i.test(u) ? u : 'https://' + u); }
+  function buildVCard(f, brand) {
+    const parts = (f.name || '').trim().split(/\s+/); const last = parts.length > 1 ? parts.pop() : ''; const first = parts.join(' ');
+    const L = ['BEGIN:VCARD', 'VERSION:3.0', 'N:' + last + ';' + first + ';;;', 'FN:' + (f.name || '')];
+    if (brand && brand !== 'Your Brand') L.push('ORG:' + brand);
+    if (f.title) L.push('TITLE:' + f.title);
+    if (f.phone) L.push('TEL;TYPE=CELL:' + f.phone);
+    if (f.email) L.push('EMAIL;TYPE=INTERNET:' + f.email);
+    if (f.web) L.push('URL:' + cardUrlNorm(f.web));
+    if (f.linkedin) L.push('URL:' + cardUrlNorm(f.linkedin));
+    L.push('END:VCARD');
+    return L.join('\r\n');
+  }
+  let _qrCache = { key: null, url: null };
+  function makeQrPng(data) {
+    return new Promise((resolve) => {
+      if (typeof QRCodeStyling === 'undefined') { resolve(null); return; }
+      try {
+        const qr = new QRCodeStyling({ width: 600, height: 600, type: 'canvas', data: data, margin: 10, qrOptions: { errorCorrectionLevel: 'M' }, dotsOptions: { color: '#111111', type: 'rounded' }, cornersSquareOptions: { color: '#111111', type: 'extra-rounded' }, backgroundOptions: { color: '#ffffff' } });
+        qr.getRawData('png').then((blob) => { resolve(blob ? URL.createObjectURL(blob) : null); }).catch(() => resolve(null));
+      } catch (e) { resolve(null); }
+    });
+  }
+  async function getQr(data) { if (_qrCache.key === data) return _qrCache.url; const url = await makeQrPng(data); _qrCache = { key: data, url: url }; return url; }
+  function gradRect(W, H, c1, c2) { return new fabric.Rect({ left: 0, top: 0, width: W, height: H, selectable: false, fill: new fabric.Gradient({ type: 'linear', gradientUnits: 'pixels', coords: { x1: 0, y1: 0, x2: W, y2: H }, colorStops: [{ offset: 0, color: c1 }, { offset: 1, color: c2 }] }) }); }
+  function pickVal(el, dflt) { return (el && /^#[0-9a-fA-F]{6}$/.test(el.value)) ? el.value : dflt; }
+  function presetColors(key) {
+    const brandBg = (typeof bgRect.fill === 'string' && bgRect.fill.charAt(0) === '#') ? bgRect.fill : '#0b1220';
+    const cols = collectBrandColors(); const bgHex = toHex(brandBg);
+    const accent = cols.find((c) => c !== bgHex) || '#10B981';
+    if (key === 'light') return { fBg: '#ffffff', fTx: '#111111', bBg: brandBg, bTx: readableOn(brandBg), accent: accent, split: false };
+    if (key === 'mono') return { fBg: '#ffffff', fTx: '#111111', bBg: '#111111', bTx: '#ffffff', accent: '#111111', split: false };
+    if (key === 'split') return { fBg: '#ffffff', fTx: '#111111', bBg: brandBg, bTx: readableOn(brandBg), accent: brandBg, split: true };
+    return { fBg: brandBg, fTx: readableOn(brandBg), bBg: brandBg, bTx: readableOn(brandBg), accent: accent, split: false };
+  }
+  function applyPreset(key) {
+    const b = presetColors(key);
+    if (cardFrontBg) cardFrontBg.value = b.fBg;
+    if (cardFrontText) cardFrontText.value = b.fTx;
+    if (cardBackBg) cardBackBg.value = b.bBg;
+    if (cardBackText) cardBackText.value = b.bTx;
+    if (cardAccent) cardAccent.value = b.accent;
+    cardSplit = b.split;
+  }
+  // Colours come from the pickers (the style preset pre-fills them); fully editable.
+  function cardPalette() {
+    const fBg = pickVal(cardFrontBg, '#0b1220'), fTx = pickVal(cardFrontText, '#ffffff');
+    const bBg = pickVal(cardBackBg, '#0b1220'), bTx = pickVal(cardBackText, '#ffffff');
+    const accent = pickVal(cardAccent, '#10B981');
+    const lite = (c) => (typeof lighten === 'function') ? lighten(c, 0.16) : c;
+    const subFor = (ink) => ink.toLowerCase() === '#111111' ? '#555555' : 'rgba(255,255,255,0.72)';
+    return {
+      accent: accent, front: [fBg, lite(fBg)], ink: fTx, sub: subFor(fTx),
+      back: [bBg, lite(bBg)], backInk: bTx, iconColor: (readableOn(fBg) === '#111111') ? accent : null,
+      split: cardSplit, band: accent
+    };
+  }
+  function qrPayload(f) {
+    const action = cardQrAction ? cardQrAction.value : 'vcard';
+    const link = cardLink ? cardLink.value.trim() : '';
+    if (action === 'website') { const u = cardUrlNorm(f.web || link); if (u) return { data: u, prompt: ['Scan to', 'visit us'] }; }
+    if (action === 'link') { const u = cardUrlNorm(link); if (u) return { data: u, prompt: ['Scan to', 'connect'] }; }
+    return { data: buildVCard(f, cardCtx.brandName), prompt: ['Scan to save', 'my contact'] };
+  }
+  async function buildCardFront(f, iconUrl, pal, ctx) {
+    const W = 1050, H = 600, M = 70;
+    const el = document.createElement('canvas'); el.width = W; el.height = H;
+    const sc = new fabric.StaticCanvas(el, { width: W, height: H, enableRetinaScaling: false, renderOnAddRemove: false });
+    sc.add(gradRect(W, H, pal.front[0], pal.front[1]));
+    let frontIcon = iconUrl;
+    if (iconUrl) {
+      if (pal.split) frontIcon = await recolorPng(iconUrl, readableOn(pal.band));
+      else if (pal.iconColor) frontIcon = await recolorPng(iconUrl, pal.iconColor);
+    }
+    if (pal.split) {
+      const bandW = 360;
+      sc.add(new fabric.Rect({ left: 0, top: 0, width: bandW, height: H, selectable: false, fill: pal.band }));
+      if (frontIcon) { const img = await loadFabricImg(frontIcon); const s = Math.min(190 / (img.height || 1), (bandW * 0.55) / (img.width || 1)); img.set({ originX: 'center', originY: 'center', left: bandW / 2, top: H / 2, scaleX: s, scaleY: s }); sc.add(img); }
+      const tx = bandW + 50;
+      sc.add(new fabric.IText(ctx.brandName, { fontFamily: ctx.headFont, fontWeight: '700', fontSize: 36, fill: pal.ink, originX: 'left', originY: 'top', left: tx, top: M }));
+      sc.add(new fabric.Rect({ left: tx, top: 150, width: W - tx - M, height: 2, fill: pal.ink, opacity: 0.15 }));
+      sc.add(new fabric.IText(f.name || 'Your Name', { fontFamily: 'Sora', fontWeight: '700', fontSize: 42, fill: pal.ink, originX: 'left', originY: 'top', left: tx, top: 196 }));
+      if (f.title) sc.add(new fabric.IText(f.title, { fontFamily: 'Inter', fontWeight: '500', fontSize: 25, fill: pal.sub, originX: 'left', originY: 'top', left: tx, top: 250 }));
+      const cs = [f.phone, f.email, f.web].filter(Boolean); if (!cs.length) cs.push('you@email.com');
+      let cy = 330; cs.forEach((v) => { sc.add(new fabric.Circle({ radius: 5, fill: pal.accent, originX: 'center', originY: 'center', left: tx + 5, top: cy + 13 })); sc.add(new fabric.IText(v, { fontFamily: 'Inter', fontWeight: '500', fontSize: 24, fill: pal.ink, originX: 'left', originY: 'top', left: tx + 26, top: cy })); cy += 42; });
+    } else {
+      let logoW = 0;
+      if (frontIcon) { const img = await loadFabricImg(frontIcon); const s = Math.min(92 / (img.height || 1), (W * 0.4) / (img.width || 1)); img.set({ originX: 'left', originY: 'center', left: M, top: M + 46, scaleX: s, scaleY: s }); sc.add(img); logoW = img.getScaledWidth() + 26; }
+      const bn = new fabric.IText(ctx.brandName, { fontFamily: ctx.headFont, fontWeight: '700', fontSize: 40, fill: pal.ink, originX: 'left', originY: 'center', left: M + logoW, top: M + 46 });
+      const bnMax = W - (M + logoW) - M; if (bn.width > bnMax) { bn.set('fontSize', 40 * (bnMax / bn.width)); if (bn.initDimensions) bn.initDimensions(); }
+      sc.add(bn);
+      sc.add(new fabric.Rect({ left: M, top: 184, width: W - 2 * M, height: 2, fill: pal.ink, opacity: 0.18 }));
+      sc.add(new fabric.IText(f.name || 'Your Name', { fontFamily: 'Sora', fontWeight: '700', fontSize: 46, fill: pal.ink, originX: 'left', originY: 'top', left: M, top: 232 }));
+      if (f.title) sc.add(new fabric.IText(f.title, { fontFamily: 'Inter', fontWeight: '500', fontSize: 27, fill: pal.sub, originX: 'left', originY: 'top', left: M, top: 290 }));
+      const cs = [f.phone, f.email, f.web].filter(Boolean); if (!cs.length) cs.push('you@email.com', 'yourwebsite.com');
+      let cy = 392; cs.forEach((v) => { sc.add(new fabric.Circle({ radius: 6, fill: pal.accent, originX: 'center', originY: 'center', left: M + 6, top: cy + 15 })); sc.add(new fabric.IText(v, { fontFamily: 'Inter', fontWeight: '500', fontSize: 27, fill: pal.ink, originX: 'left', originY: 'top', left: M + 30, top: cy })); cy += 48; });
+    }
+    await document.fonts.ready; sc.getObjects().forEach((o) => { if (o.initDimensions) o.initDimensions(); }); sc.renderAll();
+    const url = sc.toDataURL({ format: 'png', multiplier: 1 }); sc.dispose(); return url;
+  }
+  async function buildCardBack(f, iconUrl, pal, qrUrl, ctx, prompt) {
+    prompt = prompt || ['Scan to save', 'my contact'];
+    const W = 1050, H = 600, M = 70;
+    const el = document.createElement('canvas'); el.width = W; el.height = H;
+    const sc = new fabric.StaticCanvas(el, { width: W, height: H, enableRetinaScaling: false, renderOnAddRemove: false });
+    sc.add(gradRect(W, H, pal.back[0], pal.back[1]));
+    const ink = pal.backInk, sub = ink === '#111111' ? '#555555' : 'rgba(255,255,255,0.75)';
+    const qs = 300, qx = W - M - qs, qy = (H - qs) / 2;
+    sc.add(new fabric.Rect({ left: qx, top: qy, width: qs, height: qs, rx: 20, ry: 20, fill: '#ffffff', selectable: false }));
+    if (qrUrl) { const img = await loadFabricImg(qrUrl); const s = (qs - 36) / (img.width || 1); img.set({ originX: 'center', originY: 'center', left: qx + qs / 2, top: qy + qs / 2, scaleX: s, scaleY: s }); sc.add(img); }
+    let bx = M;
+    if (iconUrl) { const mono = await recolorPng(iconUrl, ink); const im = await loadFabricImg(mono); const s = Math.min(60 / (im.height || 1), 110 / (im.width || 1)); im.set({ originX: 'left', originY: 'center', left: M, top: M + 26, scaleX: s, scaleY: s }); sc.add(im); bx = M + im.getScaledWidth() + 18; }
+    sc.add(new fabric.IText(ctx.brandName, { fontFamily: ctx.headFont, fontWeight: '700', fontSize: 34, fill: ink, originX: 'left', originY: 'center', left: bx, top: M + 26 }));
+    sc.add(new fabric.IText(prompt[0], { fontFamily: 'Sora', fontWeight: '700', fontSize: 44, fill: ink, originX: 'left', originY: 'top', left: M, top: 205 }));
+    sc.add(new fabric.IText(prompt[1], { fontFamily: 'Sora', fontWeight: '700', fontSize: 44, fill: ink, originX: 'left', originY: 'top', left: M, top: 256 }));
+    sc.add(new fabric.IText('Point your phone camera here', { fontFamily: 'Inter', fontWeight: '500', fontSize: 22, fill: sub, originX: 'left', originY: 'top', left: M, top: 318 }));
+    const lines = []; if (f.web) lines.push(f.web); if (f.linkedin) lines.push('in/' + f.linkedin.replace(/^.*\/(in\/)?/, '')); if (f.instagram) lines.push('@' + f.instagram.replace(/^@/, ''));
+    let cy = 400; lines.forEach((v) => { sc.add(new fabric.Circle({ radius: 5, fill: pal.accent, originX: 'center', originY: 'center', left: M + 5, top: cy + 12 })); sc.add(new fabric.IText(v, { fontFamily: 'Inter', fontWeight: '500', fontSize: 23, fill: ink, originX: 'left', originY: 'top', left: M + 24, top: cy })); cy += 38; });
+    await document.fonts.ready; sc.getObjects().forEach((o) => { if (o.initDimensions) o.initDimensions(); }); sc.renderAll();
+    const url = sc.toDataURL({ format: 'png', multiplier: 1 }); sc.dispose(); return url;
+  }
+  let cardTimer = null;
+  async function refreshCardPreviews() {
+    const f = readCardFields();
+    const pal = cardPalette();
+    const iconUrl = cardLogo && cardLogo.url;
+    cardFrontUrl = await buildCardFront(f, iconUrl, pal, cardCtx);
+    if (cardFrontUrl && cardPreview) cardPreview.src = cardFrontUrl;
+    cardVcardStr = buildVCard(f, cardCtx.brandName); // .vcf button always saves the contact
+    const qp = qrPayload(f);
+    const qr = await getQr(qp.data);
+    cardBackUrl = await buildCardBack(f, iconUrl, pal, qr, cardCtx, qp.prompt);
+    if (cardBackUrl && cardBackPreview) cardBackPreview.src = cardBackUrl;
+  }
+  function scheduleCardPreview() { clearTimeout(cardTimer); cardTimer = setTimeout(refreshCardPreviews, 280); }
+  [cardName, cardTitle, cardPhone, cardEmail, cardWeb, cardLinkedin, cardInstagram, cardLink, cardFrontBg, cardFrontText, cardBackBg, cardBackText, cardAccent].forEach((i) => { if (i) i.addEventListener('input', scheduleCardPreview); });
+  if (cardQrAction) cardQrAction.addEventListener('change', refreshCardPreviews);
+  if (cardStyle) cardStyle.addEventListener('change', () => { applyPreset(cardStyle.value); refreshCardPreviews(); });
+  function openCard() {
+    if (!cardModal) return;
+    const src = getSource();
+    if (!src.icon && src.texts.length === 0) { toast('Add a logo to the canvas first.', 'error'); return; }
+    const iconUrl = exportIconImage();
+    cardLogo = iconUrl ? { url: iconUrl } : null;
+    const texts = src.texts.slice().sort((a, b) => (b.fontSize || 0) - (a.fontSize || 0));
+    cardCtx = {
+      headFont: (texts[0] && texts[0].fontFamily) || 'Sora',
+      brandName: (magicBrandInput && magicBrandInput.value.trim()) || (texts[0] && texts[0].text) || 'Your Brand'
+    };
+    applyPreset(cardStyle ? cardStyle.value : 'dark');
+    cardModal.style.display = 'flex';
+    refreshCardPreviews();
+  }
+  async function saveImages(items) {
+    if (logoIsIOS() && navigator.canShare) {
+      try { const files = items.map((i) => new File([i.blob], i.name, { type: 'image/png' })); if (navigator.canShare({ files: files })) { await navigator.share({ files: files }); return; } }
+      catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    items.forEach((i) => { const url = URL.createObjectURL(i.blob); const a = document.createElement('a'); a.href = url; a.download = i.name; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 120); });
+  }
+  if (cardBtn) cardBtn.addEventListener('click', openCard);
+  if (cardClose) cardClose.addEventListener('click', () => { cardModal.style.display = 'none'; });
+  if (cardModal) cardModal.addEventListener('click', (e) => { if (e.target === cardModal) cardModal.style.display = 'none'; });
+  if (cardPngBtn) cardPngBtn.addEventListener('click', async () => {
+    if (!cardFrontUrl) await refreshCardPreviews();
+    if (!cardFrontUrl) return;
+    await saveImages([
+      { blob: dataURLToBlob(cardFrontUrl), name: 'business-card-front.png' },
+      { blob: dataURLToBlob(cardBackUrl), name: 'business-card-back.png' }
+    ]);
+  });
+  if (cardPdfBtn) cardPdfBtn.addEventListener('click', async () => {
+    if (!cardFrontUrl) await refreshCardPreviews();
+    if (!cardFrontUrl || !window.jspdf || !window.jspdf.jsPDF) { alert('PDF engine not loaded — use PNG instead.'); return; }
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'in', format: [3.5, 2] });
+    pdf.addImage(cardFrontUrl, 'PNG', 0, 0, 3.5, 2);
+    pdf.addPage([3.5, 2], 'landscape');
+    pdf.addImage(cardBackUrl, 'PNG', 0, 0, 3.5, 2);
+    await saveFile(pdf.output('blob'), 'business-card.pdf', 'application/pdf');
+  });
+  if (cardVcfBtn) cardVcfBtn.addEventListener('click', async () => {
+    const vcard = cardVcardStr || buildVCard(readCardFields(), cardCtx.brandName);
+    await saveFile(new Blob([vcard], { type: 'text/vcard;charset=utf-8' }), 'contact.vcf', 'text/vcard');
+  });
+
   // ── Templates: ready-made logos to start from ────────────────────
   function tplInitials(name) { return (String(name || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase()) || 'R'; }
   function tplPath(d, targetH, extra) {

@@ -599,10 +599,63 @@
       <button id="brandkit-zip" style="margin-top:18px; width:100%; padding:13px; background:linear-gradient(135deg, #34D399, #10B981); color:#04140d; border:none; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.95rem;">⬇ Download All (ZIP) — logo set + favicon + app icons</button>
       <button id="social-pack-btn" style="margin-top:10px; width:100%; padding:13px; background:rgba(16,185,129,0.12); color:#10B981; border:1px solid rgba(16,185,129,0.4); border-radius:10px; font-weight:700; cursor:pointer; font-size:0.95rem;">📱 Social Media Pack (ZIP) — profile + covers</button>
       <button id="styleguide-btn" style="margin-top:10px; width:100%; padding:13px; background:rgba(16,185,129,0.12); color:#10B981; border:1px solid rgba(16,185,129,0.4); border-radius:10px; font-weight:700; cursor:pointer; font-size:0.95rem;">📄 Brand Style Guide (PNG) — logo, colours &amp; fonts</button>
+      <button id="card-btn" style="margin-top:10px; width:100%; padding:13px; background:rgba(16,185,129,0.12); color:#10B981; border:1px solid rgba(16,185,129,0.4); border-radius:10px; font-weight:700; cursor:pointer; font-size:0.95rem;">💳 Business Card — add your details, export PNG/PDF</button>
+    </div>
+  </div>
+
+  <!-- Business Card modal -->
+  <div id="card-modal" style="display:none; position:fixed; inset:0; z-index:3000; background:rgba(6,11,20,0.85); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
+    <div style="background:#0B1220; border:1px solid rgba(16,185,129,0.3); border-radius:16px; padding:24px; max-width:680px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 30px 80px rgba(0,0,0,0.6); box-sizing:border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <h3 style="margin:0; color:#fff; font-size:1.2rem;">Business card</h3>
+        <button id="card-close" style="background:none; border:none; color:#8b97a8; font-size:1.4rem; cursor:pointer; line-height:1; padding:4px 8px;">✕</button>
+      </div>
+      <p style="margin:0 0 12px; color:var(--text-dim); font-size:0.82rem;">Uses your logo, colours &amp; fonts. The QR on the back saves you straight into a phone's contacts. Updates as you type.</p>
+      <select id="card-style" style="width:100%; margin-bottom:12px; padding:10px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem; cursor:pointer;">
+        <option value="dark">Style — Dark Premium</option>
+        <option value="light">Style — Light Minimal</option>
+        <option value="split">Style — Split</option>
+        <option value="mono">Style — Mono</option>
+      </select>
+      <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center; margin-bottom:12px; font-size:0.74rem; color:var(--text-dim);">
+        <span>Colours:</span>
+        <label style="display:flex; align-items:center; gap:5px;">Front <input type="color" id="card-front-bg" title="Front background" style="width:30px; height:26px; border:none; background:none; padding:0; cursor:pointer;"><input type="color" id="card-front-text" title="Front text" style="width:30px; height:26px; border:none; background:none; padding:0; cursor:pointer;"></label>
+        <label style="display:flex; align-items:center; gap:5px;">Back <input type="color" id="card-back-bg" title="Back background" style="width:30px; height:26px; border:none; background:none; padding:0; cursor:pointer;"><input type="color" id="card-back-text" title="Back text" style="width:30px; height:26px; border:none; background:none; padding:0; cursor:pointer;"></label>
+        <label style="display:flex; align-items:center; gap:5px;">Accent <input type="color" id="card-accent" title="Accent" style="width:30px; height:26px; border:none; background:none; padding:0; cursor:pointer;"></label>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+        <select id="card-qr-action" style="flex:1; min-width:200px; padding:10px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.92rem; cursor:pointer;">
+          <option value="vcard">QR → Save my contact (vCard)</option>
+          <option value="website">QR → Open my website</option>
+          <option value="link">QR → Custom link (app, booking…)</option>
+        </select>
+        <input type="text" id="card-link" placeholder="https://… (for website / custom)" style="flex:1; min-width:200px; padding:10px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.92rem;">
+      </div>
+      <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
+        <div style="flex:1; min-width:230px;"><div style="font-size:0.72rem; color:var(--text-dim); margin-bottom:5px;">Front</div><img id="card-preview" alt="Card front" style="width:100%; border-radius:10px; border:1px solid rgba(255,255,255,0.1); display:block; background:#05080f;"></div>
+        <div style="flex:1; min-width:230px;"><div style="font-size:0.72rem; color:var(--text-dim); margin-bottom:5px;">Back (scan to save)</div><img id="card-back-preview" alt="Card back" style="width:100%; border-radius:10px; border:1px solid rgba(255,255,255,0.1); display:block; background:#05080f;"></div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <input type="text" id="card-name" placeholder="Full name" style="grid-column:span 2; padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
+        <input type="text" id="card-title" placeholder="Title / role" style="grid-column:span 2; padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
+        <input type="text" id="card-phone" placeholder="Phone" style="padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
+        <input type="text" id="card-email" placeholder="Email" style="padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
+        <input type="text" id="card-web" placeholder="Website" style="grid-column:span 2; padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
+        <input type="text" id="card-linkedin" placeholder="LinkedIn (optional)" style="padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
+        <input type="text" id="card-instagram" placeholder="Instagram (optional)" style="padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
+      </div>
+      <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
+        <button id="card-png" style="flex:1; min-width:140px; padding:13px; background:linear-gradient(135deg, #34D399, #10B981); color:#04140d; border:none; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.95rem;">⬇ PNG (front + back)</button>
+        <button id="card-pdf" style="flex:1; min-width:120px; padding:13px; background:rgba(16,185,129,0.12); color:#10B981; border:1px solid rgba(16,185,129,0.4); border-radius:10px; font-weight:700; cursor:pointer; font-size:0.95rem;">📄 PDF</button>
+        <button id="card-vcf" style="flex:1; min-width:120px; padding:13px; background:rgba(16,185,129,0.12); color:#10B981; border:1px solid rgba(16,185,129,0.4); border-radius:10px; font-weight:700; cursor:pointer; font-size:0.95rem;">👤 Save .vcf</button>
+      </div>
+      <p style="margin:12px 0 0; color:var(--text-dim); font-size:0.72rem;">Standard 3.5 × 2 in. PDF is print-ready (2 pages). The .vcf is a contact file you can text or email.</p>
     </div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js" crossorigin="anonymous"></script>
   <script src="bg.js?v=19"></script>
   <script src="nav.js?v=7"></script>
   <script defer src="script.js?v=29"></script>
@@ -611,7 +664,7 @@
   📥 <span>Save Logo</span>
 </button>
 
-  <script src="logo.js?v=34"></script>
+  <script src="logo.js?v=37"></script>
 
     <!-- Mockup Modal -->
     <div id="mockup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
