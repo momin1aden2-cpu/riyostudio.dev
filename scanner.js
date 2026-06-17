@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const weightSelect = document.getElementById('text-weight-select');
     const alignGroup = document.getElementById('text-align-group');
     const colorInput = document.getElementById('text-color-input');
+    const pillToggle = document.getElementById('text-pill-toggle');
+    const pillColorInput = document.getElementById('text-pill-color');
+    const pillColorRow = document.getElementById('text-pill-color-row');
     const textRotateInput = document.getElementById('text-rotate-input');
     const textShadowColor = document.getElementById('text-shadow-color');
     const textShadowBlur = document.getElementById('text-shadow-blur');
@@ -359,6 +362,10 @@ document.addEventListener('DOMContentLoaded', () => {
             layer = Object.assign(base, { content: 'Your supporting subtitle goes here', color: muted, fontWeight: '500', fontSize: 54, height: 180, y: 470 });
         } else if (kind === 'label') {
             layer = Object.assign(base, { content: 'NEW', color: light ? '#0e9f6e' : '#34d399', fontWeight: '700', fontSize: 40, height: 90, y: 180 });
+        } else if (kind === 'callout') {
+            layer = Object.assign(base, { content: 'New feature', color: '#ffffff', fontWeight: '700', fontSize: 46, height: 110, y: targetHeight / 2, pill: true, pillColor: '#10B981' });
+        } else if (kind === 'step') {
+            layer = Object.assign(base, { content: '1  Tap to begin', color: '#ffffff', fontWeight: '700', fontSize: 44, height: 104, y: targetHeight / 2, pill: true, pillColor: '#111827' });
         } else {
             layer = Object.assign(base, { content: 'Your headline here', color: ink, fontWeight: '800', fontSize: 110, height: 280, y: 300 });
         }
@@ -1428,23 +1435,42 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const lines = layer.content.split('\n');
         const lineH = layer.fontSize * 1.2;
-        layer.height = lines.length * lineH;
-        
+        const textH = lines.length * lineH;
+
         let maxW = 0;
         lines.forEach((line, i) => {
             const m = tCtx.measureText(line);
             if (m.width > maxW) maxW = m.width;
         });
-        layer.width = maxW;
+
+        // Callout pill: a rounded accent background behind the text so a label
+        // reads as an annotation. Padding inflates the layer bounds so selection
+        // and hit-testing hug the pill, while text stays centred on maxW.
+        const padX = layer.pill ? layer.fontSize * 0.6 : 0;
+        const padY = layer.pill ? layer.fontSize * 0.34 : 0;
+        layer.width = maxW + padX * 2;
+        layer.height = textH + padY * 2;
+
+        if (layer.pill) {
+            tCtx.save();
+            tCtx.shadowColor = 'transparent'; tCtx.shadowBlur = 0;
+            tCtx.fillStyle = layer.pillColor || '#10B981';
+            const pw = layer.width, ph = layer.height;
+            tCtx.beginPath();
+            tCtx.roundRect(-pw / 2, -ph / 2, pw, ph, ph / 2);
+            tCtx.fill();
+            tCtx.restore();
+            tCtx.fillStyle = layer.color;
+        }
 
         lines.forEach((line, i) => {
             const offY = (i - (lines.length-1)/2) * lineH;
             let drawX = 0;
-            if(tCtx.textAlign === 'left') drawX = -layer.width/2;
-            if(tCtx.textAlign === 'right') drawX = layer.width/2;
+            if(tCtx.textAlign === 'left') drawX = -maxW/2;
+            if(tCtx.textAlign === 'right') drawX = maxW/2;
             tCtx.fillText(line, drawX, offY);
         });
-        
+
         tCtx.shadowColor = 'transparent';
         tCtx.shadowBlur = 0;
     }
@@ -1729,6 +1755,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if(textInput) textInput.value = layer.content;
             if(colorInput) colorInput.value = layer.color;
+            if(pillToggle) pillToggle.checked = !!layer.pill;
+            if(pillColorInput) pillColorInput.value = layer.pillColor || '#10B981';
+            if(pillColorRow) pillColorRow.style.display = layer.pill ? 'flex' : 'none';
             if(fontSelect) fontSelect.value = layer.fontFamily || 'Inter';
             if(weightSelect) weightSelect.value = layer.fontWeight || '800';
             if(textRotateInput) textRotateInput.value = layer.rotation || 0;
@@ -1806,6 +1835,11 @@ document.addEventListener('DOMContentLoaded', () => {
     bindLayerSync(textRotateInput, 'rotation', true);
     bindLayerSync(textShadowBlur, 'shadowBlur', true);
     bindLayerSync(textShadowColor, 'shadowColor');
+    bindLayerSync(pillColorInput, 'pillColor');
+    if (pillToggle) pillToggle.addEventListener('change', () => {
+        const l = layers.find(x => x?.id === selectedLayerId);
+        if (l) { l.pill = pillToggle.checked; if (pillColorRow) pillColorRow.style.display = pillToggle.checked ? 'flex' : 'none'; scheduleRender(); }
+    });
 
     bindLayerSync(shapeTypeSelect, 'shapeType');
     bindLayerSync(shapeColorInput, 'color');

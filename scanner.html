@@ -122,6 +122,10 @@
               <button class="cyber-button text-preset-btn" data-text="subtitle" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Subtitle</button>
               <button class="cyber-button text-preset-btn" data-text="label" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Eyebrow Label</button>
 
+              <div style="font-size: 0.64rem; letter-spacing: 0.07em; text-transform: uppercase; color: #10B981; padding: 8px 6px 2px;">Callouts</div>
+              <button class="cyber-button text-preset-btn" data-text="callout" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Callout Pill</button>
+              <button class="cyber-button text-preset-btn" data-text="step" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Numbered Step</button>
+
               <div style="font-size: 0.64rem; letter-spacing: 0.07em; text-transform: uppercase; color: #10B981; padding: 8px 6px 2px;">Shapes</div>
               <button class="cyber-button shape-btn" data-shape="rectangle" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Rectangle</button>
               <button class="cyber-button shape-btn" data-shape="circle" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Circle</button>
@@ -473,7 +477,18 @@
             
             <label class="cyber-label">Color</label>
             <input type="color" id="text-color-input" value="#ffffff" style="width: 100%; height: 40px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
-            
+
+            <div style="margin-top: 8px;">
+              <label class="cyber-label">Callout</label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #9fb3c8; cursor: pointer; margin-top: 6px;">
+                <input type="checkbox" id="text-pill-toggle" style="accent-color: #10B981;"> Pill background
+              </label>
+              <div id="text-pill-color-row" style="display: none; align-items: center; gap: 8px; margin-top: 8px;">
+                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Pill</span>
+                 <input type="color" id="text-pill-color" value="#10B981" style="width: 30px; height: 30px; border: none; border-radius: 4px; cursor: pointer; background: transparent;">
+              </div>
+            </div>
+
             <div style="margin-top: 8px;">
               <label class="cyber-label">Effects</label>
               <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
@@ -651,6 +666,6 @@
   <script src="bg.js?v=9185d9aa"></script>
   <script src="nav.js?v=25f778f4"></script>
   <script defer src="script.js?v=67c2f523"></script>
-  <script src="scanner.js?v=6d63353f"></script>
+  <script src="scanner.js?v=96af2082"></script>
 </body>
 </html>
