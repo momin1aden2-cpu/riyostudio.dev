@@ -269,9 +269,23 @@
           </select>
         </div>
         
-        <div style="display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap;">
+        <div style="display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; align-items: center;">
+          <select id="export-format-select" title="Image format" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px 6px; border-radius: 6px; outline: none; font-size: 0.8rem;">
+            <option value="png">PNG</option>
+            <option value="jpg">JPG</option>
+            <option value="webp">WebP</option>
+          </select>
+          <select id="export-scale-select" title="Export resolution" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px 6px; border-radius: 6px; outline: none; font-size: 0.8rem;">
+            <option value="1">1×</option>
+            <option value="2" selected>2×</option>
+            <option value="3">3×</option>
+          </select>
+          <label id="export-transparent-label" title="Transparent background (PNG / WebP)" style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.78rem; color: #9fb3c8; white-space: nowrap; cursor: pointer;">
+            <input type="checkbox" id="export-transparent-toggle" style="accent-color: #10B981;"> Transparent
+          </label>
+          <button id="export-copy-btn" class="cyber-button" title="Copy image to clipboard" style="background: rgba(16,185,129,0.12); color: #6ee7b7; font-weight: 600; border: 1px solid rgba(16,185,129,0.4); padding: 8px 12px; font-size: 0.85rem; white-space: nowrap;">⧉ Copy</button>
           <button id="export-zip-btn" class="cyber-button" style="background: #10B981; color: #04140d; font-weight: 700; border: none; padding: 8px 14px; font-size: 0.85rem; white-space: nowrap;">⬇ Kit .zip</button>
-          <button id="export-png-btn" class="cyber-button" style="background: #10B981; color: #04140d; font-weight: 700; border: none; padding: 8px 14px; font-size: 0.85rem; white-space: nowrap;">⬇ PNG</button>
+          <button id="export-png-btn" class="cyber-button" style="background: #10B981; color: #04140d; font-weight: 700; border: none; padding: 8px 14px; font-size: 0.85rem; white-space: nowrap;">⬇ Image</button>
         </div>
       </div>
 
@@ -603,6 +617,6 @@
   <script src="bg.js?v=9185d9aa"></script>
   <script src="nav.js?v=25f778f4"></script>
   <script defer src="script.js?v=67c2f523"></script>
-  <script src="scanner.js?v=b541387e"></script>
+  <script src="scanner.js?v=0f0d4125"></script>
 </body>
 </html>

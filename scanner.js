@@ -156,6 +156,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     let grainEnabled = false;
     let grainVal = 35;
+    // When true the render path skips the background fill so the device + text
+    // are exported on a transparent canvas (PNG/WebP only).
+    let exportTransparent = false;
 
     // Static monochrome noise tile used for the film-grain overlay
     const noiseCanvas = document.createElement('canvas');
@@ -915,8 +918,10 @@ document.addEventListener('DOMContentLoaded', () => {
         tCtx.clearRect(0, 0, w, h);
         tCtx.filter = 'none';
         
-        // 1. Draw Background
-        if (bgType === 'preset' && BG_PRESETS[bgPresetIdx]) {
+        // 1. Draw Background (skipped entirely for transparent export)
+        if (exportTransparent) {
+            // no fill — leave the canvas clear
+        } else if (bgType === 'preset' && BG_PRESETS[bgPresetIdx]) {
             drawPresetBg(tCtx, w, h, BG_PRESETS[bgPresetIdx], bgAngle);
         } else if (bgType === 'gradient') {
             const grad = tCtx.createLinearGradient(0, 0, w, h);
@@ -1069,7 +1074,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 5. Film grain overlay over the whole composed scene (skip on transparent
         // backgrounds — overlay-composited noise bakes grey haze into the alpha).
-        if (grainEnabled && grainVal > 0 && bgType !== 'transparent') {
+        if (grainEnabled && grainVal > 0 && bgType !== 'transparent' && !exportTransparent) {
             tCtx.save();
             tCtx.globalCompositeOperation = 'overlay';
             tCtx.globalAlpha = (grainVal / 100) * 0.55;
@@ -1797,29 +1802,83 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const formatSelect = document.getElementById('export-format-select');
+    const scaleSelect = document.getElementById('export-scale-select');
+    const transparentToggle = document.getElementById('export-transparent-toggle');
+    const transparentLabel = document.getElementById('export-transparent-label');
+    const copyBtn = document.getElementById('export-copy-btn');
+
+    // JPEG has no alpha channel — disable the transparent option when it's picked.
+    function syncTransparentAvailability() {
+        const jpg = formatSelect && formatSelect.value === 'jpg';
+        if (transparentToggle) transparentToggle.disabled = jpg;
+        if (transparentLabel) { transparentLabel.style.opacity = jpg ? '0.4' : '1'; transparentLabel.style.pointerEvents = jpg ? 'none' : 'auto'; }
+    }
+    if (formatSelect) formatSelect.addEventListener('change', syncTransparentAvailability);
+    syncTransparentAvailability();
+
+    // Render the current scene to image blob(s) at the chosen format / resolution.
+    // forcePng lets the clipboard path demand PNG (the only format browsers reliably
+    // accept) while still honouring the scale + transparency choices.
+    function buildExportFiles(forcePng = false) {
+        const fmt = forcePng ? 'png' : (formatSelect ? formatSelect.value : 'png');
+        const mime = fmt === 'jpg' ? 'image/jpeg' : fmt === 'webp' ? 'image/webp' : 'image/png';
+        const ext = fmt === 'jpg' ? 'jpg' : fmt;
+        const quality = fmt === 'png' ? 1.0 : 0.95;
+        const scale = scaleSelect ? (parseInt(scaleSelect.value, 10) || 1) : 1;
+        const wantTransparent = transparentToggle && transparentToggle.checked && fmt !== 'jpg';
+
+        const fullW = Math.round(targetWidth * scale);
+        const fullH = Math.round(targetHeight * scale);
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = fullW; tempCanvas.height = fullH;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        exportTransparent = wantTransparent;
+        renderSceneToContext(tempCtx, fullW, fullH, false, scale, 0, 0);
+        exportTransparent = false;
+
+        const files = [];
+        if (screenCount > 1) {
+            const sliceW = Math.round(baseWidth * scale);
+            const slice = document.createElement('canvas');
+            slice.width = sliceW; slice.height = fullH;
+            const sctx = slice.getContext('2d');
+            for (let i = 0; i < screenCount; i++) {
+                sctx.clearRect(0, 0, sliceW, fullH);
+                sctx.drawImage(tempCanvas, -i * sliceW, 0);
+                files.push({ blob: base64ToBlob(slice.toDataURL(mime, quality)), name: `mockup-screen-${i + 1}-${sliceW}x${fullH}.${ext}`, type: mime });
+            }
+        } else {
+            files.push({ blob: base64ToBlob(tempCanvas.toDataURL(mime, quality)), name: `mockup-${fullW}x${fullH}.${ext}`, type: mime });
+        }
+        return files;
+    }
+
     const exportPngBtn = document.getElementById('export-png-btn');
     if (exportPngBtn) {
         exportPngBtn.addEventListener('click', async () => {
-            const prevSelected = selectedLayerId; selectedLayerId = null; render();
-
-            const files = [];
-            if (screenCount > 1) {
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = baseWidth;
-                tempCanvas.height = targetHeight;
-                const tempCtx = tempCanvas.getContext('2d');
-
-                for (let i = 0; i < screenCount; i++) {
-                    tempCtx.clearRect(0, 0, baseWidth, targetHeight);
-                    tempCtx.drawImage(canvas, -i * baseWidth, 0);
-                    files.push({ blob: base64ToBlob(tempCanvas.toDataURL('image/png', 1.0)), name: `mockup-screen-${i + 1}-${baseWidth}x${targetHeight}.png`, type: 'image/png' });
-                }
-            } else {
-                files.push({ blob: base64ToBlob(canvas.toDataURL('image/png', 1.0)), name: `mockup-${targetWidth}x${targetHeight}.png`, type: 'image/png' });
-            }
-
-            selectedLayerId = prevSelected; render();
+            const files = buildExportFiles();
             await saveBlobs(files);
+        });
+    }
+
+    if (copyBtn) {
+        copyBtn.addEventListener('click', async () => {
+            if (!navigator.clipboard || typeof ClipboardItem === 'undefined') {
+                return showToast("This browser can't copy images — use ⬇ Image instead.", 'error');
+            }
+            const original = copyBtn.innerText;
+            try {
+                const [file] = buildExportFiles(true);
+                await navigator.clipboard.write([new ClipboardItem({ 'image/png': file.blob })]);
+                copyBtn.innerText = '✓ Copied';
+                if (window.showToast) showToast(screenCount > 1 ? 'Copied screen 1 — use ⬇ Image for the full set.' : 'Mockup copied to clipboard.', 'success');
+            } catch (e) {
+                if (window.showToast) showToast("Couldn't copy to clipboard — use ⬇ Image instead.", 'error');
+            } finally {
+                setTimeout(() => { copyBtn.innerText = original; }, 1600);
+            }
         });
     }
 
