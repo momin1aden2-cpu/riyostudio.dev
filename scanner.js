@@ -191,6 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let originalLayerX = 0;
     let originalLayerY = 0;
     let originalScale = 1;
+    let activeGuides = []; // alignment guide lines shown while dragging
 
     // Device Frame Assets
     const notchImg = new Image(); notchImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 30"><path d="M0 0C10 0 15 5 15 15C15 25 25 30 35 30H125C135 30 145 25 145 15C145 5 150 0 160 0H0Z" fill="%23000000"/></svg>';
@@ -1098,7 +1099,21 @@ document.addEventListener('DOMContentLoaded', () => {
             tCtx.restore();
         });
 
-        // 4. Draw UI Handles
+        // 4. Alignment guides (preview only, while dragging)
+        if (drawHandles && activeGuides.length) {
+            tCtx.save();
+            tCtx.strokeStyle = 'rgba(236,72,153,0.9)';
+            tCtx.lineWidth = 2; tCtx.setLineDash([14, 9]);
+            activeGuides.forEach(g => {
+                tCtx.beginPath();
+                if (g.type === 'v') { tCtx.moveTo(g.x, 0); tCtx.lineTo(g.x, targetHeight); }
+                else { tCtx.moveTo(0, g.y); tCtx.lineTo(targetWidth, g.y); }
+                tCtx.stroke();
+            });
+            tCtx.restore();
+        }
+
+        // 4b. Draw UI Handles
         if (drawHandles && selectedLayerId) {
             const layer = layers.find(l => l.id === selectedLayerId);
             if (layer) drawSelectionBox(tCtx, layer);
@@ -1481,7 +1496,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!layer) return;
 
         if (isDragging) {
-            layer.x = originalLayerX + (x - dragStartX); layer.y = originalLayerY + (y - dragStartY); scheduleRender();
+            const snapped = applySnap(layer, originalLayerX + (x - dragStartX), originalLayerY + (y - dragStartY));
+            layer.x = snapped.x; layer.y = snapped.y; activeGuides = snapped.guides; scheduleRender();
         } else if (isScaling) {
             const distStart = Math.hypot(dragStartX - layer.x, dragStartY - layer.y);
             if (distStart < 1) return; // grabbed at the layer centre → avoid /0 → NaN scale (wipes the layer)
@@ -1490,8 +1506,77 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    window.addEventListener('pointerup', () => { isDragging = false; isScaling = false; });
-    window.addEventListener('pointercancel', () => { isDragging = false; isScaling = false; });
+    window.addEventListener('pointerup', () => { isDragging = false; isScaling = false; if (activeGuides.length) { activeGuides = []; render(); } });
+    window.addEventListener('pointercancel', () => { isDragging = false; isScaling = false; if (activeGuides.length) { activeGuides = []; render(); } });
+
+    // Magnetic snapping: pulls a dragged layer's centre onto each screen column's
+    // centre, the vertical mid-line, and any other layer's centre — with a live guide.
+    function applySnap(layer, nx, ny) {
+        const thr = 13 / (getWrapperScale() || 1); // ~13 on-screen px, in canvas units
+        const guides = [];
+        const vTargets = [];
+        for (let i = 0; i < screenCount; i++) vTargets.push(baseWidth * (i + 0.5));
+        const hTargets = [targetHeight / 2];
+        layers.forEach(l => { if (l.id !== layer.id) { vTargets.push(l.x); hTargets.push(l.y); } });
+
+        let bestV = null, bestVd = thr;
+        vTargets.forEach(t => { const d = Math.abs(nx - t); if (d < bestVd) { bestVd = d; bestV = t; } });
+        if (bestV !== null) { nx = bestV; guides.push({ type: 'v', x: bestV }); }
+
+        let bestH = null, bestHd = thr;
+        hTargets.forEach(t => { const d = Math.abs(ny - t); if (d < bestHd) { bestHd = d; bestH = t; } });
+        if (bestH !== null) { ny = bestH; guides.push({ type: 'h', y: bestH }); }
+
+        return { x: nx, y: ny, guides };
+    }
+
+    // One-tap tidy: per screen column, centre everything horizontally, stack the
+    // text near the top and fit the device into the space below with even padding.
+    function autoArrange(padFrac) {
+        if (!layers.length) return;
+        const pad = baseWidth * padFrac;
+        const topPad = targetHeight * 0.10;
+        for (let i = 0; i < screenCount; i++) {
+            const x0 = baseWidth * i, x1 = baseWidth * (i + 1);
+            const cx = baseWidth * (i + 0.5);
+            const inCol = layers.filter(l => l.x >= x0 && l.x < x1);
+            if (!inCol.length) continue;
+            inCol.forEach(l => { l.x = cx; });
+
+            const texts = inCol.filter(l => l.type === 'text').sort((a, b) => a.y - b.y);
+            const devices = inCol.filter(l => l.type === 'image');
+
+            let y = topPad;
+            texts.forEach(tl => {
+                const th = (tl.height || 120) * (tl.scale || 1);
+                tl.y = y + th / 2;
+                y += th + targetHeight * 0.012;
+            });
+            const textBottom = texts.length ? y : topPad;
+
+            const availTop = textBottom + targetHeight * 0.02;
+            const availBottom = targetHeight - pad;
+            devices.forEach(d => {
+                const dw = d.width || baseWidth, dh = d.height || baseWidth;
+                const s = Math.max(0.05, Math.min((baseWidth - 2 * pad) / dw, (availBottom - availTop) / dh));
+                d.scale = s;
+                d.y = (availTop + availBottom) / 2;
+            });
+        }
+        activeGuides = [];
+        updatePropsPanel();
+        render();
+    }
+
+    const arrangeBtn = document.getElementById('arrange-btn');
+    const paddingInput = document.getElementById('layout-padding-input');
+    const paddingVal = document.getElementById('layout-padding-val');
+    const currentPadFrac = () => (paddingInput ? (parseInt(paddingInput.value, 10) || 0) : 8) / 100;
+    if (arrangeBtn) arrangeBtn.addEventListener('click', () => autoArrange(currentPadFrac()));
+    if (paddingInput) paddingInput.addEventListener('input', () => {
+        if (paddingVal) paddingVal.textContent = paddingInput.value + '%';
+        autoArrange(currentPadFrac());
+    });
 
     // --- Properties Panel Sync ---
     function updatePropsPanel() {

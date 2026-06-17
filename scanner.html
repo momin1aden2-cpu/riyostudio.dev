@@ -310,6 +310,15 @@
           
           <!-- Background Properties -->
           <div id="canvas-props" style="display: block;">
+            <label class="cyber-label">Layout</label>
+            <button id="arrange-btn" class="cyber-button" style="width: 100%; margin-top: 8px; border-color: rgba(16,185,129,0.5); color: #6ee7b7; font-weight: 600;">✦ Auto-Arrange &amp; Center</button>
+            <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+              <span style="color: var(--text-dim); font-size: 0.78rem; width: 56px;">Padding</span>
+              <input type="range" id="layout-padding-input" min="0" max="20" value="8" style="flex: 1;">
+              <span id="layout-padding-val" style="color: var(--text-dim); font-size: 0.78rem; width: 34px; text-align: right;">8%</span>
+            </div>
+            <p style="margin: 6px 0 18px; font-size: 0.68rem; line-height: 1.35; color: #7c8da0;">Centers every screen and balances the spacing around your devices.</p>
+
             <label class="cyber-label">Canvas Background</label>
             <div style="margin-top: 8px; display: flex; gap: 8px;">
               <button id="upload-bg-btn" class="cyber-button" style="flex: 1; padding: 6px; font-size: 0.8rem;">Upload Image</button>
@@ -618,6 +627,6 @@
   <script src="bg.js?v=9185d9aa"></script>
   <script src="nav.js?v=25f778f4"></script>
   <script defer src="script.js?v=67c2f523"></script>
-  <script src="scanner.js?v=04c81bf6"></script>
+  <script src="scanner.js?v=1a127c39"></script>
 </body>
 </html>
