@@ -1955,5 +1955,204 @@ if (previewMockupBtn && mockupModal && closeMockupBtn) {
   if (brandkitModal) brandkitModal.addEventListener('click', (e) => { if (e.target === brandkitModal) { brandkitModal.style.display = 'none'; resetKitZip(); } });
   if (brandkitZip) brandkitZip.addEventListener('click', downloadBrandKitZip);
 
+  // ── Templates: ready-made logos to start from ────────────────────
+  function tplInitials(name) { return (String(name || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase()) || 'R'; }
+  function tplPath(d, targetH, extra) {
+    const p = new fabric.Path(d, Object.assign({}, extra || {}));
+    const s = targetH / (p.height || targetH); p.set({ scaleX: s, scaleY: s });
+    return p;
+  }
+  function tc(o, cx, top) { o.set({ originX: 'center', originY: 'center', left: cx, top: top }); return o; }
+
+  function recolorGroup(g, color) {
+    const apply = (o) => { if (o.fill && o.fill !== 'transparent') o.set('fill', color); if (o.stroke && o.stroke !== 'transparent') o.set('stroke', color); };
+    if (g.getObjects) g.getObjects().forEach(apply); else apply(g);
+  }
+  // The template icon: the resolved relevant symbol (recoloured) or a clean
+  // geometric fallback when none was found for the business.
+  async function tplIconObj(ctx, color, size) {
+    if (ctx.iconSvg) {
+      try {
+        const g = await loadSvgGroup(ctx.iconSvg);
+        recolorGroup(g, color);
+        const s = size / Math.max(g.width || size, g.height || size);
+        g.set({ scaleX: s, scaleY: s });
+        return g;
+      } catch (e) { /* fall through */ }
+    }
+    return regularPolygon(6, size / 2, { fill: color });
+  }
+  function addEnclosure(cv, type, color, cx, cy, R, sw) {
+    if (type === 'ring') cv.add(tc(new fabric.Circle({ radius: R, fill: 'transparent', stroke: color, strokeWidth: sw }), cx, cy));
+    else if (type === 'circle') cv.add(tc(new fabric.Circle({ radius: R, fill: color }), cx, cy));
+    else if (type === 'hex') cv.add(tc(regularPolygon(6, R, { fill: 'transparent', stroke: color, strokeWidth: sw }), cx, cy));
+    else if (type === 'roundsquare') cv.add(tc(new fabric.Rect({ width: R * 2, height: R * 2, rx: R * 0.28, ry: R * 0.28, fill: color }), cx, cy));
+    else if (type === 'shield') cv.add(tc(tplPath(SHIELD_D, R * 2.2, { fill: color }), cx, cy));
+  }
+  function curvedText(str, font, size, fill, curve, cs) {
+    const t = new fabric.Text(str, { fontFamily: font, fontSize: size, fill: fill, charSpacing: cs || 60, originX: 'center', originY: 'center' });
+    const w = t.width || size * str.length * 0.55;
+    t.set('path', new fabric.Path('M 0 0 Q ' + (w / 2) + ' ' + curve + ' ' + w + ' 0'));
+    return t;
+  }
+  // Layout builders — each returns an async build(cv, ctx) that composes the logo.
+  function tplEmblem(o) {
+    return async (cv, ctx) => {
+      const W = cv.width, H = cv.height, cx = W / 2, u = W / 1600, R = 150 * u;
+      const filled = (o.enc === 'circle' || o.enc === 'roundsquare' || o.enc === 'shield');
+      if (o.enc) addEnclosure(cv, o.enc, o.encColor || o.fg, cx, H * 0.33, R, 9 * u);
+      const ic = await tplIconObj(ctx, filled ? (o.inside || o.bg) : o.fg, o.enc ? R * (filled ? 1.05 : 1.3) : 210 * u);
+      cv.add(tc(ic, cx, H * 0.33));
+      cv.add(tc(new fabric.IText(o.upper ? ctx.name.toUpperCase() : ctx.name, { fontFamily: o.hf, fontWeight: o.hw || '700', fontSize: (o.ns || 96) * u, fill: o.fg2 || o.fg, charSpacing: o.ncs || 0 }), cx, H * 0.66));
+      if (o.tag) cv.add(tc(new fabric.IText(o.tag, { fontFamily: o.sf, fontWeight: '500', fontSize: 26 * u, fill: o.sub, charSpacing: 500 }), cx, H * 0.80));
+    };
+  }
+  function tplHorizontal(o) {
+    return async (cv, ctx) => {
+      const W = cv.width, H = cv.height, cx = W / 2, cy = H / 2, u = W / 1600;
+      const ic = await tplIconObj(ctx, o.fg, 150 * u); ic.set({ originX: 'left', originY: 'center' });
+      const nm = new fabric.IText(o.upper ? ctx.name.toUpperCase() : ctx.name, { fontFamily: o.hf, fontWeight: o.hw || '700', fontSize: (o.ns || 110) * u, fill: o.fg2 || o.fg, originX: 'left', originY: 'center' });
+      const gap = 44 * u, total = ic.getScaledWidth() + gap + nm.getScaledWidth(), sx = cx - total / 2;
+      ic.set({ left: sx, top: cy }); nm.set({ left: sx + ic.getScaledWidth() + gap, top: o.tag ? cy - 18 * u : cy });
+      cv.add(ic, nm);
+      if (o.tag) cv.add(new fabric.IText(o.tag, { fontFamily: o.sf, fontWeight: '500', fontSize: 24 * u, fill: o.sub, charSpacing: 300, originX: 'left', originY: 'top', left: nm.left, top: cy + 28 * u }));
+    };
+  }
+  function tplMonogram(o) {
+    return async (cv, ctx) => {
+      const W = cv.width, H = cv.height, cx = W / 2, u = W / 1600, R = 155 * u;
+      addEnclosure(cv, o.enc || 'ring', o.fg, cx, H * 0.36, R, 8 * u);
+      cv.add(tc(new fabric.IText(ctx.initials, { fontFamily: o.hf, fontWeight: o.hw || '700', fontSize: 150 * u, fill: o.fg }), cx, H * 0.36));
+      cv.add(tc(new fabric.IText(o.upper ? ctx.name.toUpperCase() : ctx.name, { fontFamily: o.sf, fontWeight: '600', fontSize: 40 * u, fill: o.fg2 || o.fg, charSpacing: 500 }), cx, H * 0.74));
+    };
+  }
+  function tplWordmark(o) {
+    return async (cv, ctx) => {
+      const W = cv.width, H = cv.height, cx = W / 2, u = W / 1600;
+      let y = 0.42;
+      if (o.icon) { const ic = await tplIconObj(ctx, o.accent || o.fg, 120 * u); cv.add(tc(ic, cx, H * 0.26)); y = 0.50; }
+      cv.add(tc(new fabric.IText(o.upper ? ctx.name.toUpperCase() : ctx.name, { fontFamily: o.hf, fontWeight: o.hw || '700', fontSize: (o.ns || 120) * u, fill: o.fg, charSpacing: o.ncs || 0 }), cx, H * y));
+      cv.add(tc(new fabric.Rect({ width: (o.line || 240) * u, height: 3 * u, fill: o.accent || o.fg }), cx, H * (y + 0.14)));
+      if (o.tag) cv.add(tc(new fabric.IText(o.tag, { fontFamily: o.sf, fontWeight: '500', fontSize: 28 * u, fill: o.sub, charSpacing: 600 }), cx, H * (y + 0.24)));
+    };
+  }
+  function tplBoldBar(o) {
+    return async (cv, ctx) => {
+      const W = cv.width, H = cv.height, cx = W / 2, u = W / 1600;
+      if (o.icon) { const ic = await tplIconObj(ctx, o.accent || o.fg, 90 * u); cv.add(tc(ic, cx, H * 0.26)); }
+      cv.add(tc(new fabric.IText(ctx.name.toUpperCase(), { fontFamily: o.hf || 'Anton', fontSize: (o.ns || 150) * u, fill: o.fg }), cx, o.icon ? H * 0.50 : H * 0.45));
+      cv.add(tc(new fabric.Rect({ width: 340 * u, height: 18 * u, rx: 9 * u, ry: 9 * u, fill: o.accent || '#10B981' }), cx, o.icon ? H * 0.66 : H * 0.62));
+    };
+  }
+  function tplBadgeCurved(o) {
+    return async (cv, ctx) => {
+      const W = cv.width, H = cv.height, cx = W / 2, cy = H * 0.5, u = W / 1600, R = 195 * u;
+      addEnclosure(cv, 'ring', o.fg, cx, cy, R, 7 * u);
+      addEnclosure(cv, 'ring', o.fg, cx, cy, R * 0.82, 2 * u);
+      const ic = await tplIconObj(ctx, o.fg, R * 0.7); cv.add(tc(ic, cx, cy));
+      cv.add(tc(curvedText('★ ' + ctx.name.toUpperCase() + ' ★', o.hf, 40 * u, o.fg, -110 * u, 120), cx, cy - R * 0.6));
+      if (o.tag) cv.add(tc(curvedText(o.tag.toUpperCase(), o.sf, 24 * u, o.fg, 110 * u, 180), cx, cy + R * 0.62));
+    };
+  }
+
+  const TEMPLATES = [
+    { name: 'Emerald Emblem', bg: '#0a0a0a', build: tplEmblem({ bg: '#0a0a0a', fg: '#10B981', fg2: '#ffffff', sub: '#8b97a8', enc: 'ring', hf: 'Sora', sf: 'Inter', tag: 'YOUR TAGLINE' }) },
+    { name: 'Tech Hexagon', bg: '#06121a', build: tplEmblem({ bg: '#06121a', fg: '#22d3ee', fg2: '#e0f7fb', sub: '#6b8b95', enc: 'hex', hf: 'Space Grotesk', sf: 'Space Mono', tag: 'TECHNOLOGY', upper: true, ncs: 200 }) },
+    { name: 'Shield Crest', bg: '#0b1220', build: tplEmblem({ bg: '#0b1220', fg: '#10B981', inside: '#06281d', fg2: '#ffffff', sub: '#9fb0c8', enc: 'shield', hf: 'Oswald', sf: 'Oswald', tag: 'EST · 2026', upper: true }) },
+    { name: 'Friendly Round', bg: '#1a1030', build: tplEmblem({ bg: '#1a1030', fg: '#c084fc', inside: '#1a1030', fg2: '#ffffff', sub: '#b9a4d8', enc: 'roundsquare', hf: 'Fredoka', sf: 'Poppins', hw: '600', tag: 'Say hello', ns: 100 }) },
+    { name: 'Corporate Mark', bg: '#0a1424', build: tplEmblem({ bg: '#0a1424', fg: '#3b82f6', inside: '#0a1424', fg2: '#eaf2ff', sub: '#7e96b8', enc: 'circle', hf: 'Manrope', sf: 'Manrope', tag: 'CONSULTING', upper: true, ncs: 100 }) },
+    { name: 'Eco Stack', bg: '#0c1a12', build: tplEmblem({ bg: '#0c1a12', fg: '#34d399', fg2: '#eafff5', sub: '#8fb3a3', hf: 'Quicksand', sf: 'Poppins', tag: 'natural & fresh', ns: 104 }) },
+    { name: 'Horizontal Modern', bg: '#0a0a0a', build: tplHorizontal({ fg: '#10B981', fg2: '#ffffff', sub: '#8b97a8', hf: 'Archivo', sf: 'Inter', tag: 'YOUR TAGLINE' }) },
+    { name: 'Horizontal Tech', bg: '#06121a', build: tplHorizontal({ fg: '#22d3ee', fg2: '#e0f7fb', sub: '#6b8b95', hf: 'Space Grotesk', sf: 'Space Mono', upper: true }) },
+    { name: 'Monogram Mono', bg: '#111111', build: tplMonogram({ fg: '#ffffff', fg2: '#ffffff', hf: 'Cinzel', sf: 'Inter', enc: 'ring', upper: true }) },
+    { name: 'Monogram Gold', bg: '#0b1220', build: tplMonogram({ fg: '#D4AF37', fg2: '#f3ecd2', hf: 'Playfair Display', sf: 'Cormorant Garamond', enc: 'ring', upper: true }) },
+    { name: 'Luxury Serif', bg: '#0b1220', build: tplWordmark({ bg: '#0b1220', fg: '#D4AF37', accent: '#D4AF37', sub: '#b8a778', hf: 'Playfair Display', sf: 'Cormorant Garamond', tag: 'EST · QUALITY', icon: true, ns: 118 }) },
+    { name: 'Editorial', bg: '#ffffff', build: tplWordmark({ bg: '#ffffff', fg: '#111111', accent: '#111111', sub: '#555555', hf: 'DM Serif Display', sf: 'DM Sans', tag: 'SINCE 2026', ns: 120 }) },
+    { name: 'Refined', bg: '#0a0a0a', build: tplWordmark({ bg: '#0a0a0a', fg: '#ffffff', accent: '#10B981', sub: '#8b97a8', hf: 'Marcellus', sf: 'Manrope', tag: 'BESPOKE', icon: true, ns: 116, ncs: 200 }) },
+    { name: 'Bold Impact', bg: '#0a0a0a', build: tplBoldBar({ fg: '#ffffff', accent: '#10B981', hf: 'Anton' }) },
+    { name: 'Bold Icon', bg: '#1a1030', build: tplBoldBar({ fg: '#ffffff', accent: '#c084fc', hf: 'Anton', icon: true }) },
+    { name: 'Vintage Badge', bg: '#f3ead6', build: tplBadgeCurved({ fg: '#5b3a21', hf: 'Oswald', sf: 'Oswald', tag: 'Premium Quality' }) }
+  ];
+
+  const templatesModal = document.getElementById('templates-modal');
+  const templatesGrid = document.getElementById('templates-grid');
+  const templatesClose = document.getElementById('templates-close');
+  const templatesBtn = document.getElementById('templates-btn');
+  function templateBrandName() { return (magicBrandInput && magicBrandInput.value.trim()) || 'Your Brand'; }
+  const TEMPLATE_FONTS = ['Sora', 'Inter', 'Space Grotesk', 'Space Mono', 'Oswald', 'Fredoka', 'Poppins', 'Manrope', 'Quicksand', 'Archivo', 'Cinzel', 'Playfair Display', 'Cormorant Garamond', 'DM Serif Display', 'DM Sans', 'Marcellus', 'Anton'];
+
+  // Resolve ONE relevant icon for the whole gallery from the brand + description
+  // (reuses the generator's trade matching). Null → templates use a geometric mark.
+  async function resolveTemplateIconSvg() {
+    try {
+      const brand = (magicBrandInput && magicBrandInput.value.trim()) || '';
+      const desc = (magicKeywordInput && magicKeywordInput.value.trim()) || '';
+      const terms = resolveIconTerms(brand, desc);
+      if (!terms.length) return null;
+      const pool = await fetchIconPool(terms);
+      if (!pool.length) return null;
+      const parts = pool[0].split(':');
+      const res = await fetch('https://api.iconify.design/' + parts[0] + '/' + parts[1] + '.svg');
+      if (!res.ok) return null;
+      const txt = await res.text();
+      return (txt && txt.indexOf('<svg') !== -1) ? txt : null;
+    } catch (e) { return null; }
+  }
+
+  async function renderTemplateThumb(tpl, ctx) {
+    const el = document.createElement('canvas'); el.width = 440; el.height = 260;
+    const sc = new fabric.StaticCanvas(el, { width: 440, height: 260, enableRetinaScaling: false, renderOnAddRemove: false });
+    sc.backgroundColor = tpl.bg;
+    await tpl.build(sc, ctx);
+    await document.fonts.ready;
+    sc.getObjects().forEach((o) => { if (o.initDimensions) o.initDimensions(); });
+    sc.renderAll();
+    const url = sc.toDataURL({ format: 'png', multiplier: 1 });
+    sc.dispose();
+    return url;
+  }
+  async function applyTemplate(tpl, ctx) {
+    canvas.getObjects().forEach((o) => { if (o !== bgRect) canvas.remove(o); });
+    bgRect.set('fill', tpl.bg);
+    canvas.sendToBack(bgRect);
+    await tpl.build(canvas, ctx);
+    canvas.discardActiveObject();
+    canvas.requestRenderAll();
+    document.fonts.ready.then(() => { canvas.getObjects().forEach((o) => { if (o.initDimensions) o.initDimensions(); }); canvas.requestRenderAll(); });
+    if (typeof updateLayersPanel === 'function') updateLayersPanel();
+    saveHistory();
+    if (templatesModal) templatesModal.style.display = 'none';
+    toast('Template loaded — edit text, colours and fonts to finish.');
+  }
+  async function openTemplates() {
+    if (!templatesModal || !templatesGrid) return;
+    templatesGrid.innerHTML = '';
+    templatesModal.style.display = 'flex';
+    const ctx = { name: templateBrandName(), iconSvg: null, initials: tplInitials(templateBrandName()) };
+    try { await Promise.all(TEMPLATE_FONTS.map((f) => document.fonts.load('700 40px "' + f + '"'))); } catch (e) { /* render anyway */ }
+    ctx.iconSvg = await resolveTemplateIconSvg();
+    TEMPLATES.forEach((tpl) => {
+      const card = document.createElement('div');
+      card.style.cssText = 'cursor:pointer;border:1px solid rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;background:#05080f;transition:border-color .15s,transform .15s;';
+      const ph = document.createElement('div');
+      ph.textContent = 'rendering…';
+      ph.style.cssText = 'aspect-ratio:22/13;display:flex;align-items:center;justify-content:center;color:#3a4656;font-size:0.78rem;';
+      card.appendChild(ph);
+      card.addEventListener('mouseenter', () => { card.style.borderColor = '#10B981'; card.style.transform = 'translateY(-2px)'; });
+      card.addEventListener('mouseleave', () => { card.style.borderColor = 'rgba(255,255,255,0.1)'; card.style.transform = 'none'; });
+      card.addEventListener('click', () => applyTemplate(tpl, ctx));
+      templatesGrid.appendChild(card);
+      renderTemplateThumb(tpl, ctx).then((url) => {
+        card.innerHTML = '';
+        const img = document.createElement('img'); img.src = url; img.style.cssText = 'width:100%;display:block;';
+        const lbl = document.createElement('div'); lbl.textContent = tpl.name; lbl.style.cssText = 'padding:7px;font-size:0.74rem;color:#cdd6e2;text-align:center;background:#0b1220;';
+        card.appendChild(img); card.appendChild(lbl);
+      }).catch((err) => { ph.textContent = '⚠ ' + ((err && err.message) || 'error'); });
+    });
+  }
+  if (templatesBtn) templatesBtn.addEventListener('click', openTemplates);
+  if (templatesClose) templatesClose.addEventListener('click', () => { templatesModal.style.display = 'none'; });
+  if (templatesModal) templatesModal.addEventListener('click', (e) => { if (e.target === templatesModal) templatesModal.style.display = 'none'; });
+
   document.fonts.ready.then(() => { addText(); });
 });

@@ -137,6 +137,7 @@
                     <input type="text" id="magic-keyword-input" placeholder="What does it do? e.g. electronic security installer, panel beating shop" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.5); background: rgba(0,0,0,0.5); color: #fff; font-size: 1.0rem; box-sizing: border-box;">
                     <button id="magic-generate-btn" style="width: 100%; padding: 14px 20px; background: #10B981; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.0rem; white-space: nowrap; box-sizing: border-box;">✨ Auto-Build Logo</button>
                     <button id="magic-mark-btn" style="width: 100%; padding: 10px; background: rgba(16,185,129,0.1); color: #10B981; border: 1px solid rgba(16,185,129,0.4); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; box-sizing: border-box;">✦ Generate Mark</button>
+                    <button id="templates-btn" style="width: 100%; padding: 12px; background: rgba(236,72,153,0.12); color: #ec4899; border: 1px solid rgba(236,72,153,0.45); border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.95rem; box-sizing: border-box;">📐 Start from a Template</button>
                     <p style="font-size: 0.72rem; color: var(--text-dim); margin: 0; text-align: center;">100% in your browser · click again for a new concept</p>
                 </div>
             </div>
@@ -561,6 +562,18 @@
     </div>
   </div>
 
+  <!-- Templates modal -->
+  <div id="templates-modal" style="display:none; position:fixed; inset:0; z-index:3000; background:rgba(6,11,20,0.85); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
+    <div style="background:#0B1220; border:1px solid rgba(16,185,129,0.3); border-radius:16px; padding:24px; max-width:920px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 30px 80px rgba(0,0,0,0.6); box-sizing:border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <h3 style="margin:0; color:#fff; font-size:1.2rem;">Start from a template</h3>
+        <button id="templates-close" style="background:none; border:none; color:#8b97a8; font-size:1.4rem; cursor:pointer; line-height:1; padding:4px 8px;">✕</button>
+      </div>
+      <p style="margin:0 0 16px; color:var(--text-dim); font-size:0.82rem;">Tap one to load it, then edit the text, colours &amp; fonts. Uses your brand name from the box above.</p>
+      <div id="templates-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;"></div>
+    </div>
+  </div>
+
   <!-- Brand Kit modal -->
   <div id="brandkit-modal" style="display:none; position:fixed; inset:0; z-index:3000; background:rgba(6,11,20,0.85); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
     <div style="background:#0B1220; border:1px solid rgba(16,185,129,0.3); border-radius:16px; padding:24px; max-width:980px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 30px 80px rgba(0,0,0,0.6); box-sizing:border-box;">
@@ -596,7 +609,7 @@
   📥 <span>Save Logo</span>
 </button>
 
-  <script src="logo.js?v=30"></script>
+  <script src="logo.js?v=32"></script>
 
     <!-- Mockup Modal -->
     <div id="mockup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
