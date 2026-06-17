@@ -465,12 +465,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     canvas.add(text);
     canvas.setActiveObject(text);
-    
-    document.fonts.ready.then(() => {
-        text.setCoords();
-        canvas.renderAll();
-    });
     canvas.renderAll();
+    // Re-measure once the font is actually loaded, so the selection box wraps
+    // the whole word (fallback-font metrics make the last letter overflow).
+    ensureFontRender(text.fontFamily, [text]);
   }
 
   addShapeBtn.addEventListener('click', () => {
@@ -838,7 +836,7 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.requestRenderAll();
     try {
       document.fonts.load('700 40px "' + family + '"').then(() => {
-        (objs || []).forEach((t) => { if (t && t.initDimensions) t.initDimensions(); });
+        (objs || []).forEach((t) => { if (t && t.initDimensions) t.initDimensions(); if (t && t.setCoords) t.setCoords(); });
         canvas.requestRenderAll();
       }).catch(() => {});
     } catch (e) { /* older browsers just keep the immediate render */ }
@@ -2120,6 +2118,138 @@ if (previewMockupBtn && mockupModal && closeMockupBtn) {
   if (socialBtn) socialBtn.addEventListener('click', downloadSocialPack);
   if (brandkitClose) brandkitClose.addEventListener('click', resetSocial);
   if (brandkitModal) brandkitModal.addEventListener('click', (e) => { if (e.target === brandkitModal) resetSocial(); });
+
+  // ── Brand Style Guide: one-page sheet (logo variations + colours + fonts) ──
+  function toHex(c) { if (!c || typeof c !== 'string' || c === 'transparent') return null; try { return '#' + new fabric.Color(c).toHex().toLowerCase(); } catch (e) { return null; } }
+  function collectBrandColors() {
+    const out = [], seen = {};
+    const push = (c) => { const h = toHex(c); if (h && !seen[h]) { seen[h] = 1; out.push(h); } };
+    canvas.getObjects().forEach((o) => { if (o === bgRect) return; push(o.fill); push(o.stroke); if (o.getObjects) o.getObjects().forEach((ch) => { push(ch.fill); push(ch.stroke); }); });
+    push(typeof bgRect.fill === 'string' ? bgRect.fill : null);
+    return out.slice(0, 6);
+  }
+  // Flatten the transparent logo to a solid colour (silhouette) for the mono versions.
+  function recolorPng(url, color) {
+    return new Promise((resolve) => {
+      const im = new Image();
+      im.onload = () => {
+        const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+        const cx = c.getContext('2d'); cx.drawImage(im, 0, 0);
+        cx.globalCompositeOperation = 'source-in'; cx.fillStyle = color; cx.fillRect(0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/png'));
+      };
+      im.onerror = () => resolve(url);
+      im.src = url;
+    });
+  }
+  const loadFabricImg = (url) => new Promise((res) => fabric.Image.fromURL(url, (img) => res(img)));
+
+  async function buildStyleGuideBlob() {
+    const logo = exportLogoTransparent();
+    if (!logo) { toast('Add a logo to the canvas first.', 'error'); return null; }
+    const src = getSource();
+    const texts = src.texts.slice().sort((a, b) => (b.fontSize || 0) - (a.fontSize || 0));
+    const headFont = (texts[0] && texts[0].fontFamily) || 'Sora';
+    const bodyFont = (texts[1] && texts[1].fontFamily) || 'Inter';
+    const name = (magicBrandInput && magicBrandInput.value.trim()) || (texts[0] && texts[0].text) || 'Your Brand';
+    const bg = (typeof bgRect.fill === 'string' && bgRect.fill.charAt(0) === '#') ? bgRect.fill : '#0b1220';
+    const colors = collectBrandColors();
+    try { await Promise.all([headFont, bodyFont, 'Sora', 'Inter'].map((f) => document.fonts.load('700 40px "' + f + '"'))); } catch (e) { /* render anyway */ }
+    const blackUrl = await recolorPng(logo.url, '#111111');
+    const whiteUrl = await recolorPng(logo.url, '#ffffff');
+
+    const W = 1600, H = 2264, M = 120;
+    const el = document.createElement('canvas'); el.width = W; el.height = H;
+    const sc = new fabric.StaticCanvas(el, { width: W, height: H, enableRetinaScaling: false, renderOnAddRemove: false });
+    sc.backgroundColor = '#ffffff';
+    const ink = '#111111', grey = '#6b7280', line = '#e5e7eb';
+    const T = (str, o) => sc.add(new fabric.Text(str, Object.assign({ fill: ink, fontFamily: 'Inter' }, o)));
+    const rect = (o) => sc.add(new fabric.Rect(Object.assign({ selectable: false }, o)));
+    const placeImg = async (url, bw, bh, cx, cy) => {
+      const img = await loadFabricImg(url);
+      const s = Math.min(bw / (img.width || 1), bh / (img.height || 1));
+      img.set({ originX: 'center', originY: 'center', left: cx, top: cy, scaleX: s, scaleY: s });
+      sc.add(img);
+    };
+
+    // Header
+    T('BRAND GUIDELINES', { left: M, top: 96, fontSize: 26, fill: grey, charSpacing: 400, fontWeight: '600' });
+    T(name, { left: M, top: 130, fontSize: 92, fill: ink, fontFamily: headFont, fontWeight: '700' });
+    rect({ left: M, top: 272, width: W - 2 * M, height: 2, fill: line });
+
+    // 01 Logo
+    T('01 — Logo', { left: M, top: 320, fontSize: 30, fill: grey, fontWeight: '700' });
+    const pY = 380, pH = 460;
+    rect({ left: M, top: pY, width: W - 2 * M, height: pH, rx: 24, ry: 24, fill: bg, stroke: line, strokeWidth: 1 });
+    await placeImg(logo.url, (W - 2 * M) * 0.58, pH * 0.62, W / 2, pY + pH / 2);
+    const vy = pY + pH + 44, vh = 290, gap = 30, vw = (W - 2 * M - 2 * gap) / 3;
+    const cells = [
+      { x: M, bg: bg, url: logo.url, lbl: 'Primary' },
+      { x: M + vw + gap, bg: '#0b1220', url: whiteUrl, lbl: 'Reversed' },
+      { x: M + 2 * (vw + gap), bg: '#ffffff', url: blackUrl, lbl: 'One-colour' }
+    ];
+    for (const c of cells) {
+      rect({ left: c.x, top: vy, width: vw, height: vh, rx: 18, ry: 18, fill: c.bg, stroke: line, strokeWidth: 1 });
+      await placeImg(c.url, vw * 0.62, vh * 0.56, c.x + vw / 2, vy + vh / 2);
+      T(c.lbl, { left: c.x, top: vy + vh + 14, fontSize: 24, fill: grey });
+    }
+
+    // 02 Colours
+    const colY = vy + vh + 90;
+    T('02 — Colours', { left: M, top: colY, fontSize: 30, fill: grey, fontWeight: '700' });
+    const n = colors.length || 1, sw = 180, csY = colY + 56;
+    const sgap = n > 1 ? (W - 2 * M - n * sw) / (n - 1) : 0;
+    colors.forEach((hex, i) => {
+      const x = M + i * (sw + sgap);
+      rect({ left: x, top: csY, width: sw, height: sw, rx: 18, ry: 18, fill: hex, stroke: line, strokeWidth: 1 });
+      T(hex.toUpperCase(), { left: x, top: csY + sw + 14, fontSize: 24, fill: ink, fontFamily: 'JetBrains Mono' });
+    });
+
+    // 03 Typography
+    const tyY = csY + sw + 90;
+    T('03 — Typography', { left: M, top: tyY, fontSize: 30, fill: grey, fontWeight: '700' });
+    T('Heading — ' + headFont, { left: M, top: tyY + 52, fontSize: 26, fill: grey, fontWeight: '600' });
+    T('Aa Bb Cc  1234567890', { left: M, top: tyY + 90, fontSize: 70, fill: ink, fontFamily: headFont, fontWeight: '700' });
+    T('Body — ' + bodyFont, { left: M, top: tyY + 210, fontSize: 26, fill: grey, fontWeight: '600' });
+    T('The quick brown fox jumps over the lazy dog.', { left: M, top: tyY + 248, fontSize: 44, fill: ink, fontFamily: bodyFont, fontWeight: '500' });
+
+    // Footer
+    T('Generated with Riyo Studio · riyostudio.dev', { left: M, top: H - 86, fontSize: 24, fill: grey });
+
+    await document.fonts.ready;
+    sc.getObjects().forEach((o) => { if (o.initDimensions) o.initDimensions(); });
+    sc.renderAll();
+    const out = dataURLToBlob(sc.toDataURL({ format: 'png', multiplier: 1 }));
+    sc.dispose();
+    return out;
+  }
+  const STYLEGUIDE_LABEL = '📄 Brand Style Guide (PNG) — logo, colours & fonts';
+  const styleguideBtn = document.getElementById('styleguide-btn');
+  let pendingStyleGuide = null;
+  function resetStyleGuide() { pendingStyleGuide = null; if (styleguideBtn) styleguideBtn.textContent = STYLEGUIDE_LABEL; }
+  async function downloadStyleGuide() {
+    if (pendingStyleGuide) {
+      const blob = pendingStyleGuide; pendingStyleGuide = null;
+      if (styleguideBtn) styleguideBtn.textContent = STYLEGUIDE_LABEL;
+      await saveFile(blob, 'brand-style-guide.png', 'image/png');
+      return;
+    }
+    if (styleguideBtn) styleguideBtn.textContent = 'Building…';
+    let blob = null;
+    try { blob = await buildStyleGuideBlob(); }
+    catch (err) { console.error('Style guide failed:', err); alert('Could not build the style guide. Try again.'); }
+    if (!blob) { if (styleguideBtn) styleguideBtn.textContent = STYLEGUIDE_LABEL; return; }
+    if (logoIsIOS() && navigator.canShare) {
+      pendingStyleGuide = blob;
+      if (styleguideBtn) styleguideBtn.textContent = '💾 Tap again to save the guide';
+      return;
+    }
+    await saveFile(blob, 'brand-style-guide.png', 'image/png');
+    if (styleguideBtn) styleguideBtn.textContent = STYLEGUIDE_LABEL;
+  }
+  if (styleguideBtn) styleguideBtn.addEventListener('click', downloadStyleGuide);
+  if (brandkitClose) brandkitClose.addEventListener('click', resetStyleGuide);
+  if (brandkitModal) brandkitModal.addEventListener('click', (e) => { if (e.target === brandkitModal) resetStyleGuide(); });
 
   // ── Templates: ready-made logos to start from ────────────────────
   function tplInitials(name) { return (String(name || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase()) || 'R'; }
