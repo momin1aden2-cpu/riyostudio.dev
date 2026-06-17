@@ -41,12 +41,13 @@
         padding: 0 1rem;
         display: flex !important;
         flex-direction: column !important;
-        /* Push the form down so it starts below the fixed canvas */
-        padding-top: 370px !important; 
+        /* Push the form below the fixed canvas (matches the capped preview height) */
+        padding-top: 49vh !important;
         margin-top: 0 !important;
       }
-      
-      /* Make sure the canvas stays fixed on top, just like invoice */
+
+      /* Canvas pinned on top, capped to ~half the screen so the form below has
+         real room. Its own scroll is a safety net on very small phones. */
       .logo-maker-grid > div:nth-child(2),
       .canvas-container {
         order: -1 !important;
@@ -55,6 +56,8 @@
         left: 0 !important;
         right: 0 !important;
         width: 100vw !important;
+        max-height: 48vh !important;
+        overflow-y: auto !important;
         z-index: 100 !important;
         background: rgba(6, 11, 20, 0.95) !important;
         backdrop-filter: blur(16px) !important;
@@ -67,27 +70,33 @@
 
       /* Compact canvas */
       #logo-render-wrapper {
-        max-height: 180px !important;
+        max-height: 150px !important;
         margin: 0 auto;
       }
 
-      /* Compact export buttons row */
+      /* Reclaim space on mobile (all kept on desktop) */
+      .canvas-container > h3 { display: none !important; }        /* "Live Canvas" */
+      #logo-local-note { display: none !important; }              /* "Rendered locally…" */
+      .logo-maker-grid .tool-header { display: none !important; } /* page title + subtitle */
+
+      /* Compact export buttons into a tidy 2×2 */
       .canvas-container > div:last-child {
         flex-direction: row !important;
         flex-wrap: wrap !important;
         gap: 0.5rem !important;
-        margin-top: 0.75rem !important;
+        margin-top: 0.6rem !important;
       }
       /* The inner flex div needs to be unset to let items flow */
       .canvas-container > div:last-child > div {
         display: contents !important;
       }
-      #logo-export-btn, #logo-export-svg-btn, #logo-export-pdf-btn {
-        padding: 0.5rem 0.6rem !important;
-        font-size: 0.75rem !important;
-        flex: 1 1 calc(33% - 0.5rem) !important;
-        min-width: fit-content;
+      #logo-export-btn, #brandkit-btn, #logo-export-svg-btn, #logo-export-pdf-btn {
+        padding: 0.55rem 0.6rem !important;
+        font-size: 0.78rem !important;
+        flex: 1 1 calc(50% - 0.5rem) !important;
+        min-width: 0 !important;
         justify-content: center;
+        box-shadow: none !important;
       }
     }
   </style>
@@ -459,7 +468,7 @@
                         📄 Export Print PDF
                     </button>
                 </div>
-                <p style="text-align: center; font-size: 12px; color: var(--text-muted); margin: 0;">Rendered locally in your browser</p>
+                <p id="logo-local-note" style="text-align: center; font-size: 12px; color: var(--text-muted); margin: 0;">Rendered locally in your browser</p>
             </div>
 
         </div>
