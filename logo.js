@@ -1,3 +1,21 @@
+// Fabric.js 5.3.1 sets ctx.textBaseline to the invalid value 'alphabetical'
+// (the spec value is 'alphabetic'), which floods the console with warnings on
+// every text render. Coerce that one value at the canvas-context level so the
+// console stays clean; behaviour is unchanged.
+(function () {
+  try {
+    const proto = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+    const desc = proto && Object.getOwnPropertyDescriptor(proto, 'textBaseline');
+    if (desc && desc.set && desc.get) {
+      Object.defineProperty(proto, 'textBaseline', {
+        configurable: true, enumerable: desc.enumerable,
+        get: desc.get,
+        set: function (v) { desc.set.call(this, v === 'alphabetical' ? 'alphabetic' : v); }
+      });
+    }
+  } catch (e) { /* leave the console as-is if patching isn't possible */ }
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
   const canvasElement = document.getElementById('logo-canvas');
   if (!canvasElement || typeof fabric === 'undefined') return;
@@ -1480,18 +1498,21 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
     const cx = cv.width / 2, cy = cv.height / 2;
     const gap = cv.width > 800 ? 40 : 14;
     const pad = cv.width > 800 ? 14 : 6;
+    // A logo may be icon-only (uploaded image, no text) or text-only — handle both.
     const iconH = icon ? icon.getScaledHeight() : 0;
-    const bH = brand.getScaledHeight();
+    const bH = brand ? brand.getScaledHeight() : 0;
     const sH = sub ? sub.getScaledHeight() : 0;
-    const totalH = iconH + (icon ? gap : 0) + bH + (sub ? pad + sH : 0);
+    const totalH = iconH + (icon && (brand || sub) ? gap : 0) + bH + (brand && sub ? pad : 0) + sH;
     let y = cy - totalH / 2;
-    if (icon) { icon.set({ originX: 'center', originY: 'top', left: cx, top: y }); y += iconH + gap; }
-    brand.set({ originX: 'center', originY: 'top', left: cx, top: y }); y += bH + pad;
+    if (icon) { icon.set({ originX: 'center', originY: 'top', left: cx, top: y }); y += iconH + (brand || sub ? gap : 0); }
+    if (brand) { brand.set({ originX: 'center', originY: 'top', left: cx, top: y }); y += bH + (sub ? pad : 0); }
     if (sub) sub.set({ originX: 'center', originY: 'top', left: cx, top: y });
   }
   function arrangeLeft(cv, icon, brand, sub) {
     const cx = cv.width / 2, cy = cv.height / 2;
     const gap = cv.width > 800 ? 36 : 12;
+    // No text → just centre the icon (image-only logos).
+    if (!brand) { if (icon) icon.set({ originX: 'center', originY: 'center', left: cx, top: cy }); return; }
     const iconW = icon ? icon.getScaledWidth() : 0;
     const bW = brand.getScaledWidth();
     const sx = cx - (iconW + (icon ? gap : 0) + bW) / 2;
@@ -1954,6 +1975,151 @@ if (previewMockupBtn && mockupModal && closeMockupBtn) {
   if (brandkitClose) brandkitClose.addEventListener('click', () => { brandkitModal.style.display = 'none'; resetKitZip(); });
   if (brandkitModal) brandkitModal.addEventListener('click', (e) => { if (e.target === brandkitModal) { brandkitModal.style.display = 'none'; resetKitZip(); } });
   if (brandkitZip) brandkitZip.addEventListener('click', downloadBrandKitZip);
+
+  // ── Social Media Pack: the logo correctly sized for each platform ──
+  // Render the logo on its own (background hidden), tightly cropped, so it can
+  // be re-centred on each platform canvas without the editing background.
+  function exportObjectsTransparent(includeFilter) {
+    const objs = canvas.getObjects().filter((o) => o !== bgRect && o.visible !== false && (!includeFilter || includeFilter(o)));
+    if (!objs.length) return null;
+    canvas.discardActiveObject();
+    const vpt = canvas.viewportTransform ? canvas.viewportTransform.slice() : [1, 0, 0, 1, 0, 0];
+    canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+    const wasVisible = bgRect.visible;
+    bgRect.visible = false;
+    canvas.renderAll();
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    objs.forEach((o) => { const r = o.getBoundingRect(true, true); minX = Math.min(minX, r.left); minY = Math.min(minY, r.top); maxX = Math.max(maxX, r.left + r.width); maxY = Math.max(maxY, r.top + r.height); });
+    const pad = 24;
+    minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+    maxX = Math.min(canvas.width, maxX + pad); maxY = Math.min(canvas.height, maxY + pad);
+    const url = canvas.toDataURL({ format: 'png', left: minX, top: minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY), multiplier: 2 });
+    bgRect.visible = wasVisible;
+    canvas.setViewportTransform(vpt);
+    canvas.renderAll();
+    return { url: url };
+  }
+  function exportLogoTransparent() { return exportObjectsTransparent(null); }
+  // Just the symbol/icon (no text) — for the banner layouts which add their own
+  // business name + tagline, so the name isn't duplicated.
+  function exportIconImage() {
+    const src = getSource();
+    if (!src.icon) return null;
+    const others = canvas.getObjects().filter((o) => o !== bgRect && o !== src.icon);
+    const prev = others.map((o) => o.visible);
+    others.forEach((o) => { o.visible = false; });
+    const r = exportObjectsTransparent(null);
+    others.forEach((o, i) => { o.visible = prev[i]; });
+    canvas.renderAll();
+    return r ? r.url : null;
+  }
+  function readableOn(hex) {
+    if (typeof hex !== 'string' || hex.charAt(0) !== '#' || hex.length < 7) return '#ffffff';
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6 ? '#111111' : '#ffffff';
+  }
+  // Squares (profile/post) show the whole logo centred. Wide banners are a
+  // designed cover: gradient fill + icon + business name + tagline.
+  const SOCIAL_SIZES = [
+    { key: 'profile-square', w: 512, h: 512, kind: 'square' },
+    { key: 'instagram-post', w: 1080, h: 1080, kind: 'square' },
+    { key: 'facebook-cover', w: 1640, h: 624, kind: 'banner' },
+    { key: 'linkedin-banner', w: 1584, h: 396, kind: 'banner' },
+    { key: 'x-header', w: 1500, h: 500, kind: 'banner' },
+    { key: 'youtube-banner', w: 2560, h: 1440, kind: 'banner' }
+  ];
+  function buildSocialBlob(assets, size) {
+    return new Promise((resolve) => {
+      const W = size.w, H = size.h;
+      const el = document.createElement('canvas'); el.width = W; el.height = H;
+      const sc = new fabric.StaticCanvas(el, { width: W, height: H, enableRetinaScaling: false, renderOnAddRemove: false });
+      sc.add(new fabric.Rect({ left: 0, top: 0, width: W, height: H, selectable: false, fill: new fabric.Gradient({ type: 'linear', gradientUnits: 'pixels', coords: { x1: 0, y1: 0, x2: W, y2: H }, colorStops: [{ offset: 0, color: assets.grad1 }, { offset: 1, color: assets.grad2 }] }) }));
+      const done = () => { sc.renderAll(); const out = dataURLToBlob(sc.toDataURL({ format: 'png', multiplier: 1 })); sc.dispose(); resolve(out); };
+      if (size.kind === 'square') {
+        fabric.Image.fromURL(assets.logoUrl, (img) => {
+          const s = Math.min((0.82 * W) / (img.width || 1), (0.82 * H) / (img.height || 1));
+          img.set({ originX: 'center', originY: 'center', left: W / 2, top: H / 2, scaleX: s, scaleY: s });
+          sc.add(img); done();
+        });
+      } else {
+        const compose = (iconImg) => {
+          const nameT = new fabric.IText(assets.name, { fontFamily: 'Sora', fontWeight: '700', fontSize: H * 0.22, fill: assets.textColor, originX: 'left', originY: 'center' });
+          const maxTW = W * 0.6;
+          if (nameT.width > maxTW) { nameT.set('fontSize', nameT.fontSize * (maxTW / nameT.width)); if (nameT.initDimensions) nameT.initDimensions(); }
+          const tagT = assets.tagline ? new fabric.IText(assets.tagline, { fontFamily: 'Inter', fontWeight: '500', fontSize: H * 0.105, fill: assets.subColor, originX: 'left', originY: 'center', charSpacing: 150 }) : null;
+          if (tagT && tagT.width > maxTW) { tagT.set('fontSize', tagT.fontSize * (maxTW / tagT.width)); if (tagT.initDimensions) tagT.initDimensions(); }
+          let iconW = 0, iconS = 0;
+          if (iconImg) { iconS = (H * 0.62) / (iconImg.height || 1); iconW = (iconImg.width || 1) * iconS; }
+          const gap = iconImg ? W * 0.03 : 0;
+          const textW = Math.max(nameT.getScaledWidth(), tagT ? tagT.getScaledWidth() : 0);
+          const x = (W - (iconW + gap + textW)) / 2;
+          if (iconImg) { iconImg.set({ originX: 'left', originY: 'center', left: x, top: H / 2, scaleX: iconS, scaleY: iconS }); sc.add(iconImg); }
+          const tx = x + iconW + gap;
+          if (tagT) {
+            nameT.set({ left: tx, top: H / 2 - H * 0.085 });
+            tagT.set({ left: tx, top: H / 2 + H * 0.09 });
+            sc.add(nameT); sc.add(tagT);
+          } else {
+            nameT.set({ left: tx, top: H / 2 });
+            sc.add(nameT);
+          }
+          done();
+        };
+        if (assets.iconUrl) fabric.Image.fromURL(assets.iconUrl, (im) => compose(im));
+        else compose(null);
+      }
+    });
+  }
+  const SOCIAL_LABEL = '📱 Social Media Pack (ZIP) — profile + covers';
+  const socialBtn = document.getElementById('social-pack-btn');
+  let pendingSocialZip = null;
+  function resetSocial() { pendingSocialZip = null; if (socialBtn) socialBtn.textContent = SOCIAL_LABEL; }
+  async function downloadSocialPack() {
+    if (pendingSocialZip) {
+      const blob = pendingSocialZip; pendingSocialZip = null;
+      if (socialBtn) socialBtn.textContent = SOCIAL_LABEL;
+      await saveFile(blob, 'social-media-pack.zip', 'application/zip');
+      return;
+    }
+    const logo = exportLogoTransparent();
+    if (!logo) { toast('Add a logo to the canvas first.', 'error'); return; }
+    if (typeof JSZip === 'undefined') { alert('ZIP library is not loaded — try again in a second.'); return; }
+    const src = getSource();
+    const bg = (typeof bgRect.fill === 'string' && bgRect.fill.charAt(0) === '#') ? bgRect.fill : '#0b1220';
+    const textColor = readableOn(bg);
+    const assets = {
+      logoUrl: logo.url,
+      iconUrl: exportIconImage(),
+      name: (magicBrandInput && magicBrandInput.value.trim()) || (src.texts[0] && src.texts[0].text) || 'Your Brand',
+      tagline: (magicKeywordInput && magicKeywordInput.value.trim()) || (src.texts[1] && src.texts[1].text) || '',
+      textColor: textColor,
+      subColor: textColor === '#111111' ? '#555555' : 'rgba(255,255,255,0.72)',
+      grad1: bg,
+      grad2: (typeof lighten === 'function') ? lighten(bg, 0.16) : bg
+    };
+    if (socialBtn) socialBtn.textContent = 'Building…';
+    try {
+      const zip = new JSZip();
+      for (const sz of SOCIAL_SIZES) {
+        const blob = await buildSocialBlob(assets, sz);
+        zip.file(sz.key + '-' + sz.w + 'x' + sz.h + '.png', blob);
+      }
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      if (logoIsIOS() && navigator.canShare) {
+        pendingSocialZip = zipBlob;
+        if (socialBtn) socialBtn.textContent = '💾 Tap again to save the pack';
+        return;
+      }
+      await saveFile(zipBlob, 'social-media-pack.zip', 'application/zip');
+    } catch (err) {
+      console.error('Social pack failed:', err);
+      alert('Could not build the social pack. Try again.');
+    }
+    if (socialBtn) socialBtn.textContent = SOCIAL_LABEL;
+  }
+  if (socialBtn) socialBtn.addEventListener('click', downloadSocialPack);
+  if (brandkitClose) brandkitClose.addEventListener('click', resetSocial);
+  if (brandkitModal) brandkitModal.addEventListener('click', (e) => { if (e.target === brandkitModal) resetSocial(); });
 
   // ── Templates: ready-made logos to start from ────────────────────
   function tplInitials(name) { return (String(name || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase()) || 'R'; }
