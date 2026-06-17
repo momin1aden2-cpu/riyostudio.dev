@@ -262,13 +262,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (layoutLeftBtn) {
     layoutLeftBtn.addEventListener('click', () => {
       const objs = getLayoutObjects();
-      if (objs.length < 2) return;
+      if (objs.length < 2) { toast('Smart Layouts arrange an icon with your text — add both first.', 'error'); return; }
       
       let icon = objs.find(o => o.type === 'path' || o.type === 'group' || o.type === 'image');
       let texts = objs.filter(o => o.type === 'i-text' || o.type === 'text');
       
       if (!icon && texts.length >= 2) { icon = texts[0]; texts = texts.slice(1); }
-      if (!icon || texts.length === 0) return;
+      if (!icon || texts.length === 0) { toast('Need an icon and at least one text for this layout.', 'error'); return; }
 
       const mainText = texts[0];
       const spacing = 40;
@@ -298,12 +298,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (layoutStackBtn) {
     layoutStackBtn.addEventListener('click', () => {
       const objs = getLayoutObjects();
-      if (objs.length < 2) return;
+      if (objs.length < 2) { toast('Smart Layouts arrange an icon with your text — add both first.', 'error'); return; }
       
       let icon = objs.find(o => o.type === 'path' || o.type === 'group' || o.type === 'image');
       let texts = objs.filter(o => o.type === 'i-text' || o.type === 'text');
       if (!icon && texts.length >= 2) { icon = texts[0]; texts = texts.slice(1); }
-      if (!icon || texts.length === 0) return;
+      if (!icon || texts.length === 0) { toast('Need an icon and at least one text for this layout.', 'error'); return; }
 
       const mainText = texts[0];
       const spacing = 40;
@@ -433,7 +433,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   fabric.Object.prototype.set({
     transparentCorners: false, cornerColor: '#10B981', cornerStrokeColor: '#000000',
-    borderColor: '#10B981', cornerSize: 16, padding: 10, cornerStyle: 'circle'
+    borderColor: '#10B981', cornerSize: 22, touchCornerSize: 56, padding: 8,
+    cornerStyle: 'circle', borderScaleFactor: 2
   });
 
   function addText() {
@@ -467,9 +468,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const path = new fabric.Path(svgPath, {
         left: canvas.width / 2, top: canvas.height / 2,
         fill: (currentTheme === 'light' || currentTheme === 'holographic') ? '#111111' : '#ffffff',
-        originX: 'center', originY: 'center', scaleX: 6, scaleY: 6,
+        originX: 'center', originY: 'center',
         shadow: currentTheme === 'cyber' ? new fabric.Shadow({ color: '#10B981', blur: 30 }) : null
       });
+      const ls = 340 / Math.max(path.width || 340, path.height || 340);
+      path.set({ scaleX: ls, scaleY: ls });
       canvas.add(path);
       canvas.setActiveObject(path);
       canvas.renderAll();
@@ -488,9 +491,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Editor power: duplicate / group / lock / nudge ───────────────
   const CLONE_PROPS = ['id', 'name', 'origProps', 'selectable', 'evented', 'locked'];
 
+  function toast(msg, type) { if (window.showToast) window.showToast(msg, type || 'success'); }
+
   function duplicateSelected() {
     const active = canvas.getActiveObject();
-    if (!active) return;
+    if (!active) { toast('Select something to duplicate first.', 'error'); return; }
     active.clone((cloned) => {
       canvas.discardActiveObject();
       cloned.set({ left: (active.left || 0) + 30, top: (active.top || 0) + 30, evented: true });
@@ -509,18 +514,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function groupSelected() {
     const active = canvas.getActiveObject();
-    if (!active || active.type !== 'activeSelection') return;
+    if (!active || active.type !== 'activeSelection') {
+      toast('Pick 2+ items first — drag a box around them or Shift-click each, then Group.', 'error');
+      return;
+    }
     active.toGroup();
     canvas.requestRenderAll();
     saveHistory();
+    toast('Grouped — they now move & resize as one. Use Ungroup to split them.');
   }
 
   function ungroupSelected() {
     const active = canvas.getActiveObject();
-    if (!active || active.type !== 'group') return;
+    if (!active || active.type !== 'group') {
+      toast('Select a grouped item first, then Ungroup.', 'error');
+      return;
+    }
     active.toActiveSelection();
     canvas.requestRenderAll();
     saveHistory();
+    toast('Ungrouped.');
   }
 
   function refreshLockBtn() {
@@ -532,7 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function toggleLockSelected() {
     const objs = canvas.getActiveObjects();
-    if (!objs.length) return;
+    if (!objs.length) { toast('Select an item first to lock or unlock it.', 'error'); return; }
     const locking = !objs[0].locked;
     objs.forEach((o) => {
       o.locked = locking;
@@ -545,6 +558,7 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.requestRenderAll();
     refreshLockBtn();
     saveHistory();
+    toast(locking ? 'Locked — it won’t move or resize. Tap Unlock to edit it again.' : 'Unlocked — you can edit it again.');
   }
 
   let nudgeSaveTimer = null;
@@ -707,10 +721,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (activeObj.shadow) {
         shadowBlur.value = activeObj.shadow.blur || 0;
         shadowOffset.value = activeObj.shadow.offsetX || 0;
-        shadowColor.value = activeObj.shadow.color || '#000000';
+        if (/^#[0-9a-f]{6}$/i.test(activeObj.shadow.color || '')) shadowColor.value = activeObj.shadow.color;
       } else {
         shadowBlur.value = 0;
         shadowOffset.value = 0;
+        // Pre-load a visible default so dragging Blur immediately shows the effect.
+        shadowColor.value = defaultShadowColor();
       }
     }
 
@@ -846,6 +862,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (strokeColor) strokeColor.addEventListener('input', updateStroke);
   if (strokeWidth) strokeWidth.addEventListener('input', updateStroke);
+
+  // A black shadow is invisible on a dark canvas, so default to a colour that
+  // actually shows for the current background — light glow on dark themes, a
+  // dark drop-shadow on light ones. The user can still pick any colour.
+  function defaultShadowColor() {
+    const darkThemes = ['dark', 'cyber', 'midnight', 'grid', 'transparent'];
+    return darkThemes.indexOf(currentTheme) !== -1 ? '#ffffff' : '#000000';
+  }
 
   function updateShadow() {
     const activeObj = canvas.getActiveObject();
@@ -1076,14 +1100,15 @@ document.addEventListener('DOMContentLoaded', () => {
                           
                           fabric.loadSVGFromString(svgText, (objects, options) => {
                               const obj = fabric.util.groupSVGElements(objects, options);
+                              const s = 340 / Math.max(obj.width || 340, obj.height || 340);
                               obj.set({
                                   left: canvas.width / 2,
                                   top: canvas.height / 2,
                                   originX: 'center',
                                   originY: 'center',
                                   fill: '#ffffff',
-                                  scaleX: 100 / (obj.width || 100),
-                                  scaleY: 100 / (obj.height || 100)
+                                  scaleX: s,
+                                  scaleY: s
                               });
                               canvas.add(obj);
                               canvas.setActiveObject(obj);
