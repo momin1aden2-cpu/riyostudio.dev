@@ -999,6 +999,14 @@ document.addEventListener('DOMContentLoaded', () => {
         galaxy:  { radius: 0.085, bezel: 0.014, cutout: 'punch-sm' }    // Samsung Galaxy — slim bezel
     };
     const isPhoneFrame = (fs) => Object.prototype.hasOwnProperty.call(PHONE_DEVICES, fs);
+    // Frames whose body colour can be changed.
+    const COLOURABLE_FRAMES = ['iphone', 'android', 'pixel', 'galaxy', 'clay', 'ipad', 'macbook'];
+    function hexLuminance(hex) {
+        const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+        if (!m) return 0;
+        const n = parseInt(m[1], 16);
+        return (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+    }
 
     // Realistic phone: body → inset screen → on-screen cutout → metallic rim.
     function drawPhoneFrame(tCtx, layer, w, h) {
@@ -1027,11 +1035,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         tCtx.restore();
 
-        // Metallic edge highlight
+        // Metallic edge — white sheen on dark bodies, a soft dark edge on light ones.
+        const light = hexLuminance(layer.frameColor || '#0b0b0d') > 0.6;
         const rim = tCtx.createLinearGradient(0, 0, w, h);
-        rim.addColorStop(0, 'rgba(255,255,255,0.28)');
-        rim.addColorStop(0.5, 'rgba(255,255,255,0.03)');
-        rim.addColorStop(1, 'rgba(255,255,255,0.20)');
+        rim.addColorStop(0, light ? 'rgba(0,0,0,0.20)' : 'rgba(255,255,255,0.28)');
+        rim.addColorStop(0.5, light ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.03)');
+        rim.addColorStop(1, light ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.20)');
         tCtx.strokeStyle = rim; tCtx.lineWidth = Math.max(2, w * 0.008);
         tCtx.beginPath(); tCtx.roundRect(0, 0, w, h, bodyR); tCtx.stroke();
     }
@@ -1073,14 +1082,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (layer.frameStyle === 'ipad') {
             const padW = w * 0.05; const rad = Math.min(w, h) * 0.05;
             tCtx.beginPath(); tCtx.roundRect(-padW, -padW, w + padW*2, h + padW*2, rad + padW); tCtx.closePath();
-            tCtx.fillStyle = '#111'; tCtx.fill(); tCtx.shadowColor = 'transparent';
+            tCtx.fillStyle = layer.frameColor || '#111'; tCtx.fill(); tCtx.shadowColor = 'transparent';
             tCtx.drawImage(layer.img, 0, 0, w, h);
-            tCtx.strokeStyle = '#000'; tCtx.lineWidth = 2; tCtx.strokeRect(0, 0, w, h);
+            tCtx.strokeStyle = 'rgba(0,0,0,0.4)'; tCtx.lineWidth = 2; tCtx.strokeRect(0, 0, w, h);
 
         } else if (layer.frameStyle === 'macbook') {
             const padW = w * 0.02; const topBar = h * 0.05; const bottomLip = h * 0.12;
             tCtx.beginPath(); tCtx.roundRect(-padW, -padW - topBar, w + padW*2, h + padW*2 + topBar + bottomLip, [16,16,0,0]); tCtx.closePath();
-            tCtx.fillStyle = '#111'; tCtx.fill(); tCtx.shadowColor = 'transparent';
+            tCtx.fillStyle = layer.frameColor || '#111'; tCtx.fill(); tCtx.shadowColor = 'transparent';
             tCtx.fillStyle = '#9ca3af'; tCtx.beginPath(); tCtx.roundRect(-padW, h + padW, w + padW*2, bottomLip, [0,0,16,16]); tCtx.fill();
             tCtx.drawImage(layer.img, 0, 0, w, h);
 
@@ -1318,10 +1327,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(document.getElementById('glare-shadow-toggles')) document.getElementById('glare-shadow-toggles').style.display = 'flex';
                 if(frameSelect) {
                     frameSelect.value = layer.frameStyle;
-                    if(layer.frameStyle === 'clay' && frameColorContainer) frameColorContainer.style.display = 'block';
-                    else if(frameColorContainer) frameColorContainer.style.display = 'none';
+                    if(frameColorContainer) frameColorContainer.style.display = COLOURABLE_FRAMES.includes(layer.frameStyle) ? 'block' : 'none';
                 }
-                if(frameColorInput) frameColorInput.value = layer.frameColor || '#f8f9fa';
+                // Default the picker to the device's natural body colour when unset.
+                const defColour = layer.frameStyle === 'clay' ? '#f8f9fa' : '#0b0b0d';
+                if(frameColorInput) frameColorInput.value = layer.frameColor || defColour;
+                if(typeof syncColourSwatches === 'function') syncColourSwatches();
                 if(tiltYInput && tiltYInput.parentElement) tiltYInput.parentElement.style.display = 'flex';
                 if(tiltYInput) tiltYInput.value = layer.tiltY || 0;
                 if(tiltXInput && tiltXInput.parentElement) tiltXInput.parentElement.style.display = 'flex';
@@ -1365,10 +1376,31 @@ document.addEventListener('DOMContentLoaded', () => {
     bindLayerSync(frameSelect, 'frameStyle');
     if (frameSelect && frameColorContainer) {
         frameSelect.addEventListener('input', (e) => {
-            frameColorContainer.style.display = e.target.value === 'clay' ? 'block' : 'none';
+            frameColorContainer.style.display = COLOURABLE_FRAMES.includes(e.target.value) ? 'block' : 'none';
+            syncColourSwatches();
         });
     }
     bindLayerSync(frameColorInput, 'frameColor');
+    if (frameColorInput) frameColorInput.addEventListener('input', syncColourSwatches);
+
+    // Device-colour preset swatches → set the selected layer's frame colour.
+    function syncColourSwatches() {
+        const l = layers.find(x => x?.id === selectedLayerId);
+        const cur = (l && l.frameColor || frameColorInput.value || '').toLowerCase();
+        document.querySelectorAll('#frame-color-swatches .frame-swatch').forEach((b) => {
+            b.classList.toggle('active', (b.dataset.color || '').toLowerCase() === cur);
+        });
+    }
+    document.querySelectorAll('#frame-color-swatches .frame-swatch').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const c = btn.dataset.color;
+            const l = layers.find(x => x?.id === selectedLayerId);
+            if (l) { l.frameColor = c; }
+            if (frameColorInput) frameColorInput.value = c;
+            syncColourSwatches();
+            scheduleRender();
+        });
+    });
     bindLayerSync(rotateInput, 'rotation', true);
     bindLayerSync(tiltYInput, 'tiltY', true);
     bindLayerSync(tiltXInput, 'tiltX', true);
@@ -1484,11 +1516,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const prevSelected = selectedLayerId;
             selectedLayerId = null;
 
-            const formats = [
-                { name: "Apple_6.5_inch", w: 1284, h: 2778 },
-                { name: "Apple_5.5_inch", w: 1242, h: 2208 },
-                { name: "Google_Play", w: 1080, h: 1920 }
-            ];
+            // Pick the export set from the CURRENT canvas — a tall phone canvas gets
+            // the full App Store phone kit; anything else (square/landscape/tablet/
+            // social) exports at its own size so it isn't cropped into portrait.
+            const [pw, ph] = presetSelect.value.split('x').map(Number);
+            const formats = (ph / pw > 1.9)
+                ? [
+                    { name: "iPhone_6.9_inch", w: 1290, h: 2796 },
+                    { name: "iPhone_6.7_inch", w: 1284, h: 2778 },
+                    { name: "iPhone_6.5_inch", w: 1242, h: 2688 },
+                    { name: "iPhone_5.5_inch", w: 1242, h: 2208 }
+                  ]
+                : [{ name: "Mockup", w: pw, h: ph }];
 
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
