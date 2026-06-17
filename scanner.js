@@ -77,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     };
+    setupDropdown('add-text-btn', 'text-dropdown');
     setupDropdown('add-sticker-menu-btn', 'sticker-dropdown');
     setupDropdown('add-shape-menu-btn', 'shape-dropdown');
     setupDropdown('add-template-menu-btn', 'template-dropdown');
@@ -97,6 +98,62 @@ document.addEventListener('DOMContentLoaded', () => {
     let bgColor2 = '#4ECDC4';
     let bgImgObj = null;
     let bgBlur = 0;
+    let bgPresetIdx = -1;   // index into BG_PRESETS when bgType === 'preset'
+    let bgAngle = 135;      // linear-gradient angle (degrees)
+
+    // Curated premium backgrounds — rich multi-colour gradients & mesh blends that
+    // make a mockup look high-end with one tap.
+    const BG_PRESETS = [
+        { name: 'Indigo',    type: 'linear', angle: 135, colors: ['#6a11cb', '#2575fc'] },
+        { name: 'Sunset',    type: 'linear', angle: 135, colors: ['#ff6a00', '#ee0979'] },
+        { name: 'Coral',     type: 'linear', angle: 135, colors: ['#FF512F', '#DD2476'] },
+        { name: 'Mint',      type: 'linear', angle: 135, colors: ['#43e97b', '#38f9d7'] },
+        { name: 'Sky',       type: 'linear', angle: 135, colors: ['#56CCF2', '#2F80ED'] },
+        { name: 'Berry',     type: 'linear', angle: 135, colors: ['#8E2DE2', '#4A00E0'] },
+        { name: 'Gold',      type: 'linear', angle: 135, colors: ['#F2994A', '#F2C94C'] },
+        { name: 'Royal',     type: 'linear', angle: 135, colors: ['#141E30', '#243B55'] },
+        { name: 'Candy',     type: 'linear', angle: 135, colors: ['#fc466b', '#3f5efb'] },
+        { name: 'Dusk',      type: 'linear', angle: 135, colors: ['#0F2027', '#203A43', '#2C5364'] },
+        { name: 'Emerald',   type: 'mesh', colors: ['#022c22', '#10b981', '#34d399', '#064e3b'] },
+        { name: 'Aurora',    type: 'mesh', colors: ['#1a1a2e', '#e94560', '#0f3460', '#533483'] },
+        { name: 'Pastel',    type: 'mesh', colors: ['#fbc2eb', '#a6c1ee', '#f6d365', '#fda085'] },
+        { name: 'Vivid',     type: 'mesh', colors: ['#21d4fd', '#b721ff', '#2af598', '#fdfbfb'] },
+        { name: 'Dark Pro',  type: 'mesh', colors: ['#0b0b14', '#3a1c71', '#d76d77', '#1f2937'] },
+        { name: 'Soft',      type: 'mesh', colors: ['#ee9ca7', '#ffdde1', '#a18cd1', '#fbc2eb'] },
+        { name: 'Ocean',     type: 'mesh', colors: ['#0b486b', '#3b8686', '#79bd9a', '#a8dba8'] },
+        { name: 'Mono',      type: 'mesh', colors: ['#e0eafc', '#cfdef3', '#ffffff', '#f5f7fa'] }
+    ];
+    const MESH_POS = [[0.15, 0.2], [0.85, 0.15], [0.8, 0.85], [0.2, 0.9], [0.5, 0.45], [0.1, 0.6], [0.9, 0.55]];
+    function bgPresetCss(p) {
+        if (p.type === 'mesh') {
+            const layers = p.colors.map((c, i) => {
+                const [x, y] = MESH_POS[i % MESH_POS.length];
+                return `radial-gradient(circle at ${Math.round(x * 100)}% ${Math.round(y * 100)}%, ${c}, transparent 60%)`;
+            });
+            return layers.join(', ') + `, ${p.colors[0]}`;
+        }
+        return `linear-gradient(${p.angle || 135}deg, ${p.colors.join(', ')})`;
+    }
+    function drawPresetBg(tCtx, w, h, p, angle) {
+        if (p.type === 'mesh') {
+            tCtx.fillStyle = p.colors[0]; tCtx.fillRect(0, 0, w, h);
+            const R = Math.max(w, h);
+            p.colors.forEach((c, i) => {
+                const [px, py] = MESH_POS[i % MESH_POS.length];
+                const g = tCtx.createRadialGradient(w * px, h * py, 0, w * px, h * py, R * 0.55);
+                g.addColorStop(0, hexA(c, 0.95)); g.addColorStop(1, hexA(c, 0));
+                tCtx.fillStyle = g; tCtx.fillRect(0, 0, w, h);
+            });
+        } else {
+            const rad = (angle != null ? angle : (p.angle || 135)) * Math.PI / 180;
+            const cx = w / 2, cy = h / 2, dx = Math.cos(rad), dy = Math.sin(rad);
+            const half = (Math.abs(dx) * w + Math.abs(dy) * h) / 2;
+            const g = tCtx.createLinearGradient(cx - dx * half, cy - dy * half, cx + dx * half, cy + dy * half);
+            const n = p.colors.length;
+            p.colors.forEach((c, i) => g.addColorStop(n > 1 ? i / (n - 1) : 0, c));
+            tCtx.fillStyle = g; tCtx.fillRect(0, 0, w, h);
+        }
+    }
     let grainEnabled = false;
     let grainVal = 35;
 
@@ -171,6 +228,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (typeof prefs.grainVal === 'number') grainVal = prefs.grainVal;
                 if (prefs.preset) presetSelect.value = prefs.preset;
                 if (prefs.screens) screensSelect.value = prefs.screens;
+                if (typeof prefs.bgPresetIdx === 'number') bgPresetIdx = prefs.bgPresetIdx;
+                if (typeof prefs.bgAngle === 'number') bgAngle = prefs.bgAngle;
+                if (bgType === 'preset' && !BG_PRESETS[bgPresetIdx]) bgType = 'gradient'; // stale index guard
             }
         } catch(e) { console.error('Failed to load Mockup prefs', e); }
     }
@@ -184,7 +244,9 @@ document.addEventListener('DOMContentLoaded', () => {
             grain: grainEnabled,
             grainVal: grainVal,
             preset: presetSelect.value,
-            screens: screensSelect.value
+            screens: screensSelect.value,
+            bgPresetIdx: bgPresetIdx,
+            bgAngle: bgAngle
         };
         try { localStorage.setItem('riyo_mockup_prefs', JSON.stringify(prefs)); } catch (e) { /* quota — ignore */ }
     }
@@ -249,14 +311,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Layers API ---
-    function addTextLayer() {
-        layers.push({
-            id: generateId(), type: 'text', content: 'HEADING TITLE',
-            color: '#ffffff', fontFamily: 'Inter', fontWeight: '800', textAlign: 'center',
-            shadowColor: '#000000', shadowBlur: 0,
-            x: targetWidth / 2, y: 300, scale: 1, rotation: 0, fontSize: 120, width: 0, height: 120
-        });
-        selectedLayerId = layers[layers.length - 1].id;
+    function addTextLayer() { addTextPreset('headline'); }
+
+    // Is the current background light? (so headline text auto-contrasts)
+    function bgIsLight() {
+        let col = bgColor1;
+        if (bgType === 'preset' && BG_PRESETS[bgPresetIdx]) col = BG_PRESETS[bgPresetIdx].colors[0];
+        if (bgType === 'transparent') return true; // exported on white-ish surfaces
+        return hexLuminance(col) > 0.58;
+    }
+
+    // Pre-styled marketing text, auto-contrasted and positioned for App Store shots.
+    function addTextPreset(kind) {
+        const light = bgIsLight();
+        const ink = light ? '#0b0b0d' : '#ffffff';
+        const muted = light ? 'rgba(11,11,13,0.72)' : 'rgba(255,255,255,0.82)';
+        const base = {
+            id: generateId(), type: 'text', fontFamily: 'Inter', textAlign: 'center',
+            shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0,
+            x: targetWidth / 2, width: Math.min(1100, baseWidth * 0.9)
+        };
+        let layer;
+        if (kind === 'subtitle') {
+            layer = Object.assign(base, { content: 'Your supporting subtitle goes here', color: muted, fontWeight: '500', fontSize: 54, height: 180, y: 470 });
+        } else if (kind === 'label') {
+            layer = Object.assign(base, { content: 'NEW', color: light ? '#0e9f6e' : '#34d399', fontWeight: '700', fontSize: 40, height: 90, y: 180 });
+        } else {
+            layer = Object.assign(base, { content: 'Your headline here', color: ink, fontWeight: '800', fontSize: 110, height: 280, y: 300 });
+        }
+        layers.push(layer);
+        selectedLayerId = layer.id;
         updatePropsPanel();
         render();
     }
@@ -630,7 +714,10 @@ document.addEventListener('DOMContentLoaded', () => {
         render();
     }
 
-    document.getElementById('add-text-btn').addEventListener('click', addTextLayer);
+    document.querySelectorAll('.text-preset-btn').forEach(btn => btn.addEventListener('click', (e) => {
+        addTextPreset(e.target.dataset.text);
+        const dd = document.getElementById('text-dropdown'); if (dd) dd.style.display = 'none';
+    }));
     document.getElementById('add-device-btn').addEventListener('click', () => imageUpload.click());
 
     document.querySelectorAll('.sticker-btn').forEach(btn => btn.addEventListener('click', (e) => addStickerLayer(e.target.dataset.sticker)));
@@ -718,6 +805,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (bgColor2Input && /^#[0-9a-fA-F]{6}$/.test(bgColor2)) bgColor2Input.value = bgColor2;
         if (grainToggle) grainToggle.checked = grainEnabled;
         if (grainAmount) grainAmount.value = grainVal;
+        const bgAngleInput = document.getElementById('bg-angle-input');
+        if (bgAngleInput) bgAngleInput.value = bgAngle;
+        document.querySelectorAll('#bg-preset-gallery .bg-btn').forEach(b =>
+            b.classList.toggle('active', bgType === 'preset' && (+b.dataset.idx) === bgPresetIdx));
     }
     const ensureCustomBg = () => {
         if (!['gradient', 'radial', 'mesh', 'solid', 'color'].includes(bgType)) {
@@ -784,7 +875,9 @@ document.addEventListener('DOMContentLoaded', () => {
         tCtx.filter = 'none';
         
         // 1. Draw Background
-        if (bgType === 'gradient') {
+        if (bgType === 'preset' && BG_PRESETS[bgPresetIdx]) {
+            drawPresetBg(tCtx, w, h, BG_PRESETS[bgPresetIdx], bgAngle);
+        } else if (bgType === 'gradient') {
             const grad = tCtx.createLinearGradient(0, 0, w, h);
             grad.addColorStop(0, bgColor1);
             grad.addColorStop(1, bgColor2);
@@ -1515,9 +1608,35 @@ document.addEventListener('DOMContentLoaded', () => {
             if (bg === 'solid-dark') { bgType = 'solid'; bgColor1 = '#111'; }
             if (bg === 'solid-light') { bgType = 'solid'; bgColor1 = '#ffffff'; }
             if (bg === 'transparent') { bgType = 'transparent'; }
+            bgPresetIdx = -1; // leaving the premium gallery
             syncBgControls();
             render();
         });
+    });
+
+    // Premium background gallery — one-tap high-end gradients & mesh blends.
+    const bgGallery = document.getElementById('bg-preset-gallery');
+    const bgAngleInput = document.getElementById('bg-angle-input');
+    if (bgGallery) {
+        BG_PRESETS.forEach((p, idx) => {
+            const sw = document.createElement('div');
+            sw.className = 'bg-btn';
+            sw.dataset.idx = idx;
+            sw.title = p.name;
+            sw.style.cssText = `aspect-ratio:1; border-radius:50%; cursor:pointer; border:2px solid transparent; background:${bgPresetCss(p)};`;
+            sw.addEventListener('click', () => {
+                bgType = 'preset'; bgPresetIdx = idx; bgAngle = (p.angle != null ? p.angle : 135);
+                document.querySelectorAll('.bg-btn').forEach(b => b.classList.remove('active'));
+                sw.classList.add('active');
+                if (bgAngleInput) bgAngleInput.value = bgAngle;
+                render();
+            });
+            bgGallery.appendChild(sw);
+        });
+    }
+    if (bgAngleInput) bgAngleInput.addEventListener('input', (e) => {
+        bgAngle = parseInt(e.target.value) || 0;
+        if (bgType === 'preset') scheduleRender();
     });
 
     // --- Bulk Export Kit ---
