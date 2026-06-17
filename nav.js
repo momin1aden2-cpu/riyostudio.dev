@@ -132,6 +132,18 @@
 
     wire(drawer, overlay);
     prefetch(document);
+    scrollToHashOnLoad();
+  }
+
+  // When a page is opened with a #section hash (e.g. arriving at /#about from
+  // another page), scroll to it allowing for the fixed nav bar.
+  function scrollToHashOnLoad() {
+    if (!location.hash || location.hash.length < 2) return;
+    var t = document.getElementById(location.hash.slice(1));
+    if (!t) return;
+    setTimeout(function () {
+      window.scrollTo({ top: t.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop) - 72, behavior: 'smooth' });
+    }, 400);
   }
 
   function buildBottomBar(page) {
@@ -211,17 +223,22 @@
       a.addEventListener('click', function (e) {
         var href = a.getAttribute('href') || '';
         var hi = href.indexOf('#');
-        var target = (hi !== -1 && href.length > hi + 1) ? document.getElementById(href.slice(hi + 1)) : null;
+        if (hi === -1) { close(); return; } // plain page link → let it navigate
+        var id = href.slice(hi + 1);
+        var target = id ? document.getElementById(id) : null;
+        e.preventDefault();
+        close();
         if (target) {
-          e.preventDefault();
-          close();
+          // Section is on THIS page — smooth-scroll once the drawer unlocks scroll.
           setTimeout(function () {
             var y = target.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop) - 72;
             window.scrollTo({ top: y, behavior: 'smooth' });
-            if (history.replaceState) history.replaceState(null, '', href.slice(hi));
-          }, 280);
+            try { history.replaceState(null, '', href.slice(hi)); } catch (err) {}
+          }, 300);
         } else {
-          close();
+          // Section is on another page — navigate explicitly. Installed PWAs don't
+          // reliably follow the default <a> action when JS handled the tap.
+          setTimeout(function () { window.location.href = href; }, 60);
         }
       });
     });
