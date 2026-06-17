@@ -394,9 +394,30 @@ document.addEventListener('DOMContentLoaded', () => {
         const phMac = new Image(); phMac.onload = render; phMac.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><rect width="1200" height="800" fill="%23222"/><text x="600" y="400" font-family="Arial" font-size="40" fill="%23555" text-anchor="middle">MacBook Screen</text></svg>';
 
         // ==========================================
+        // PREMIUM HERO TEMPLATES — premium bg + coloured 3D device + headline
+        // ==========================================
+        const buildHero = (presetIdx, angle, frame, frameColor, persY, head, sub) => {
+            presetSelect.value = '1290x2796'; screensSelect.value = '1'; updateCanvasSize();
+            bgType = 'preset'; bgPresetIdx = presetIdx; bgAngle = angle;
+            const light = hexLuminance(BG_PRESETS[presetIdx].colors[0]) > 0.58;
+            const ink = light ? '#0b0b0d' : '#ffffff';
+            const muted = light ? 'rgba(11,11,13,0.72)' : 'rgba(255,255,255,0.82)';
+            const cx = baseWidth / 2;
+            layers.push({ id: generateId(), type: 'text', content: head, color: ink, fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 104, width: 1140, height: 280, x: cx, y: 330 });
+            layers.push({ id: generateId(), type: 'text', content: sub, color: muted, fontFamily: 'Inter', fontWeight: '500', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 50, width: 1080, height: 160, x: cx, y: 520 });
+            layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: frame, frameColor: frameColor, scale: 0.82, width: 1080, height: 2340, rotation: 0, persY: persY, persX: 0, shadowBlur: 130, shadowOp: 45, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true, x: cx, y: 1760 });
+        };
+        if (type === 'pro-light')        buildHero(17, 135, 'iphone', '#0b0b0d', 0,   'Designed to impress',     'Your tagline goes right here');
+        else if (type === 'pro-indigo')  buildHero(0, 135,  'iphone', '#ece9e2', 14,  'Built for speed',         "Everything you need, nothing you don't");
+        else if (type === 'pro-aurora')  buildHero(11, 135, 'iphone', '#0b0b0d', -16, 'Meet the future',         'Beautifully simple, seriously powerful');
+        else if (type === 'pro-emerald') buildHero(10, 135, 'iphone', '#0b0b0d', 0,   'Private by design',       'Your data never leaves your device');
+        else if (type === 'pro-sunset')  buildHero(1, 135,  'iphone', '#0b0b0d', 12,  'Go further',              'The app that keeps up with you');
+        else if (type === 'pro-dark')    buildHero(14, 135, 'iphone', '#d6d7da', -10, 'Pro tools, zero clutter', 'Crafted for people who ship');
+
+        // ==========================================
         // APPLE APP STORE — Premium Set (1242x2688)
         // ==========================================
-        if (type === 'apple-minimal') {
+        else if (type === 'apple-minimal') {
             presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
             bgType = 'color'; bgColor1 = '#f5f5f7';
             const tOpt = { type: 'text', color: '#1d1d1f', fontFamily: 'Inter', fontWeight: '600', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 78, width: 1050, height: 240, y: 360 };
@@ -739,14 +760,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    let replaceTargetId = null;
+    document.getElementById('replace-screenshot-btn').addEventListener('click', () => {
+        replaceTargetId = selectedLayerId;
+        imageUpload.click();
+    });
+
     imageUpload.addEventListener('change', (e) => {
         const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
-        if (files.length === 0) return;
+        const target = replaceTargetId ? layers.find(l => l.id === replaceTargetId && l.type === 'image') : null;
+        replaceTargetId = null;
+        if (files.length === 0) { e.target.value = ''; return; }
 
         files.forEach((file, index) => {
             const url = URL.createObjectURL(file);
             const img = new Image();
-            img.onload = () => { addImageLayer(img, index); URL.revokeObjectURL(url); };
+            img.onload = () => {
+                if (index === 0 && target) {
+                    target.img = img;
+                    target.width = img.naturalWidth || img.width;
+                    target.height = img.naturalHeight || img.height;
+                    selectedLayerId = target.id;
+                    updatePropsPanel();
+                    render();
+                } else {
+                    addImageLayer(img, index);
+                }
+                URL.revokeObjectURL(url);
+            };
             img.onerror = () => {
                 URL.revokeObjectURL(url);
                 if (window.showToast) showToast("Couldn't load that image — if it's an iPhone HEIC, save/export it as JPG or PNG first.", 'error');
