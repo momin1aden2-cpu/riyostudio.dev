@@ -712,6 +712,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function resetToDropzone() {
+    // Stop an in-progress mic recording first, or its stream (and the OS mic
+    // indicator) stays live after the project is torn down.
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') { try { mediaRecorder.stop(); } catch (e) { /* ignore */ } }
     activeId = null; dropGlobal = 0;
     t2.length = 0; sources = t1; sources.length = 0;
     editingTrack = 1; activeIdT = { 1: null, 2: null };
@@ -799,7 +802,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   function exitClipTools() {
     setRailMode('global');
-    setMode('home');
+    setMode('add'); // return to the Media tab (a real, visible default — 'home' shows no panel)
   }
 
   function updateBanner() {
@@ -987,6 +990,8 @@ document.addEventListener('DOMContentLoaded', () => {
       s.url = URL.createObjectURL(blob);
       s.thumb = s.url; s.w = cv.width; s.h = cv.height;
       if (imgEl && imgEl.getAttribute('src') === old) imgEl.src = s.url;
+      // Free the previous blob URL unless a split sibling still shares it.
+      if (old && !sources.some((o) => o !== s && o.url === old)) { try { URL.revokeObjectURL(old); } catch (e) { /* ignore */ } }
       renderAll();
     } catch (e) { console.warn('[VideoStudio] image transform failed', e); }
   }
@@ -1141,6 +1146,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function splitActive() {
     const s = activeSource();
     if (!s) return;
+    if (isImage(s)) { flashHint('Splitting works on video clips. For an image, set how long it shows in the Trim tab.'); return; }
     const t = clampWin(s, video.currentTime);
     if (t <= inOf(s) + 0.2 || t >= outOf(s) - 0.2) {
       flashHint('Drag the <b>🎬 whole-video bar</b> so the amber <b style="color:#FBBF24;">⬇</b> marker is inside a clip, then tap <b>✂️ Split</b>.');
@@ -1360,7 +1366,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!text) { flashHint('Type what the voice should say first.'); return; }
     const key = (aiKeyInput && aiKeyInput.value || '').trim();
     if (!key) { flashHint('Enter your ElevenLabs API key.'); if (aiKeyInput) aiKeyInput.focus(); return; }
-    localStorage.setItem('elevenlabs_api_key', key);
     const voiceId = aiVoiceSel ? aiVoiceSel.value : 'pNInz6obpgDQGcFmaJgB';
     const orig = aiGenBtn ? aiGenBtn.textContent : '';
     if (aiGenBtn) { aiGenBtn.disabled = true; aiGenBtn.textContent = 'Generating…'; }
@@ -1376,6 +1381,7 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(typeof detail === 'string' ? detail : 'request failed');
       }
       const blob = await res.blob();
+      localStorage.setItem('elevenlabs_api_key', key); // only persist a key that actually worked
       await addAudio('ai', blob, 'AI voiceover', dropGlobal || 0);
       if (aiForm) aiForm.style.display = 'none';
       if (aiText) aiText.value = '';
@@ -1445,8 +1451,9 @@ document.addEventListener('DOMContentLoaded', () => {
       acc += outLen;
     }
     try { dec.close(); } catch (e) { /* ignore */ }
-    if (!any) return null;
+    if (!any) { try { offline.close && offline.close(); } catch (e) { /* ignore */ } return null; }
     const rendered = await offline.startRendering();
+    try { offline.close && offline.close(); } catch (e) { /* ignore */ } // Chromium counts it against the ~6-context cap until closed
     return rendered.getChannelData(0);
   }
 
@@ -2303,6 +2310,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const msg = 'Engine worker failed to load' + (e && e.message ? (': ' + e.message) : '');
         if (!loaded) reject(new Error(msg));
         Object.keys(pending).forEach((k) => { pending[k].reject(new Error(msg)); delete pending[k]; });
+        // A dead worker must not stay cached, or every later export reuses the
+        // corpse and hangs/fails until a full page reload. Drop it so the next
+        // export builds a fresh one.
+        ffmpegInstance = null;
+        try { worker.terminate(); } catch (err) { /* ignore */ }
       };
       const send = (type, payload, transfer) => new Promise((res, rej) => {
         const id = nextId++;
@@ -2337,8 +2349,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function status(msg) { if (statusEl) statusEl.textContent = msg; if (exporting && banner) banner.textContent = msg; showDownload(); if (!exporting) hideDownloadSoon(4500); }
 
   function triggerDownload(blob, name) {
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = name;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    // Release the URL (and the full video blob it pins) once the download has kicked off.
+    setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) { /* ignore */ } }, 60000);
   }
 
   // Hand the finished video to the user — save it, or open the native share sheet
