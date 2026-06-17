@@ -480,6 +480,70 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // ── Shapes & Containers ──────────────────────────────────────────
+  function themeFill() {
+    return (currentTheme === 'light' || currentTheme === 'holographic') ? '#111111' : '#ffffff';
+  }
+  function regularPolygon(n, R, extra) {
+    const pts = [];
+    for (let i = 0; i < n; i++) { const a = Math.PI / 180 * (360 / n * i - 90); pts.push({ x: R * Math.cos(a), y: R * Math.sin(a) }); }
+    return new fabric.Polygon(pts, Object.assign({ fill: themeFill() }, extra || {}));
+  }
+  function starPolygon(spikes, R, r, extra) {
+    const pts = [];
+    for (let i = 0; i < spikes * 2; i++) { const rad = i % 2 ? r : R; const a = Math.PI / spikes * i - Math.PI / 2; pts.push({ x: rad * Math.cos(a), y: rad * Math.sin(a) }); }
+    return new fabric.Polygon(pts, Object.assign({ fill: themeFill() }, extra || {}));
+  }
+  function pathShape(d, extra) {
+    const p = new fabric.Path(d, Object.assign({ fill: themeFill() }, extra || {}));
+    const s = 320 / Math.max(p.width || 320, p.height || 320);
+    p.set({ scaleX: s, scaleY: s });
+    return p;
+  }
+  const SHIELD_D = 'M50 2 L96 20 V52 C96 84 76 108 50 120 C24 108 4 84 4 52 V20 Z';
+  const BANNER_D = 'M8 14 H192 L168 44 L192 74 H8 L32 44 Z';
+  const ARROW_D = 'M2 34 H74 V12 L118 52 L74 92 V70 H2 Z';
+  const SHAPES = [
+    { g: '▭', t: 'Rounded box', build: () => new fabric.Rect({ width: 420, height: 280, rx: 28, ry: 28, fill: themeFill() }) },
+    { g: '●', t: 'Circle', build: () => new fabric.Circle({ radius: 175, fill: themeFill() }) },
+    { g: '▲', t: 'Triangle', build: () => new fabric.Triangle({ width: 360, height: 320, fill: themeFill() }) },
+    { g: '◆', t: 'Diamond', build: () => regularPolygon(4, 180) },
+    { g: '⬟', t: 'Pentagon', build: () => regularPolygon(5, 180) },
+    { g: '⬡', t: 'Hexagon', build: () => regularPolygon(6, 180) },
+    { g: '★', t: 'Star', build: () => starPolygon(5, 185, 80) },
+    { g: '✺', t: 'Burst seal', build: () => starPolygon(16, 190, 152) },
+    { g: '➤', t: 'Arrow', build: () => pathShape(ARROW_D) },
+    { g: '▬', t: 'Divider line', build: () => new fabric.Rect({ width: 380, height: 12, rx: 6, ry: 6, fill: themeFill() }) },
+    { g: '◯', t: 'Ring badge (frame)', build: () => new fabric.Circle({ radius: 185, fill: 'transparent', stroke: themeFill(), strokeWidth: 12 }) },
+    { g: '▢', t: 'Square frame', build: () => new fabric.Rect({ width: 380, height: 380, rx: 30, ry: 30, fill: 'transparent', stroke: themeFill(), strokeWidth: 12 }) },
+    { g: '⬢', t: 'Hex frame', build: () => regularPolygon(6, 185, { fill: 'transparent', stroke: themeFill(), strokeWidth: 12 }) },
+    { g: '🛡', t: 'Shield', build: () => pathShape(SHIELD_D) },
+    { g: '🎀', t: 'Banner ribbon', build: () => pathShape(BANNER_D) }
+  ];
+  function addShapeObj(obj) {
+    obj.set({
+      left: canvas.width / 2, top: canvas.height / 2, originX: 'center', originY: 'center',
+      shadow: currentTheme === 'cyber' ? new fabric.Shadow({ color: '#10B981', blur: 30 }) : null
+    });
+    canvas.add(obj);
+    canvas.setActiveObject(obj);
+    canvas.requestRenderAll();
+    saveHistory();
+  }
+  (function buildShapesPanel() {
+    const grid = document.getElementById('shapes-grid');
+    if (!grid) return;
+    SHAPES.forEach((sh) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.title = sh.t;
+      b.textContent = sh.g;
+      b.style.cssText = 'padding:10px 0;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text-main);cursor:pointer;font-size:1.2rem;line-height:1;';
+      b.addEventListener('click', () => addShapeObj(sh.build()));
+      grid.appendChild(b);
+    });
+  })();
+
   function deleteSelected() {
     const activeObjects = canvas.getActiveObjects();
     if (activeObjects.length) {
