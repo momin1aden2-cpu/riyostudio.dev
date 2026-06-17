@@ -136,7 +136,14 @@ document.addEventListener('DOMContentLoaded', () => {
       appUrl: appUrl.value,
       logo: uploadedLogo
     };
-    localStorage.setItem('riyo_qr_prefs', JSON.stringify(prefs));
+    try {
+      localStorage.setItem('riyo_qr_prefs', JSON.stringify(prefs));
+    } catch (e) {
+      // A large embedded-logo dataURL can blow the ~5MB quota — and savePrefs runs
+      // on every keystroke, so an unguarded throw would freeze live updates. Retry
+      // without the logo so the rest of the prefs still persist.
+      try { delete prefs.logo; localStorage.setItem('riyo_qr_prefs', JSON.stringify(prefs)); } catch (e2) { /* ignore */ }
+    }
   }
 
   loadPrefs();
@@ -243,25 +250,38 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function buildEmail() {
+    // mailto: is what modern phone cameras actually open; MATMSG is a dead legacy format.
     const to = emTo.value.trim();
-    const sub = encodeURIComponent(emSub.value.trim());
-    const body = encodeURIComponent(emBody.value.trim());
-    return `MATMSG:TO:${to};SUB:${sub};BODY:${body};;`;
+    const params = [];
+    if (emSub.value.trim()) params.push('subject=' + encodeURIComponent(emSub.value.trim()));
+    if (emBody.value.trim()) params.push('body=' + encodeURIComponent(emBody.value.trim()));
+    return 'mailto:' + to + (params.length ? '?' + params.join('&') : '');
   }
 
   function buildSMS() {
+    // smsto:NUMBER:BODY — body is raw text (don't URL-encode), and omit the
+    // separator entirely when there's no message so clients don't choke.
     const to = smsTo.value.trim();
-    const body = encodeURIComponent(smsBody.value.trim());
-    return `smsto:${to}:${body}`;
+    const body = smsBody.value.trim();
+    return body ? `smsto:${to}:${body}` : `smsto:${to}`;
   }
 
   function buildCrypto() {
     const type = cryptoType.value;
     const addr = cryptoAddr.value.trim();
     const amt = cryptoAmount.value.trim();
-    let uri = `${type}:${addr}`;
-    if (amt) uri += `?amount=${amt}`;
-    return uri;
+    if (!amt) return `${type}:${addr}`;
+    if (type === 'ethereum') {
+      // EIP-681: ETH amount lives in `value`, denominated in wei.
+      const [whole, frac = ''] = amt.split('.');
+      const fracPadded = (frac + '0'.repeat(18)).slice(0, 18);
+      try {
+        const wei = (BigInt(whole || '0') * (10n ** 18n) + BigInt(fracPadded || '0')).toString();
+        return `ethereum:${addr}?value=${wei}`;
+      } catch (e) { return `ethereum:${addr}`; }
+    }
+    // BIP-21 family (bitcoin/litecoin/…): amount in the main unit.
+    return `${type}:${addr}?amount=${encodeURIComponent(amt)}`;
   }
 
   function buildWhatsApp() {
@@ -336,6 +356,9 @@ document.addEventListener('DOMContentLoaded', () => {
     qrCode.update({
       data: dataPayload,
       image: finalLogo,
+      // A logo punches a hole in the code — raise error correction to H (30%) so it
+      // still scans; plain codes use Q for a tighter, denser result.
+      qrOptions: { errorCorrectionLevel: finalLogo ? 'H' : 'Q' },
       dotsOptions: Object.assign({ type: styleDots.value }, fill),
       backgroundOptions: {
         color: colorBg.value
@@ -370,6 +393,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!file) {
       uploadedLogo = null;
       updateQR();
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      alert('Please choose an image file (PNG, JPG, or SVG) for the logo.');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 1024 * 1024) {
+      alert('That logo is over 1 MB — please use a smaller image so the code stays sharp and scannable.');
+      e.target.value = '';
       return;
     }
 
