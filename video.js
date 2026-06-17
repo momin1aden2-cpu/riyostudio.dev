@@ -676,9 +676,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (removed && !sources.some((s) => s.url === removed.url)) { try { URL.revokeObjectURL(removed.url); } catch (e) { /* ignore */ } }
     if (!sources.length) {
       if (editingTrack === 1 && !t2.length) { resetToDropzone(); return; }
+      if (editingTrack === 2) pipLayout = 'off'; // no Video 2 left to composite — drop the merge layout
       activeId = null; dropGlobal = 0;
       video.pause(); video.removeAttribute('src'); video.load();
       renderAll(); refreshTrackSwitch();
+      if (typeof refreshOverlayButtons === 'function') refreshOverlayButtons();
       return;
     }
     selectClip(sources[Math.min(idx, sources.length - 1)].id);
@@ -1218,6 +1220,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (replace) {
       cutRange(gs, ge);
       if (!sources.length) { resetToDropzone(); return; }
+      if (!activeSource()) activeId = sources[0].id; // the removed span may have held the active clip
       insertAtGlobal(gs); // opens the picker; addFiles drops the new clip into the gap
       setMode('add');
       return;
@@ -2451,13 +2454,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (exportHeartbeat) clearInterval(exportHeartbeat);
     exportHeartbeat = setInterval(() => { if (!exporting) return; status(`${exportPhase}… ${fmtTime((performance.now() - exportStart) / 1000)}`); }, 500);
 
+    let com = null;
     try {
       const qual = QUALITY[qualitySel.value] || QUALITY.sd;
       const { W, H } = computeWH(outAspect, qual.base);
       const bitrate = qual.base >= 1080 ? 8e6 : (qual.base >= 720 ? 5e6 : 2.5e6);
       const lookCss = (FILTERS[vfilter] && FILTERS[vfilter].css !== 'none') ? FILTERS[vfilter].css : '';
       const flipH = outFlipH, flipV = outFlipV;
-      const com = new Combinator({ width: W, height: H, bitrate, bgColor: (outFill === 'color') ? bgColor : '#000' });
+      com = new Combinator({ width: W, height: H, bitrate, bgColor: (outFill === 'color') ? bgColor : '#000' });
 
       if (texts.length || captions.length) await ensureVSFonts();
 
@@ -2736,12 +2740,14 @@ document.addEventListener('DOMContentLoaded', () => {
       updateProgress(1);
       if (exportHeartbeat) { clearInterval(exportHeartbeat); exportHeartbeat = null; }
       await deliverOutput(blob, 'riyo-video.mp4', `Done! Saved to your downloads. (⚡ ${fmtTime((performance.now() - exportStart) / 1000)})`);
+      try { com && com.destroy && com.destroy(); } catch (e) { /* free WebCodecs decoders */ }
       exportBtn.disabled = false; exporting = false;
       hideDownloadSoon(2600);
       setTimeout(updateBanner, 2600);
       return true;
     } catch (e) {
       console.warn('[VideoStudio] fast (WebAV) export failed — using the standard engine:', e);
+      try { com && com.destroy && com.destroy(); } catch (err) { /* free WebCodecs decoders */ }
       if (exportHeartbeat) { clearInterval(exportHeartbeat); exportHeartbeat = null; }
       exporting = false; exportBtn.disabled = false;
       return false;
@@ -3092,8 +3098,9 @@ document.addEventListener('DOMContentLoaded', () => {
         graphStr += `;[ca]anullsink;${vOut}fps=12,scale=${gifW}:-2:flags=lanczos,split[gpa][gpb];[gpb]palettegen=stats_mode=diff[pal];[gpa][pal]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle[gifo]`;
         args.push('-filter_complex', graphStr, '-map', '[gifo]', '-loop', '0', outName);
       } else {
-        // When merging, "Sound from Video 2" silences Video 1's own audio.
-        const caLbl = (pipOn && mergeAudio === 'v2') ? '[cav1m]' : '[ca]';
+        // When merging, "Sound from Video 2" silences Video 1's own audio — but
+        // only if Video 2 actually HAS audio, otherwise the whole export goes silent.
+        const caLbl = (pipOn && mergeAudio === 'v2' && t2HasAudio) ? '[cav1m]' : '[ca]';
         if (caLbl !== '[ca]') graphStr += ';[ca]volume=0[cav1m]';
         let aOut = caLbl;
         // Mix voiceover / music tracks over the video's own audio.
