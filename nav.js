@@ -142,8 +142,19 @@
     var t = document.getElementById(location.hash.slice(1));
     if (!t) return;
     setTimeout(function () {
+      forceShow(t);
       window.scrollTo({ top: t.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop) - 72, behavior: 'smooth' });
     }, 400);
+  }
+
+  // The installed PWA collapses the home page into a tools-only dashboard,
+  // hiding marketing sections (About, etc.) with display:none. When one of
+  // those is the navigation target, reveal it so there's something to scroll
+  // to. Inline !important overrides the stylesheet's !important.
+  function forceShow(el) {
+    if (el && getComputedStyle(el).display === 'none') {
+      el.style.setProperty('display', 'block', 'important');
+    }
   }
 
   function buildBottomBar(page) {
@@ -231,6 +242,7 @@
         if (target) {
           // Section is on THIS page — smooth-scroll once the drawer unlocks scroll.
           setTimeout(function () {
+            forceShow(target);
             var y = target.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop) - 72;
             window.scrollTo({ top: y, behavior: 'smooth' });
             try { history.replaceState(null, '', href.slice(hi)); } catch (err) {}
