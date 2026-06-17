@@ -203,9 +203,27 @@
     if (closeBtn) closeBtn.addEventListener('click', close);
     overlay.addEventListener('click', close);
 
-    // Close after picking a destination (same-page hash links too)
+    // Close after picking a destination. For a link to a section ON THIS page
+    // (e.g. /#about while already on the home page), the open drawer's scroll
+    // lock swallows the jump — so close first, then scroll once unlocked. This
+    // is why About did nothing in the installed PWA but worked on desktop.
     drawer.querySelectorAll('.drawer-link, .drawer-cta, .drawer-brand').forEach(function (a) {
-      a.addEventListener('click', function () { close(); });
+      a.addEventListener('click', function (e) {
+        var href = a.getAttribute('href') || '';
+        var hi = href.indexOf('#');
+        var target = (hi !== -1 && href.length > hi + 1) ? document.getElementById(href.slice(hi + 1)) : null;
+        if (target) {
+          e.preventDefault();
+          close();
+          setTimeout(function () {
+            var y = target.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop) - 72;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+            if (history.replaceState) history.replaceState(null, '', href.slice(hi));
+          }, 280);
+        } else {
+          close();
+        }
+      });
     });
 
     // Swipe-left to dismiss

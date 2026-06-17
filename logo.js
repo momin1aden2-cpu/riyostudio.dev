@@ -1949,10 +1949,18 @@ if (previewMockupBtn && mockupModal && closeMockupBtn) {
         zip.file(`svg/${v.key}.svg`, tc.toSVG());
         tc.dispose();
       }
-      for (const px of [16, 32, 48, 180, 512, 1024]) {
-        const tc = await buildVariation('icon', true);
-        zip.file(`app-icons/icon-${px}.png`, tc.toDataURL({ format: 'png', multiplier: px / 1024 }).split(',')[1], { base64: true });
-        tc.dispose();
+      // Proper web favicon set (real .ico + correctly-named files + snippet).
+      const full = exportLogoTransparent();
+      const favIcon = exportIconImage() || (full && full.url);
+      if (favIcon) {
+        const fbg = (typeof bgRect.fill === 'string' && bgRect.fill.charAt(0) === '#') ? bgRect.fill : '#0b1220';
+        const fp = {};
+        for (const s of [16, 32, 48, 180, 192, 512]) fp[s] = dataURLToBytes(await buildFaviconPng(s, favIcon, fbg));
+        zip.file('favicon/favicon.ico', pngToIco([{ size: 16, bytes: fp[16] }, { size: 32, bytes: fp[32] }, { size: 48, bytes: fp[48] }]));
+        zip.file('favicon/favicon-16x16.png', fp[16]); zip.file('favicon/favicon-32x32.png', fp[32]); zip.file('favicon/favicon-48x48.png', fp[48]);
+        zip.file('favicon/apple-touch-icon.png', fp[180]);
+        zip.file('favicon/android-chrome-192x192.png', fp[192]); zip.file('favicon/android-chrome-512x512.png', fp[512]);
+        zip.file('favicon/README.txt', FAVICON_README);
       }
       const blob = await zip.generateAsync({ type: 'blob' });
       // iOS: the build consumed the tap's activation, so a direct share would be
@@ -2471,6 +2479,30 @@ if (previewMockupBtn && mockupModal && closeMockupBtn) {
     const vcard = cardVcardStr || buildVCard(readCardFields(), cardCtx.brandName);
     await saveFile(new Blob([vcard], { type: 'text/vcard;charset=utf-8' }), 'contact.vcf', 'text/vcard');
   });
+
+  // ── Favicon pack: browser-tab icons (.ico + PNG sizes + snippet) ──
+  function dataURLToBytes(d) { const b = atob(d.split(',')[1]); const a = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
+  // Pack PNGs into a real multi-size .ico (browsers accept PNG-encoded icons).
+  function pngToIco(items) {
+    const count = items.length; const head = new Uint8Array(6 + 16 * count); const dv = new DataView(head.buffer);
+    dv.setUint16(0, 0, true); dv.setUint16(2, 1, true); dv.setUint16(4, count, true);
+    let offset = 6 + 16 * count;
+    items.forEach((it, i) => { const e = 6 + i * 16; head[e] = it.size >= 256 ? 0 : it.size; head[e + 1] = it.size >= 256 ? 0 : it.size; head[e + 2] = 0; head[e + 3] = 0; dv.setUint16(e + 4, 1, true); dv.setUint16(e + 6, 32, true); dv.setUint32(e + 8, it.bytes.length, true); dv.setUint32(e + 12, offset, true); offset += it.bytes.length; });
+    const out = new Uint8Array(offset); out.set(head, 0); let o = 6 + 16 * count; items.forEach((it) => { out.set(it.bytes, o); o += it.bytes.length; });
+    return out;
+  }
+  function buildFaviconPng(size, iconUrl, bg) {
+    return new Promise((resolve) => {
+      const el = document.createElement('canvas'); el.width = size; el.height = size;
+      const sc = new fabric.StaticCanvas(el, { width: size, height: size, enableRetinaScaling: false, renderOnAddRemove: false });
+      if (bg && bg !== 'transparent') sc.backgroundColor = bg;
+      const finish = () => { sc.renderAll(); const u = sc.toDataURL({ format: 'png', multiplier: 1 }); sc.dispose(); resolve(u); };
+      if (iconUrl) { fabric.Image.fromURL(iconUrl, (img) => { const s = (size * 0.74) / Math.max(img.width || 1, img.height || 1); img.set({ originX: 'center', originY: 'center', left: size / 2, top: size / 2, scaleX: s, scaleY: s }); sc.add(img); finish(); }); }
+      else finish();
+    });
+  }
+  const FAVICON_README = ['Riyo Studio — Favicon pack', '', 'Upload these files to your website root, then add this to your page <head>:', '', '<link rel="icon" href="/favicon.ico" sizes="any">', '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">', '<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">', '<link rel="apple-touch-icon" href="/apple-touch-icon.png">', '', 'android-chrome-192x192.png and android-chrome-512x512.png are for Android / PWA home-screen icons.'].join('\r\n');
+  // (The favicon set is folded into the "Download All" ZIP above — no separate button.)
 
   // ── Templates: ready-made logos to start from ────────────────────
   function tplInitials(name) { return (String(name || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase()) || 'R'; }
