@@ -11,6 +11,32 @@
 html {
   scroll-behavior: smooth;
   overflow-x: clip;
+  background-color: #060B14;
+}
+
+/* Smooth, calm cross-page navigation. Chromium (desktop + Android PWA) and
+   iOS Safari 18.2+ render a native crossfade between documents instead of the
+   abrupt white swap; everywhere else this is simply ignored and pages appear
+   instantly on the dark background (no flash, since html is dark). */
+@view-transition {
+  navigation: auto;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.22s;
+}
+
+/* Where the browser crossfades documents itself, the per-page body fade-in is
+   redundant and would double up (a sluggish second fade on heavy pages). Drop
+   it there; keep it as the gentle entry on browsers without view transitions. */
+@supports (view-transition-name: none) {
+  body { animation: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+  html { scroll-behavior: auto; }
+  body { animation: none !important; }
 }
 
 /* Custom Scrollbar */
