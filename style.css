@@ -2836,7 +2836,36 @@ html.supernova body {
     zoom: 0.7 !important;
     margin: 0 auto !important;
     transform: none !important;
+    min-height: unset !important;
+    padding: 0.75rem !important;
   }
+
+  /* QR: cap the pinned preview to ~half the screen (its own scroll if a small
+     phone can't fit every control) and push the form below it, so there's real
+     room to fill the form while the QR + export options stay visible up top. */
+  .qr-container {
+    padding-top: 49vh !important;
+    margin-top: 0 !important;
+  }
+  .qr-container > div:nth-child(2) {
+    max-height: 48vh !important;
+    overflow-y: auto !important;
+    padding: 10px 16px !important;
+  }
+  .qr-container > div:nth-child(2) > h3 { display: none !important; } /* "Live Canvas" heading */
+  /* Reclaim space: the page title/subtitle aren't needed above the form on mobile */
+  .qr-container .tool-header-title,
+  .qr-container .tool-header-subtitle { display: none !important; }
+  .qr-export-opts {
+    margin: 6px 0 4px !important;
+    gap: 6px 14px !important;
+    font-size: 0.72rem !important;
+  }
+  .qr-export-opts select { padding: 4px 6px !important; font-size: 0.72rem !important; }
+  #btn-verify { padding: 0.4rem 0.8rem !important; font-size: 0.78rem !important; }
+  #verify-result { margin-top: 0.4rem !important; font-size: 0.72rem !important; min-height: 0 !important; }
+  /* Hide the privacy/trust tagline on mobile to give the form more room (it stays on desktop). */
+  .qr-container > div:nth-child(2) > p:last-child { display: none !important; }
 }
 
 /* --- PWA Standalone Mode Fixes --- */
