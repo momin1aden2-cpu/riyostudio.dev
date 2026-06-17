@@ -236,6 +236,15 @@
             </div>
           </div>
           
+          <div class="dropdown" style="position: relative; display: inline-block;">
+            <button id="project-menu-btn" class="cyber-button" style="padding: 8px 16px; font-size: 0.9rem;">💾 Project ▾</button>
+            <div id="project-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: #111; border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 8px; z-index: 100; min-width: 180px; flex-direction: column; gap: 4px; margin-top: 4px;">
+              <button id="save-project-btn" class="cyber-button" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">⬇ Save Project (.json)</button>
+              <button id="open-project-btn" class="cyber-button" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">📂 Open Project…</button>
+            </div>
+          </div>
+          <input type="file" id="project-upload-input" accept="application/json,.json" style="display: none;">
+
           <input type="file" id="image-upload-input" accept="image/*" multiple style="display: none;">
           <button id="add-device-btn" class="cyber-button" style="padding: 8px 16px; font-size: 0.9rem;">+ Screenshot</button>
           
@@ -627,6 +636,6 @@
   <script src="bg.js?v=9185d9aa"></script>
   <script src="nav.js?v=25f778f4"></script>
   <script defer src="script.js?v=67c2f523"></script>
-  <script src="scanner.js?v=1a127c39"></script>
+  <script src="scanner.js?v=d7ad270d"></script>
 </body>
 </html>

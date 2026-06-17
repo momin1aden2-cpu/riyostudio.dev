@@ -81,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupDropdown('add-sticker-menu-btn', 'sticker-dropdown');
     setupDropdown('add-shape-menu-btn', 'shape-dropdown');
     setupDropdown('add-template-menu-btn', 'template-dropdown');
+    setupDropdown('project-menu-btn', 'project-dropdown');
 
     // --- Editor State ---
     let baseWidth = 1242;
@@ -1576,6 +1577,92 @@ document.addEventListener('DOMContentLoaded', () => {
     if (paddingInput) paddingInput.addEventListener('input', () => {
         if (paddingVal) paddingVal.textContent = paddingInput.value + '%';
         autoArrange(currentPadFrac());
+    });
+
+    // --- Save / Load Project (self-contained .json with embedded screenshots) ---
+    function imgToDataURL(img) {
+        try {
+            const w = img.naturalWidth || img.videoWidth || img.width;
+            const h = img.naturalHeight || img.videoHeight || img.height;
+            if (!w || !h) return null;
+            const c = document.createElement('canvas'); c.width = w; c.height = h;
+            c.getContext('2d').drawImage(img, 0, 0, w, h);
+            return c.toDataURL('image/png');
+        } catch (e) { return null; }
+    }
+
+    function serializeProject() {
+        const proj = {
+            app: 'riyo-mockup', version: 1,
+            preset: presetSelect.value,
+            screens: screensSelect.value,
+            bg: { type: bgType, presetIdx: bgPresetIdx, angle: bgAngle, color1: bgColor1, color2: bgColor2, blur: bgBlur },
+            grain: { enabled: grainEnabled, val: grainVal },
+            layers: layers.map(l => {
+                const o = {};
+                for (const k in l) { if (k === 'img') continue; o[k] = l[k]; }
+                if (l.type !== 'sticker' && l.img) o.imgData = imgToDataURL(l.img);
+                return o;
+            })
+        };
+        if (bgType === 'image' && bgImgObj) proj.bg.imageData = imgToDataURL(bgImgObj);
+        return proj;
+    }
+
+    function loadProjectData(proj) {
+        if (!proj || proj.app !== 'riyo-mockup') {
+            if (window.showToast) showToast("That doesn't look like a Mockup Studio project file.", 'error');
+            return;
+        }
+        presetSelect.value = proj.preset || '1290x2796';
+        screensSelect.value = proj.screens || '1';
+        updateCanvasSize();
+
+        const bg = proj.bg || {};
+        bgType = bg.type || 'preset';
+        bgPresetIdx = (bg.presetIdx != null) ? bg.presetIdx : 0;
+        bgAngle = (bg.angle != null) ? bg.angle : 135;
+        if (bg.color1) bgColor1 = bg.color1;
+        if (bg.color2) bgColor2 = bg.color2;
+        bgBlur = (bg.blur != null) ? bg.blur : 0;
+        if (proj.grain) { grainEnabled = !!proj.grain.enabled; grainVal = (proj.grain.val != null) ? proj.grain.val : grainVal; }
+
+        bgImgObj = null;
+        if (bgType === 'image' && bg.imageData) { const im = new Image(); im.onload = render; im.src = bg.imageData; bgImgObj = im; }
+
+        layers = (proj.layers || []).map(o => {
+            const l = Object.assign({}, o);
+            delete l.imgData;
+            if (!l.id) l.id = generateId();
+            if (l.type === 'sticker') { l.img = stickers[l.stickerId] || null; }
+            else if (o.imgData) { const im = new Image(); im.onload = render; im.src = o.imgData; l.img = im; }
+            return l;
+        });
+
+        selectedLayerId = null;
+        if (typeof syncBgControls === 'function') syncBgControls();
+        updatePropsPanel();
+        render();
+        if (window.showToast) showToast('Project loaded.', 'success');
+    }
+
+    const saveProjectBtn = document.getElementById('save-project-btn');
+    if (saveProjectBtn) saveProjectBtn.addEventListener('click', () => {
+        const json = JSON.stringify(serializeProject());
+        saveBlob(new Blob([json], { type: 'application/json' }), 'mockup-project.json', 'application/json');
+        const dd = document.getElementById('project-dropdown'); if (dd) dd.style.display = 'none';
+    });
+    const openProjectBtn = document.getElementById('open-project-btn');
+    const projectInput = document.getElementById('project-upload-input');
+    if (openProjectBtn && projectInput) openProjectBtn.addEventListener('click', () => projectInput.click());
+    if (projectInput) projectInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => { try { loadProjectData(JSON.parse(reader.result)); } catch (err) { if (window.showToast) showToast("Couldn't read that project file.", 'error'); } };
+        reader.readAsText(file);
+        e.target.value = '';
+        const dd = document.getElementById('project-dropdown'); if (dd) dd.style.display = 'none';
     });
 
     // --- Properties Panel Sync ---
