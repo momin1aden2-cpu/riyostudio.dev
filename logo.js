@@ -1108,7 +1108,17 @@ document.addEventListener('DOMContentLoaded', () => {
               removeBgBtn.textContent = '⏳ Processing (AI)...';
               try {
                   const blob = await fetch(activeObj.getSrc()).then(r => r.blob());
-                  const imageBlob = await imglyRemoveBackground(blob);
+                  const imageBlob = await imglyRemoveBackground(blob, {
+                      progress: (key, current, total) => {
+                          if (key && key.indexOf('compute') === 0) {
+                              removeBgBtn.textContent = '⏳ Removing background…';
+                          } else if (total) {
+                              const pct = Math.round((current / total) * 100);
+                              const mb = (total / 1048576).toFixed(0);
+                              removeBgBtn.textContent = `⏳ AI model ${pct}% (~${mb}MB, one-time)`;
+                          }
+                      }
+                  });
                   const url = URL.createObjectURL(imageBlob);
                   fabric.Image.fromURL(url, (img) => {
                       img.set({

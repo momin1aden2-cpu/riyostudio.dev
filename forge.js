@@ -1353,10 +1353,10 @@ function initTextExtractor() {
     textarea.value = '';
     progressContainer.style.display = 'block';
     progressBar.style.width = '0%';
-    statusText.textContent = 'Initializing Engine...';
+    statusText.textContent = 'Loading the OCR engine — first run downloads ~15 MB (one-time)…';
     percentage.textContent = '0%';
     statusText.style.color = '#A78BFA';
-    
+
     try {
       if (file.type.startsWith('image/')) {
         await ensureScript('tesseract');
@@ -1366,7 +1366,8 @@ function initTextExtractor() {
           logger: m => {
             if (m.status) {
               const statusStr = m.status.charAt(0).toUpperCase() + m.status.slice(1);
-              statusText.textContent = statusStr;
+              const downloading = /load|download/i.test(m.status);
+              statusText.textContent = downloading ? `${statusStr} (one-time)…` : statusStr;
             }
             const pct = Math.floor((m.progress || 0) * 100);
             percentage.textContent = `${pct}%`;
@@ -1387,15 +1388,18 @@ function initTextExtractor() {
         env.allowLocalModels = false;
         env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/';
         
-        statusText.textContent = 'Loading Whisper AI (One-time download)...';
+        statusText.textContent = 'Loading the speech model — one-time ~40 MB download…';
         const transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny', {
           progress_callback: (data) => {
-            if (data.status === 'downloading') {
-               statusText.textContent = `Downloading AI Model (${data.file})...`;
-            } else if (data.status === 'progress') {
+            if (data.status === 'progress' && data.total) {
                const pct = Math.round(data.progress);
+               const cur = (data.loaded / 1048576).toFixed(0);
+               const tot = (data.total / 1048576).toFixed(0);
+               statusText.textContent = `Downloading speech model… ${cur}/${tot} MB (one-time)`;
                percentage.textContent = `${pct}%`;
                progressBar.style.width = `${pct}%`;
+            } else if (data.status === 'downloading') {
+               statusText.textContent = `Downloading speech model (${data.file})…`;
             }
           }
         });
@@ -2477,8 +2481,11 @@ function initBackgroundRemover() {
         progress: (key, current, total) => {
           if (key === 'compute:inference') {
             statusText.textContent = 'Removing background...';
+          } else if (total) {
+            const mb = (total / 1048576).toFixed(0);
+            statusText.textContent = `Downloading the AI cut-out model — one-time ~${mb} MB…`;
           } else {
-            statusText.textContent = `Downloading AI Model (${key})...`;
+            statusText.textContent = 'Downloading the AI cut-out model (one-time)…';
           }
           if (total) {
             const p = Math.round((current / total) * 100);

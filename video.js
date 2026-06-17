@@ -1498,7 +1498,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const tx = await loadTranscriber((d) => {
         if (d && d.status === 'progress' && d.progress != null) {
           setCapBar(d.progress / 100);
-          capStatus(`Downloading the caption AI… ${Math.round(d.progress)}% (one time only)`);
+          if (d.total) {
+            const cur = (d.loaded / 1048576).toFixed(0);
+            const tot = (d.total / 1048576).toFixed(0);
+            capStatus(`Downloading the caption AI… ${cur}/${tot} MB (one time only)`);
+          } else {
+            capStatus(`Downloading the caption AI… ${Math.round(d.progress)}% (one time only)`);
+          }
         }
       });
       setCapBar(0);
