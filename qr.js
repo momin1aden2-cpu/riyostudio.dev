@@ -98,6 +98,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const btnDlSvg = document.getElementById('btn-dl-svg');
   const btnDlPng = document.getElementById('btn-dl-png');
+  const btnCopy = document.getElementById('btn-copy');
+  const btnVerify = document.getElementById('btn-verify');
+  const verifyResult = document.getElementById('verify-result');
+  const pngSize = document.getElementById('png-size');
+  const bgTransparent = document.getElementById('bg-transparent');
 
   let currentMode = 'url';
   let uploadedLogo = null;
@@ -117,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof prefs.grad === 'boolean') gradToggle.checked = prefs.grad;
         if (prefs.appStore) appStoreType.value = prefs.appStore;
         if (prefs.appUrl) appUrl.value = prefs.appUrl;
+        if (typeof prefs.transparent === 'boolean' && bgTransparent) bgTransparent.checked = prefs.transparent;
         if (prefs.logo) uploadedLogo = prefs.logo;
       }
     } catch (e) { console.error('Failed to load QR prefs', e); }
@@ -134,6 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
       grad: gradToggle.checked,
       appStore: appStoreType.value,
       appUrl: appUrl.value,
+      transparent: bgTransparent ? bgTransparent.checked : false,
       logo: uploadedLogo
     };
     try {
@@ -361,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
       qrOptions: { errorCorrectionLevel: finalLogo ? 'H' : 'Q' },
       dotsOptions: Object.assign({ type: styleDots.value }, fill),
       backgroundOptions: {
-        color: colorBg.value
+        color: (bgTransparent && bgTransparent.checked) ? 'rgba(0,0,0,0)' : colorBg.value
       },
       cornersSquareOptions: Object.assign({ type: styleCorners.value }, fill),
       cornersDotOptions: Object.assign({ type: styleCornerDot.value }, fill)
@@ -414,12 +421,85 @@ document.addEventListener('DOMContentLoaded', () => {
     reader.readAsDataURL(file);
   });
 
+  if (bgTransparent) bgTransparent.addEventListener('change', updateQR);
+
   // 8. Download Triggers
   btnDlSvg.addEventListener('click', () => {
     qrCode.download({ name: "RiyoStudio_QR", extension: "svg" });
   });
 
-  btnDlPng.addEventListener('click', () => {
-    qrCode.download({ name: "RiyoStudio_QR", extension: "png" });
+  // PNG export at a chosen resolution — render big, save, then restore the
+  // on-screen size so print output is crisp instead of the ~300px preview.
+  btnDlPng.addEventListener('click', async () => {
+    const size = parseInt(pngSize && pngSize.value, 10) || 1024;
+    qrCode.update({ width: size, height: size });
+    await new Promise((r) => setTimeout(r, 60)); // let the high-res redraw settle
+    try { await qrCode.download({ name: "RiyoStudio_QR", extension: "png" }); }
+    catch (e) { /* ignore */ }
+    finally { qrCode.update({ width: qrSize, height: qrSize }); }
   });
+
+  // Copy the QR straight to the clipboard as a PNG — paste into Figma/Slack/docs.
+  if (btnCopy) {
+    btnCopy.addEventListener('click', async () => {
+      if (!navigator.clipboard || !window.ClipboardItem) {
+        alert("Your browser can't copy images to the clipboard — use Download instead.");
+        return;
+      }
+      const original = btnCopy.innerHTML;
+      try {
+        const blob = await qrCode.getRawData('png');
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        btnCopy.textContent = 'Copied ✓';
+        setTimeout(() => { btnCopy.innerHTML = original; }, 1500);
+      } catch (e) {
+        alert('Could not copy to the clipboard — use Download instead.');
+      }
+    });
+  }
+
+  // Verify the rendered code actually decodes (catch low-contrast / oversized-logo
+  // failures BEFORE printing). Decodes the canvas locally with jsQR — no upload.
+  let _jsqrP = null;
+  function ensureJsQR() {
+    if (window.jsQR) return Promise.resolve();
+    if (_jsqrP) return _jsqrP;
+    _jsqrP = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+      s.onload = resolve;
+      s.onerror = () => { _jsqrP = null; reject(new Error('jsQR load failed')); };
+      document.head.appendChild(s);
+    });
+    return _jsqrP;
+  }
+  if (btnVerify && verifyResult) {
+    btnVerify.addEventListener('click', async () => {
+      verifyResult.textContent = 'Checking…';
+      verifyResult.style.color = 'var(--text-faint)';
+      try {
+        await ensureJsQR();
+        const blob = await qrCode.getRawData('png');
+        const bmp = await createImageBitmap(blob);
+        const cv = document.createElement('canvas');
+        cv.width = bmp.width; cv.height = bmp.height;
+        const cx = cv.getContext('2d');
+        cx.fillStyle = '#ffffff'; cx.fillRect(0, 0, cv.width, cv.height); // composite transparent codes on white, like a real scan
+        cx.drawImage(bmp, 0, 0);
+        const data = cx.getImageData(0, 0, cv.width, cv.height);
+        const found = window.jsQR(data.data, cv.width, cv.height);
+        if (found && found.data) {
+          verifyResult.textContent = '✓ Verified — this code scans correctly';
+          verifyResult.style.color = '#10B981';
+          verifyResult.title = found.data;
+        } else {
+          verifyResult.textContent = '⚠ Hard to read — try higher contrast, a smaller logo, or a shorter payload';
+          verifyResult.style.color = '#F59E0B';
+        }
+      } catch (e) {
+        verifyResult.textContent = 'Could not run the check (scanner failed to load).';
+        verifyResult.style.color = 'var(--text-dim)';
+      }
+    });
+  }
 });
