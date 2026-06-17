@@ -25,7 +25,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@400;500;700&family=Outfit:wght@400;600;700;800&family=Archivo:wght@400;600;700;800&family=Manrope:wght@400;600;700;800&family=Playfair+Display:wght@400;600;700;800&family=Cormorant+Garamond:wght@400;600;700&family=Cinzel:wght@400;600;700&family=DM+Serif+Display&family=Marcellus&family=Anton&family=Bebas+Neue&family=Oswald:wght@400;600;700&family=Poppins:wght@400;600;700;800&family=Quicksand:wght@400;600;700&family=Fredoka:wght@400;600;700&family=Syne:wght@400;700;800&family=DM+Sans:wght@400;600;700&family=Space+Mono:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap">
 
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg?v=2">
@@ -224,6 +224,15 @@
                 <p style="font-size: 0.72rem; color: var(--text-dim); margin: 8px 0 0;">Recolours all text &amp; icons in one tap.</p>
             </div>
 
+            <!-- FONT PAIRING PANEL -->
+            <div class="tool-bento-panel tint-pink" style="margin-bottom: 8px;">
+                <label style="display: block; font-size: 1.05rem; color: #ec4899; margin-bottom: 12px; font-weight: bold;">🔤 Font Pairing</label>
+                <select id="font-pairing-selector" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 6px; padding: 10px; color: var(--text-main); font-family: inherit; font-size: 1.0rem; cursor: pointer;">
+                    <option value="none">Choose a pairing…</option>
+                </select>
+                <p style="font-size: 0.72rem; color: var(--text-dim); margin: 8px 0 0;">Sets your main name &amp; tagline to fonts that work well together.</p>
+            </div>
+
             <!-- LAYERS PANEL -->
             <div class="tool-bento-panel tint-blue" style="margin-bottom: 8px;">
                 <label style="display: block; font-size: 1.05rem; color: #10B981; margin-bottom: 12px; font-weight: bold;">📚 Layers</label>
@@ -293,16 +302,37 @@
               <div id="font-prop-group" class="form-group" style="display: none;">
                 <label style="display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Typography</label>
                 <select id="obj-font-select" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text-main); font-family: inherit; font-size: 1.1rem; cursor: pointer;">
-                  <option value="Inter">Inter</option>
-                  <option value="Outfit">Outfit</option>
-                  <option value="Space Grotesk">Space Grotesk</option>
-                  <option value="Playfair Display">Playfair</option>
-                  <option value="Cinzel">Cinzel</option>
-                  <option value="Clash Display">Clash Display</option>
-                  <option value="Syne">Syne</option>
-                  <option value="Syncopate">Syncopate</option>
-                  <option value="Bricolage Grotesque">Bricolage</option>
-                  <option value="DM Sans">DM Sans</option>
+                  <optgroup label="Modern Sans">
+                    <option value="Inter">Inter</option>
+                    <option value="Sora">Sora</option>
+                    <option value="Space Grotesk">Space Grotesk</option>
+                    <option value="Outfit">Outfit</option>
+                    <option value="Archivo">Archivo</option>
+                    <option value="Manrope">Manrope</option>
+                    <option value="Syne">Syne</option>
+                    <option value="DM Sans">DM Sans</option>
+                  </optgroup>
+                  <optgroup label="Elegant Serif">
+                    <option value="Playfair Display">Playfair Display</option>
+                    <option value="Cormorant Garamond">Cormorant Garamond</option>
+                    <option value="Cinzel">Cinzel</option>
+                    <option value="DM Serif Display">DM Serif Display</option>
+                    <option value="Marcellus">Marcellus</option>
+                  </optgroup>
+                  <optgroup label="Bold Display">
+                    <option value="Anton">Anton</option>
+                    <option value="Bebas Neue">Bebas Neue</option>
+                    <option value="Oswald">Oswald</option>
+                  </optgroup>
+                  <optgroup label="Friendly / Rounded">
+                    <option value="Poppins">Poppins</option>
+                    <option value="Quicksand">Quicksand</option>
+                    <option value="Fredoka">Fredoka</option>
+                  </optgroup>
+                  <optgroup label="Mono">
+                    <option value="Space Mono">Space Mono</option>
+                    <option value="JetBrains Mono">JetBrains Mono</option>
+                  </optgroup>
                 </select>
                 <div style="display: flex; gap: 4px; margin-top: 8px;">
                   <button id="font-bold-btn" style="flex: 1; padding: 6px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 4px; color: var(--text-main); cursor: pointer; font-weight: bold;">B</button>
@@ -566,7 +596,7 @@
   📥 <span>Save Logo</span>
 </button>
 
-  <script src="logo.js?v=29"></script>
+  <script src="logo.js?v=30"></script>
 
     <!-- Mockup Modal -->
     <div id="mockup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">

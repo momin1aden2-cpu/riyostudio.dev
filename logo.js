@@ -439,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function addText() {
     const text = new fabric.IText('Your Brand', {
-      left: 800, top: 400, fontFamily: 'Clash Display',
+      left: 800, top: 400, fontFamily: 'Sora',
       fill: (currentTheme === 'light' || currentTheme === 'holographic') ? '#111111' : '#ffffff',
       fontSize: 120, fontWeight: '700', originX: 'center', originY: 'center',
       shadow: currentTheme === 'cyber' ? new fabric.Shadow({ color: '#10B981', blur: 30 }) : null,
@@ -814,18 +814,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Google Fonts load lazily, so a freshly-picked font may not be ready at the
+  // first render — fetch it, then reflow/redraw so it shows without a fallback.
+  function ensureFontRender(family, objs) {
+    canvas.requestRenderAll();
+    try {
+      document.fonts.load('700 40px "' + family + '"').then(() => {
+        (objs || []).forEach((t) => { if (t && t.initDimensions) t.initDimensions(); });
+        canvas.requestRenderAll();
+      }).catch(() => {});
+    } catch (e) { /* older browsers just keep the immediate render */ }
+  }
+
   fontSelect.addEventListener('change', (e) => {
     const activeObj = canvas.getActiveObject();
     if (activeObj && (activeObj.type === 'i-text' || activeObj.type === 'text')) {
-      activeObj.set('fontFamily', e.target.value);
-      if (e.target.value === 'Cinzel' || e.target.value === 'Playfair Display' || e.target.value === 'Bricolage Grotesque' || e.target.value === 'Syne') {
-        activeObj.set('fontWeight', '800');
-      } else if (e.target.value === 'Clash Display' || e.target.value === 'Syncopate') {
-        activeObj.set('fontWeight', '700');
-      } else {
-        activeObj.set('fontWeight', '600');
-      }
-      canvas.renderAll();
+      const v = e.target.value;
+      activeObj.set('fontFamily', v);
+      const singleWeight = ['Anton', 'Bebas Neue', 'DM Serif Display', 'Marcellus'];
+      if (singleWeight.indexOf(v) !== -1) activeObj.set('fontWeight', 'normal');
+      else if (['Playfair Display', 'Cinzel', 'Cormorant Garamond', 'Syne', 'Sora', 'Archivo', 'Poppins', 'Oswald'].indexOf(v) !== -1) activeObj.set('fontWeight', '700');
+      else activeObj.set('fontWeight', '600');
+      ensureFontRender(v, [activeObj]);
     }
   });
 
@@ -984,6 +994,45 @@ document.addEventListener('DOMContentLoaded', () => {
           canvas.renderAll();
           if (typeof saveHistory === 'function') saveHistory();
       });
+  }
+
+  // ── Font pairing: set the main name + tagline to fonts that work together ──
+  const FONT_PAIRINGS = [
+    { name: 'Modern — Sora / Inter', h: 'Sora', s: 'Inter' },
+    { name: 'Luxury — Playfair / Inter', h: 'Playfair Display', s: 'Inter' },
+    { name: 'Classic — Cinzel / Cormorant', h: 'Cinzel', s: 'Cormorant Garamond' },
+    { name: 'Editorial — DM Serif / DM Sans', h: 'DM Serif Display', s: 'DM Sans' },
+    { name: 'Bold — Anton / Archivo', h: 'Anton', s: 'Archivo' },
+    { name: 'Strong — Oswald / Inter', h: 'Oswald', s: 'Inter' },
+    { name: 'Friendly — Fredoka / Poppins', h: 'Fredoka', s: 'Poppins' },
+    { name: 'Tech — Space Grotesk / Space Mono', h: 'Space Grotesk', s: 'Space Mono' },
+    { name: 'Refined — Marcellus / Manrope', h: 'Marcellus', s: 'Manrope' }
+  ];
+  const fontPairingSelector = document.getElementById('font-pairing-selector');
+  if (fontPairingSelector) {
+    FONT_PAIRINGS.forEach((p, i) => {
+      const o = document.createElement('option'); o.value = String(i); o.textContent = p.name;
+      fontPairingSelector.appendChild(o);
+    });
+    fontPairingSelector.addEventListener('change', (e) => {
+      const p = FONT_PAIRINGS[parseInt(e.target.value, 10)];
+      e.target.value = 'none';
+      if (!p) return;
+      const texts = canvas.getObjects().filter((o) => o.type === 'i-text' || o.type === 'text');
+      if (!texts.length) { toast('Add some text first, then pick a pairing.', 'error'); return; }
+      // Largest text = the main name (heading); the rest = tagline/body.
+      const sorted = texts.slice().sort((a, b) => (b.fontSize || 0) - (a.fontSize || 0));
+      const heavy = ['Anton', 'Bebas Neue', 'DM Serif Display', 'Marcellus'];
+      sorted.forEach((t, i) => {
+        const fam = i === 0 ? p.h : p.s;
+        t.set('fontFamily', fam);
+        t.set('fontWeight', heavy.indexOf(fam) !== -1 ? 'normal' : (i === 0 ? '700' : '500'));
+      });
+      ensureFontRender(p.h, texts);
+      ensureFontRender(p.s, texts);
+      saveHistory();
+      toast('Fonts paired — ' + p.name.split('—')[0].trim() + '.');
+    });
   }
 
   window.addEventListener('keydown', (e) => {
@@ -1233,13 +1282,16 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
     { bg: '#042F2E', icon: '#2DD4BF', text: '#CCFBF1' }  // deep teal
   ];
   const GEN_FONTS = [
-    { h: 'Clash Display', s: 'Inter' },
+    { h: 'Sora', s: 'Inter' },
     { h: 'Space Grotesk', s: 'DM Sans' },
     { h: 'Syne', s: 'Inter' },
     { h: 'Playfair Display', s: 'DM Sans' },
-    { h: 'Cinzel', s: 'Inter' },
+    { h: 'Cinzel', s: 'Cormorant Garamond' },
     { h: 'Outfit', s: 'Inter' },
-    { h: 'Bricolage Grotesque', s: 'DM Sans' }
+    { h: 'Archivo', s: 'Manrope' },
+    { h: 'Oswald', s: 'Inter' },
+    { h: 'DM Serif Display', s: 'DM Sans' },
+    { h: 'Poppins', s: 'Inter' }
   ];
   const pickRand = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
@@ -1776,7 +1828,7 @@ if (previewMockupBtn && mockupModal && closeMockupBtn) {
     if (key === 'monogram') {
       const initials = (src.texts[0] && src.texts[0].text) || 'R';
       const col = firstFill(src.icon) || '#10B981';
-      icon = buildMark({ icon: col, bg: tc.backgroundColor || '#0B1220', text: tc.backgroundColor || '#0B1220' }, { h: (src.texts[0] && src.texts[0].fontFamily) || 'Clash Display' }, initials, 6);
+      icon = buildMark({ icon: col, bg: tc.backgroundColor || '#0B1220', text: tc.backgroundColor || '#0B1220' }, { h: (src.texts[0] && src.texts[0].fontFamily) || 'Sora' }, initials, 6);
     } else {
       if (src.icon) { const c = await cloneObjs([src.icon]); icon = c[0]; }
       if (key !== 'icon') texts = await cloneObjs(src.texts);
