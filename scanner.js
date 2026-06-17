@@ -451,6 +451,47 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (type === 'pro-dark')    buildHero(14, 135, 'iphone', '#d6d7da', -10, HERO_COPY['pro-dark']);
 
         // ==========================================
+        // MULTI-DEVICE SCENES — one app shown across a laptop / tablet / phone
+        // on a premium landscape background. Each device is a separate layer, so
+        // any of them can take its own screenshot via Replace Screenshot.
+        // ==========================================
+        const DEVICE_DIMS = {
+            macbook: [1200, 800], browser: [1200, 800], ipad: [1500, 2000],
+            iphone: [1080, 2340], pixel: [1080, 2340], galaxy: [1080, 2340], android: [1080, 2340]
+        };
+        const buildScene = (presetIdx, head, sub, devices) => {
+            presetSelect.value = '1920x1080'; screensSelect.value = '1'; updateCanvasSize();
+            bgType = 'preset'; bgPresetIdx = presetIdx; bgAngle = 135;
+            const light = hexLuminance(BG_PRESETS[presetIdx].colors[0]) > 0.58;
+            const ink = light ? '#0b0b0d' : '#ffffff';
+            const muted = light ? 'rgba(11,11,13,0.72)' : 'rgba(255,255,255,0.82)';
+            if (head) layers.push({ id: generateId(), type: 'text', content: head, color: ink, fontFamily: 'Inter', fontWeight: '800', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 76, width: 1500, height: 150, x: baseWidth / 2, y: 118 });
+            if (sub) layers.push({ id: generateId(), type: 'text', content: sub, color: muted, fontFamily: 'Inter', fontWeight: '500', textAlign: 'center', shadowColor: 'transparent', shadowBlur: 0, scale: 1, rotation: 0, fontSize: 38, width: 1300, height: 100, x: baseWidth / 2, y: 212 });
+            devices.forEach(d => {
+                const [w, h] = DEVICE_DIMS[d.frame] || [1080, 2340];
+                const img = (d.frame === 'macbook' || d.frame === 'browser') ? phMac : phApp;
+                layers.push({ id: generateId(), type: 'image', img, frameStyle: d.frame, x: d.x, y: d.y, scale: d.scale, width: w, height: h, rotation: 0, persY: d.persY || 0, persX: 0, shadowBlur: d.shadowBlur || 120, shadowOp: d.shadowOp || 45, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
+            });
+        };
+        if (type === 'scene-laptop-phone') buildScene(0, 'One app. Every device.', 'Pixel-perfect from desktop to pocket.', [
+            { frame: 'macbook', x: 760, y: 640, scale: 0.92, persY: 8 },
+            { frame: 'iphone', x: 1500, y: 670, scale: 0.31, persY: -10, shadowBlur: 90 }
+        ]);
+        else if (type === 'scene-ecosystem') buildScene(11, 'Works everywhere.', 'One seamless experience across all your screens.', [
+            { frame: 'macbook', x: 960, y: 650, scale: 0.80, persY: 0 },
+            { frame: 'ipad', x: 410, y: 690, scale: 0.33, persY: 16 },
+            { frame: 'iphone', x: 1520, y: 700, scale: 0.29, persY: -16, shadowBlur: 90 }
+        ]);
+        else if (type === 'scene-tablet-phone') buildScene(10, 'Designed for every screen.', 'Beautiful on tablet and phone alike.', [
+            { frame: 'ipad', x: 790, y: 675, scale: 0.37, persY: 8 },
+            { frame: 'iphone', x: 1330, y: 690, scale: 0.30, persY: -12, shadowBlur: 90 }
+        ]);
+        else if (type === 'scene-desktop-phone') buildScene(14, 'From desktop to pocket.', 'Your product, ready on any device.', [
+            { frame: 'browser', x: 800, y: 650, scale: 0.92, persY: 6 },
+            { frame: 'iphone', x: 1500, y: 670, scale: 0.31, persY: -10, shadowBlur: 90 }
+        ]);
+
+        // ==========================================
         // APPLE APP STORE â Premium Set (1242x2688)
         // ==========================================
         else if (type === 'apple-minimal') {
