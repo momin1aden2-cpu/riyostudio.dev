@@ -115,26 +115,19 @@
       <div class="editor-toolbar" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; position: relative; z-index: 50; backdrop-filter: blur(16px); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), 0 8px 32px rgba(0,0,0,0.3);">
         <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: flex-start; margin-right: auto;">
           <div class="dropdown" style="position: relative; display: inline-block;">
-            <button id="add-text-btn" class="cyber-button" style="padding: 8px 16px; font-size: 0.9rem;">+ Text ▾</button>
-            <div id="text-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: #111; border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 8px; z-index: 100; min-width: 150px; flex-direction: column; gap: 4px; margin-top: 4px;">
+            <button id="add-element-btn" class="cyber-button" style="padding: 8px 16px; font-size: 0.9rem;">+ Add ▾</button>
+            <div id="add-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: #111; border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 8px; z-index: 100; min-width: 180px; max-height: 62vh; overflow-y: auto; flex-direction: column; gap: 2px; margin-top: 4px;">
+              <div style="font-size: 0.64rem; letter-spacing: 0.07em; text-transform: uppercase; color: #10B981; padding: 4px 6px 2px;">Text</div>
               <button class="cyber-button text-preset-btn" data-text="headline" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Headline</button>
               <button class="cyber-button text-preset-btn" data-text="subtitle" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Subtitle</button>
               <button class="cyber-button text-preset-btn" data-text="label" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Eyebrow Label</button>
-            </div>
-          </div>
 
-          <div class="dropdown" style="position: relative; display: inline-block;">
-            <button id="add-shape-menu-btn" class="cyber-button" style="padding: 8px 16px; font-size: 0.9rem;">+ Shape ▾</button>
-            <div id="shape-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: #111; border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 8px; z-index: 100; min-width: 120px; flex-direction: column; gap: 4px; margin-top: 4px;">
+              <div style="font-size: 0.64rem; letter-spacing: 0.07em; text-transform: uppercase; color: #10B981; padding: 8px 6px 2px;">Shapes</div>
               <button class="cyber-button shape-btn" data-shape="rectangle" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Rectangle</button>
               <button class="cyber-button shape-btn" data-shape="circle" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Circle</button>
               <button class="cyber-button shape-btn" data-shape="glass" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Glass Card</button>
-            </div>
-          </div>
-          
-          <div class="dropdown" style="position: relative; display: inline-block;">
-            <button id="add-sticker-menu-btn" class="cyber-button" style="padding: 8px 16px; font-size: 0.9rem;">+ Sticker ▾</button>
-            <div id="sticker-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: #111; border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 8px; z-index: 100; min-width: 150px; flex-direction: column; gap: 4px; margin-top: 4px;">
+
+              <div style="font-size: 0.64rem; letter-spacing: 0.07em; text-transform: uppercase; color: #10B981; padding: 8px 6px 2px;">Stickers &amp; Badges</div>
               <button class="cyber-button sticker-btn" data-sticker="apple" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">App Store Badge</button>
               <button class="cyber-button sticker-btn" data-sticker="google" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">Google Play Badge</button>
               <button class="cyber-button sticker-btn" data-sticker="stars" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">⭐⭐⭐⭐⭐</button>
@@ -150,7 +143,7 @@
               <button class="cyber-button sticker-btn" data-sticker="tap" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">👆 Tap Point</button>
             </div>
           </div>
-          
+
           <div class="dropdown" style="position: relative; display: inline-block;">
             <button id="add-template-menu-btn" class="cyber-button" style="padding: 8px 16px; font-size: 0.9rem; border-color: #10B981; color: #10B981;">+ Templates ▾</button>
             <div id="template-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: #111; border: 1px solid rgba(16, 185, 129,0.5); border-radius: 8px; padding: 8px; z-index: 100; min-width: 250px; flex-direction: column; gap: 4px; margin-top: 4px; max-height: 400px; overflow-y: auto;">
@@ -279,23 +272,33 @@
           </select>
         </div>
         
-        <div style="display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; align-items: center;">
-          <select id="export-format-select" title="Image format" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px 6px; border-radius: 6px; outline: none; font-size: 0.8rem;">
-            <option value="png">PNG</option>
-            <option value="jpg">JPG</option>
-            <option value="webp">WebP</option>
-          </select>
-          <select id="export-scale-select" title="Export resolution" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px 6px; border-radius: 6px; outline: none; font-size: 0.8rem;">
-            <option value="1">1×</option>
-            <option value="2" selected>2×</option>
-            <option value="3">3×</option>
-          </select>
-          <label id="export-transparent-label" title="Transparent background (PNG / WebP)" style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.78rem; color: #9fb3c8; white-space: nowrap; cursor: pointer;">
-            <input type="checkbox" id="export-transparent-toggle" style="accent-color: #10B981;"> Transparent
-          </label>
-          <button id="export-copy-btn" class="cyber-button" title="Copy image to clipboard" style="background: rgba(16,185,129,0.12); color: #6ee7b7; font-weight: 600; border: 1px solid rgba(16,185,129,0.4); padding: 8px 12px; font-size: 0.85rem; white-space: nowrap;">⧉ Copy</button>
-          <button id="export-zip-btn" class="cyber-button" style="background: #10B981; color: #04140d; font-weight: 700; border: none; padding: 8px 14px; font-size: 0.85rem; white-space: nowrap;">⬇ Kit .zip</button>
-          <button id="export-png-btn" class="cyber-button" style="background: #10B981; color: #04140d; font-weight: 700; border: none; padding: 8px 14px; font-size: 0.85rem; white-space: nowrap;">⬇ Image</button>
+        <div class="dropdown" style="position: relative; display: inline-block; margin-left: auto;">
+          <button id="export-menu-btn" class="cyber-button" style="background: #10B981; color: #04140d; font-weight: 700; border: none; padding: 9px 18px; font-size: 0.9rem; white-space: nowrap;">⬇ Export ▾</button>
+          <div id="export-dropdown" style="display: none; position: absolute; top: 100%; right: 0; background: #111; border: 1px solid rgba(16,185,129,0.4); border-radius: 10px; padding: 14px; z-index: 100; min-width: 240px; flex-direction: column; gap: 10px; margin-top: 6px; box-shadow: 0 16px 40px rgba(0,0,0,0.6);">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+              <span style="color: #9fb3c8; font-size: 0.8rem;">Format</span>
+              <select id="export-format-select" style="flex: 1; max-width: 130px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px; border-radius: 6px; outline: none; font-size: 0.8rem;">
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+                <option value="webp">WebP</option>
+              </select>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+              <span style="color: #9fb3c8; font-size: 0.8rem;">Resolution</span>
+              <select id="export-scale-select" style="flex: 1; max-width: 130px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px; border-radius: 6px; outline: none; font-size: 0.8rem;">
+                <option value="1">1× (standard)</option>
+                <option value="2" selected>2× (retina)</option>
+                <option value="3">3× (max)</option>
+              </select>
+            </div>
+            <label id="export-transparent-label" title="Transparent background (PNG / WebP)" style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #9fb3c8; cursor: pointer;">
+              <input type="checkbox" id="export-transparent-toggle" style="accent-color: #10B981;"> Transparent background
+            </label>
+            <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 2px 0;"></div>
+            <button id="export-png-btn" class="cyber-button" style="background: #10B981; color: #04140d; font-weight: 700; border: none; padding: 9px 14px; font-size: 0.85rem;">⬇ Save Image</button>
+            <button id="export-copy-btn" class="cyber-button" style="background: rgba(16,185,129,0.12); color: #6ee7b7; font-weight: 600; border: 1px solid rgba(16,185,129,0.4); padding: 9px 14px; font-size: 0.85rem;">⧉ Copy to Clipboard</button>
+            <button id="export-zip-btn" class="cyber-button" style="background: transparent; color: #fff; font-weight: 600; border: 1px solid rgba(255,255,255,0.2); padding: 9px 14px; font-size: 0.85rem;">⬇ App Store Kit (.zip)</button>
+          </div>
         </div>
       </div>
 
@@ -636,6 +639,6 @@
   <script src="bg.js?v=9185d9aa"></script>
   <script src="nav.js?v=25f778f4"></script>
   <script defer src="script.js?v=67c2f523"></script>
-  <script src="scanner.js?v=d7ad270d"></script>
+  <script src="scanner.js?v=673ef1e0"></script>
 </body>
 </html>
