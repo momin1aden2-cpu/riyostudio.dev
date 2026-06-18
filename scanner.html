@@ -72,6 +72,10 @@
     .frame-swatch:hover { transform: scale(1.12); }
     .frame-swatch.active { border-color: #10B981; box-shadow: 0 0 0 2px rgba(16,185,129,0.45); }
 
+    /* Touch gestures (drag / two-finger pinch) drive the canvas — stop the browser
+       hijacking touches for page scroll/zoom over the editor. */
+    #canvas-wrapper, #mockup-canvas { touch-action: none; }
+
     /* Mobile Quick Edit — desktop hides it (the full canvas + panel are shown). */
     #mobile-quick-edit { display: none; }
     @media (max-width: 900px) {
@@ -711,6 +715,6 @@
   <script src="bg.js?v=9185d9aa"></script>
   <script src="nav.js?v=646e34c0"></script>
   <script defer src="script.js?v=003cc603"></script>
-  <script src="scanner.js?v=b284488c"></script>
+  <script src="scanner.js?v=dc746243"></script>
 </body>
 </html>

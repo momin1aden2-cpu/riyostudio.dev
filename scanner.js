@@ -825,6 +825,14 @@ document.addEventListener('DOMContentLoaded', () => {
             layers.push({ id: generateId(), type: 'text', content: 'Real-time sync\nGranular permissions\nAudit logs & SSO', color: '#94a3b8', fontFamily: 'Inter', fontWeight: '500', textAlign: 'left', shadowColor: 'transparent', shadowBlur: 0, x: 1180, y: 560, scale: 1, rotation: 0, fontSize: 40, width: 680, height: 280 });
         }
 
+        // Mobile is single-screen: collapse any multi-screen template to just its
+        // first panel so phones never get a tiny 5-up canvas.
+        if (isMobileViewport() && screenCount > 1) {
+            layers = layers.filter(l => (l.x || 0) < baseWidth);
+            screensSelect.value = '1';
+            updateCanvasSize();
+        }
+
         document.getElementById('template-dropdown').style.display = 'none';
         updatePropsPanel();
         syncBgControls();
@@ -1646,8 +1654,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // Drag on the canvas itself rather than scrolling it (mobile + desktop).
     wrapper.style.touchAction = 'none';
 
+    // Multi-touch: two fingers = pinch-to-resize + reposition the selected layer,
+    // so positioning/sizing text & devices is easy on a phone's small canvas.
+    const pointers = new Map(); // pointerId -> {x,y} canvas coords
+    let isPinching = false, pinchStartDist = 1, pinchStartScale = 1, pinchStartMidX = 0, pinchStartMidY = 0, pinchLayerX = 0, pinchLayerY = 0;
+
     wrapper.addEventListener('pointerdown', (e) => {
         const { x, y } = getMouseCoords(e);
+        pointers.set(e.pointerId, { x, y });
+
+        // Second finger down → start a pinch on the selected (or tapped) layer.
+        if (pointers.size === 2) {
+            let layer = layers.find(l => l.id === selectedLayerId);
+            if (!layer) { const hid = checkHit(x, y); if (hid) { selectedLayerId = hid; layer = layers.find(l => l.id === hid); updatePropsPanel(); } }
+            if (layer) {
+                const pts = [...pointers.values()];
+                pinchStartDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+                pinchStartScale = layer.scale || 1;
+                pinchStartMidX = (pts[0].x + pts[1].x) / 2; pinchStartMidY = (pts[0].y + pts[1].y) / 2;
+                pinchLayerX = layer.x; pinchLayerY = layer.y;
+                isPinching = true; isDragging = false; isScaling = false; activeGuides = []; render();
+            }
+            return;
+        }
+
         if (selectedLayerId) {
             const layer = layers.find(l => l.id === selectedLayerId);
             if (layer) {
@@ -1669,6 +1699,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     window.addEventListener('pointermove', (e) => {
+        if (pointers.has(e.pointerId)) pointers.set(e.pointerId, getMouseCoords(e));
+
+        if (isPinching && pointers.size >= 2) {
+            const pl = layers.find(l => l.id === selectedLayerId);
+            if (!pl) return;
+            const pts = [...pointers.values()];
+            const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+            const midX = (pts[0].x + pts[1].x) / 2, midY = (pts[0].y + pts[1].y) / 2;
+            pl.scale = Math.max(0.05, pinchStartScale * (dist / pinchStartDist));
+            pl.x = pinchLayerX + (midX - pinchStartMidX);
+            pl.y = pinchLayerY + (midY - pinchStartMidY);
+            scheduleRender();
+            return;
+        }
+
         if (!isDragging && !isScaling) return;
         const { x, y } = getMouseCoords(e);
         const layer = layers.find(l => l.id === selectedLayerId);
@@ -1685,8 +1730,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    window.addEventListener('pointerup', () => { isDragging = false; isScaling = false; if (activeGuides.length) { activeGuides = []; render(); } });
-    window.addEventListener('pointercancel', () => { isDragging = false; isScaling = false; if (activeGuides.length) { activeGuides = []; render(); } });
+    function endPointer(e) {
+        if (e && pointers.has(e.pointerId)) pointers.delete(e.pointerId);
+        if (pointers.size < 2) isPinching = false;
+        if (pointers.size === 0) {
+            isDragging = false; isScaling = false;
+            if (activeGuides.length) { activeGuides = []; render(); }
+            renderMobileQuickEdit(); // reflect any pinch-resize in the composer's size slider
+        }
+    }
+    window.addEventListener('pointerup', endPointer);
+    window.addEventListener('pointercancel', endPointer);
 
     // Magnetic snapping: pulls a dragged layer's centre onto each screen column's
     // centre, the vertical mid-line, and any other layer's centre â with a live guide.
