@@ -3346,3 +3346,69 @@ body.drawer-open { overflow: hidden; }
 /* File Forge: two-column result panels that stack on narrow screens */
 .forge-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 @media (max-width: 760px) { .forge-2col { grid-template-columns: 1fr; } }
+
+/* ================================================================
+   REVIEWS — "Wall of Love" (shared by /reviews, homepage strip
+   and per-tool mini-walls)
+   ================================================================ */
+.rv-stars { color: #f5b301; letter-spacing: 1px; }
+.rv-stars .off { color: rgba(255,255,255,0.18); }
+
+/* gradient initial avatar */
+.rv-av { width: 38px; height: 38px; border-radius: 50%; flex: 0 0 38px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.95rem; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.25); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12); }
+
+/* card */
+.rv-card { position: relative; background: linear-gradient(180deg, rgba(22,28,40,0.72), rgba(14,18,28,0.72)); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 1.25rem 1.3rem; backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+.rv-card:hover { transform: translateY(-4px); border-color: rgba(16,185,129,0.35); box-shadow: 0 14px 40px rgba(0,0,0,0.45); }
+.rv-card .rv-quote { position: absolute; top: 8px; right: 16px; font-size: 3rem; line-height: 1; color: rgba(16,185,129,0.16); font-family: Georgia, serif; pointer-events: none; }
+.rv-card .rv-body { color: var(--text-main); line-height: 1.6; margin: 0.55rem 0 1rem; white-space: pre-wrap; word-wrap: break-word; }
+.rv-card .rv-foot { display: flex; align-items: center; gap: 10px; }
+.rv-card .rv-who { display: flex; flex-direction: column; min-width: 0; }
+.rv-card .rv-name { font-weight: 600; color: #e6edf5; font-size: 0.9rem; line-height: 1.2; }
+.rv-card .rv-date { color: var(--text-dim); font-size: 0.74rem; }
+.rv-chip { margin-left: auto; font-size: 0.7rem; font-weight: 600; color: #6ee7b7; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.28); padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+
+/* aggregate header */
+.rv-agg { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: center; max-width: 620px; margin: 1.75rem auto 0; padding: 1.5rem 1.75rem; border-radius: 18px; background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.2); }
+.rv-agg .big { text-align: center; }
+.rv-agg .big .num { font-size: 3.2rem; font-weight: 800; color: #fff; line-height: 1; }
+.rv-agg .big .of { color: var(--text-dim); font-size: 0.8rem; margin-top: 4px; }
+.rv-dist { display: flex; flex-direction: column; gap: 6px; }
+.rv-dist .row { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-dim); }
+.rv-dist .row .lbl { width: 26px; text-align: right; color: #cbd5e1; }
+.rv-dist .bar { flex: 1; height: 8px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
+.rv-dist .bar > i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #10B981, #34d399); width: 0; transition: width .9s cubic-bezier(.2,.8,.2,1); }
+.rv-dist .row .pct { width: 34px; text-align: right; }
+
+/* filter chips */
+.rv-filters { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 2rem 0 1.5rem; }
+.rv-filter { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12); color: var(--text-dim); padding: 7px 16px; border-radius: 999px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all .15s ease; }
+.rv-filter:hover { color: #fff; border-color: rgba(16,185,129,0.4); }
+.rv-filter.on { background: #10B981; border-color: #10B981; color: #04140d; }
+
+/* masonry wall */
+.rv-wall { columns: 3 280px; column-gap: 18px; }
+.rv-wall .rv-card { break-inside: avoid; margin-bottom: 18px; animation: rvIn .5s ease both; }
+@keyframes rvIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+/* homepage / per-tool strip marquee */
+.rv-strip { position: relative; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.rv-track { display: flex; gap: 18px; width: max-content; animation: rvMarquee 60s linear infinite; }
+.rv-strip:hover .rv-track { animation-play-state: paused; }
+.rv-track .rv-card { width: 320px; flex: 0 0 320px; }
+@keyframes rvMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .rv-track { animation: none; } .rv-dist .bar > i { transition: none; } }
+
+/* section heading for strips / per-tool walls */
+.rv-sec { position: relative; z-index: 10; padding: 3.5rem 0; }
+.rv-sec-head { text-align: center; margin-bottom: 2rem; }
+.rv-sec-head h2 { font-size: 1.9rem; color: var(--text-main); margin: 0 0 0.5rem; }
+.rv-sec-head .rv-sub { color: var(--text-dim); display: inline-flex; align-items: center; gap: 8px; }
+.rv-more { display: inline-block; margin-top: 1.75rem; color: #6ee7b7; font-weight: 600; text-decoration: none; border: 1px solid rgba(16,185,129,0.35); padding: 9px 20px; border-radius: 10px; transition: all .15s ease; }
+.rv-more:hover { background: rgba(16,185,129,0.12); }
+
+@media (max-width: 600px) {
+  .rv-agg { grid-template-columns: 1fr; gap: 16px; text-align: center; }
+  .rv-wall { columns: 1; }
+}
+.btn-reviews .rv-cta-star { color: #f5b301; }

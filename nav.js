@@ -23,7 +23,8 @@
   ];
 
   var COMPANY = [
-    { href: '/#about', icon: '💡', label: 'About Us' }
+    { href: '/#about', icon: '💡', label: 'About Us' },
+    { href: '/reviews', icon: '⭐', label: 'Reviews', match: ['reviews', 'reviews.html'] }
   ];
 
   var LEGAL = [

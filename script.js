@@ -807,3 +807,190 @@ if (fpsEl) {
     });
   });
 
+/* ================================================================
+   SMART REVIEW PROMPT
+   Counts real "uses" (a file/export download anywhere on the site)
+   and, after a few, shows ONE gentle dismissible toast inviting a
+   review. Never nags: snoozes when dismissed, and stops for good
+   once a review has been submitted. All state lives in localStorage.
+   ================================================================ */
+(function () {
+  'use strict';
+
+  var USES_BEFORE_PROMPT = 3;
+  var DAY = 86400000;
+  var path = location.pathname.replace(/\/$/, '');
+  if (path === '/reviews' || path === '/admin-reviews') return; // never prompt on these
+
+  function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+  if (get('riyoReviewDone') === '1') return;
+
+  var lastCount = 0;
+  // Count a use at most once per ~2s so a multi-file export (e.g. a panorama
+  // that fires several downloads) still counts as a single use.
+  function trackUse() {
+    var now = Date.now();
+    if (now - lastCount < 2000) return;
+    lastCount = now;
+    var n = (parseInt(get('riyoUseCount'), 10) || 0) + 1;
+    set('riyoUseCount', String(n));
+    maybeShow(n);
+  }
+
+  // Detect downloads site-wide without touching any tool: our tools trigger
+  // saves via a temporary <a download> appended to the body and clicked.
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest && e.target.closest('a[download]');
+    if (a) trackUse();
+  }, true);
+  // Tools can also opt in for precision: window.dispatchEvent(new Event('riyo:used'))
+  window.addEventListener('riyo:used', trackUse);
+
+  var shown = false;
+  function maybeShow(n) {
+    if (shown) return;
+    if (n < USES_BEFORE_PROMPT) return;
+    var snooze = parseInt(get('riyoReviewSnoozeUntil'), 10) || 0;
+    if (Date.now() < snooze) return;
+    shown = true;
+    set('riyoReviewSnoozeUntil', String(Date.now() + 7 * DAY)); // showing once buys 7 days of quiet
+    render();
+  }
+
+  function snoozeFor(days) {
+    set('riyoReviewSnoozeUntil', String(Date.now() + days * DAY));
+    dismiss();
+  }
+
+  var el = null;
+  function dismiss() {
+    if (!el) return;
+    el.style.transform = 'translateY(140%)';
+    setTimeout(function () { if (el && el.parentNode) el.parentNode.removeChild(el); el = null; }, 320);
+  }
+
+  function render() {
+    el = document.createElement('div');
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-label', 'Leave a review');
+    el.style.cssText = [
+      'position:fixed', 'left:50%', 'bottom:20px', 'transform:translateY(140%)',
+      'z-index:99999', 'width:min(420px,calc(100vw - 32px))',
+      'background:rgba(10,14,22,0.92)', 'backdrop-filter:blur(16px)', '-webkit-backdrop-filter:blur(16px)',
+      'border:1px solid rgba(16,185,129,0.35)', 'border-radius:14px',
+      'box-shadow:0 16px 50px rgba(0,0,0,0.6)', 'padding:16px 18px',
+      'font-family:Inter,system-ui,sans-serif', 'color:#e8edf3',
+      'transition:transform .32s cubic-bezier(.2,.8,.2,1)', 'margin-left:calc(min(420px,calc(100vw - 32px)) / -2)'
+    ].join(';');
+    el.innerHTML =
+      '<button aria-label="Dismiss" id="riyo-rv-x" style="position:absolute;top:8px;right:10px;background:none;border:none;color:#7c8da0;font-size:18px;cursor:pointer;line-height:1;">&times;</button>' +
+      '<div style="display:flex;align-items:flex-start;gap:12px;">' +
+        '<div style="font-size:22px;line-height:1.2;">⭐</div>' +
+        '<div style="flex:1;">' +
+          '<div style="font-weight:700;margin-bottom:2px;">Enjoying Riyo Studio?</div>' +
+          '<div style="font-size:0.86rem;color:#9fb3c8;line-height:1.45;">If it saved you time, a quick review really helps. Takes 20 seconds — no sign-up.</div>' +
+          '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">' +
+            '<button id="riyo-rv-go" style="background:#10B981;color:#04140d;font-weight:700;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.85rem;">Leave a review</button>' +
+            '<button id="riyo-rv-later" style="background:transparent;color:#9fb3c8;border:1px solid rgba(255,255,255,0.18);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:0.85rem;">Maybe later</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(el);
+    requestAnimationFrame(function () { el.style.transform = 'translateY(0)'; });
+
+    var tool = (path.split('/')[1] || '').trim();
+    el.querySelector('#riyo-rv-go').addEventListener('click', function () {
+      location.href = '/reviews?tool=' + encodeURIComponent(tool) + '#write';
+    });
+    el.querySelector('#riyo-rv-later').addEventListener('click', function () { snoozeFor(7); });
+    el.querySelector('#riyo-rv-x').addEventListener('click', function () { snoozeFor(30); });
+  }
+})();
+
+/* ================================================================
+   REVIEW WIDGETS — renders the homepage social-proof strip and any
+   per-tool mini-walls from a single /api/reviews fetch. Add a host
+   element to a page and this fills (or removes) it:
+     <section class="rv-sec" data-reviews-strip></section>
+     <section class="rv-sec" data-reviews-tool="forge"></section>
+   Sections with no reviews remove themselves, so nothing looks empty.
+   ================================================================ */
+(function () {
+  'use strict';
+  var strip = document.querySelector('[data-reviews-strip]');
+  var toolHosts = Array.prototype.slice.call(document.querySelectorAll('[data-reviews-tool]'));
+  var ratingEls = Array.prototype.slice.call(document.querySelectorAll('[data-reviews-rating]'));
+  if (!strip && !toolHosts.length && !ratingEls.length) return;
+
+  var TOOL_NAMES = { scanner: 'Mockup Studio', forge: 'File Forge', qr: 'QR Hub', invoice: 'Invoice Maker', logo: 'Logo Maker', video: 'Video Studio' };
+  function toolName(s) { return TOOL_NAMES[s] || (s ? s.charAt(0).toUpperCase() + s.slice(1) : ''); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function starHTML(n) { var s = ''; for (var i = 1; i <= 5; i++) s += i <= n ? '★' : '<span class="off">★</span>'; return s; }
+  function fmtDate(iso) { try { return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }); } catch (e) { return ''; } }
+  function hashOf(str) { var h = 0; for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0; return h; }
+  function avatar(name) {
+    var label = name ? esc(name.trim().charAt(0).toUpperCase()) : '★';
+    var h = hashOf(name || 'anon'), h1 = h % 360, h2 = (h1 + 42) % 360;
+    return '<div class="rv-av" style="background:linear-gradient(135deg,hsl(' + h1 + ',62%,46%),hsl(' + h2 + ',68%,38%))">' + label + '</div>';
+  }
+  function card(r, withChip) {
+    var who = r.name ? esc(r.name) : 'Anonymous';
+    var chip = (withChip && r.tool) ? '<span class="rv-chip">' + esc(toolName(r.tool)) + '</span>' : '';
+    return '<article class="rv-card">' +
+      '<div class="rv-quote">&#8221;</div>' +
+      '<div class="rv-stars">' + starHTML(r.rating) + '</div>' +
+      '<p class="rv-body">' + esc(r.body) + '</p>' +
+      '<div class="rv-foot">' + avatar(r.name) +
+        '<div class="rv-who"><span class="rv-name">' + who + '</span><span class="rv-date">' + esc(fmtDate(r.created_at)) + '</span></div>' +
+        chip +
+      '</div></article>';
+  }
+
+  function renderStrip(host, data, all) {
+    if (!data.count || !all.length) { host.remove(); return; }
+    var base = all.slice(0, 12);
+    while (base.length < 8) base = base.concat(all); // fill so the marquee looks full
+    var half = base.map(function (r) { return card(r, true); }).join('');
+    host.innerHTML =
+      '<div class="container">' +
+        '<div class="rv-sec-head">' +
+          '<h2>Loved by makers who ship</h2>' +
+          '<div class="rv-sub"><span class="rv-stars">' + starHTML(Math.round(data.average)) + '</span> ' +
+            '<strong style="color:#fff;">' + (data.average || 0).toFixed(1) + '</strong> · ' + data.count + ' reviews</div>' +
+        '</div>' +
+        '<div class="rv-strip"><div class="rv-track">' + half + half + '</div></div>' +
+        '<div style="text-align:center;"><a class="rv-more" href="/reviews">Read all reviews →</a></div>' +
+      '</div>';
+  }
+
+  function renderTool(host, all) {
+    var tool = host.getAttribute('data-reviews-tool');
+    var items = all.filter(function (r) { return (r.tool || '') === tool; });
+    if (!items.length) { host.remove(); return; }
+    var avg = Math.round((items.reduce(function (s, r) { return s + r.rating; }, 0) / items.length) * 10) / 10;
+    var cards = items.slice(0, 6).map(function (r) { return card(r, false); }).join('');
+    host.innerHTML =
+      '<div class="container">' +
+        '<div class="rv-sec-head">' +
+          '<h2>What makers say about ' + esc(toolName(tool)) + '</h2>' +
+          '<div class="rv-sub"><span class="rv-stars">' + starHTML(Math.round(avg)) + '</span> ' +
+            '<strong style="color:#fff;">' + avg.toFixed(1) + '</strong> · ' + items.length + ' review' + (items.length === 1 ? '' : 's') + '</div>' +
+        '</div>' +
+        '<div class="rv-wall">' + cards + '</div>' +
+        '<div style="text-align:center;"><a class="rv-more" href="/reviews?tool=' + encodeURIComponent(tool) + '">Read more →</a></div>' +
+      '</div>';
+  }
+
+  fetch('/api/reviews', { headers: { Accept: 'application/json' } })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      var all = data.reviews || [];
+      if (strip) renderStrip(strip, data, all);
+      toolHosts.forEach(function (h) { renderTool(h, all); });
+      if (data.count) ratingEls.forEach(function (el) { el.textContent = (data.average || 0).toFixed(1) + ' · Reviews'; });
+    })
+    .catch(function () { if (strip) strip.remove(); toolHosts.forEach(function (h) { h.remove(); }); });
+})();
+

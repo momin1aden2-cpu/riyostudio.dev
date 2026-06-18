@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <style>html,body{background-color:#060B14!important}</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Review Moderation — Riyo Studio</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#060B14">
+  <meta name="color-scheme" content="dark">
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="style.css?v=5bc7ec58">
+  <style>
+    .adm { max-width: 760px; margin: 0 auto; padding: 80px 16px; }
+    .adm h1 { color: var(--text-main); font-size: 1.6rem; margin: 0 0 0.4rem; }
+    .adm p.sub { color: var(--text-dim); margin: 0 0 1.5rem; font-size: 0.9rem; }
+    .adm .bar { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+    .adm input { flex: 1; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 10px 12px; border-radius: 8px; outline: none; }
+    .adm button { background: #10B981; color: #04140d; font-weight: 700; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; }
+    .adm .item { background: rgba(16,20,30,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 1.1rem 1.25rem; margin-bottom: 12px; }
+    .adm .stars { color: #f5b301; }
+    .adm .body { color: var(--text-main); line-height: 1.55; margin: 0.5rem 0 0.75rem; white-space: pre-wrap; word-wrap: break-word; }
+    .adm .meta { color: var(--text-dim); font-size: 0.8rem; margin-bottom: 0.75rem; }
+    .adm .acts { display: flex; gap: 8px; }
+    .adm .acts button { padding: 7px 14px; font-size: 0.82rem; font-weight: 600; }
+    .adm .approve { background: #10B981; color: #04140d; }
+    .adm .reject { background: transparent; color: #fbbf24; border: 1px solid rgba(251,191,36,0.4); }
+    .adm .delete { background: transparent; color: #f87171; border: 1px solid rgba(248,113,113,0.4); }
+    .adm .msg { color: var(--text-dim); padding: 1.5rem 0; }
+  </style>
+</head>
+<body>
+  <div class="adm">
+    <h1>Review Moderation</h1>
+    <p class="sub">Pending reviews. Approve to publish on <a href="/reviews" style="color:var(--accent);">/reviews</a>, reject to hide, delete to remove.</p>
+    <div class="bar">
+      <input id="adm-token" type="password" placeholder="Admin token" autocomplete="off">
+      <button id="adm-load">Load</button>
+    </div>
+    <div id="adm-list"></div>
+  </div>
+  <script src="admin-reviews.js?v=0d029113"></script>
+</body>
+</html>
