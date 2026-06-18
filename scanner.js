@@ -264,11 +264,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Initialization ---
     function init() {
         loadPrefs();
+        if (isMobileViewport()) screensSelect.value = '1'; // mobile is locked to a single screen
         syncBgControls();
         updateCanvasSize();
         window.addEventListener('resize', scaleWrapperToFit);
         // Open on a finished template so the canvas is never blank.
-        if (layers.length === 0) loadTemplate('apple-minimal');
+        // Mobile starts on a clean single-screen hero (panoramas are desktop-only);
+        // desktop keeps the rich 5-screen showcase default.
+        if (layers.length === 0) loadTemplate(isMobileViewport() ? 'pro-light' : 'apple-minimal');
         else render();
     }
 
@@ -282,12 +285,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const [w, h] = presetSelect.value.split('x').map(Number);
         return (h / w) >= 1.6;
     }
+    function isMobileViewport() {
+        return !!(window.matchMedia && window.matchMedia('(max-width: 900px)').matches);
+    }
     function syncPanoramaAvailability() {
-        const allow = isPanoramaFormat();
+        // Multi-screen panoramas are a desktop feature — on mobile lock to one screen
+        // (the composer builds one at a time). Desktop still gates to tall phone formats.
+        const mobile = isMobileViewport();
+        const allow = isPanoramaFormat() && !mobile;
         Array.from(screensSelect.options).forEach(o => {
             if (o.value !== '1') { o.disabled = !allow; o.hidden = !allow; }
         });
-        if (!allow && screensSelect.value !== '1') screensSelect.value = '1';
+        // Force back to 1 only on desktop non-tall formats; on mobile just disable the
+        // options (don't yank a value a template may have set, to avoid breakage).
+        if (!isPanoramaFormat() && !mobile && screensSelect.value !== '1') screensSelect.value = '1';
         screensSelect.style.opacity = allow ? '1' : '0.55';
         screensSelect.title = allow
             ? 'Lay your screenshots out as a continuous multi-screen panorama'
@@ -429,6 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // continuous background. `copy` cycles if there are fewer lines than screens.
         const buildHero = (presetIdx, angle, frame, frameColor, persY, copy) => {
             let n = parseInt(screensSelect.value) || 1; n = Math.max(1, Math.min(5, n));
+            if (isMobileViewport()) n = 1; // mobile builds one screen at a time
             presetSelect.value = '1290x2796'; screensSelect.value = String(n); updateCanvasSize();
             bgType = 'preset'; bgPresetIdx = presetIdx; bgAngle = angle;
             const light = hexLuminance(BG_PRESETS[presetIdx].colors[0]) > 0.58;
@@ -882,12 +894,16 @@ document.addEventListener('DOMContentLoaded', () => {
         e.target.value = '';
     });
 
-    // --- Mobile Quick Edit: form-driven editing of text + screenshots so phones
-    // don't have to wrestle the tiny pinned canvas. Rebuilt from updatePropsPanel()
-    // (a structural-change point); typing only re-renders the canvas, not this panel,
-    // so input focus is preserved.
+    // --- Mobile One-Screen Composer: a fully form-driven builder so phones never
+    // have to wrestle the tiny pinned canvas. It controls the background, device
+    // (frame/colour/screenshot/angle/size) and text via taps, sliders and inputs,
+    // auto-targeting each layer by id (no canvas selection needed). Rebuilt from
+    // updatePropsPanel() on structural changes; sliders/text only re-render the
+    // canvas (not the panel), so focus and drag aren't interrupted.
     const mqe = document.getElementById('mobile-quick-edit');
     const MQE_FRAME_NAMES = { iphone: 'iPhone', pixel: 'Pixel', galaxy: 'Galaxy', android: 'Android', ipad: 'iPad', macbook: 'MacBook', browser: 'Browser', clay: 'Clay', none: 'Image' };
+    const MQE_FRAME_OPTS = [['iphone', 'iPhone'], ['pixel', 'Google Pixel'], ['galaxy', 'Samsung Galaxy'], ['android', 'Android'], ['ipad', 'iPad'], ['macbook', 'MacBook'], ['browser', 'Browser'], ['clay', 'Clay'], ['none', 'No frame']];
+    const MQE_COLORS = ['#0b0b0d', '#3a3a3c', '#d6d7da', '#f5f5f7', '#e3c08d', '#4a6b8a', '#2e5b4f'];
     function mqeEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
     function mqeScreenIndex(l) {
         if (screenCount <= 1) return 0;
@@ -895,50 +911,87 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function renderMobileQuickEdit() {
         if (!mqe) return;
-        let html = '<p class="mqe-title">✏️ Quick Edit</p><p class="mqe-hint">Type to edit text live, or swap a screenshot — no need to tap the canvas.</p>';
+        let html = '<p class="mqe-title">✏️ Build your mockup</p><p class="mqe-hint">Everything is here — no need to touch the canvas. Multi-screen panoramas are a desktop feature.</p>';
         if (!layers.length) {
-            mqe.innerHTML = html + '<div class="mqe-empty">Add a template or element from the toolbar above to start.</div>';
+            mqe.innerHTML = html + '<div class="mqe-empty">Pick a template or “+ Screenshot” above to start.</div>';
             return;
         }
+
+        // Background (global)
+        html += '<div class="mqe-sec-label">Background</div><div class="mqe-bgrow">';
+        BG_PRESETS.forEach((p, i) => {
+            const on = (bgType === 'preset' && bgPresetIdx === i) ? ' on' : '';
+            html += '<button class="mqe-bg' + on + '" data-bg="' + i + '" title="' + mqeEsc(p.name) + '" style="background:' + bgPresetCss(p) + '"></button>';
+        });
+        html += '</div>';
+
         const screens = Math.max(1, screenCount);
         for (let s = 0; s < screens; s++) {
             const inScreen = layers.filter((l) => mqeScreenIndex(l) === s);
             const texts = inScreen.filter((l) => l.type === 'text');
             const devices = inScreen.filter((l) => l.type === 'image');
             if (!texts.length && !devices.length) continue;
-            if (screenCount > 1) html += '<div class="mqe-screen-label">Screen ' + (s + 1) + '</div>';
+            if (screens > 1) html += '<div class="mqe-screen-label">Screen ' + (s + 1) + '</div>';
+
+            if (texts.length) html += '<div class="mqe-sec-label">Text</div>';
             texts.forEach((l) => {
                 html += '<input class="mqe-text" data-id="' + l.id + '" value="' + mqeEsc(l.content) + '" placeholder="Text…">';
             });
+
             devices.forEach((l) => {
-                const label = (MQE_FRAME_NAMES[l.frameStyle] || 'Screenshot') + ' screenshot';
-                html += '<div class="mqe-device"><span class="mqe-dlabel">📱 ' + mqeEsc(label) + '</span>' +
+                html += '<div class="mqe-sec-label">Device</div>';
+                html += '<select class="mqe-frame" data-id="' + l.id + '">' +
+                    MQE_FRAME_OPTS.map((o) => '<option value="' + o[0] + '"' + (o[0] === l.frameStyle ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select>';
+                if (COLOURABLE_FRAMES.includes(l.frameStyle)) {
+                    html += '<div class="mqe-swrow">';
+                    MQE_COLORS.forEach((c) => {
+                        const on = (l.frameColor || '').toLowerCase() === c.toLowerCase() ? ' on' : '';
+                        html += '<button class="mqe-sw' + on + '" data-id="' + l.id + '" data-color="' + c + '" style="background:' + c + '"></button>';
+                    });
+                    html += '</div>';
+                }
+                html += '<div class="mqe-device"><span class="mqe-dlabel">📱 ' + mqeEsc(MQE_FRAME_NAMES[l.frameStyle] || 'Screenshot') + '</span>' +
                     '<button class="mqe-replace" data-id="' + l.id + '">Replace</button>' +
                     '<button class="mqe-del" data-id="' + l.id + '" aria-label="Remove">✕</button></div>';
+                html += '<div class="mqe-slider"><span>Angle</span><input type="range" class="mqe-tilt" data-id="' + l.id + '" min="-45" max="45" value="' + Math.round(l.persY || 0) + '"></div>';
+                html += '<div class="mqe-slider"><span>Size</span><input type="range" class="mqe-size" data-id="' + l.id + '" min="30" max="140" value="' + Math.round((l.scale || 1) * 100) + '"></div>';
             });
         }
+        html += '<button class="mqe-download" type="button">⬇ Download mockup</button>';
         mqe.innerHTML = html;
     }
     if (mqe) {
+        const mqeLayer = (el) => layers.find((x) => x.id === el.dataset.id);
         mqe.addEventListener('input', (e) => {
+            const t = e.target; if (!t.dataset || !t.dataset.id) return;
+            const l = mqeLayer(t); if (!l) return;
+            if (t.classList.contains('mqe-text')) l.content = t.value;
+            else if (t.classList.contains('mqe-tilt')) l.persY = parseInt(t.value) || 0;
+            else if (t.classList.contains('mqe-size')) l.scale = Math.max(0.05, (parseInt(t.value) || 100) / 100);
+            else return;
+            scheduleRender();
+        });
+        mqe.addEventListener('change', (e) => {
             const t = e.target;
-            if (t && t.classList && t.classList.contains('mqe-text')) {
-                const l = layers.find((x) => x.id === t.dataset.id);
-                if (l) { l.content = t.value; scheduleRender(); }
+            if (t.classList.contains('mqe-frame')) {
+                const l = mqeLayer(t); if (l) { l.frameStyle = t.value; render(); renderMobileQuickEdit(); }
             }
         });
         mqe.addEventListener('click', (e) => {
+            const bg = e.target.closest && e.target.closest('.mqe-bg');
+            if (bg) { bgType = 'preset'; bgPresetIdx = parseInt(bg.dataset.bg); const p = BG_PRESETS[bgPresetIdx]; bgAngle = (p && p.angle != null) ? p.angle : 135; render(); renderMobileQuickEdit(); return; }
+            const sw = e.target.closest && e.target.closest('.mqe-sw');
+            if (sw) { const l = mqeLayer(sw); if (l) { l.frameColor = sw.dataset.color; render(); renderMobileQuickEdit(); } return; }
+            const dl = e.target.closest && e.target.closest('.mqe-download');
+            if (dl) { const pn = document.getElementById('export-png-btn'); if (pn) pn.click(); return; }
             const btn = e.target.closest && e.target.closest('button[data-id]');
             if (!btn) return;
-            const id = btn.dataset.id;
-            if (btn.classList.contains('mqe-replace')) {
-                replaceTargetId = id;
-                imageUpload.click();
-            } else if (btn.classList.contains('mqe-del')) {
+            if (btn.classList.contains('mqe-replace')) { replaceTargetId = btn.dataset.id; imageUpload.click(); }
+            else if (btn.classList.contains('mqe-del')) {
+                const id = btn.dataset.id;
                 layers = layers.filter((x) => x.id !== id);
                 if (selectedLayerId === id) selectedLayerId = null;
-                updatePropsPanel();
-                render();
+                updatePropsPanel(); render();
             }
         });
     }
