@@ -881,7 +881,67 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         e.target.value = '';
     });
-    
+
+    // --- Mobile Quick Edit: form-driven editing of text + screenshots so phones
+    // don't have to wrestle the tiny pinned canvas. Rebuilt from updatePropsPanel()
+    // (a structural-change point); typing only re-renders the canvas, not this panel,
+    // so input focus is preserved.
+    const mqe = document.getElementById('mobile-quick-edit');
+    const MQE_FRAME_NAMES = { iphone: 'iPhone', pixel: 'Pixel', galaxy: 'Galaxy', android: 'Android', ipad: 'iPad', macbook: 'MacBook', browser: 'Browser', clay: 'Clay', none: 'Image' };
+    function mqeEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+    function mqeScreenIndex(l) {
+        if (screenCount <= 1) return 0;
+        return Math.max(0, Math.min(screenCount - 1, Math.floor((l.x || 0) / baseWidth)));
+    }
+    function renderMobileQuickEdit() {
+        if (!mqe) return;
+        let html = '<p class="mqe-title">✏️ Quick Edit</p><p class="mqe-hint">Type to edit text live, or swap a screenshot — no need to tap the canvas.</p>';
+        if (!layers.length) {
+            mqe.innerHTML = html + '<div class="mqe-empty">Add a template or element from the toolbar above to start.</div>';
+            return;
+        }
+        const screens = Math.max(1, screenCount);
+        for (let s = 0; s < screens; s++) {
+            const inScreen = layers.filter((l) => mqeScreenIndex(l) === s);
+            const texts = inScreen.filter((l) => l.type === 'text');
+            const devices = inScreen.filter((l) => l.type === 'image');
+            if (!texts.length && !devices.length) continue;
+            if (screenCount > 1) html += '<div class="mqe-screen-label">Screen ' + (s + 1) + '</div>';
+            texts.forEach((l) => {
+                html += '<input class="mqe-text" data-id="' + l.id + '" value="' + mqeEsc(l.content) + '" placeholder="Text…">';
+            });
+            devices.forEach((l) => {
+                const label = (MQE_FRAME_NAMES[l.frameStyle] || 'Screenshot') + ' screenshot';
+                html += '<div class="mqe-device"><span class="mqe-dlabel">📱 ' + mqeEsc(label) + '</span>' +
+                    '<button class="mqe-replace" data-id="' + l.id + '">Replace</button>' +
+                    '<button class="mqe-del" data-id="' + l.id + '" aria-label="Remove">✕</button></div>';
+            });
+        }
+        mqe.innerHTML = html;
+    }
+    if (mqe) {
+        mqe.addEventListener('input', (e) => {
+            const t = e.target;
+            if (t && t.classList && t.classList.contains('mqe-text')) {
+                const l = layers.find((x) => x.id === t.dataset.id);
+                if (l) { l.content = t.value; scheduleRender(); }
+            }
+        });
+        mqe.addEventListener('click', (e) => {
+            const btn = e.target.closest && e.target.closest('button[data-id]');
+            if (!btn) return;
+            const id = btn.dataset.id;
+            if (btn.classList.contains('mqe-replace')) {
+                replaceTargetId = id;
+                imageUpload.click();
+            } else if (btn.classList.contains('mqe-del')) {
+                layers = layers.filter((x) => x.id !== id);
+                if (selectedLayerId === id) selectedLayerId = null;
+                updatePropsPanel();
+                render();
+            }
+        });
+    }
 
     const autoRotateToggle = document.getElementById('auto-rotate-toggle');
     const ambientGlowToggle = document.getElementById('ambient-glow-toggle');
@@ -1732,6 +1792,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Properties Panel Sync ---
     function updatePropsPanel() {
+        renderMobileQuickEdit();
         if (!selectedLayerId) {
             if(propsCanvas) propsCanvas.style.display = 'block';
             if(propsText) propsText.style.display = 'none';
