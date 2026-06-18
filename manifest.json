@@ -1,7 +1,7 @@
 {
   "name": "Riyo Studio",
   "short_name": "Riyo Studio",
-  "description": "Zero-Server Developer and Business Tools",
+  "description": "Free, private browser tools for everyone — no uploads, no accounts.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#060B14",

@@ -111,7 +111,7 @@
         '<a class="drawer-brand" href="/" aria-label="Riyo Studio home">' +
           '<img src="assets/icon.svg?v=2" alt="" width="34" height="34">' +
           '<span class="drawer-brand-text"><span class="drawer-brand-name">Riyo Studio</span>' +
-          '<span class="drawer-brand-tag">Local Developer Tools</span></span>' +
+          '<span class="drawer-brand-tag">Free Private Browser Tools</span></span>' +
         '</a>' +
         '<button class="drawer-close" type="button" aria-label="Close menu">' +
           '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>' +
