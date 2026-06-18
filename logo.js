@@ -1339,7 +1339,7 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
   // description) to concrete terms we know surface strong, on-theme icons.
   // `match` phrases are tested with substring includes; `terms` are searched.
   const ICON_CATEGORIES = [
-    { match: ['security', 'alarm', 'cctv', 'surveillance', ' alert', 'alert360', 'locksmith', 'access control', 'guarding', 'patrol'], terms: ['shield', 'lock', 'cctv', 'security-camera', 'alarm', 'fingerprint', 'key', 'padlock', 'eye-security'] },
+    { match: ['security', 'alarm', 'cctv', 'surveillance', ' alert', 'alert360', 'locksmith', 'access control', 'guarding', 'patrol', 'protection', 'guard'], terms: ['shield', 'shield-check', 'padlock', 'lock', 'cctv', 'fingerprint', 'eye', 'key', 'dog', 'radar'] },
     { match: ['panel beat', 'smash repair', 'auto body', 'bodywork', 'spray paint', 'mechanic', 'automotive', 'car repair', 'car service', 'tyre', 'tire shop', 'muffler', 'detailing'], terms: ['car', 'car-repair', 'car-wrench', 'wrench', 'spray', 'garage', 'tire', 'engine', 'steering-wheel'] },
     { match: ['car wash', 'carwash'], terms: ['car-wash', 'car', 'water', 'bubbles', 'spray', 'soap'] },
     { match: ['plumb', 'pipe', 'drain', 'leak', 'hot water', 'gasfit'], terms: ['pipe', 'pipe-wrench', 'tap', 'faucet', 'plumbing', 'valve', 'water-pump'] },
@@ -1370,7 +1370,21 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
     { match: ['jewel', 'diamond ring', 'goldsmith'], terms: ['diamond', 'ring', 'gem', 'crown'] }
   ];
 
-  // Turn the brand name + description into the icon search terms to use.
+  // Curated, logo-friendly icon sets (clean, bold, consistent). Restricting the
+  // search to these avoids the grab-bag of mismatched styles that made results
+  // look random; Solar/Phosphor/Material favour solid marks that read as logos.
+  const GEN_PREFIXES = 'solar,ph,material-symbols,mingcute,fluent,tabler,lucide';
+
+  // Break terms into whole words used as a relevance gate, so a search for
+  // "shield/lock/cctv" keeps shields & padlocks but drops alarm-CLOCKS, key-BOARDS
+  // and other loose name matches that polluted the old pool.
+  function termSegments(terms) {
+    const s = new Set();
+    terms.forEach((t) => String(t).toLowerCase().split(/[\s-]+/).forEach((w) => { if (w.length >= 3) s.add(w); }));
+    return s;
+  }
+
+  // Turn the brand name + description into icon search terms + a relevance gate.
   // Description wins over the name (the name may be unrelated, e.g. "Safari"
   // panel-beating). Falls back to plain keywords, then nothing (→ procedural).
   function resolveIconTerms(brandName, description) {
@@ -1385,30 +1399,39 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
     if (hits.length) {
       const terms = [];
       hits.slice(0, 2).forEach((c) => terms.push(...c.terms));
-      return [...new Set(terms)];
+      const t = [...new Set(terms)];
+      return { terms: t, core: termSegments(t) };
     }
     // No category — search the meaningful words the user actually wrote.
     const words = []
       .concat(brandKeyword(description).split(' '))
       .concat(brandKeyword(brandName).split(' '))
       .filter(Boolean);
-    return [...new Set(words)];
+    const w = [...new Set(words)];
+    return { terms: w, core: termSegments(w) };
   }
 
   // Build a pool of relevant icon ids ("prefix:name") from the resolved terms.
-  // Pull a few icons from EACH term and interleave them, so the six concepts
-  // get a spread of on-theme icons (shield, lock, cctv, camera…) rather than
-  // six near-identical results from whichever term happened to come first.
-  async function fetchIconPool(terms) {
+  // Searches only the curated sets, then keeps icons whose NAME segment matches a
+  // core term (true relevance gate), and interleaves across terms for variety.
+  async function fetchIconPool(terms, core) {
     const lists = await Promise.all(terms.slice(0, 8).map(async (term) => {
       try {
-        const res = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(term)}&limit=6`);
+        const res = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(term)}&prefixes=${GEN_PREFIXES}&limit=32`);
         const data = await res.json();
-        return (data && data.icons ? data.icons : []).slice(0, 4);
+        let icons = (data && data.icons) ? data.icons : [];
+        if (core && core.size) {
+          const onTheme = icons.filter((id) => {
+            const name = (id.split(':')[1] || '');
+            return name.split('-').some((seg) => core.has(seg));
+          });
+          if (onTheme.length) icons = onTheme; // keep gate only if it leaves results
+        }
+        return icons.slice(0, 8);
       } catch (e) { return []; }
     }));
     const pool = [], seen = new Set();
-    for (let round = 0; round < 4; round++) {
+    for (let round = 0; round < 8; round++) {
       for (const list of lists) {
         const ic = list[round];
         if (ic && !seen.has(ic)) { seen.add(ic); pool.push(ic); }
@@ -1538,29 +1561,43 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
       brandName,
       palette: pickRand(GEN_PALETTES),
       fp: pickRand(GEN_FONTS),
-      layout: pickRand(['stack', 'left']),
+      layout: pickRand(['stack', 'stack', 'left', 'left', 'badge', 'badge', 'wordmark']),
       gradient: Math.random() < 0.5,
       recipeIndex: Math.floor(Math.random() * 8),
       iconId: iconId || null,
       iconSvg: null
     };
   }
+  // Wrap an icon in a filled circle for the "badge" / emblem layout.
+  function wrapInBadge(iconGroup, palette) {
+    scaleTo(iconGroup, 96);
+    iconGroup.set({ originX: 'center', originY: 'center', left: 0, top: 0 });
+    const circle = new fabric.Circle({ radius: 100, originX: 'center', originY: 'center', left: 0, top: 0, fill: palette.icon });
+    return new fabric.Group([circle, iconGroup], { originX: 'center', originY: 'center' });
+  }
   async function getConceptIcon(concept) {
-    if (concept.iconSvg) return await loadSvgGroup(concept.iconSvg);
-    // A relevant icon was assigned from the pool — fetch it in the palette colour.
-    if (concept.iconId) {
+    if (concept.layout === 'wordmark') return null; // text-only logo, no mark
+    // On a badge the icon sits inside a coloured circle, so it must be the bg colour
+    // for contrast; otherwise it's the accent colour.
+    const iconColor = concept.layout === 'badge' ? concept.palette.bg : concept.palette.icon;
+    let mark = null;
+    if (concept.iconSvg) mark = await loadSvgGroup(concept.iconSvg);
+    else if (concept.iconId) {
       try {
         const [prefix, name] = concept.iconId.split(':');
-        const svgRes = await fetch(`https://api.iconify.design/${prefix}/${name}.svg?color=${encodeURIComponent(concept.palette.icon)}`);
+        const svgRes = await fetch(`https://api.iconify.design/${prefix}/${name}.svg?color=${encodeURIComponent(iconColor)}`);
         if (svgRes.ok) {
           const txt = await svgRes.text();
-          if (txt && txt.indexOf('<svg') !== -1) { concept.iconSvg = txt; return await loadSvgGroup(txt); }
+          if (txt && txt.indexOf('<svg') !== -1) { concept.iconSvg = txt; mark = await loadSvgGroup(txt); }
         }
       } catch (e) { /* fall through to a generated mark */ }
     }
-    const mark = buildMark(concept.palette, concept.fp, concept.brandName, concept.recipeIndex);
-    if (concept.gradient) applyGradient(mark, concept.palette.icon);
-    return mark;
+    if (!mark) {
+      const m = buildMark(concept.palette, concept.fp, concept.brandName, concept.recipeIndex);
+      if (concept.gradient) applyGradient(m, concept.palette.icon);
+      return m; // procedural marks are already self-contained
+    }
+    return concept.layout === 'badge' ? wrapInBadge(mark, concept.palette) : mark;
   }
   async function renderConceptThumb(concept) {
     const el = document.createElement('canvas');
@@ -1568,10 +1605,11 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
     const tc = new fabric.StaticCanvas(el, { width: 480, height: 240, enableRetinaScaling: false, renderOnAddRemove: false });
     tc.backgroundColor = concept.palette.bg;
     const icon = await getConceptIcon(concept);
-    scaleTo(icon, 92);
-    const brand = new fabric.IText(concept.brandName, { fontFamily: concept.fp.h, fontWeight: 'bold', fontSize: 30, fill: concept.palette.text, objectCaching: false });
+    if (icon) scaleTo(icon, 92);
+    const brand = new fabric.IText(concept.brandName, { fontFamily: concept.fp.h, fontWeight: 'bold', fontSize: concept.layout === 'wordmark' ? 40 : 30, fill: concept.palette.text, objectCaching: false });
     const sub = new fabric.IText('YOUR TAGLINE', { fontFamily: concept.fp.s, fontSize: 10, fill: concept.palette.text, opacity: 0.7, charSpacing: 300, objectCaching: false });
-    tc.add(icon, brand, sub);
+    if (icon) tc.add(icon);
+    tc.add(brand, sub);
     await document.fonts.ready;
     if (brand.initDimensions) brand.initDimensions();
     if (sub.initDimensions) sub.initDimensions();
@@ -1585,9 +1623,8 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
     canvas.getObjects().forEach((o) => { if (o !== bgRect) canvas.remove(o); });
     bgRect.set('fill', concept.palette.bg);
     const icon = await getConceptIcon(concept);
-    scaleTo(icon, 320);
-    canvas.add(icon);
-    const brand = new fabric.IText(concept.brandName, { fontFamily: concept.fp.h, fontWeight: 'bold', fontSize: 64, fill: concept.palette.text, objectCaching: false });
+    if (icon) { scaleTo(icon, 320); canvas.add(icon); }
+    const brand = new fabric.IText(concept.brandName, { fontFamily: concept.fp.h, fontWeight: 'bold', fontSize: concept.layout === 'wordmark' ? 92 : 64, fill: concept.palette.text, objectCaching: false });
     const sub = new fabric.IText('YOUR TAGLINE HERE', { fontFamily: concept.fp.s, fontWeight: 'normal', fontSize: 20, fill: concept.palette.text, opacity: 0.75, charSpacing: 400, objectCaching: false });
     canvas.add(brand); canvas.add(sub);
     const place = () => {
@@ -1609,8 +1646,8 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
     conceptGrid.innerHTML = '';
     conceptModal.style.display = 'flex';
 
-    // Show the 6 cards immediately so it feels instant, then fill them in.
-    const cards = Array.from({ length: 6 }, () => {
+    // Show the cards immediately so it feels instant, then fill them in.
+    const cards = Array.from({ length: 12 }, () => {
       const card = document.createElement('div');
       card.style.cssText = 'cursor:pointer;border:1px solid rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;background:#05080f;aspect-ratio:2/1;display:flex;align-items:center;justify-content:center;color:#3a4656;font-size:0.78rem;transition:border-color .15s,transform .15s;';
       card.textContent = 'rendering…';
@@ -1623,7 +1660,7 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
     // Resolve a relevant icon pool from what the business is, then give each
     // concept a DIFFERENT icon so the six results are on-theme yet varied.
     let pool = [];
-    try { pool = shuffle(await fetchIconPool(resolveIconTerms(brandRaw, descRaw))); } catch (e) { pool = []; }
+    try { const r = resolveIconTerms(brandRaw, descRaw); pool = shuffle(await fetchIconPool(r.terms, r.core)); } catch (e) { pool = []; }
 
     cards.forEach((card, i) => {
       const iconId = pool.length ? pool[i % pool.length] : null;
