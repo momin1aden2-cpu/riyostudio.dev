@@ -2,8 +2,9 @@ export async function onRequestGet(context) {
   const apiKey = context.env.UPTIMEROBOT_API_KEY;
 
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: "SERVER_UNCONFIGURED: UPTIMEROBOT_API_KEY missing from environment" }), {
-      status: 500,
+    console.error("uptime: monitor API key not configured");
+    return new Response(JSON.stringify({ error: "SERVICE_UNAVAILABLE" }), {
+      status: 503,
       headers: { "Content-Type": "application/json" }
     });
   }
