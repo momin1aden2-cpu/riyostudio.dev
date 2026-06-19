@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const frameColorContainer = document.getElementById('frame-color-container');
     const imageUpload = document.getElementById('image-upload-input');
     const addDeviceBtn = document.getElementById('add-device-btn');
+    const viewResetBtn = document.getElementById('view-reset-btn');
     let replaceTargetId = null;
 
     // Premium Background Inputs
@@ -202,6 +203,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let originalScale = 1;
     let activeGuides = []; // alignment guide lines shown while dragging
 
+    // Mobile-only whole-canvas zoom/pan: the device frames stay put, we just
+    // magnify the entire preview so fine edits are possible on a small screen.
+    let fitScale = 1, viewZoom = 1, viewPanX = 0, viewPanY = 0;
+
     // Device Frame Assets
     const notchImg = new Image(); notchImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 30"><path d="M0 0C10 0 15 5 15 15C15 25 25 30 35 30H125C135 30 145 25 145 15C145 5 150 0 160 0H0Z" fill="%23000000"/></svg>';
     const punchHoleImg = new Image(); punchHoleImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="%23000000"/></svg>';
@@ -337,6 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         canvasInitialized = true;
 
+        viewZoom = 1; viewPanX = 0; viewPanY = 0; // a new canvas size starts at fit
         scaleWrapperToFit();
         render();
 
@@ -351,14 +357,48 @@ document.addEventListener('DOMContentLoaded', () => {
         const padding = 40;
         const availableW = container.clientWidth - padding;
         const availableH = container.clientHeight - padding;
-        
+
         const scaleW = availableW / targetWidth;
         const scaleH = availableH / targetHeight;
         // Guard against a transient zero/negative container (mid-layout, narrow splits)
         // flipping or hiding the canvas.
-        const scale = Math.max(0.02, Math.min(scaleW, scaleH));
+        fitScale = Math.max(0.02, Math.min(scaleW, scaleH));
+        clampViewPan();
+        applyWrapperTransform();
+        updateZoomUI();
+    }
 
-        wrapper.style.transform = `scale(${scale})`;
+    // The wrapper holds the canvas at full resolution; this combines the fit-scale
+    // with the mobile view zoom + pan into a single transform.
+    function applyWrapperTransform() {
+        const total = fitScale * viewZoom;
+        wrapper.style.transform = `translate(${viewPanX}px, ${viewPanY}px) scale(${total})`;
+    }
+
+    // Stop a zoomed canvas being panned entirely out of the viewport.
+    function clampViewPan() {
+        if (viewZoom <= 1) { viewPanX = 0; viewPanY = 0; return; }
+        const c = document.getElementById('canvas-container');
+        const total = fitScale * viewZoom;
+        const ovX = Math.max(0, (targetWidth * total - c.clientWidth) / 2 + 24);
+        const ovY = Math.max(0, (targetHeight * total - c.clientHeight) / 2 + 24);
+        viewPanX = Math.max(-ovX, Math.min(ovX, viewPanX));
+        viewPanY = Math.max(-ovY, Math.min(ovY, viewPanY));
+    }
+
+    // Snap back to a 1:1 fit (Fit button, and whenever the canvas itself changes).
+    function resetView() {
+        viewZoom = 1; viewPanX = 0; viewPanY = 0;
+        applyWrapperTransform();
+        updateZoomUI();
+    }
+
+    // Show the Fit pill only on mobile while zoomed in, reflecting the current %.
+    function updateZoomUI() {
+        if (!viewResetBtn) return;
+        const show = isMobileViewport() && viewZoom > 1.01;
+        viewResetBtn.style.display = show ? 'flex' : 'none';
+        if (show) viewResetBtn.textContent = 'Fit · ' + Math.round(viewZoom * 100) + '%';
     }
 
     // --- Layers API ---
@@ -893,6 +933,7 @@ document.addEventListener('DOMContentLoaded', () => {
         addTextPreset(e.target.dataset.text);
         closeAddMenu();
     }));
+    if (viewResetBtn) viewResetBtn.addEventListener('click', resetView);
     addDeviceBtn.addEventListener('click', () => {
         // If a device is already selected, the chosen image fills (replaces) it;
         // otherwise it's added as a new device. The button relabels to match.
@@ -1721,12 +1762,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // so positioning/sizing text & devices is easy on a phone's small canvas.
     const pointers = new Map(); // pointerId -> {x,y} canvas coords
     let isPinching = false, pinchStartDist = 1, pinchStartScale = 1, pinchStartMidX = 0, pinchStartMidY = 0, pinchLayerX = 0, pinchLayerY = 0;
+    // Two-finger whole-canvas zoom (mobile, when the fingers aren't on a layer).
+    let isViewPinching = false, vpStartDist = 1, vpStartZoom = 1, vpAnchorX = 0, vpAnchorY = 0, vpContCx = 0, vpContCy = 0;
+    // One-finger canvas pan while zoomed in (mobile).
+    let isViewPanning = false, vpanStartX = 0, vpanStartY = 0, vpanPanX0 = 0, vpanPanY0 = 0;
 
     wrapper.addEventListener('pointerdown', (e) => {
         const { x, y } = getMouseCoords(e);
-        pointers.set(e.pointerId, { x, y });
+        pointers.set(e.pointerId, { x, y, cx: e.clientX, cy: e.clientY });
 
-        // Second finger down → start a pinch on the selected (or tapped) layer.
+        // Second finger down → pinch the selected/tapped layer, OR (on mobile, with
+        // nothing under the fingers) pinch-zoom the whole canvas.
         if (pointers.size === 2) {
             let layer = layers.find(l => l.id === selectedLayerId);
             if (!layer) { const hid = checkHit(x, y); if (hid) { selectedLayerId = hid; layer = layers.find(l => l.id === hid); updatePropsPanel(); } }
@@ -1736,7 +1782,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 pinchStartScale = layer.scale || 1;
                 pinchStartMidX = (pts[0].x + pts[1].x) / 2; pinchStartMidY = (pts[0].y + pts[1].y) / 2;
                 pinchLayerX = layer.x; pinchLayerY = layer.y;
-                isPinching = true; isDragging = false; isScaling = false; activeGuides = []; render();
+                isPinching = true; isViewPinching = false; isViewPanning = false; isDragging = false; isScaling = false; activeGuides = []; render();
+            } else if (isMobileViewport()) {
+                const pts = [...pointers.values()];
+                vpStartDist = Math.hypot(pts[0].cx - pts[1].cx, pts[0].cy - pts[1].cy) || 1;
+                vpStartZoom = viewZoom;
+                const mcx = (pts[0].cx + pts[1].cx) / 2, mcy = (pts[0].cy + pts[1].cy) / 2;
+                const crect = document.getElementById('canvas-container').getBoundingClientRect();
+                vpContCx = crect.left + crect.width / 2; vpContCy = crect.top + crect.height / 2;
+                // Content point under the pinch centre, so zoom stays anchored there.
+                const total0 = fitScale * vpStartZoom;
+                vpAnchorX = (mcx - (vpContCx + viewPanX)) / total0;
+                vpAnchorY = (mcy - (vpContCy + viewPanY)) / total0;
+                isViewPinching = true; isViewPanning = false; isPinching = false; isDragging = false; isScaling = false;
             }
             return;
         }
@@ -1759,10 +1817,35 @@ document.addEventListener('DOMContentLoaded', () => {
             updatePropsPanel(); render(); return;
         }
         selectedLayerId = null; updatePropsPanel(); render();
+        // On mobile, dragging empty space while zoomed in pans the canvas view.
+        if (isMobileViewport() && viewZoom > 1.01) {
+            isViewPanning = true;
+            vpanStartX = e.clientX; vpanStartY = e.clientY;
+            vpanPanX0 = viewPanX; vpanPanY0 = viewPanY;
+        }
     });
 
     window.addEventListener('pointermove', (e) => {
-        if (pointers.has(e.pointerId)) pointers.set(e.pointerId, getMouseCoords(e));
+        if (pointers.has(e.pointerId)) { const m = getMouseCoords(e); pointers.set(e.pointerId, { x: m.x, y: m.y, cx: e.clientX, cy: e.clientY }); }
+
+        if (isViewPanning) {
+            viewPanX = vpanPanX0 + (e.clientX - vpanStartX);
+            viewPanY = vpanPanY0 + (e.clientY - vpanStartY);
+            clampViewPan(); applyWrapperTransform();
+            return;
+        }
+
+        if (isViewPinching && pointers.size >= 2) {
+            const pts = [...pointers.values()];
+            const dist = Math.hypot(pts[0].cx - pts[1].cx, pts[0].cy - pts[1].cy) || 1;
+            const mcx = (pts[0].cx + pts[1].cx) / 2, mcy = (pts[0].cy + pts[1].cy) / 2;
+            viewZoom = Math.max(1, Math.min(5, vpStartZoom * (dist / vpStartDist)));
+            const total1 = fitScale * viewZoom;
+            viewPanX = mcx - vpContCx - vpAnchorX * total1;
+            viewPanY = mcy - vpContCy - vpAnchorY * total1;
+            clampViewPan(); applyWrapperTransform(); updateZoomUI();
+            return;
+        }
 
         if (isPinching && pointers.size >= 2) {
             const pl = layers.find(l => l.id === selectedLayerId);
@@ -1773,6 +1856,7 @@ document.addEventListener('DOMContentLoaded', () => {
             pl.scale = Math.max(0.05, pinchStartScale * (dist / pinchStartDist));
             pl.x = pinchLayerX + (midX - pinchStartMidX);
             pl.y = pinchLayerY + (midY - pinchStartMidY);
+            clampLayerPos(pl);
             scheduleRender();
             return;
         }
@@ -1784,7 +1868,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (isDragging) {
             const snapped = applySnap(layer, originalLayerX + (x - dragStartX), originalLayerY + (y - dragStartY));
-            layer.x = snapped.x; layer.y = snapped.y; activeGuides = snapped.guides; scheduleRender();
+            layer.x = snapped.x; layer.y = snapped.y; clampLayerPos(layer); activeGuides = snapped.guides; scheduleRender();
         } else if (isScaling) {
             const distStart = Math.hypot(dragStartX - layer.x, dragStartY - layer.y);
             if (distStart < 1) return; // grabbed at the layer centre → avoid /0 → NaN scale (wipes the layer)
@@ -1795,13 +1879,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function endPointer(e) {
         if (e && pointers.has(e.pointerId)) pointers.delete(e.pointerId);
-        if (pointers.size < 2) isPinching = false;
+        if (pointers.size < 2) { isPinching = false; isViewPinching = false; }
         if (pointers.size === 0) {
-            isDragging = false; isScaling = false;
+            isDragging = false; isScaling = false; isViewPanning = false;
             activeGuides = [];
             render(); // gesture ended → repaint once at full quality (shadow/glare/grain)
             renderMobileQuickEdit(); // reflect any pinch-resize in the composer's size slider
+            updateZoomUI();
         }
+    }
+
+    // Keep a layer's centre on the canvas so it can be pushed to an edge but never
+    // dragged fully off and lost.
+    function clampLayerPos(l) {
+        if (!l) return;
+        l.x = Math.max(0, Math.min(targetWidth, l.x));
+        l.y = Math.max(0, Math.min(targetHeight, l.y));
     }
     window.addEventListener('pointerup', endPointer);
     window.addEventListener('pointercancel', endPointer);
