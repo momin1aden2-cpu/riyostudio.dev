@@ -1,5 +1,3 @@
-// forge.js
-
 // Escape anything sourced from a user file (names, EXIF tags, error text)
 // before it touches innerHTML, so a crafted file can't inject markup/script.
 function escapeHtml(s) {

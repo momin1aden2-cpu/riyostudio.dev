@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let bgPresetIdx = -1;   // index into BG_PRESETS when bgType === 'preset'
     let bgAngle = 135;      // linear-gradient angle (degrees)
 
-    // Curated premium backgrounds â rich multi-colour gradients & mesh blends that
+    // Curated premium backgrounds — rich multi-colour gradients & mesh blends that
     // make a mockup look high-end with one tap.
     const BG_PRESETS = [
         { name: 'Indigo',    type: 'linear', angle: 135, colors: ['#6a11cb', '#2575fc'] },
@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     stickers['apple'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="240" height="80" viewBox="0 0 240 80"><rect width="240" height="80" rx="16" fill="%23000"/><text x="120" y="45" font-family="Arial" font-weight="bold" font-size="24" fill="%23FFF" text-anchor="middle">Download on the</text><text x="120" y="70" font-family="Arial" font-weight="bold" font-size="28" fill="%23FFF" text-anchor="middle">App Store</text></svg>';
     stickers['google'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="240" height="80" viewBox="0 0 240 80"><rect width="240" height="80" rx="16" fill="%23000"/><text x="120" y="45" font-family="Arial" font-weight="bold" font-size="24" fill="%23FFF" text-anchor="middle">GET IT ON</text><text x="120" y="70" font-family="Arial" font-weight="bold" font-size="28" fill="%23FFF" text-anchor="middle">Google Play</text></svg>';
-    stickers['stars'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="250" height="50" viewBox="0 0 250 50"><text x="125" y="40" font-family="Arial" font-size="50" fill="%23FFD700" text-anchor="middle">âââââ</text></svg>';
+    stickers['stars'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="250" height="50" viewBox="0 0 250 50"><text x="125" y="40" font-family="Arial" font-size="50" fill="%23FFD700" text-anchor="middle">★★★★★</text></svg>';
     stickers['cursor'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="50" height="70" viewBox="0 0 50 70"><path d="M0,0 L0,70 L15,55 L30,85 L45,75 L30,45 L50,45 Z" fill="%23FFF" stroke="%23000" stroke-width="4"/></svg>';
     stickers['ph'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="280" height="60" viewBox="0 0 280 60"><rect width="280" height="60" rx="8" fill="%23DA552F"/><circle cx="30" cy="30" r="15" fill="%23FFF"/><text x="30" y="37" font-family="Arial" font-weight="bold" font-size="20" fill="%23DA552F" text-anchor="middle">P</text><text x="150" y="36" font-family="Arial" font-weight="bold" font-size="22" fill="%23FFF" text-anchor="middle">FEATURED ON PRODUCT HUNT</text></svg>';
     stickers['ribbon'].src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60"><path d="M0,0 L200,0 L180,30 L200,60 L0,60 Z" fill="%23EAB308"/><text x="90" y="38" font-family="Arial" font-weight="bold" font-size="24" fill="%23FFF" text-anchor="middle">TOP RATED</text></svg>';
@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const prefs = JSON.parse(localStorage.getItem('riyo_mockup_prefs'));
             if (prefs) {
                 if (prefs.frameStyle) frameSelect.value = prefs.frameStyle;
-                // 'image' can't be restored (the uploaded image is gone) â would render blank; fall back to gradient.
+                // 'image' can't be restored (the uploaded image is gone) → would render blank; fall back to gradient.
                 if (prefs.bgType) bgType = (prefs.bgType === 'image') ? 'gradient' : prefs.bgType;
                 if (prefs.bgColor1) bgColor1 = prefs.bgColor1;
                 if (prefs.bgColor2) bgColor2 = prefs.bgColor2;
@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
             bgPresetIdx: bgPresetIdx,
             bgAngle: bgAngle
         };
-        try { localStorage.setItem('riyo_mockup_prefs', JSON.stringify(prefs)); } catch (e) { /* quota â ignore */ }
+        try { localStorage.setItem('riyo_mockup_prefs', JSON.stringify(prefs)); } catch (e) { /* quota — ignore */ }
     }
     // render() runs on every frame (and during auto-rotate/drag), so coalesce saves.
     let _saveTimer = null;
@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Canvas Sizing ---
     let canvasInitialized = false;
-    // Panorama (multi-screen) only reads well on tall phone screenshots â a 5-wide
+    // Panorama (multi-screen) only reads well on tall phone screenshots — a 5-wide
     // strip of iPads or square social posts just sprawls. Gate it to portrait phones.
     function isPanoramaFormat() {
         const [w, h] = presetSelect.value.split('x').map(Number);
@@ -302,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
         screensSelect.style.opacity = allow ? '1' : '0.55';
         screensSelect.title = allow
             ? 'Lay your screenshots out as a continuous multi-screen panorama'
-            : 'Panorama is for tall phone screenshots â single screen for this format';
+            : 'Panorama is for tall phone screenshots — single screen for this format';
     }
 
     function updateCanvasSize() {
@@ -433,10 +433,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const phMac = new Image(); phMac.onload = render; phMac.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><rect width="1200" height="800" fill="%23222"/><text x="600" y="400" font-family="Arial" font-size="40" fill="%23555" text-anchor="middle">MacBook Screen</text></svg>';
 
         // ==========================================
-        // PREMIUM HERO TEMPLATES â premium bg + coloured 3D device + headline
+        // PREMIUM HERO TEMPLATES — premium bg + coloured 3D device + headline
         // ==========================================
         // Reads the chosen Screens count and lays the look out across that many
-        // panels â one framed device + headline + subtitle per screen, sharing one
+        // panels — one framed device + headline + subtitle per screen, sharing one
         // continuous background. `copy` cycles if there are fewer lines than screens.
         const buildHero = (presetIdx, angle, frame, frameColor, persY, copy) => {
             let n = parseInt(screensSelect.value) || 1; n = Math.max(1, Math.min(5, n));
@@ -511,7 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ]);
 
         // ==========================================
-        // APPLE APP STORE â Premium Set (1242x2688)
+        // APPLE APP STORE — Premium Set (1242x2688)
         // ==========================================
         else if (type === 'apple-minimal') {
             presetSelect.value = '1242x2688'; screensSelect.value = '5'; updateCanvasSize();
@@ -610,7 +610,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // ==========================================
-        // GOOGLE PLAY â Premium Set (1080x1920)
+        // GOOGLE PLAY — Premium Set (1080x1920)
         // ==========================================
         else if (type === 'gplay-clean') {
             presetSelect.value = '1080x1920'; screensSelect.value = '5'; updateCanvasSize();
@@ -708,7 +708,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // ==========================================
-        // SQUARE POST â Premium Set (1080x1080)
+        // SQUARE POST — Premium Set (1080x1080)
         // ==========================================
         else if (type === 'sq-announce') {
             presetSelect.value = '1080x1080'; screensSelect.value = '1'; updateCanvasSize();
@@ -728,7 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
             bgType = 'gradient'; bgColor1 = '#0f2027'; bgColor2 = '#203a43';
             layers.push({ id: generateId(), type: 'shape', shapeType: 'circle', color: '#f5af19', x: 250, y: 540, width: 600, height: 600, scale: 1, rotation: 0, shadowBlur: 200, shadowColor: '#f12711', opacity: 30 });
             layers.push({ id: generateId(), type: 'text', content: '"This app completely\nchanged how I work."', color: '#ffffff', fontFamily: 'Inter', fontWeight: '600', textAlign: 'left', shadowColor: 'transparent', shadowBlur: 0, x: 110, y: 380, scale: 1, rotation: 0, fontSize: 48, width: 560, height: 300 });
-            layers.push({ id: generateId(), type: 'text', content: 'âââââ', color: '#f5af19', fontFamily: 'Inter', fontWeight: '900', textAlign: 'left', shadowColor: 'transparent', shadowBlur: 0, x: 110, y: 640, scale: 1, rotation: 0, fontSize: 60, width: 400, height: 100 });
+            layers.push({ id: generateId(), type: 'text', content: '★★★★★', color: '#f5af19', fontFamily: 'Inter', fontWeight: '900', textAlign: 'left', shadowColor: 'transparent', shadowBlur: 0, x: 110, y: 640, scale: 1, rotation: 0, fontSize: 60, width: 400, height: 100 });
             layers.push({ id: generateId(), type: 'image', img: phApp, frameStyle: 'iphone', x: 820, y: 600, scale: 0.45, width: 1080, height: 2340, rotation: 0, persY: 15, shadowBlur: 100, shadowOp: 60, shadowColor: '#000000', hasGlare: true, hasFloorShadow: true });
         }
         else if (type === 'sq-compare') {
@@ -767,7 +767,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // ==========================================
-        // LANDSCAPE â Premium Set (1920x1080)
+        // LANDSCAPE — Premium Set (1920x1080)
         // ==========================================
         else if (type === 'ls-hero') {
             presetSelect.value = '1920x1080'; screensSelect.value = '1'; updateCanvasSize();
@@ -857,10 +857,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const span = btn.querySelector('span');
             if (content.style.display === 'none') {
                 content.style.display = 'flex';
-                span.innerHTML = 'â¾';
+                span.innerHTML = '▾';
             } else {
                 content.style.display = 'none';
-                span.innerHTML = 'â¸';
+                span.innerHTML = '▸';
             }
         });
     });
@@ -895,7 +895,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             img.onerror = () => {
                 URL.revokeObjectURL(url);
-                if (window.showToast) showToast("Couldn't load that image â if it's an iPhone HEIC, save/export it as JPG or PNG first.", 'error');
+                if (window.showToast) showToast("Couldn't load that image — if it's an iPhone HEIC, save/export it as JPG or PNG first.", 'error');
             };
             img.src = url;
         });
@@ -1021,7 +1021,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (autoRotate) {
                 if (!isAnimating) { isAnimating = true; render(); }
             } else {
-                isAnimating = false; // stop the animation loop â was running (and draining CPU) forever
+                isAnimating = false; // stop the animation loop — was running (and draining CPU) forever
                 render();
             }
         });
@@ -1123,7 +1123,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 1. Draw Background (skipped entirely for transparent export)
         if (exportTransparent) {
-            // no fill â leave the canvas clear
+            // no fill — leave the canvas clear
         } else if (bgType === 'preset' && BG_PRESETS[bgPresetIdx]) {
             drawPresetBg(tCtx, w, h, BG_PRESETS[bgPresetIdx], bgAngle);
         } else if (bgType === 'gradient') {
@@ -1290,7 +1290,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tCtx.restore();
 
         // 5. Film grain overlay over the whole composed scene (skip on transparent
-        // backgrounds â overlay-composited noise bakes grey haze into the alpha).
+        // backgrounds — overlay-composited noise bakes grey haze into the alpha).
         if (grainEnabled && grainVal > 0 && bgType !== 'transparent' && !exportTransparent) {
             tCtx.save();
             tCtx.globalCompositeOperation = 'overlay';
@@ -1352,10 +1352,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Data-driven phone device library. radius/bezel are fractions of the screen
     // width; cutout = the top sensor housing drawn on the screen like a real device.
     const PHONE_DEVICES = {
-        iphone:  { radius: 0.135, bezel: 0.022, cutout: 'island' },     // iPhone 15/16 â Dynamic Island
+        iphone:  { radius: 0.135, bezel: 0.022, cutout: 'island' },     // iPhone 15/16 — Dynamic Island
         android: { radius: 0.11,  bezel: 0.022, cutout: 'punch' },      // generic Android
-        pixel:   { radius: 0.105, bezel: 0.020, cutout: 'punch' },      // Google Pixel â centred punch-hole
-        galaxy:  { radius: 0.085, bezel: 0.014, cutout: 'punch-sm' }    // Samsung Galaxy â slim bezel
+        pixel:   { radius: 0.105, bezel: 0.020, cutout: 'punch' },      // Google Pixel — centred punch-hole
+        galaxy:  { radius: 0.085, bezel: 0.014, cutout: 'punch-sm' }    // Samsung Galaxy — slim bezel
     };
     const isPhoneFrame = (fs) => Object.prototype.hasOwnProperty.call(PHONE_DEVICES, fs);
     // Frames whose body colour can be changed.
@@ -1367,7 +1367,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
     }
 
-    // Realistic phone: body â inset screen â on-screen cutout â metallic rim.
+    // Realistic phone: body → inset screen → on-screen cutout → metallic rim.
     function drawPhoneFrame(tCtx, layer, w, h) {
         const dev = PHONE_DEVICES[layer.frameStyle] || PHONE_DEVICES.iphone;
         const bodyR = w * dev.radius;
@@ -1394,7 +1394,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         tCtx.restore();
 
-        // Metallic edge â white sheen on dark bodies, a soft dark edge on light ones.
+        // Metallic edge — white sheen on dark bodies, a soft dark edge on light ones.
         const light = hexLuminance(layer.frameColor || '#0b0b0d') > 0.6;
         const rim = tCtx.createLinearGradient(0, 0, w, h);
         rim.addColorStop(0, light ? 'rgba(0,0,0,0.20)' : 'rgba(255,255,255,0.28)');
@@ -1438,7 +1438,7 @@ document.addEventListener('DOMContentLoaded', () => {
         drawImageLayer(octx, Object.assign({}, layer, { shadowOp: 0 })); // device drawn flat, no baked shadow
 
         const rx = (layer.persX || 0) * Math.PI / 180, ry = (layer.persY || 0) * Math.PI / 180;
-        const f = Math.max(ow, oh) * 1.9; // focal length â higher = gentler perspective
+        const f = Math.max(ow, oh) * 1.9; // focal length — higher = gentler perspective
         const project = (u, v) => {
             const x = (u - 0.5) * ow, y = (v - 0.5) * oh;
             const x1 = x * Math.cos(ry);
@@ -1724,7 +1724,7 @@ document.addEventListener('DOMContentLoaded', () => {
             layer.x = snapped.x; layer.y = snapped.y; activeGuides = snapped.guides; scheduleRender();
         } else if (isScaling) {
             const distStart = Math.hypot(dragStartX - layer.x, dragStartY - layer.y);
-            if (distStart < 1) return; // grabbed at the layer centre â avoid /0 â NaN scale (wipes the layer)
+            if (distStart < 1) return; // grabbed at the layer centre → avoid /0 → NaN scale (wipes the layer)
             const distCurrent = Math.hypot(x - layer.x, y - layer.y);
             layer.scale = Math.max(0.05, originalScale * (distCurrent / distStart)); scheduleRender();
         }
@@ -1743,7 +1743,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('pointercancel', endPointer);
 
     // Magnetic snapping: pulls a dragged layer's centre onto each screen column's
-    // centre, the vertical mid-line, and any other layer's centre â with a live guide.
+    // centre, the vertical mid-line, and any other layer's centre — with a live guide.
     function applySnap(layer, nx, ny) {
         const thr = 13 / (getWrapperScale() || 1); // ~13 on-screen px, in canvas units
         const guides = [];
@@ -2026,7 +2026,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bindLayerSync(frameColorInput, 'frameColor');
     if (frameColorInput) frameColorInput.addEventListener('input', syncColourSwatches);
 
-    // Device-colour preset swatches â set the selected layer's frame colour.
+    // Device-colour preset swatches → set the selected layer's frame colour.
     function syncColourSwatches() {
         const l = layers.find(x => x?.id === selectedLayerId);
         const cur = (l && l.frameColor || frameColorInput.value || '').toLowerCase();
@@ -2107,7 +2107,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Premium background gallery â one-tap high-end gradients & mesh blends.
+    // Premium background gallery — one-tap high-end gradients & mesh blends.
     const bgGallery = document.getElementById('bg-preset-gallery');
     const bgAngleInput = document.getElementById('bg-angle-input');
     if (bgGallery) {
@@ -2146,7 +2146,7 @@ document.addEventListener('DOMContentLoaded', () => {
                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     }
 
-    // iOS Safari ignores the <a download> attribute for blob URLs â the file
+    // iOS Safari ignores the <a download> attribute for blob URLs — the file
     // saves to Files with no name or extension (so a .zip can't be opened).
     // Hand those off to the native share sheet instead, which keeps the real
     // filename; everywhere else the direct download is faster and quieter.
@@ -2186,7 +2186,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const prevSelected = selectedLayerId;
             selectedLayerId = null;
 
-            // Pick the export set from the CURRENT canvas â a tall phone canvas gets
+            // Pick the export set from the CURRENT canvas — a tall phone canvas gets
             // the full App Store phone kit; anything else (square/landscape/tablet/
             // social) exports at its own size so it isn't cropped into portrait.
             const [pw, ph] = presetSelect.value.split('x').map(Number);
@@ -2204,7 +2204,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Render every format/screen up front and SYNCHRONOUSLY. iOS only lets
             // navigator.share() run while the tap's user activation is still live,
-            // and any await (like zip.generateAsync) before it voids that â so we
+            // and any await (like zip.generateAsync) before it voids that — so we
             // build the blobs first and keep the share call gesture-bound.
             const files = [];
             for (let fmt of formats) {
@@ -2228,14 +2228,14 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedLayerId = prevSelected; render();
 
             // iOS can't usefully open a .zip on-device, and zipping needs an async
-            // build that would kill the share gesture â so push the PNGs straight
+            // build that would kill the share gesture — so push the PNGs straight
             // to the share sheet (Save to Photos / Files). Desktop & Android get the zip.
             const fileObjs = files.map(f => new File([f.blob], f.name, { type: f.type }));
             if (iosShare && navigator.canShare({ files: fileObjs })) {
                 try {
                     await navigator.share({ files: fileObjs, title: 'App Store Kit' });
                 } catch (e) {
-                    if (!(e && e.name === 'AbortError')) showToast("Couldn't open the share sheet, mate â try Export PNG instead.", "error");
+                    if (!(e && e.name === 'AbortError')) showToast("Couldn't open the share sheet, mate — try Export PNG instead.", "error");
                 }
                 exportZipBtn.innerText = "⬇ App Store Kit (.zip)";
                 return;
@@ -2255,7 +2255,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const transparentLabel = document.getElementById('export-transparent-label');
     const copyBtn = document.getElementById('export-copy-btn');
 
-    // JPEG has no alpha channel â disable the transparent option when it's picked.
+    // JPEG has no alpha channel — disable the transparent option when it's picked.
     function syncTransparentAvailability() {
         const jpg = formatSelect && formatSelect.value === 'jpg';
         if (transparentToggle) transparentToggle.disabled = jpg;
@@ -2313,16 +2313,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (copyBtn) {
         copyBtn.addEventListener('click', async () => {
             if (!navigator.clipboard || typeof ClipboardItem === 'undefined') {
-                return showToast("This browser can't copy images â use â¬ Image instead.", 'error');
+                return showToast("This browser can't copy images — use ⬇ Image instead.", 'error');
             }
             const original = copyBtn.innerText;
             try {
                 const [file] = buildExportFiles(true);
                 await navigator.clipboard.write([new ClipboardItem({ 'image/png': file.blob })]);
-                copyBtn.innerText = 'â Copied';
-                if (window.showToast) showToast(screenCount > 1 ? 'Copied screen 1 â use â¬ Image for the full set.' : 'Mockup copied to clipboard.', 'success');
+                copyBtn.innerText = '✓ Copied';
+                if (window.showToast) showToast(screenCount > 1 ? 'Copied screen 1 — use ⬇ Image for the full set.' : 'Mockup copied to clipboard.', 'success');
             } catch (e) {
-                if (window.showToast) showToast("Couldn't copy to clipboard â use â¬ Image instead.", 'error');
+                if (window.showToast) showToast("Couldn't copy to clipboard — use ⬇ Image instead.", 'error');
             } finally {
                 setTimeout(() => { copyBtn.innerText = original; }, 1600);
             }

@@ -58,7 +58,8 @@ export async function onRequestGet(context) {
     });
     
   } catch (error) {
-    return new Response(JSON.stringify({ error: `INTERNAL_ERROR: ${error.message}` }), {
+    console.error("uptime proxy error:", error);
+    return new Response(JSON.stringify({ error: "INTERNAL_ERROR" }), {
       status: 500,
       headers: { "Content-Type": "application/json" }
     });

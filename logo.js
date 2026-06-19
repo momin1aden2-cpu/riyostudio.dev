@@ -31,8 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const addTextBtn = document.getElementById('add-text-btn');
   
   function resizeCanvas() {
-    // We are now using pure CSS aspect-ratio scaling in logo.html!
-    // We only need to tell FabricJS to recalculate its mouse offsets when the window resizes.
+    // The canvas scales via CSS aspect-ratio; just recalculate Fabric's pointer
+    // offsets when the window changes size.
     if (canvas) canvas.calcOffset();
   }
   

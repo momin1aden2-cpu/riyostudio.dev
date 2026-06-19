@@ -940,294 +940,9 @@ section {
   margin: 0 0 24px;
 }
 
-/* Products Grid Fallback (Deprecated, migrating to Bento) */
-.products-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 28px;
-}
-
-.product-card {
-  background: rgba(6, 11, 20, 0.2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  padding: 40px 36px;
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.45s var(--ease), border-color 0.4s, box-shadow 0.4s;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
-
-.product-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: var(--radius-xl);
-  pointer-events: none;
-  background: radial-gradient(
-    600px circle at var(--mouse-x) var(--mouse-y),
-    rgba(255, 255, 255, 0.08),
-    transparent 40%
-  );
-  z-index: 10;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.product-card:hover::after {
-  opacity: 1;
-}
-
-.product-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: var(--radius-xl);
-  opacity: 0;
-  transition: opacity 0.4s;
-  pointer-events: none;
-}
-
-.product-card:hover {
-  transform: translateY(-6px);
-}
-
-/* ShiftCore card */
-.product-card.shiftcore::before {
-  background: radial-gradient(circle at 50% 0%, var(--shiftcore-glow) 0%, transparent 60%);
-}
-.product-card.shiftcore:hover {
-  border-color: rgba(34, 197, 94, 0.35);
-  box-shadow: 0 24px 60px rgba(34, 197, 94, 0.15);
-}
-.product-card.shiftcore:hover::before { opacity: 1; }
-
-.product-card-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.product-logo {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  flex-shrink: 0;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-}
-
-.product-logo-img {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  object-fit: cover;
-  flex-shrink: 0;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-  background: #ffffff;
-}
-
-.product-card.renteriq .product-logo {
-  background: linear-gradient(135deg, var(--renteriq), #2E63E0);
-}
-
-.product-card.shiftcore .product-logo {
-  background: linear-gradient(135deg, var(--shiftcore), #16a34a);
-}
-
-.product-card-header h3 {
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: -0.3px;
-}
-
-.product-badge {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  padding: 4px 10px;
-  border-radius: var(--radius-pill);
-  margin-left: auto;
-}
-
-.product-card.renteriq .product-badge {
-  background: rgba(27, 80, 200, 0.15);
-  color: #5B8DEF;
-}
-
-.product-card.shiftcore .product-badge {
-  background: rgba(34, 197, 94, 0.15);
-  color: #4ADE80;
-}
-
-.product-desc {
-  font-size: 15px;
-  color: var(--text-dim);
-  line-height: 1.7;
-  margin-bottom: 24px;
-}
-
-.product-features {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 28px;
-}
-
-.product-feature-pill {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 14px;
-  border-radius: var(--radius-pill);
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  transition: background 0.2s, border-color 0.2s;
-}
-
-.product-card:hover .product-feature-pill {
-  background: var(--bg-surface-hover);
-}
-
-.product-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  transition: gap 0.3s;
-}
-
-.product-card.renteriq .product-link { color: #5B8DEF; }
-.product-card.shiftcore .product-link { color: #4ADE80; }
-
-.product-link .arrow {
-  transition: transform 0.3s;
-  display: inline-block;
-}
-
-.product-card:hover .product-link { gap: 12px; }
-.product-card:hover .product-link .arrow { transform: translateX(3px); }
-
 .about {
   padding: 100px 0;
   background: linear-gradient(180deg, transparent 0%, rgba(16, 185, 129, 0.03) 50%, transparent 100%);
-}
-
-.about-grid {
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 64px;
-  align-items: start;
-}
-
-.about-text h2 {
-  font-size: clamp(28px, 4vw, 42px);
-  font-weight: 800;
-  margin-bottom: 20px;
-  background: linear-gradient(180deg, #ffffff 20%, rgba(255, 255, 255, 0.80) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.about-text p {
-  font-size: 16px;
-  color: var(--text-dim);
-  line-height: 1.75;
-  margin-bottom: 20px;
-}
-
-.about-text p strong {
-  color: var(--text);
-  font-weight: 600;
-}
-
-.about-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.about-card {
-  background: rgba(6, 11, 20, 0.2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 28px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  transition: transform 0.35s var(--ease), border-color 0.35s;
-  position: relative;
-  overflow: hidden;
-}
-
-.about-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: var(--radius-lg);
-  pointer-events: none;
-  background: radial-gradient(
-    600px circle at var(--mouse-x) var(--mouse-y),
-    rgba(255, 255, 255, 0.08),
-    transparent 40%
-  );
-  z-index: 10;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.about-card:hover::after {
-  opacity: 1;
-}
-
-.about-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--border-hover);
-}
-
-.about-card h4 {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  margin-bottom: 14px;
-}
-
-.about-card-content {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.about-card-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  color: var(--text-dim);
-}
-
-.about-card-item .tick {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--accent-soft);
-  color: var(--accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 800;
-  flex-shrink: 0;
 }
 
 .tech-pills {
@@ -1689,15 +1404,6 @@ select.cyber-input option {
 .footer-legal a:hover { color: var(--text-dim); }
 
 @media (max-width: 1024px) {
-  .products-grid {
-    gap: 20px;
-  }
-
-  .about-grid {
-    grid-template-columns: 1fr;
-    gap: 48px;
-  }
-
   .contact-grid {
     grid-template-columns: 1fr;
     gap: 48px;
@@ -1727,15 +1433,6 @@ select.cyber-input option {
 
   section { padding: 50px 0; }
 
-  .products-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-
-  .product-card {
-    padding: 32px 24px;
-  }
-
   .process-steps {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -1757,7 +1454,6 @@ select.cyber-input option {
   .container { padding: 0 16px; }
   .hero { padding: 120px 0 56px; }
   .hero-stats { gap: 24px; }
-  .product-card { padding: 24px 20px; }
   .contact-form-wrap { padding: 28px 20px; }
 }
 
@@ -2059,102 +1755,6 @@ input:focus, textarea:focus, select:focus, button:focus {
     font-size: 11px;
   }
   
-  /* Mobile Spotlight Fallback */
-  .product-card::after, .about-card::after {
-    background: radial-gradient(
-      600px circle at 50% 50%,
-      rgba(255, 255, 255, 0.06),
-      transparent 50%
-    );
-    opacity: 1;
-    animation: mobile-spotlight 8s ease-in-out infinite alternate;
-  }
-  
-  @keyframes mobile-spotlight {
-    0% { background-position: 0% 0%; }
-    100% { background-position: 100% 100%; }
-  }
-}
-
-/* =====================================================================
-   System HUD & Easter Eggs
-   ===================================================================== */
-#perf-hud {
-  position: fixed;
-  bottom: 16px;
-  right: 16px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  color: var(--text-dim);
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 4px 8px;
-  z-index: 9999;
-  pointer-events: none;
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  transition: opacity 0.3s var(--ease);
-}
-
-#perf-hud .perf-label {
-  color: var(--text-muted);
-}
-
-#fps-counter {
-  color: #00ff41; /* Bright hacker green */
-  font-weight: 700;
-  text-shadow: 0 0 8px rgba(0, 255, 65, 0.5); /* Subtle glow */
-}
-
-/* =====================================================================
-   DEV'S DEV: HTML SOURCE GLITCH HOVER
-   ===================================================================== */
-.glitch-hover {
-  transition: all 0.2s ease;
-}
-
-.glitch-hover:hover {
-  animation: cyber-glitch-skew 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
-  color: #fff !important;
-  -webkit-text-fill-color: #fff !important;
-  text-shadow: 
-    -2px 0 #ff00c1, 
-    2px 2px #00fff9;
-}
-
-@keyframes cyber-glitch-skew {
-  0% { transform: skew(0deg); }
-  20% { transform: skew(-10deg); }
-  40% { transform: skew(10deg); }
-  60% { transform: skew(-5deg); }
-  80% { transform: skew(5deg); }
-  100% { transform: skew(0deg); }
-}
-
-/* =====================================================================
-   KONAMI CODE SUPERNOVA EASTER EGG
-   ===================================================================== */
-html.supernova {
-  animation: supernova-hue 5s linear infinite;
-  filter: invert(1) contrast(1.5) saturate(2);
-}
-
-html.supernova body {
-  animation: supernova-spin 10s linear infinite;
-}
-
-@keyframes supernova-spin {
-  0% { transform: perspective(1000px) rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
-  50% { transform: perspective(1000px) rotateX(180deg) rotateY(90deg) rotateZ(180deg) scale(0.8); }
-  100% { transform: perspective(1000px) rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
-}
-
-@keyframes supernova-hue {
-  0% { filter: invert(1) hue-rotate(0deg); }
-  100% { filter: invert(1) hue-rotate(360deg); }
 }
 
 /* Forge Bento Grid Layout */
@@ -3304,8 +2904,6 @@ body.drawer-open { overflow: hidden; }
   .drawer-nav .nav-brand-tag { display: none; }
   .drawer-nav .nav-brand-name { font-size: 16px; }
   .drawer-nav .nav-brand-icon-img { height: 28px; width: 28px; }
-  /* The performance HUD sits bottom-right and would cover the bottom bar */
-  #perf-hud { display: none !important; }
 }
 
 

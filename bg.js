@@ -1,4 +1,4 @@
-// bg.js - Premium Ambient Mesh & Mouse Glow
+// Ambient mesh-gradient backdrop with a subtle mouse-follow glow.
 (function () {
   'use strict';
 

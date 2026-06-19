@@ -244,7 +244,7 @@
 
   // -- Logic extensions --
   // Spotlight tracking
-  const cards = document.querySelectorAll('.product-card, .about-card, .premium-card');
+  const cards = document.querySelectorAll('.premium-card');
   cards.forEach(card => {
     card.addEventListener('mousemove', e => {
       const rect = card.getBoundingClientRect();
@@ -413,7 +413,7 @@
   let scrollVelocity = 0;
   
   // Cache cards to prevent massive DOM thrashing inside the scroll loop
-  const scrollCards = document.querySelectorAll('.product-card, .about-card, .premium-card');
+  const scrollCards = document.querySelectorAll('.premium-card');
   
   window.addEventListener('scroll', () => {
     if (window.innerWidth <= 768) return; // Disable on mobile to fix touch-inertia bugs
@@ -442,7 +442,7 @@
   window.addEventListener('scroll', () => {
     clearTimeout(scrollTimeout);
     scrollTimeout = setTimeout(() => {
-      const allCards = document.querySelectorAll('.product-card, .about-card, .premium-card');
+      const allCards = document.querySelectorAll('.premium-card');
       allCards.forEach(card => {
         if (!card.matches(':hover')) {
           card.style.transform = `skewY(0deg)`;
@@ -757,23 +757,6 @@ window.showToast = function(message, type = 'error') {
   toast.querySelector('.riyo-toast-close').onclick = removeToast;
   setTimeout(() => { if (toast.parentNode) removeToast(); }, 5000);
 };
-// Real FPS Counter
-const fpsEl = document.getElementById('fps-counter');
-if (fpsEl) {
-    let frameCount = 0;
-    let lastTime = performance.now();
-    
-    function updateFPS(now) {
-        frameCount++;
-        if (now - lastTime >= 1000) {
-            fpsEl.textContent = frameCount + ' FPS';
-            frameCount = 0;
-            lastTime = now;
-        }
-        requestAnimationFrame(updateFPS);
-    }
-    requestAnimationFrame(updateFPS);
-}
 
   // Newsletter form handling
   const newsletterForms = document.querySelectorAll('.newsletter-form');

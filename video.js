@@ -2985,7 +2985,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { has = false; }
         try { await ff.readFile(probeOut); } catch (e) { /* may not exist */ }
         inp.hasAudio = has;
-        console.log('[VideoStudio] audio in ' + inp.name + ': ' + has);
       }
     }
 
@@ -3143,8 +3142,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         args.push('-filter_complex', graphStr, '-map', vOut, '-map', aOut, ...vcodec, ...acodec, outName);
       }
-      console.log('[VideoStudio] filtergraph:', graphStr);
-      console.log('[VideoStudio] ffmpeg args:', args.join(' '));
       ffLogs = [];
       if (fmt !== 'gif') { exportPhase = pipOn ? 'Merging the two videos' : 'Rendering'; }
       else { exportPhase = 'Rendering GIF'; }
