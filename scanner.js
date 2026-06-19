@@ -43,7 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const frameColorInput = document.getElementById('frame-color-input');
     const frameColorContainer = document.getElementById('frame-color-container');
     const imageUpload = document.getElementById('image-upload-input');
-    
+    const addDeviceBtn = document.getElementById('add-device-btn');
+    let replaceTargetId = null;
+
     // Premium Background Inputs
     const bgUploadBtn = document.getElementById('upload-bg-btn');
     const bgUploadInput = document.getElementById('bg-upload-input');
@@ -891,7 +893,13 @@ document.addEventListener('DOMContentLoaded', () => {
         addTextPreset(e.target.dataset.text);
         closeAddMenu();
     }));
-    document.getElementById('add-device-btn').addEventListener('click', () => imageUpload.click());
+    addDeviceBtn.addEventListener('click', () => {
+        // If a device is already selected, the chosen image fills (replaces) it;
+        // otherwise it's added as a new device. The button relabels to match.
+        const sel = layers.find(l => l.id === selectedLayerId && l.type === 'image');
+        replaceTargetId = sel ? sel.id : null;
+        imageUpload.click();
+    });
 
     document.querySelectorAll('.sticker-btn').forEach(btn => btn.addEventListener('click', (e) => { addStickerLayer(e.target.dataset.sticker); closeAddMenu(); }));
     document.querySelectorAll('.shape-btn').forEach(btn => btn.addEventListener('click', (e) => { addShapeLayer(e.target.dataset.shape); closeAddMenu(); }));
@@ -910,12 +918,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 span.innerHTML = '▸';
             }
         });
-    });
-
-    let replaceTargetId = null;
-    document.getElementById('replace-screenshot-btn').addEventListener('click', () => {
-        replaceTargetId = selectedLayerId;
-        imageUpload.click();
     });
 
     imageUpload.addEventListener('change', (e) => {
@@ -1962,6 +1964,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Properties Panel Sync ---
     function updatePropsPanel() {
         renderMobileQuickEdit();
+        // The toolbar screenshot button fills the selected device, else adds a new one.
+        const selForBtn = layers.find(l => l.id === selectedLayerId && l.type === 'image');
+        if (addDeviceBtn) addDeviceBtn.textContent = selForBtn ? '🖼️ Replace Screenshot' : '+ Screenshot';
         if (!selectedLayerId) {
             if(propsCanvas) propsCanvas.style.display = 'block';
             if(propsText) propsText.style.display = 'none';
