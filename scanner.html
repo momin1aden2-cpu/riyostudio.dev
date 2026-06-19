@@ -37,7 +37,9 @@
         position: fixed !important;
         top: 0 !important; left: 0 !important; right: 0 !important;
         width: 100% !important; max-width: 100% !important; min-width: 0 !important;
-        height: max(44vh, 300px) !important; min-height: 300px !important;
+        height: max(44vh, 300px) !important;
+        height: max(44svh, 300px) !important; /* svh stays fixed when the URL bar hides → no scroll-time layout shift */
+        min-height: 300px !important;
         z-index: 100 !important;
         margin: 0 !important; padding: 12px !important; box-sizing: border-box !important;
         border: none !important; border-radius: 0 !important;
@@ -49,6 +51,7 @@
 
       /* Push the scrolling content clear of the pinned preview. */
       .mockup-main { padding-top: calc(max(44vh, 300px) + 16px) !important; }
+      .mockup-main { padding-top: calc(max(44svh, 300px) + 16px) !important; }
 
       .editor-toolbar { width: 100% !important; max-width: 100% !important; min-width: 0 !important; padding: 12px !important; gap: 10px !important; margin-bottom: 16px !important; box-sizing: border-box !important; }
       .editor-workspace { display: block !important; height: auto !important; width: 100% !important; max-width: 100% !important; min-width: 0 !important; min-height: 0 !important; }
@@ -594,6 +597,23 @@
               </div>
             </div>
             
+            <div id="crop-controls" style="margin-top: 8px; display: none;">
+              <label class="cyber-label">Fit Screenshot In Frame</label>
+              <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Zoom</span>
+                 <input type="range" id="img-zoom-input" min="1" max="3" step="0.01" value="1" style="flex: 1;">
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Pan X</span>
+                 <input type="range" id="img-pos-x-input" min="-100" max="100" value="0" style="flex: 1;">
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Pan Y</span>
+                 <input type="range" id="img-pos-y-input" min="-100" max="100" value="0" style="flex: 1;">
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 6px;">Your screenshot fills the device screen — zoom and pan to frame it.</div>
+            </div>
+
             <div style="margin-top: 8px;">
               <label class="cyber-label">Rotation & 3D Tilt</label>
               <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
@@ -707,6 +727,6 @@
   <script src="bg.js?v=34b8be7d"></script>
   <script src="nav.js?v=646e34c0"></script>
   <script defer src="script.js?v=a28b2207"></script>
-  <script src="scanner.js?v=ca39f88d"></script>
+  <script src="scanner.js?v=07ec9e02"></script>
 </body>
 </html>

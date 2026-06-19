@@ -65,6 +65,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const glareToggle = document.getElementById('img-glare-toggle');
     const floorShadowToggle = document.getElementById('img-floor-shadow-toggle');
     const reflectionToggle = document.getElementById('img-reflection-toggle');
+    const cropControls = document.getElementById('crop-controls');
+    const imgZoomInput = document.getElementById('img-zoom-input');
+    const imgPosXInput = document.getElementById('img-pos-x-input');
+    const imgPosYInput = document.getElementById('img-pos-y-input');
 
     // Dropdowns (Sticker & Shape)
     const setupDropdown = (btnId, menuId) => {
@@ -313,9 +317,15 @@ document.addEventListener('DOMContentLoaded', () => {
         targetWidth = baseWidth * screenCount;
         targetHeight = h;
         
+        // Suppress the size transition on the very first layout so the wrapper
+        // snaps to its dimensions instead of animating from 0 (which registers as
+        // cumulative layout shift on load). Preset changes after init still animate.
+        const firstSize = !canvasInitialized;
+        if (firstSize) wrapper.style.transition = 'none';
+
         canvas.width = targetWidth;
         canvas.height = targetHeight;
-        
+
         wrapper.style.width = `${targetWidth}px`;
         wrapper.style.height = `${targetHeight}px`;
 
@@ -324,9 +334,11 @@ document.addEventListener('DOMContentLoaded', () => {
             updatePropsPanel();
         }
         canvasInitialized = true;
-        
+
         scaleWrapperToFit();
         render();
+
+        if (firstSize) requestAnimationFrame(() => { wrapper.style.transition = ''; });
     }
 
     presetSelect.addEventListener('change', updateCanvasSize);
@@ -386,14 +398,49 @@ document.addEventListener('DOMContentLoaded', () => {
         render();
     }
 
+    // Canonical on-screen dimensions per device frame, so an added photo takes the
+    // device's real proportions (and is cropped to fit) instead of the device
+    // stretching to match the photo's shape. "none" keeps the photo's natural size.
+    const DEVICE_SCREENS = {
+        iphone: { w: 1080, h: 2340 }, android: { w: 1080, h: 2340 },
+        pixel:  { w: 1080, h: 2340 }, galaxy:  { w: 1080, h: 2340 },
+        clay:   { w: 1080, h: 2340 }, ipad:    { w: 1640, h: 2160 },
+        macbook:{ w: 1200, h: 800 },  browser: { w: 1280, h: 800 }
+    };
+    function naturalDims(img) {
+        return {
+            w: (img && (img.naturalWidth || img.videoWidth || img.width)) || 1080,
+            h: (img && (img.naturalHeight || img.videoHeight || img.height)) || 2340
+        };
+    }
+    // Target screen size for a frame: the device's fixed ratio, or the photo's own
+    // size when there is no device frame.
+    function frameDims(frameStyle, img) { return DEVICE_SCREENS[frameStyle] || naturalDims(img); }
+
+    // Draw an image to *cover* a screen rect (fill it, crop the overflow) with an
+    // optional zoom and pan, so a screenshot of any aspect ratio sits cleanly inside
+    // the frame without distortion. The caller clips to the screen first.
+    function drawCover(tCtx, img, sx, sy, sw, sh, layer) {
+        const n = naturalDims(img);
+        const zoom = Math.max(1, (layer && layer.imgZoom) || 1);
+        const cover = Math.max(sw / n.w, sh / n.h) * zoom;
+        const dw = n.w * cover, dh = n.h * cover;
+        const ox = (layer && layer.imgOffsetX) || 0; // -1..1 pan within the crop range
+        const oy = (layer && layer.imgOffsetY) || 0;
+        const dx = sx + (sw - dw) / 2 + ox * (dw - sw) / 2;
+        const dy = sy + (sh - dh) / 2 + oy * (dh - sh) / 2;
+        tCtx.drawImage(img, dx, dy, dw, dh);
+    }
+
     function addImageLayer(imgObj, offset = 0) {
-        const w = imgObj.videoWidth || imgObj.width || 800;
-        const h = imgObj.videoHeight || imgObj.height || 800;
-        const initialScale = Math.min(1.5, (targetHeight * 0.85) / h);
+        const frameStyle = 'iphone';
+        const dim = frameDims(frameStyle, imgObj);
+        const initialScale = Math.min(1.5, (targetHeight * 0.85) / dim.h);
         layers.push({
-            id: generateId(), type: 'image', img: imgObj, frameStyle: 'iphone',
+            id: generateId(), type: 'image', img: imgObj, frameStyle,
             x: (targetWidth / 2) + (offset * 80), y: (targetHeight / 2) + (offset * 80),
-            scale: initialScale, width: w, height: h,
+            scale: initialScale, width: dim.w, height: dim.h,
+            imgZoom: 1, imgOffsetX: 0, imgOffsetY: 0,
             rotation: 0, persY: 0, shadowBlur: 80, shadowOp: 50, hasGlare: false, hasFloorShadow: false
         });
         selectedLayerId = layers[layers.length - 1].id;
@@ -883,8 +930,10 @@ document.addEventListener('DOMContentLoaded', () => {
             img.onload = () => {
                 if (index === 0 && target) {
                     target.img = img;
-                    target.width = img.naturalWidth || img.width;
-                    target.height = img.naturalHeight || img.height;
+                    // Keep the device's shape; the new screenshot is cropped to fit it.
+                    const dim = frameDims(target.frameStyle, img);
+                    target.width = dim.w; target.height = dim.h;
+                    target.imgZoom = 1; target.imgOffsetX = 0; target.imgOffsetY = 0;
                     selectedLayerId = target.id;
                     updatePropsPanel();
                     render();
@@ -1109,6 +1158,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // True while a pointer gesture is moving a layer — the live preview renders a
+    // lighter "draft" frame (no shadow blur / glare / grain) so dragging stays
+    // responsive; the full-quality frame is painted once the gesture ends.
+    function isInteracting() { return isDragging || isScaling || isPinching; }
+
     // Coalesce rapid interactions (drag/scale fire ~120/s) into one render per frame
     let renderQueued = false;
     function scheduleRender() {
@@ -1290,8 +1344,9 @@ document.addEventListener('DOMContentLoaded', () => {
         tCtx.restore();
 
         // 5. Film grain overlay over the whole composed scene (skip on transparent
-        // backgrounds — overlay-composited noise bakes grey haze into the alpha).
-        if (grainEnabled && grainVal > 0 && bgType !== 'transparent' && !exportTransparent) {
+        // backgrounds — overlay-composited noise bakes grey haze into the alpha,
+        // and skip mid-drag where it's the costliest pass and barely visible).
+        if (grainEnabled && grainVal > 0 && bgType !== 'transparent' && !exportTransparent && !isInteracting()) {
             tCtx.save();
             tCtx.globalCompositeOperation = 'overlay';
             tCtx.globalAlpha = (grainVal / 100) * 0.55;
@@ -1381,7 +1436,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sr = Math.max(0, bodyR - bezel);
         tCtx.save();
         tCtx.beginPath(); tCtx.roundRect(sx, sy, sw, sh, sr); tCtx.closePath(); tCtx.clip();
-        tCtx.drawImage(layer.img, sx, sy, sw, sh);
+        drawCover(tCtx, layer.img, sx, sy, sw, sh, layer);
         // On-screen sensor housing
         tCtx.fillStyle = '#000';
         if (dev.cutout === 'island') {
@@ -1463,7 +1518,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const h = layer.height;
         tCtx.translate(-w/2, -h/2);
 
-        const sBlur = layer.shadowBlur !== undefined ? layer.shadowBlur : 80;
+        // While the user is actively dragging/scaling, drop the soft drop-shadow —
+        // a large blurred shadow at full export resolution is the single most
+        // expensive op per frame. The full-quality shadow is restored on release.
+        const draft = isInteracting();
+        const sBlur = draft ? 0 : (layer.shadowBlur !== undefined ? layer.shadowBlur : 80);
         const sOp = layer.shadowOp !== undefined ? layer.shadowOp : 50;
         const sAngle = layer.shadowAngle !== undefined ? layer.shadowAngle : 90;
         const sDist = layer.shadowDistance !== undefined ? layer.shadowDistance : (sBlur / 2);
@@ -1487,7 +1546,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tCtx.save();
             const pad = w * 0.06;
             tCtx.beginPath(); tCtx.roundRect(pad, pad, w - pad*2, h - pad*2, rad*0.8); tCtx.clip();
-            tCtx.drawImage(layer.img, pad, pad, w - pad*2, h - pad*2);
+            drawCover(tCtx, layer.img, pad, pad, w - pad*2, h - pad*2, layer);
             tCtx.restore();
             tCtx.strokeStyle = 'rgba(0,0,0,0.1)'; tCtx.lineWidth = w * 0.01;
             tCtx.beginPath(); tCtx.roundRect(0, 0, w, h, rad); tCtx.stroke();
@@ -1496,7 +1555,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const padW = w * 0.05; const rad = Math.min(w, h) * 0.05;
             tCtx.beginPath(); tCtx.roundRect(-padW, -padW, w + padW*2, h + padW*2, rad + padW); tCtx.closePath();
             tCtx.fillStyle = layer.frameColor || '#111'; tCtx.fill(); tCtx.shadowColor = 'transparent';
-            tCtx.drawImage(layer.img, 0, 0, w, h);
+            tCtx.save(); tCtx.beginPath(); tCtx.roundRect(0, 0, w, h, Math.min(w, h) * 0.04); tCtx.clip();
+            drawCover(tCtx, layer.img, 0, 0, w, h, layer); tCtx.restore();
             tCtx.strokeStyle = 'rgba(0,0,0,0.4)'; tCtx.lineWidth = 2; tCtx.strokeRect(0, 0, w, h);
 
         } else if (layer.frameStyle === 'macbook') {
@@ -1504,7 +1564,8 @@ document.addEventListener('DOMContentLoaded', () => {
             tCtx.beginPath(); tCtx.roundRect(-padW, -padW - topBar, w + padW*2, h + padW*2 + topBar + bottomLip, [16,16,0,0]); tCtx.closePath();
             tCtx.fillStyle = layer.frameColor || '#111'; tCtx.fill(); tCtx.shadowColor = 'transparent';
             tCtx.fillStyle = '#9ca3af'; tCtx.beginPath(); tCtx.roundRect(-padW, h + padW, w + padW*2, bottomLip, [0,0,16,16]); tCtx.fill();
-            tCtx.drawImage(layer.img, 0, 0, w, h);
+            tCtx.save(); tCtx.beginPath(); tCtx.rect(0, 0, w, h); tCtx.clip();
+            drawCover(tCtx, layer.img, 0, 0, w, h, layer); tCtx.restore();
 
         } else if (layer.frameStyle === 'browser') {
             const topBar = 60; const totalH = h + topBar;
@@ -1514,7 +1575,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tCtx.fillStyle = '#ffbd2e'; tCtx.beginPath(); tCtx.arc(52, topBar/2, 8, 0, Math.PI*2); tCtx.fill();
             tCtx.fillStyle = '#27c93f'; tCtx.beginPath(); tCtx.arc(80, topBar/2, 8, 0, Math.PI*2); tCtx.fill();
             tCtx.save(); tCtx.beginPath(); tCtx.roundRect(0, topBar, w, h, [0,0,16,16]); tCtx.clip();
-            tCtx.drawImage(layer.img, 0, topBar, w, h); tCtx.restore();
+            drawCover(tCtx, layer.img, 0, topBar, w, h, layer); tCtx.restore();
             layer.renderHeight = totalH;
 
         } else {
@@ -1522,7 +1583,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tCtx.shadowColor = 'transparent';
         }
 
-        if (layer.hasGlare) {
+        if (layer.hasGlare && !draft) {
             tCtx.save();
             let renderH = layer.renderHeight || h;
             if (isPhoneFrame(layer.frameStyle) || layer.frameStyle === 'clay') { tCtx.beginPath(); tCtx.roundRect(0, 0, w, h, Math.min(w, h) * 0.1); tCtx.clip(); }
@@ -1735,7 +1796,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pointers.size < 2) isPinching = false;
         if (pointers.size === 0) {
             isDragging = false; isScaling = false;
-            if (activeGuides.length) { activeGuides = []; render(); }
+            activeGuides = [];
+            render(); // gesture ended → repaint once at full quality (shadow/glare/grain)
             renderMobileQuickEdit(); // reflect any pinch-resize in the composer's size slider
         }
     }
@@ -1978,9 +2040,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(glareToggle) glareToggle.checked = layer.hasGlare || false;
                 if(floorShadowToggle) floorShadowToggle.checked = layer.hasFloorShadow || false;
                 if(reflectionToggle) reflectionToggle.checked = layer.hasReflection || false;
+                // Crop controls only apply when the photo is masked into a device frame.
+                const cropable = !!DEVICE_SCREENS[layer.frameStyle];
+                if(cropControls) cropControls.style.display = cropable ? 'block' : 'none';
+                if(cropable) {
+                    if(imgZoomInput) imgZoomInput.value = layer.imgZoom || 1;
+                    if(imgPosXInput) imgPosXInput.value = Math.round((layer.imgOffsetX || 0) * 100);
+                    if(imgPosYInput) imgPosYInput.value = Math.round((layer.imgOffsetY || 0) * 100);
+                }
             } else {
                 if(document.getElementById('frame-style-container')) document.getElementById('frame-style-container').style.display = 'none';
                 if(document.getElementById('glare-shadow-toggles')) document.getElementById('glare-shadow-toggles').style.display = 'none';
+                if(cropControls) cropControls.style.display = 'none';
                 if(tiltYInput && tiltYInput.parentElement) tiltYInput.parentElement.style.display = 'none';
                 if(tiltXInput && tiltXInput.parentElement) tiltXInput.parentElement.style.display = 'none';
             }
@@ -2016,15 +2087,42 @@ document.addEventListener('DOMContentLoaded', () => {
     bindLayerSync(shapeWidthInput, 'width', true);
     bindLayerSync(shapeHeightInput, 'height', true);
 
-    bindLayerSync(frameSelect, 'frameStyle');
-    if (frameSelect && frameColorContainer) {
+    if (frameSelect) {
         frameSelect.addEventListener('input', (e) => {
-            frameColorContainer.style.display = COLOURABLE_FRAMES.includes(e.target.value) ? 'block' : 'none';
+            const l = layers.find(x => x?.id === selectedLayerId);
+            if (!l) return;
+            const newFrame = e.target.value;
+            // Re-fit the layer to the new device's fixed proportions (or the photo's
+            // own ratio for "none"), keeping its on-canvas height roughly stable, and
+            // reset the crop so the screenshot re-centres in the new frame.
+            const visualH = (l.height || 1) * (l.scale || 1);
+            const dim = frameDims(newFrame, l.img);
+            l.frameStyle = newFrame;
+            l.width = dim.w; l.height = dim.h;
+            l.scale = visualH / dim.h;
+            l.imgOffsetX = 0; l.imgOffsetY = 0; l.imgZoom = 1;
+            if (frameColorContainer) frameColorContainer.style.display = COLOURABLE_FRAMES.includes(newFrame) ? 'block' : 'none';
             syncColourSwatches();
+            updatePropsPanel();
+            scheduleRender();
         });
     }
     bindLayerSync(frameColorInput, 'frameColor');
     if (frameColorInput) frameColorInput.addEventListener('input', syncColourSwatches);
+
+    // Crop controls — zoom and pan the screenshot inside its device frame.
+    if (imgZoomInput) imgZoomInput.addEventListener('input', (e) => {
+        const l = layers.find(x => x?.id === selectedLayerId);
+        if (l) { l.imgZoom = Math.max(1, parseFloat(e.target.value) || 1); scheduleRender(); }
+    });
+    if (imgPosXInput) imgPosXInput.addEventListener('input', (e) => {
+        const l = layers.find(x => x?.id === selectedLayerId);
+        if (l) { l.imgOffsetX = (parseInt(e.target.value) || 0) / 100; scheduleRender(); }
+    });
+    if (imgPosYInput) imgPosYInput.addEventListener('input', (e) => {
+        const l = layers.find(x => x?.id === selectedLayerId);
+        if (l) { l.imgOffsetY = (parseInt(e.target.value) || 0) / 100; scheduleRender(); }
+    });
 
     // Device-colour preset swatches → set the selected layer's frame colour.
     function syncColourSwatches() {
