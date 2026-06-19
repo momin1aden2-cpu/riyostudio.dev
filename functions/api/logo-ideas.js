@@ -23,6 +23,38 @@ function extractJson(text) {
 const STYLES = ['minimal', 'bold', 'luxury', 'playful', 'modern'];
 const MOODS = ['dark', 'light', 'vibrant', 'calm', 'luxury'];
 
+const RATE_LIMIT = 15;       // max AI requests …
+const RATE_WINDOW_SEC = 60;  // … per IP per minute
+
+async function hashIp(ip, salt) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${ip}|${salt}`));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Per-IP throttle backed by D1. Fails OPEN: any DB issue lets the request
+// through rather than breaking the feature. Returns true if the caller is over
+// the limit and should be refused.
+async function isRateLimited(env, request) {
+  if (!env.DB) return false; // no DB bound → can't throttle, don't block
+  try {
+    const ip = request.headers.get('CF-Connecting-IP') || '0.0.0.0';
+    const ipHash = await hashIp(ip, env.IP_SALT || 'riyo-logo');
+    const since = new Date(Date.now() - RATE_WINDOW_SEC * 1000).toISOString();
+    const { results } = await env.DB.prepare(
+      'SELECT COUNT(*) AS n FROM ai_hits WHERE ip_hash = ? AND created_at > ?'
+    ).bind(ipHash, since).all();
+    if (results && results[0] && results[0].n >= RATE_LIMIT) return true;
+    await env.DB.prepare('INSERT INTO ai_hits (ip_hash, created_at) VALUES (?, ?)')
+      .bind(ipHash, new Date().toISOString()).run();
+    // Opportunistic cleanup so the table can't grow unbounded.
+    await env.DB.prepare('DELETE FROM ai_hits WHERE created_at < ?')
+      .bind(new Date(Date.now() - 10 * 60 * 1000).toISOString()).run();
+    return false;
+  } catch (e) {
+    return false; // fail open
+  }
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
   if (!env.AI) return json({ error: 'AI not configured' }, 503);
@@ -32,6 +64,8 @@ export async function onRequestPost(context) {
   const brand = String(data.brand || '').slice(0, 80).trim();
   const description = String(data.description || '').slice(0, 300).trim();
   if (!brand && !description) return json({ error: 'empty' }, 400);
+
+  if (await isRateLimited(env, request)) return json({ error: 'rate_limited' }, 429);
 
   const system = 'You are a senior brand/logo designer. You reply with ONLY a JSON object, no prose, no code fences.';
   const user =

@@ -15,3 +15,11 @@ CREATE TABLE IF NOT EXISTS reviews (
 
 CREATE INDEX IF NOT EXISTS idx_reviews_status_created ON reviews (status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_reviews_iphash_created ON reviews (ip_hash, created_at);
+
+-- Anti-abuse counter for the Logo Maker AI endpoint (/api/logo-ideas).
+-- One row per request; we count recent rows per salted IP-hash to throttle.
+CREATE TABLE IF NOT EXISTS ai_hits (
+  ip_hash    TEXT NOT NULL,   -- salted hash of the IP (never the raw IP)
+  created_at TEXT NOT NULL    -- ISO 8601
+);
+CREATE INDEX IF NOT EXISTS idx_ai_hits_iphash_created ON ai_hits (ip_hash, created_at);
