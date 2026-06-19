@@ -599,16 +599,16 @@
             
             <div id="crop-controls" style="margin-top: 8px; display: none;">
               <label class="cyber-label">Fit Screenshot In Frame</label>
-              <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
-                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Zoom</span>
+              <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;" title="Scales the screenshot inside the screen — the device stays the same size. Higher = more zoomed in and cropped.">
+                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px; cursor: help;">Zoom</span>
                  <input type="range" id="img-zoom-input" min="1" max="3" step="0.01" value="1" style="flex: 1;">
               </div>
-              <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
-                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Pan X</span>
+              <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;" title="Slides the screenshot left/right inside the screen to choose what's visible.">
+                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px; cursor: help;">Pan X</span>
                  <input type="range" id="img-pos-x-input" min="-100" max="100" value="0" style="flex: 1;">
               </div>
-              <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
-                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Pan Y</span>
+              <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;" title="Slides the screenshot up/down inside the screen.">
+                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px; cursor: help;">Pan Y</span>
                  <input type="range" id="img-pos-y-input" min="-100" max="100" value="0" style="flex: 1;">
               </div>
               <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 6px;">Your screenshot fills the device screen — zoom and pan to frame it.</div>
@@ -616,16 +616,16 @@
 
             <div style="margin-top: 8px;">
               <label class="cyber-label">Rotation & 3D Tilt</label>
-              <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
-                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Rotate</span>
+              <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;" title="Spins the whole device flat, like turning a photo on a table.">
+                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px; cursor: help;">Rotate</span>
                  <input type="range" id="img-rotate-input" min="-180" max="180" value="0" style="flex: 1;">
               </div>
-              <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
-                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Tilt Y</span>
+              <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;" title="Turns the whole device left/right in 3D perspective.">
+                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px; cursor: help;">Tilt Y</span>
                  <input type="range" id="img-tilt-y-input" min="-50" max="50" value="0" style="flex: 1;">
               </div>
-              <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
-                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Tilt X</span>
+              <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;" title="Turns the whole device forward/back in 3D perspective.">
+                 <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px; cursor: help;">Tilt X</span>
                  <input type="range" id="img-tilt-x-input" min="-50" max="50" value="0" style="flex: 1;">
               </div>
               <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 6px;">Tilt turns the device in real 3D perspective.</div>
