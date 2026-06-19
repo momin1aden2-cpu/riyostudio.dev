@@ -1443,6 +1443,28 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
     for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
     return arr;
   }
+
+  // Optional AI assist (Cloudflare Workers AI): turns the typed brand + description
+  // into relevant icon keywords + a tagline for businesses outside the curated map.
+  // Only the typed text is sent (to this site's own host). Any failure → null, and
+  // the caller silently falls back to the 100% client-side generator.
+  async function fetchLogoIdeas(brand, description) {
+    if (!brand && !description) return null;
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 7000);
+      const res = await fetch('/api/logo-ideas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brand, description }),
+        signal: ctrl.signal,
+      });
+      clearTimeout(to);
+      if (!res.ok) return null;
+      const d = await res.json();
+      return (d && Array.isArray(d.iconKeywords) && d.iconKeywords.length) ? d : null;
+    } catch (e) { return null; }
+  }
   function loadSvgGroup(svg) {
     return new Promise((r) => fabric.loadSVGFromString(svg, (o, op) => r(fabric.util.groupSVGElements(o, op))));
   }
@@ -1556,9 +1578,10 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
       brand.set({ originX: 'left', originY: 'center', left: tx, top: cy });
     }
   }
-  function makeConcept(brandName, iconId) {
+  function makeConcept(brandName, iconId, tagline) {
     return {
       brandName,
+      tagline: tagline || '',
       palette: pickRand(GEN_PALETTES),
       fp: pickRand(GEN_FONTS),
       layout: pickRand(['stack', 'stack', 'left', 'left', 'badge', 'badge', 'wordmark']),
@@ -1607,7 +1630,7 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
     const icon = await getConceptIcon(concept);
     if (icon) scaleTo(icon, 92);
     const brand = new fabric.IText(concept.brandName, { fontFamily: concept.fp.h, fontWeight: 'bold', fontSize: concept.layout === 'wordmark' ? 40 : 30, fill: concept.palette.text, objectCaching: false });
-    const sub = new fabric.IText('YOUR TAGLINE', { fontFamily: concept.fp.s, fontSize: 10, fill: concept.palette.text, opacity: 0.7, charSpacing: 300, objectCaching: false });
+    const sub = new fabric.IText(concept.tagline ? concept.tagline.toUpperCase() : 'YOUR TAGLINE', { fontFamily: concept.fp.s, fontSize: 10, fill: concept.palette.text, opacity: 0.7, charSpacing: 300, objectCaching: false });
     if (icon) tc.add(icon);
     tc.add(brand, sub);
     await document.fonts.ready;
@@ -1625,7 +1648,7 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
     const icon = await getConceptIcon(concept);
     if (icon) { scaleTo(icon, 320); canvas.add(icon); }
     const brand = new fabric.IText(concept.brandName, { fontFamily: concept.fp.h, fontWeight: 'bold', fontSize: concept.layout === 'wordmark' ? 92 : 64, fill: concept.palette.text, objectCaching: false });
-    const sub = new fabric.IText('YOUR TAGLINE HERE', { fontFamily: concept.fp.s, fontWeight: 'normal', fontSize: 20, fill: concept.palette.text, opacity: 0.75, charSpacing: 400, objectCaching: false });
+    const sub = new fabric.IText(concept.tagline ? concept.tagline.toUpperCase() : 'YOUR TAGLINE HERE', { fontFamily: concept.fp.s, fontWeight: 'normal', fontSize: 20, fill: concept.palette.text, opacity: 0.75, charSpacing: 400, objectCaching: false });
     canvas.add(brand); canvas.add(sub);
     const place = () => {
       if (concept.layout === 'left') arrangeLeft(canvas, icon, brand, sub); else arrangeStack(canvas, icon, brand, sub);
@@ -1657,14 +1680,24 @@ if (saveProjBtn) saveProjBtn.addEventListener('click', () => {
       return card;
     });
 
-    // Resolve a relevant icon pool from what the business is, then give each
-    // concept a DIFFERENT icon so the six results are on-theme yet varied.
-    let pool = [];
-    try { const r = resolveIconTerms(brandRaw, descRaw); pool = shuffle(await fetchIconPool(r.terms, r.core)); } catch (e) { pool = []; }
+    // Resolve a relevant icon pool. Try the AI assist first (best for arbitrary
+    // businesses); fall back to the client-side category map / keyword search.
+    let pool = [], aiTagline = '';
+    const localResolve = async () => { const r = resolveIconTerms(brandRaw, descRaw); return shuffle(await fetchIconPool(r.terms, r.core)); };
+    try {
+      const ai = await fetchLogoIdeas(brandRaw, descRaw);
+      if (ai && ai.iconKeywords.length) {
+        aiTagline = ai.tagline || '';
+        pool = shuffle(await fetchIconPool(ai.iconKeywords, termSegments(ai.iconKeywords)));
+      }
+      if (!pool.length) pool = await localResolve(); // AI off/empty, or its terms found no icons
+    } catch (e) {
+      try { pool = await localResolve(); } catch (_) { pool = []; }
+    }
 
     cards.forEach((card, i) => {
       const iconId = pool.length ? pool[i % pool.length] : null;
-      const concept = makeConcept(brandName, iconId);
+      const concept = makeConcept(brandName, iconId, aiTagline);
       card.onclick = () => applyConcept(concept);
       renderConceptThumb(concept).then((url) => {
         card.textContent = '';
