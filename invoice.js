@@ -347,6 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (inputs.invStatus) inputs.invStatus.addEventListener('change', updatePreview);
 
   // Dynamic scaling: fit the 210mm A4 paper into the available column width
+  let lastFitWidth = -1;
   function resizePreview() {
     const wrapper = document.querySelector('.canvas-wrapper');
     const paper = document.getElementById('a4-paper');
@@ -360,11 +361,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // Collapse the dead vertical space left below the scaled paper
     const naturalHeight = paper.scrollHeight;
     paper.style.marginBottom = `-${naturalHeight * (1 - scale)}px`;
+    lastFitWidth = availableWidth;
   }
 
   window.addEventListener('resize', resizePreview);
-  const ro = new ResizeObserver(resizePreview);
+
+  // Re-fit only when the column WIDTH actually changes. The negative margin we
+  // set above changes the height, which the observer would otherwise treat as a
+  // new resize and re-fire — a feedback loop that visibly shimmers near a
+  // scrollbar threshold. The width guard + rAF coalescing breaks it.
   const cw = document.querySelector('.canvas-wrapper');
+  let roPending = false;
+  const ro = new ResizeObserver(() => {
+    if (roPending || !cw) return;
+    roPending = true;
+    requestAnimationFrame(() => {
+      roPending = false;
+      if (cw.clientWidth - 64 !== lastFitWidth) resizePreview();
+    });
+  });
   if (cw) ro.observe(cw);
   
   // Initial scale after DOM settles
