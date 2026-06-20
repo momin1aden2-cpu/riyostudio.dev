@@ -52,7 +52,7 @@
       margin: 2rem auto 0;
     }
     .vs-dropzone.dragover { border-color: #34D399; background: rgba(16,185,129,0.1); transform: translateY(-2px); }
-    .vs-dropzone h3 { margin: 12px 0 6px; color: #fff; font-size: 1.3rem; }
+    .vs-dropzone h2 { margin: 12px 0 6px; color: #fff; font-size: 1.3rem; }
     .vs-dropzone p { margin: 0; color: var(--text-dim); font-size: 0.9rem; }
 
     .vs-layout { display: grid; grid-template-columns: 360px 1fr; gap: 20px; margin-top: 1.5rem; align-items: start; }
@@ -402,6 +402,14 @@
     @media (max-width: 768px) {
       #vs-rec-dropzone-wrap, #vs-add-rec, #vs-rec-section { display: none !important; }
     }
+    .footer-col h3 {
+      font-size: 12px !important;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 18px;
+    }
   </style>
 </head>
 <body>
@@ -441,13 +449,13 @@
 
       <!-- File picker lives OUTSIDE the dropzone so a programmatic .click() can't
            bubble back to the dropzone handler and wipe the insert target. -->
-      <input type="file" id="vs-file-input" accept="video/*,image/*" multiple hidden>
+      <input type="file" id="vs-file-input" accept="video/*,image/*" multiple hidden aria-label="Add videos and images">
 
       <!-- Dropzone -->
       <div id="vs-dropzone" class="vs-dropzone">
         <div class="vs-dropzone-inner">
           <div style="font-size: 2.6rem;">🎬</div>
-          <h3>Drop videos &amp; images here</h3>
+          <h2>Drop videos &amp; images here</h2>
           <p>or click to browse · videos, screen recordings &amp; screenshots · stays on your device</p>
         </div>
       </div>
@@ -560,7 +568,7 @@
               <!-- Title card (revealed when "Title card" is tapped) -->
               <div id="vs-card-section" style="display:none;">
                 <div class="vs-bar-head" style="margin-top:14px;"><span>🅰️ Title card — type text, pick a colour</span></div>
-                <textarea id="vs-card-text" rows="2" placeholder="e.g. ShiftCore — Isolation Lock Demo" style="width:100%;box-sizing:border-box;margin-top:10px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);color:#e7eef5;border-radius:9px;padding:9px 11px;font:inherit;font-size:0.85rem;outline:none;resize:vertical;"></textarea>
+                <textarea id="vs-card-text" rows="2" aria-label="Title card text" placeholder="e.g. ShiftCore — Isolation Lock Demo" style="width:100%;box-sizing:border-box;margin-top:10px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);color:#e7eef5;border-radius:9px;padding:9px 11px;font:inherit;font-size:0.85rem;outline:none;resize:vertical;"></textarea>
                 <div class="vs-pos-btns" id="vs-card-colors" style="margin-top:8px;">
                   <button class="vs-swatch active" data-cardbg="#0B1220" style="background:#0B1220;" title="Midnight"></button>
                   <button class="vs-swatch" data-cardbg="#10B981" style="background:#10B981;" title="Emerald"></button>
@@ -648,9 +656,9 @@
               <div class="vs-pos-btns" style="margin-top:10px;">
                 <button class="vs-mini" id="vs-duck-btn" title="Automatically dip the music whenever a voice is speaking">🎚️ Auto-duck music under voice</button>
               </div>
-              <input id="vs-music-input" type="file" accept="audio/*" hidden>
+              <input id="vs-music-input" type="file" accept="audio/*" hidden aria-label="Background music file">
               <div id="vs-ai-form" class="vs-ai-form" style="display:none;">
-                <textarea id="vs-ai-text" rows="2" placeholder="Type what the voice should say…"></textarea>
+                <textarea id="vs-ai-text" rows="2" aria-label="AI voiceover script" placeholder="Type what the voice should say…"></textarea>
                 <label class="vs-field">Voice
                   <select id="vs-ai-voice">
                     <option value="pNInz6obpgDQGcFmaJgB">Adam (Professional)</option>
@@ -659,7 +667,7 @@
                     <option value="MF3mGyEYCl7XYWbV9V6O">Elli (Emotional)</option>
                   </select>
                 </label>
-                <input id="vs-ai-key" type="password" placeholder="ElevenLabs API key" autocomplete="off">
+                <input id="vs-ai-key" type="password" aria-label="ElevenLabs API key" placeholder="ElevenLabs API key" autocomplete="off">
                 <button id="vs-ai-gen" class="vs-tool primary">✨ Generate voiceover</button>
                 <p class="vs-hint">Your key is saved only on this device and sent directly to ElevenLabs.</p>
               </div>
@@ -787,7 +795,7 @@
                 <button id="vs-ovl-add" class="vs-tool primary">➕ Add second video</button>
                 <button id="vs-ovl-remove" class="vs-tool danger" style="display:none;">🗑️ Remove</button>
               </div>
-              <input id="vs-ovl-input" type="file" accept="video/*" hidden>
+              <input id="vs-ovl-input" type="file" accept="video/*" hidden aria-label="Second video file">
               <div id="vs-ovl-name" class="vs-cap-status"></div>
               <div id="vs-ovl-opts" style="display:none;">
                 <div class="vs-bar-head" style="margin-top:12px;"><span>✂️ Trim it <span id="vs-ovl-trim-sub" class="vs-trim-sub"></span></span></div>
@@ -837,7 +845,7 @@
               <button id="vs-add-text" class="vs-ghost" style="margin-top:12px;">＋ Add text</button>
               <div id="vs-text-list" style="margin-top: 10px;"></div>
               <div id="vs-text-editor" style="display:none;">
-                <textarea id="vs-text-content" placeholder="Type your text…" rows="2"></textarea>
+                <textarea id="vs-text-content" aria-label="Overlay text" placeholder="Type your text…" rows="2"></textarea>
                 <div class="vs-presets">
                   <button class="vs-preset" data-preset="clean">Clean</button>
                   <button class="vs-preset" data-preset="bold">Bold</button>
@@ -913,7 +921,7 @@
         </div>
 
         <div class="footer-col">
-          <h4>Tools</h4>
+          <h3>Tools</h3>
           <a href="/invoice">Invoice Maker</a>
           <a href="/qr">QR Hub</a>
           <a href="/scanner">Mockup Studio</a>
@@ -923,7 +931,7 @@
         </div>
 
         <div class="footer-col">
-          <h4>Legal</h4>
+          <h3>Legal</h3>
           <a href="/privacy">Privacy Policy</a>
           <a href="/terms">Terms of Service</a>
           <a href="/disclaimer">Disclaimer</a>

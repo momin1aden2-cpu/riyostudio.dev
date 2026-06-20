@@ -87,6 +87,14 @@
         box-shadow: none !important;
       }
     }
+    .footer-col h2 {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 18px;
+    }
   </style>
 </head>
 <body class="tool-page-clean">
@@ -130,8 +138,8 @@
             <div class="tool-bento-panel tint-purple" style="margin-bottom: 8px;">
                 <label style="display: block; font-size: 1.05rem; color: #10B981; margin-bottom: 12px; font-weight: bold;">🪄 AI Auto-Generator</label>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <input type="text" id="magic-brand-input" placeholder="Enter Brand Name..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.5); background: rgba(0,0,0,0.5); color: #fff; font-size: 1.0rem; box-sizing: border-box;">
-                    <input type="text" id="magic-keyword-input" placeholder="What does it do? e.g. electronic security installer, panel beating shop" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.5); background: rgba(0,0,0,0.5); color: #fff; font-size: 1.0rem; box-sizing: border-box;">
+                    <input type="text" id="magic-brand-input" aria-label="Brand name" placeholder="Enter Brand Name..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.5); background: rgba(0,0,0,0.5); color: #fff; font-size: 1.0rem; box-sizing: border-box;">
+                    <input type="text" id="magic-keyword-input" aria-label="Brand description" placeholder="What does it do? e.g. electronic security installer, panel beating shop" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.5); background: rgba(0,0,0,0.5); color: #fff; font-size: 1.0rem; box-sizing: border-box;">
                     <button id="magic-generate-btn" style="width: 100%; padding: 14px 20px; background: #10B981; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.0rem; white-space: nowrap; box-sizing: border-box;">✨ Auto-Build Logo</button>
                     <button id="magic-mark-btn" style="width: 100%; padding: 10px; background: rgba(16,185,129,0.1); color: #10B981; border: 1px solid rgba(16,185,129,0.4); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; box-sizing: border-box;">✦ Generate Mark</button>
                     <button id="templates-btn" style="width: 100%; padding: 12px; background: rgba(236,72,153,0.12); color: #ec4899; border: 1px solid rgba(236,72,153,0.45); border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.95rem; box-sizing: border-box;">📐 Start from a Template</button>
@@ -153,12 +161,12 @@
                   <button id="add-image-btn" class="nav-link" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 1.0rem;">
                     <span style="font-size: 1.3rem;">🖼️</span> Image
                   </button>
-                  <input type="file" id="image-upload-input" accept="image/*" style="display: none;">
+                  <input type="file" id="image-upload-input" aria-label="Upload image" accept="image/*" style="display: none;">
                 </div>
                 
                 <div id="icon-library-panel" style="display: none; flex-direction: column; gap: 12px; margin-top: 12px; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">
                     <div style="display: flex; gap: 8px;">
-                        <input type="text" id="icon-search-input" placeholder="Search icons (e.g. rocket, wolf)..." style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: rgba(0,0,0,0.5); color: #fff; font-size: 0.85rem;">
+                        <input type="text" id="icon-search-input" aria-label="Search icons" placeholder="Search icons (e.g. rocket, wolf)..." style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: rgba(0,0,0,0.5); color: #fff; font-size: 0.85rem;">
                         <button id="icon-search-btn" style="padding: 8px 12px; background: #10B981; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">🔎</button>
                     </div>
                     <div id="icon-search-results" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-height: 200px; overflow-y: auto; padding-right: 4px;">
@@ -213,7 +221,7 @@
             <!-- RECOLOUR PALETTE PANEL -->
             <div class="tool-bento-panel tint-emerald" style="margin-bottom: 8px;">
                 <label style="display: block; font-size: 1.05rem; color: #10B981; margin-bottom: 12px; font-weight: bold;">🎨 Quick Recolour</label>
-                <select id="palette-selector" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 6px; padding: 10px; color: var(--text-main); font-family: inherit; font-size: 1.0rem; cursor: pointer;">
+                <select id="palette-selector" aria-label="Colour palette" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 6px; padding: 10px; color: var(--text-main); font-family: inherit; font-size: 1.0rem; cursor: pointer;">
                     <option value="none">Choose a palette…</option>
                     <option value="luxury">✨ Luxury (gold)</option>
                     <option value="tech">💎 Tech (cyan)</option>
@@ -226,7 +234,7 @@
             <!-- FONT PAIRING PANEL -->
             <div class="tool-bento-panel tint-pink" style="margin-bottom: 8px;">
                 <label style="display: block; font-size: 1.05rem; color: #ec4899; margin-bottom: 12px; font-weight: bold;">🔤 Font Pairing</label>
-                <select id="font-pairing-selector" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 6px; padding: 10px; color: var(--text-main); font-family: inherit; font-size: 1.0rem; cursor: pointer;">
+                <select id="font-pairing-selector" aria-label="Font pairing" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 6px; padding: 10px; color: var(--text-main); font-family: inherit; font-size: 1.0rem; cursor: pointer;">
                     <option value="none">Choose a pairing…</option>
                 </select>
                 <p style="font-size: 0.72rem; color: var(--text-dim); margin: 8px 0 0;">Sets your main name &amp; tagline to fonts that work well together.</p>
@@ -300,7 +308,7 @@
 
               <div id="font-prop-group" class="form-group" style="display: none;">
                 <label style="display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Typography</label>
-                <select id="obj-font-select" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text-main); font-family: inherit; font-size: 1.1rem; cursor: pointer;">
+                <select id="obj-font-select" aria-label="Font family" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text-main); font-family: inherit; font-size: 1.1rem; cursor: pointer;">
                   <optgroup label="Modern Sans">
                     <option value="Inter">Inter</option>
                     <option value="Sora">Sora</option>
@@ -341,11 +349,11 @@
                 <button id="split-words-btn" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.05); border: 1px dashed var(--border); border-radius: 6px; color: var(--text-main); cursor: pointer; font-size: 0.85rem; margin-top: 8px;">✂️ Split into Words</button>
                 <div style="margin-top: 12px;">
                   <label style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Letter Spacing <span id="spacing-val">0</span></label>
-                  <input type="range" id="letter-spacing-slider" min="-200" max="800" value="0" style="width: 100%;">
+                  <input type="range" id="letter-spacing-slider" aria-label="Letter spacing" min="-200" max="800" value="0" style="width: 100%;">
                 </div>
                 <div style="margin-top: 12px;">
                       <label style="display: block; font-size: 0.9rem; color: var(--text-dim); margin-bottom: 8px;">Curve Text (<span id="curve-val">0</span>)</label>
-                      <input type="range" id="text-curve-slider" min="-50" max="50" value="0" style="width: 100%;">
+                      <input type="range" id="text-curve-slider" aria-label="Curve text" min="-50" max="50" value="0" style="width: 100%;">
                     </div>
                     <div>
                       <label style="display: block; font-size: 0.9rem; color: var(--text-dim); margin-bottom: 8px;">Advanced Effects</label>
@@ -361,20 +369,20 @@
               <div class="form-group">
                 <label style="display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Color</label>
                 <div style="display: flex; gap: 8px;">
-                  <input type="color" id="obj-color-picker" value="#ffffff" style="height: 32px; width: 48px; cursor: pointer; background: none; border: none; padding: 0;">
-                  <input type="text" id="obj-color-hex" value="#ffffff" style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text-main); font-family: 'JetBrains Mono'; font-size: 1.0rem;">
+                  <input type="color" id="obj-color-picker" aria-label="Fill colour" value="#ffffff" style="height: 32px; width: 48px; cursor: pointer; background: none; border: none; padding: 0;">
+                  <input type="text" id="obj-color-hex" aria-label="Fill colour hex" value="#ffffff" style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text-main); font-family: 'JetBrains Mono'; font-size: 1.0rem;">
                 </div>
               </div>
 
               <div class="form-group">
                 <label style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Opacity <span id="opacity-val">100%</span></label>
-                <input type="range" id="obj-opacity-slider" min="0" max="100" value="100" style="width: 100%;">
+                <input type="range" id="obj-opacity-slider" aria-label="Opacity" min="0" max="100" value="100" style="width: 100%;">
               </div>
 
               <div class="form-group">
                 <label style="display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Outline</label>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                  <input type="color" id="obj-stroke-color" value="#000000" style="height: 32px; width: 48px; cursor: pointer; background: none; border: none; padding: 0;">
+                  <input type="color" id="obj-stroke-color" aria-label="Outline colour" value="#000000" style="height: 32px; width: 48px; cursor: pointer; background: none; border: none; padding: 0;">
                   <input type="range" id="obj-stroke-width" min="0" max="40" value="0" style="flex: 1;" title="Outline thickness">
                 </div>
               </div>
@@ -382,13 +390,13 @@
               <div class="form-group">
                 <label style="display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">Drop Shadow</label>
                 <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
-                  <input type="color" id="shadow-color" value="#000000" style="height: 32px; width: 48px; cursor: pointer; background: none; border: none; padding: 0;">
+                  <input type="color" id="shadow-color" aria-label="Shadow colour" value="#000000" style="height: 32px; width: 48px; cursor: pointer; background: none; border: none; padding: 0;">
                   <span style="font-size: 0.78rem; color: var(--text-dim); width: 44px;">Blur</span>
-                  <input type="range" id="shadow-blur" min="0" max="60" value="0" style="flex: 1;">
+                  <input type="range" id="shadow-blur" aria-label="Shadow blur" min="0" max="60" value="0" style="flex: 1;">
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center;">
                   <span style="font-size: 0.78rem; color: var(--text-dim); width: 52px;">Offset</span>
-                  <input type="range" id="shadow-offset" min="0" max="40" value="0" style="flex: 1;">
+                  <input type="range" id="shadow-offset" aria-label="Shadow offset" min="0" max="40" value="0" style="flex: 1;">
                 </div>
               </div>
 
@@ -430,7 +438,7 @@
             }
           </style>
           <div class="canvas-container tool-bento-panel tint-purple" style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; position: sticky; top: 120px; gap: 1rem; padding: 24px;">
-            <h3 style="font-size: 1.1rem; color: #fff; margin-bottom: 0.5rem; text-align: center; z-index: 1;">Live Canvas</h3>
+            <h2 style="font-size: 1.1rem; color: #fff; margin-bottom: 0.5rem; text-align: center; z-index: 1;">Live Canvas</h2>
             <div style="position: relative; width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
                 <!-- Checkerboard background pattern for transparency visualization -->
                 <div style="position: absolute; inset: 0; background-image: linear-gradient(45deg, rgba(255,255,255,0.02) 25%, transparent 25%), linear-gradient(-45deg, rgba(255,255,255,0.02) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.02) 75%), linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.02) 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px; z-index: 0;"></div>
@@ -489,7 +497,7 @@
         </div>
 
         <div class="footer-col">
-          <h4>Tools</h4>
+          <h2>Tools</h2>
           <a href="/invoice">Invoice Maker</a>
           <a href="/qr">QR Hub</a>
           <a href="/scanner">Mockup Studio</a>
@@ -499,7 +507,7 @@
         </div>
 
         <div class="footer-col">
-          <h4>Legal</h4>
+          <h2>Legal</h2>
           <a href="/privacy">Privacy Policy</a>
           <a href="/terms">Terms of Service</a>
           <a href="/disclaimer">Disclaimer</a>
@@ -607,7 +615,7 @@
         <button id="card-close" style="background:none; border:none; color:#8b97a8; font-size:1.4rem; cursor:pointer; line-height:1; padding:4px 8px;">✕</button>
       </div>
       <p style="margin:0 0 12px; color:var(--text-dim); font-size:0.82rem;">Uses your logo, colours &amp; fonts. The QR on the back saves you straight into a phone's contacts. Updates as you type.</p>
-      <select id="card-style" style="width:100%; margin-bottom:12px; padding:10px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem; cursor:pointer;">
+      <select id="card-style" aria-label="Card style" style="width:100%; margin-bottom:12px; padding:10px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem; cursor:pointer;">
         <option value="dark">Style — Dark Premium</option>
         <option value="light">Style — Light Minimal</option>
         <option value="split">Style — Split</option>
@@ -620,25 +628,25 @@
         <label style="display:flex; align-items:center; gap:5px;">Accent <input type="color" id="card-accent" title="Accent" style="width:30px; height:26px; border:none; background:none; padding:0; cursor:pointer;"></label>
       </div>
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
-        <select id="card-qr-action" style="flex:1; min-width:200px; padding:10px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.92rem; cursor:pointer;">
+        <select id="card-qr-action" aria-label="QR action" style="flex:1; min-width:200px; padding:10px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.92rem; cursor:pointer;">
           <option value="vcard">QR → Save my contact (vCard)</option>
           <option value="website">QR → Open my website</option>
           <option value="link">QR → Custom link (app, booking…)</option>
         </select>
-        <input type="text" id="card-link" placeholder="https://… (for website / custom)" style="flex:1; min-width:200px; padding:10px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.92rem;">
+        <input type="text" id="card-link" aria-label="QR link" placeholder="https://… (for website / custom)" style="flex:1; min-width:200px; padding:10px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.92rem;">
       </div>
       <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
         <div style="flex:1; min-width:230px;"><div style="font-size:0.72rem; color:var(--text-dim); margin-bottom:5px;">Front</div><img id="card-preview" alt="Card front" style="width:100%; border-radius:10px; border:1px solid rgba(255,255,255,0.1); display:block; background:#05080f;"></div>
         <div style="flex:1; min-width:230px;"><div style="font-size:0.72rem; color:var(--text-dim); margin-bottom:5px;">Back (scan to save)</div><img id="card-back-preview" alt="Card back" style="width:100%; border-radius:10px; border:1px solid rgba(255,255,255,0.1); display:block; background:#05080f;"></div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-        <input type="text" id="card-name" placeholder="Full name" style="grid-column:span 2; padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
-        <input type="text" id="card-title" placeholder="Title / role" style="grid-column:span 2; padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
-        <input type="text" id="card-phone" placeholder="Phone" style="padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
-        <input type="text" id="card-email" placeholder="Email" style="padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
-        <input type="text" id="card-web" placeholder="Website" style="grid-column:span 2; padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
-        <input type="text" id="card-linkedin" placeholder="LinkedIn (optional)" style="padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
-        <input type="text" id="card-instagram" placeholder="Instagram (optional)" style="padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
+        <input type="text" id="card-name" aria-label="Full name" placeholder="Full name" style="grid-column:span 2; padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
+        <input type="text" id="card-title" aria-label="Title or role" placeholder="Title / role" style="grid-column:span 2; padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
+        <input type="text" id="card-phone" aria-label="Phone" placeholder="Phone" style="padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
+        <input type="text" id="card-email" aria-label="Email" placeholder="Email" style="padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
+        <input type="text" id="card-web" aria-label="Website" placeholder="Website" style="grid-column:span 2; padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
+        <input type="text" id="card-linkedin" aria-label="LinkedIn" placeholder="LinkedIn (optional)" style="padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
+        <input type="text" id="card-instagram" aria-label="Instagram" placeholder="Instagram (optional)" style="padding:11px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,0.5); color:#fff; font-size:0.95rem;">
       </div>
       <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
         <button id="card-png" style="flex:1; min-width:140px; padding:13px; background:linear-gradient(135deg, #34D399, #10B981); color:#04140d; border:none; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.95rem;">⬇ PNG (front + back)</button>
@@ -672,7 +680,7 @@
             <div style="width: 500px; height: 300px; background: #1a1a1a; border-radius: 12px; box-shadow: 20px 20px 60px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.1); transform: rotateY(-15deg) rotateX(10deg); display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden;">
                 <!-- Texture overlay -->
                 <div style="position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%); pointer-events: none;"></div>
-                <img id="mockup-image" src="" style="max-width: 60%; max-height: 60%; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));">
+                <img id="mockup-image" src="" alt="Logo mockup preview" style="max-width: 60%; max-height: 60%; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));">
             </div>
         </div>
     </div>

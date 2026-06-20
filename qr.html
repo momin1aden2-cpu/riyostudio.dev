@@ -341,30 +341,30 @@
 
       <!-- URL INPUT -->
       <div id="url-fields" class="input-group">
-        <label class="input-label">Target URL</label>
+        <label class="input-label" for="qr-url">Target URL</label>
         <input type="url" id="qr-url" class="cyber-input" style="width: 100%" placeholder="https://riyostudio.dev" value="https://riyostudio.dev">
       </div>
 
       <!-- VCARD INPUT -->
       <div id="vcard-fields" class="input-group" style="display: none;">
         <div>
-          <label class="input-label">First Name</label>
+          <label class="input-label" for="vc-fname">First Name</label>
           <input type="text" id="vc-fname" class="cyber-input" style="width: 100%" placeholder="John">
         </div>
         <div>
-          <label class="input-label">Last Name</label>
+          <label class="input-label" for="vc-lname">Last Name</label>
           <input type="text" id="vc-lname" class="cyber-input" style="width: 100%" placeholder="Doe">
         </div>
         <div style="grid-column: span 2;">
-          <label class="input-label">Company</label>
+          <label class="input-label" for="vc-company">Company</label>
           <input type="text" id="vc-company" class="cyber-input" style="width: 100%" placeholder="Riyo Studio">
         </div>
         <div>
-          <label class="input-label">Phone</label>
+          <label class="input-label" for="vc-phone">Phone</label>
           <input type="tel" id="vc-phone" class="cyber-input" style="width: 100%" placeholder="+61 400 000 000">
         </div>
         <div>
-          <label class="input-label">Email</label>
+          <label class="input-label" for="vc-email">Email</label>
           <input type="email" id="vc-email" class="cyber-input" style="width: 100%" placeholder="hello@riyostudio.dev">
         </div>
       </div>
@@ -372,15 +372,15 @@
       <!-- WIFI INPUT -->
       <div id="wifi-fields" class="input-group" style="display: none;">
         <div style="grid-column: span 2;">
-          <label class="input-label">Network Name (SSID)</label>
+          <label class="input-label" for="wifi-ssid">Network Name (SSID)</label>
           <input type="text" id="wifi-ssid" class="cyber-input" style="width: 100%" placeholder="My WiFi Network">
         </div>
         <div>
-          <label class="input-label">Password</label>
+          <label class="input-label" for="wifi-pass">Password</label>
           <input type="password" id="wifi-pass" class="cyber-input" style="width: 100%" placeholder="SecretPassword123">
         </div>
         <div>
-          <label class="input-label">Security</label>
+          <label class="input-label" for="wifi-sec">Security</label>
           <select id="wifi-sec" class="cyber-input" style="width: 100%">
             <option value="WPA">WPA/WPA2</option>
             <option value="WEP">WEP</option>
@@ -392,15 +392,15 @@
       <!-- EMAIL INPUT -->
       <div id="email-fields" class="input-group" style="display: none;">
         <div style="grid-column: span 2;">
-          <label class="input-label">Email Address</label>
+          <label class="input-label" for="em-to">Email Address</label>
           <input type="email" id="em-to" class="cyber-input" style="width: 100%" placeholder="hello@riyostudio.dev">
         </div>
         <div style="grid-column: span 2;">
-          <label class="input-label">Subject</label>
+          <label class="input-label" for="em-sub">Subject</label>
           <input type="text" id="em-sub" class="cyber-input" style="width: 100%" placeholder="Project Inquiry">
         </div>
         <div style="grid-column: span 2;">
-          <label class="input-label">Body Text</label>
+          <label class="input-label" for="em-body">Body Text</label>
           <textarea id="em-body" class="cyber-input" style="width: 100%; height: 80px;" placeholder="Hi there, I would like to..."></textarea>
         </div>
       </div>
@@ -408,11 +408,11 @@
       <!-- SMS INPUT -->
       <div id="sms-fields" class="input-group" style="display: none;">
         <div style="grid-column: span 2;">
-          <label class="input-label">Phone Number</label>
+          <label class="input-label" for="sms-to">Phone Number</label>
           <input type="tel" id="sms-to" class="cyber-input" style="width: 100%" placeholder="+61400000000">
         </div>
         <div style="grid-column: span 2;">
-          <label class="input-label">Message</label>
+          <label class="input-label" for="sms-body">Message</label>
           <textarea id="sms-body" class="cyber-input" style="width: 100%; height: 80px;" placeholder="I am here!"></textarea>
         </div>
       </div>
@@ -420,7 +420,7 @@
       <!-- CRYPTO INPUT -->
       <div id="crypto-fields" class="input-group" style="display: none;">
         <div>
-          <label class="input-label">Currency</label>
+          <label class="input-label" for="crypto-type">Currency</label>
           <select id="crypto-type" class="cyber-input" style="width: 100%">
             <option value="bitcoin">Bitcoin (BTC)</option>
             <option value="ethereum">Ethereum (ETH)</option>
@@ -429,11 +429,11 @@
           </select>
         </div>
         <div style="grid-column: span 2;">
-          <label class="input-label">Wallet Address</label>
+          <label class="input-label" for="crypto-addr">Wallet Address</label>
           <input type="text" id="crypto-addr" class="cyber-input" style="width: 100%" placeholder="0x...">
         </div>
         <div>
-          <label class="input-label">Amount (Optional)</label>
+          <label class="input-label" for="crypto-amount">Amount (Optional)</label>
           <input type="number" id="crypto-amount" class="cyber-input" style="width: 100%" placeholder="0.5">
         </div>
       </div>
@@ -441,7 +441,7 @@
       <!-- APP INPUT -->
       <div id="app-fields" class="input-group" style="display: none;">
         <div>
-          <label class="input-label">Store Logo</label>
+          <label class="input-label" for="app-store-type">Store Logo</label>
           <select id="app-store-type" class="cyber-input" style="width: 100%">
             <option value="none">None</option>
             <option value="apple">Apple App Store</option>
@@ -449,21 +449,21 @@
           </select>
         </div>
         <div style="grid-column: span 2;">
-          <label class="input-label">App Link</label>
+          <label class="input-label" for="app-url">App Link</label>
           <input type="url" id="app-url" class="cyber-input" style="width: 100%" placeholder="https://apps.apple.com/...">
         </div>
       </div>
 
       <!-- MENU INPUT -->
       <div id="menu-fields" class="input-group" style="display: none;">
-        <label class="input-label">Menu / PDF Link</label>
+        <label class="input-label" for="qr-menu">Menu / PDF Link</label>
         <input type="url" id="qr-menu" class="cyber-input" style="width: 100%" placeholder="https://yoursite.com/menu.pdf">
         <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">Host your menu (PDF or page) anywhere and paste the link — scans open it instantly. Perfect for tables, windows &amp; signage.</p>
       </div>
 
       <!-- PHONE INPUT -->
       <div id="phone-fields" class="input-group" style="display: none;">
-        <label class="input-label">Phone Number</label>
+        <label class="input-label" for="qr-phone">Phone Number</label>
         <input type="tel" id="qr-phone" class="cyber-input" style="width: 100%" placeholder="+61 400 000 000">
         <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">Scanning starts a call to this number.</p>
       </div>
@@ -471,18 +471,18 @@
       <!-- WHATSAPP INPUT -->
       <div id="whatsapp-fields" class="input-group" style="display: none;">
         <div style="grid-column: span 2;">
-          <label class="input-label">WhatsApp Number (with country code, no +)</label>
+          <label class="input-label" for="wa-number">WhatsApp Number (with country code, no +)</label>
           <input type="tel" id="wa-number" class="cyber-input" style="width: 100%" placeholder="61400000000">
         </div>
         <div style="grid-column: span 2;">
-          <label class="input-label">Pre-filled Message (Optional)</label>
+          <label class="input-label" for="wa-msg">Pre-filled Message (Optional)</label>
           <textarea id="wa-msg" class="cyber-input" style="width: 100%; height: 70px;" placeholder="Hi! I'd like to ask about..."></textarea>
         </div>
       </div>
 
       <!-- LOCATION INPUT -->
       <div id="location-fields" class="input-group" style="display: none;">
-        <label class="input-label">Address or Place</label>
+        <label class="input-label" for="qr-location">Address or Place</label>
         <input type="text" id="qr-location" class="cyber-input" style="width: 100%" placeholder="123 Main St, Perth WA">
         <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.4rem;">Opens directly in Google Maps.</p>
       </div>
@@ -490,19 +490,19 @@
       <!-- EVENT INPUT -->
       <div id="event-fields" class="input-group" style="display: none;">
         <div style="grid-column: span 2;">
-          <label class="input-label">Event Title</label>
+          <label class="input-label" for="ev-title">Event Title</label>
           <input type="text" id="ev-title" class="cyber-input" style="width: 100%" placeholder="Product Launch">
         </div>
         <div style="grid-column: span 2;">
-          <label class="input-label">Location</label>
+          <label class="input-label" for="ev-loc">Location</label>
           <input type="text" id="ev-loc" class="cyber-input" style="width: 100%" placeholder="Online / Venue name">
         </div>
         <div>
-          <label class="input-label">Starts</label>
+          <label class="input-label" for="ev-start">Starts</label>
           <input type="datetime-local" id="ev-start" class="cyber-input" style="width: 100%">
         </div>
         <div>
-          <label class="input-label">Ends</label>
+          <label class="input-label" for="ev-end">Ends</label>
           <input type="datetime-local" id="ev-end" class="cyber-input" style="width: 100%">
         </div>
       </div>
@@ -510,31 +510,31 @@
       <!-- PAYPAL INPUT -->
       <div id="paypal-fields" class="input-group" style="display: none;">
         <div>
-          <label class="input-label">PayPal.Me Username</label>
+          <label class="input-label" for="pp-user">PayPal.Me Username</label>
           <input type="text" id="pp-user" class="cyber-input" style="width: 100%" placeholder="yourname">
         </div>
         <div>
-          <label class="input-label">Amount (Optional)</label>
+          <label class="input-label" for="pp-amount">Amount (Optional)</label>
           <input type="number" id="pp-amount" class="cyber-input" style="width: 100%" placeholder="25.00">
         </div>
       </div>
 
       <!-- TEXT INPUT -->
       <div id="text-fields" class="input-group" style="display: none;">
-        <label class="input-label">Plain Text</label>
+        <label class="input-label" for="qr-text">Plain Text</label>
         <textarea id="qr-text" class="cyber-input" style="width: 100%; height: 100px;" placeholder="Any text — a note, a code, a message..."></textarea>
       </div>
 
       <hr style="border: none; border-top: 1px dashed rgba(255,255,255,0.1); margin: 2rem 0;">
 
       <!-- STYLING OPTIONS -->
-      <h3 style="font-size: 1.1rem; color: #fff; margin-bottom: 1rem;">🎨 Style Studio</h3>
+      <h2 style="font-size: 1.1rem; color: #fff; margin-bottom: 1rem;">🎨 Style Studio</h2>
       
       <div class="style-grid">
         <div class="input-group">
           <label class="input-label">Foreground Color</label>
           <div class="color-picker-wrap">
-            <input type="color" id="color-dots" value="#060B14">
+            <input type="color" id="color-dots" value="#060B14" aria-label="Foreground color">
             <span style="font-family: 'JetBrains Mono'; font-size: 0.8rem;" id="color-dots-hex">#060B14</span>
           </div>
         </div>
@@ -542,13 +542,13 @@
         <div class="input-group">
           <label class="input-label">Background Color</label>
           <div class="color-picker-wrap">
-            <input type="color" id="color-bg" value="#ffffff">
+            <input type="color" id="color-bg" value="#ffffff" aria-label="Background color">
             <span style="font-family: 'JetBrains Mono'; font-size: 0.8rem;" id="color-bg-hex">#FFFFFF</span>
           </div>
         </div>
 
         <div class="input-group">
-          <label class="input-label">Dot Style</label>
+          <label class="input-label" for="style-dots">Dot Style</label>
           <select id="style-dots" class="cyber-input" style="width: 100%">
             <option value="square">Standard Squares</option>
             <option value="dots">Rounded Dots</option>
@@ -560,7 +560,7 @@
         </div>
 
         <div class="input-group">
-          <label class="input-label">Corner Frame</label>
+          <label class="input-label" for="style-corners">Corner Frame</label>
           <select id="style-corners" class="cyber-input" style="width: 100%">
             <option value="square">Square</option>
             <option value="dot">Circular</option>
@@ -569,7 +569,7 @@
         </div>
 
         <div class="input-group">
-          <label class="input-label">Corner Dot</label>
+          <label class="input-label" for="style-corner-dot">Corner Dot</label>
           <select id="style-corner-dot" class="cyber-input" style="width: 100%">
             <option value="square">Square</option>
             <option value="dot">Circular</option>
@@ -579,7 +579,7 @@
         <div class="input-group">
           <label class="input-label">Gradient Fill</label>
           <div class="color-picker-wrap">
-            <input type="checkbox" id="grad-toggle" style="width: 18px; height: 18px; accent-color: #10B981; cursor: pointer;">
+            <input type="checkbox" id="grad-toggle" style="width: 18px; height: 18px; accent-color: #10B981; cursor: pointer;" aria-label="Enable gradient fill">
             <input type="color" id="color-dots-2" value="#10B981" title="Second colour">
             <span style="font-size: 0.75rem; color: var(--text-dim);">2nd colour</span>
           </div>
@@ -587,7 +587,7 @@
       </div>
 
       <div class="input-group" style="margin-top: 1rem;">
-        <label class="input-label">Center Logo (Optional)</label>
+        <label class="input-label" for="logo-upload">Center Logo (Optional)</label>
         <input type="file" id="logo-upload" class="cyber-input" accept="image/png, image/jpeg, image/svg+xml" style="width: 100%">
         <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.5rem;">Square PNGs or SVGs work best. Transparent background recommended.</p>
       </div>

@@ -107,6 +107,14 @@
       .mqe-slider input[type=range] { flex: 1; accent-color: #10B981; }
       .mqe-download { width: 100%; margin-top: 16px; background: #10B981; color: #04140d; font-weight: 700; border: none; padding: 13px; border-radius: 10px; font-size: 0.95rem; cursor: pointer; }
     }
+    .footer-col h2 {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 18px;
+    }
   </style>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -288,12 +296,12 @@
               <button id="open-project-btn" class="cyber-button" style="padding: 6px; font-size: 0.8rem; border: none; background: transparent; text-align: left; color: #fff;">📂 Open Project…</button>
             </div>
           </div>
-          <input type="file" id="project-upload-input" accept="application/json,.json" style="display: none;">
+          <input type="file" id="project-upload-input" accept="application/json,.json" aria-label="Open project file" style="display: none;">
 
-          <input type="file" id="image-upload-input" accept="image/*" multiple style="display: none;">
+          <input type="file" id="image-upload-input" accept="image/*" multiple aria-label="Upload screenshots" style="display: none;">
           <button id="add-device-btn" class="cyber-button" style="padding: 8px 16px; font-size: 0.9rem;">+ Screenshot</button>
           
-          <select id="preset-size-select" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none; margin-left: 12px;">
+          <select id="preset-size-select" aria-label="Canvas preset size" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none; margin-left: 12px;">
             <optgroup label="🍎 App Store">
               <option value="1290x2796">iPhone 6.9"</option>
               <option value="1284x2778">iPhone 6.7"</option>
@@ -315,7 +323,7 @@
             </optgroup>
           </select>
           
-          <select id="screens-count-select" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none;">
+          <select id="screens-count-select" aria-label="Number of screens" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none;">
             <option value="1">1 Screen</option>
             <option value="2">2 Screens (Panorama)</option>
             <option value="3">3 Screens (Panorama)</option>
@@ -329,7 +337,7 @@
           <div id="export-dropdown" style="display: none; position: absolute; top: 100%; right: 0; background: #111; border: 1px solid rgba(16,185,129,0.4); border-radius: 10px; padding: 14px; z-index: 100; min-width: 240px; flex-direction: column; gap: 10px; margin-top: 6px; box-shadow: 0 16px 40px rgba(0,0,0,0.6);">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
               <span style="color: #9fb3c8; font-size: 0.8rem;">Format</span>
-              <select id="export-format-select" style="flex: 1; max-width: 130px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px; border-radius: 6px; outline: none; font-size: 0.8rem;">
+              <select id="export-format-select" aria-label="Export format" style="flex: 1; max-width: 130px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px; border-radius: 6px; outline: none; font-size: 0.8rem;">
                 <option value="png">PNG</option>
                 <option value="jpg">JPG</option>
                 <option value="webp">WebP</option>
@@ -337,7 +345,7 @@
             </div>
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
               <span style="color: #9fb3c8; font-size: 0.8rem;">Resolution</span>
-              <select id="export-scale-select" style="flex: 1; max-width: 130px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px; border-radius: 6px; outline: none; font-size: 0.8rem;">
+              <select id="export-scale-select" aria-label="Export resolution" style="flex: 1; max-width: 130px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px; border-radius: 6px; outline: none; font-size: 0.8rem;">
                 <option value="1">1× (standard)</option>
                 <option value="2" selected>2× (retina)</option>
                 <option value="3">3× (max)</option>
@@ -384,7 +392,7 @@
             <button id="arrange-btn" class="cyber-button" style="width: 100%; margin-top: 8px; border-color: rgba(16,185,129,0.5); color: #6ee7b7; font-weight: 600;">✦ Auto-Arrange &amp; Center</button>
             <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
               <span style="color: var(--text-dim); font-size: 0.78rem; width: 56px;">Padding</span>
-              <input type="range" id="layout-padding-input" min="0" max="20" value="8" style="flex: 1;">
+              <input type="range" id="layout-padding-input" min="0" max="20" value="8" aria-label="Layout padding" style="flex: 1;">
               <span id="layout-padding-val" style="color: var(--text-dim); font-size: 0.78rem; width: 34px; text-align: right;">8%</span>
             </div>
             <p style="margin: 6px 0 18px; font-size: 0.68rem; line-height: 1.35; color: #7c8da0;">Centers every screen and balances the spacing around your devices.</p>
@@ -392,23 +400,23 @@
             <label class="cyber-label">Canvas Background</label>
             <div style="margin-top: 8px; display: flex; gap: 8px;">
               <button id="upload-bg-btn" class="cyber-button" style="flex: 1; padding: 6px; font-size: 0.8rem;">Upload Image</button>
-              <input type="file" id="bg-upload-input" accept="image/*" style="display: none;">
+              <input type="file" id="bg-upload-input" accept="image/*" aria-label="Upload background image" style="display: none;">
             </div>
             
             <div style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between;">
                <label class="cyber-label" style="margin: 0;">Bg Blur</label>
-               <input type="range" id="bg-blur-input" min="0" max="100" value="0" style="width: 120px;">
+               <input type="range" id="bg-blur-input" min="0" max="100" value="0" aria-label="Background blur" style="width: 120px;">
             </div>
 
             <label class="cyber-label" style="margin-top: 16px; display: block;">Premium Backgrounds</label>
             <div id="bg-preset-gallery" class="bg-selector" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 7px; margin-top: 8px;"></div>
             <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
               <span style="color: var(--text-dim); font-size: 0.78rem; width: 42px;">Angle</span>
-              <input type="range" id="bg-angle-input" min="0" max="360" value="135" style="flex: 1;">
+              <input type="range" id="bg-angle-input" min="0" max="360" value="135" aria-label="Background angle" style="flex: 1;">
             </div>
 
             <label class="cyber-label" style="margin-top: 16px; display: block;">Custom Background</label>
-            <select id="bg-type-select" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none; font-size: 0.85rem; margin-top: 8px;">
+            <select id="bg-type-select" aria-label="Background type" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none; font-size: 0.85rem; margin-top: 8px;">
               <option value="gradient">Linear Gradient</option>
               <option value="radial">Radial Gradient</option>
               <option value="mesh">Mesh Gradient</option>
@@ -426,7 +434,7 @@
               <label style="display: flex; align-items: center; gap: 8px; color: #fff; font-size: 0.9rem; cursor: pointer;">
                 <input type="checkbox" id="grain-toggle"> Film Grain
               </label>
-              <input type="range" id="grain-amount" min="0" max="100" value="35" style="width: 110px;">
+              <input type="range" id="grain-amount" min="0" max="100" value="35" aria-label="Film grain amount" style="width: 110px;">
             </div>
 
             <label class="cyber-label" style="margin-top: 16px; display: block;">Auto-Rotate Animation</label>
@@ -460,30 +468,30 @@
           <!-- Shape Properties -->
           <div id="shape-props" style="display: none; flex-direction: column; gap: 16px;">
             <label class="cyber-label">Shape Options</label>
-            <select id="shape-type-select" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none;">
+            <select id="shape-type-select" aria-label="Shape type" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none;">
               <option value="rectangle">Rectangle</option>
               <option value="circle">Circle</option>
             </select>
             
             <label class="cyber-label">Fill Color</label>
-            <input type="color" id="shape-color-input" value="#38bdf8" style="width: 100%; height: 40px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
+            <input type="color" id="shape-color-input" value="#38bdf8" aria-label="Shape fill color" style="width: 100%; height: 40px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
             
             <div style="margin-top: 8px;">
               <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
                  <span style="color: var(--text-dim); font-size: 0.8rem; width: 50px;">Width</span>
-                 <input type="range" id="shape-width-input" min="50" max="4000" value="1242" style="flex: 1;">
+                 <input type="range" id="shape-width-input" min="50" max="4000" value="1242" aria-label="Shape width" style="flex: 1;">
               </div>
               <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
                  <span style="color: var(--text-dim); font-size: 0.8rem; width: 50px;">Height</span>
-                 <input type="range" id="shape-height-input" min="50" max="4000" value="2688" style="flex: 1;">
+                 <input type="range" id="shape-height-input" min="50" max="4000" value="2688" aria-label="Shape height" style="flex: 1;">
               </div>
               <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
                  <span style="color: var(--text-dim); font-size: 0.8rem; width: 50px;">Radius</span>
-                 <input type="range" id="shape-radius-input" min="0" max="500" value="0" style="flex: 1;">
+                 <input type="range" id="shape-radius-input" min="0" max="500" value="0" aria-label="Shape corner radius" style="flex: 1;">
               </div>
               <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
                  <span style="color: var(--text-dim); font-size: 0.8rem; width: 50px;">Rotate</span>
-                 <input type="range" id="shape-rotate-input" min="-180" max="180" value="0" style="flex: 1;">
+                 <input type="range" id="shape-rotate-input" min="-180" max="180" value="0" aria-label="Shape rotation" style="flex: 1;">
               </div>
             </div>
             
@@ -498,18 +506,18 @@
           <!-- Text Properties -->
           <div id="text-props" style="display: none; flex-direction: column; gap: 16px;">
             <label class="cyber-label">Edit Text</label>
-            <select id="text-font-select" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none; margin-bottom: -8px;">
+            <select id="text-font-select" aria-label="Text font" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none; margin-bottom: -8px;">
               <option value="Inter">Inter (Clean)</option>
               <option value="JetBrains Mono">JetBrains Mono (Tech)</option>
               <option value="Times New Roman">Times New Roman (Serif)</option>
               <option value="Arial">Arial (Standard)</option>
             </select>
-            <select id="text-weight-select" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none; margin-bottom: -8px;">
+            <select id="text-weight-select" aria-label="Text weight" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none; margin-bottom: -8px;">
               <option value="400">Normal</option>
               <option value="600">Semi-Bold</option>
               <option value="800">Extra Bold</option>
             </select>
-            <textarea id="text-content-input" style="width: 100%; height: 80px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 12px; border-radius: 6px; outline: none; resize: none;"></textarea>
+            <textarea id="text-content-input" aria-label="Text content" style="width: 100%; height: 80px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 12px; border-radius: 6px; outline: none; resize: none;"></textarea>
             
             <div id="text-align-group" style="display: flex; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; overflow: hidden; margin-top: 4px;">
                <button data-align="left" style="flex: 1; padding: 8px; background: transparent; border: none; color: #fff; cursor: pointer; border-right: 1px solid rgba(255,255,255,0.2);">Left</button>
@@ -518,7 +526,7 @@
             </div>
             
             <label class="cyber-label">Color</label>
-            <input type="color" id="text-color-input" value="#ffffff" style="width: 100%; height: 40px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
+            <input type="color" id="text-color-input" value="#ffffff" aria-label="Text color" style="width: 100%; height: 40px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
 
             <div style="margin-top: 8px;">
               <label class="cyber-label">Callout</label>
@@ -527,7 +535,7 @@
               </label>
               <div id="text-pill-color-row" style="display: none; align-items: center; gap: 8px; margin-top: 8px;">
                  <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Pill</span>
-                 <input type="color" id="text-pill-color" value="#10B981" style="width: 30px; height: 30px; border: none; border-radius: 4px; cursor: pointer; background: transparent;">
+                 <input type="color" id="text-pill-color" value="#10B981" aria-label="Pill background color" style="width: 30px; height: 30px; border: none; border-radius: 4px; cursor: pointer; background: transparent;">
               </div>
             </div>
 
@@ -535,8 +543,8 @@
               <label class="cyber-label">Effects</label>
               <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
                  <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Glow</span>
-                 <input type="color" id="text-shadow-color" value="#000000" style="width: 30px; height: 30px; border: none; border-radius: 4px; cursor: pointer; background: transparent;">
-                 <input type="range" id="text-shadow-blur" min="0" max="100" value="0" style="flex: 1;">
+                 <input type="color" id="text-shadow-color" value="#000000" aria-label="Text glow color" style="width: 30px; height: 30px; border: none; border-radius: 4px; cursor: pointer; background: transparent;">
+                 <input type="range" id="text-shadow-blur" min="0" max="100" value="0" aria-label="Text glow blur" style="flex: 1;">
               </div>
             </div>
             
@@ -544,7 +552,7 @@
               <label class="cyber-label">Rotation</label>
               <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
                  <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Rotate</span>
-                 <input type="range" id="text-rotate-input" min="-180" max="180" value="0" style="flex: 1;">
+                 <input type="range" id="text-rotate-input" min="-180" max="180" value="0" aria-label="Text rotation" style="flex: 1;">
               </div>
             </div>
             
@@ -560,7 +568,7 @@
           <div id="image-props" style="display: none; flex-direction: column; gap: 16px;">
             <div id="frame-style-container">
               <label class="cyber-label">Frame Style</label>
-              <select id="frame-style-select" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none;">
+              <select id="frame-style-select" aria-label="Device frame style" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 6px; outline: none;">
                 <optgroup label="📱 Phones">
                   <option value="iphone">iPhone (Dynamic Island)</option>
                   <option value="pixel">Google Pixel</option>
@@ -593,7 +601,7 @@
                   <button type="button" class="frame-swatch" data-color="#f8f9fa" title="Clay White" style="background:#f8f9fa;"></button>
                 </div>
                 <label class="cyber-label" style="font-size:0.72rem; opacity:0.7;">Custom</label>
-                <input type="color" id="frame-color-input" value="#0b0b0d" style="width: 100%; height: 40px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
+                <input type="color" id="frame-color-input" value="#0b0b0d" aria-label="Custom device colour" style="width: 100%; height: 40px; border: none; border-radius: 6px; cursor: pointer; background: transparent;">
               </div>
             </div>
             
@@ -601,15 +609,15 @@
               <label class="cyber-label">Fit Screenshot In Frame</label>
               <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;" title="Scales the screenshot inside the screen — the device stays the same size. Higher = more zoomed in and cropped.">
                  <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px; cursor: help;">Zoom</span>
-                 <input type="range" id="img-zoom-input" min="1" max="3" step="0.01" value="1" style="flex: 1;">
+                 <input type="range" id="img-zoom-input" min="1" max="3" step="0.01" value="1" aria-label="Screenshot zoom" style="flex: 1;">
               </div>
               <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;" title="Slides the screenshot left/right inside the screen to choose what's visible.">
                  <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px; cursor: help;">Pan X</span>
-                 <input type="range" id="img-pos-x-input" min="-100" max="100" value="0" style="flex: 1;">
+                 <input type="range" id="img-pos-x-input" min="-100" max="100" value="0" aria-label="Screenshot horizontal pan" style="flex: 1;">
               </div>
               <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;" title="Slides the screenshot up/down inside the screen.">
                  <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px; cursor: help;">Pan Y</span>
-                 <input type="range" id="img-pos-y-input" min="-100" max="100" value="0" style="flex: 1;">
+                 <input type="range" id="img-pos-y-input" min="-100" max="100" value="0" aria-label="Screenshot vertical pan" style="flex: 1;">
               </div>
               <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 6px;">Your screenshot fills the device screen — zoom and pan to frame it.</div>
             </div>
@@ -618,15 +626,15 @@
               <label class="cyber-label">Rotation & 3D Tilt</label>
               <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;" title="Spins the whole device flat, like turning a photo on a table.">
                  <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px; cursor: help;">Rotate</span>
-                 <input type="range" id="img-rotate-input" min="-180" max="180" value="0" style="flex: 1;">
+                 <input type="range" id="img-rotate-input" min="-180" max="180" value="0" aria-label="Device rotation" style="flex: 1;">
               </div>
               <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;" title="Turns the whole device left/right in 3D perspective.">
                  <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px; cursor: help;">Tilt Y</span>
-                 <input type="range" id="img-tilt-y-input" min="-50" max="50" value="0" style="flex: 1;">
+                 <input type="range" id="img-tilt-y-input" min="-50" max="50" value="0" aria-label="Device 3D tilt left and right" style="flex: 1;">
               </div>
               <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;" title="Turns the whole device forward/back in 3D perspective.">
                  <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px; cursor: help;">Tilt X</span>
-                 <input type="range" id="img-tilt-x-input" min="-50" max="50" value="0" style="flex: 1;">
+                 <input type="range" id="img-tilt-x-input" min="-50" max="50" value="0" aria-label="Device 3D tilt forward and back" style="flex: 1;">
               </div>
               <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 6px;">Tilt turns the device in real 3D perspective.</div>
             </div>
@@ -635,19 +643,19 @@
               <label class="cyber-label">Drop Shadow</label>
               <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
                  <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Blur</span>
-                 <input type="range" id="img-shadow-blur-input" min="0" max="200" value="80" style="flex: 1;">
+                 <input type="range" id="img-shadow-blur-input" min="0" max="200" value="80" aria-label="Drop shadow blur" style="flex: 1;">
               </div>
               <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
                  <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Opacity</span>
-                 <input type="range" id="img-shadow-op-input" min="0" max="100" value="50" style="flex: 1;">
+                 <input type="range" id="img-shadow-op-input" min="0" max="100" value="50" aria-label="Drop shadow opacity" style="flex: 1;">
               </div>
               <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
                  <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Angle</span>
-                 <input type="range" id="img-shadow-angle-input" min="-180" max="180" value="90" style="flex: 1;">
+                 <input type="range" id="img-shadow-angle-input" min="-180" max="180" value="90" aria-label="Drop shadow angle" style="flex: 1;">
               </div>
               <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
                  <span style="color: var(--text-dim); font-size: 0.8rem; width: 40px;">Dist</span>
-                 <input type="range" id="img-shadow-dist-input" min="0" max="200" value="40" style="flex: 1;">
+                 <input type="range" id="img-shadow-dist-input" min="0" max="200" value="40" aria-label="Drop shadow distance" style="flex: 1;">
               </div>
             </div>
             
@@ -696,7 +704,7 @@
         </div>
 
         <div class="footer-col">
-          <h4>Tools</h4>
+          <h2>Tools</h2>
           <a href="/invoice">Invoice Maker</a>
           <a href="/qr">QR Hub</a>
           <a href="/scanner">Mockup Studio</a>
@@ -706,7 +714,7 @@
         </div>
 
         <div class="footer-col">
-          <h4>Legal</h4>
+          <h2>Legal</h2>
           <a href="/privacy">Privacy Policy</a>
           <a href="/terms">Terms of Service</a>
           <a href="/disclaimer">Disclaimer</a>

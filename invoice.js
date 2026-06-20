@@ -152,10 +152,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const row = document.createElement('div');
     row.className = 'line-item-row';
     row.innerHTML = `
-      <input type="text" class="cyber-input desc" placeholder="Item description...">
-      <input type="number" class="cyber-input qty" value="1" min="1">
-      <input type="number" class="cyber-input price" value="0.00" min="0" step="0.01">
-      <button class="btn-small btn-del">X</button>
+      <input type="text" class="cyber-input desc" placeholder="Item description..." aria-label="Item description">
+      <input type="number" class="cyber-input qty" value="1" min="1" aria-label="Quantity">
+      <input type="number" class="cyber-input price" value="0.00" min="0" step="0.01" aria-label="Unit price">
+      <button class="btn-small btn-del" aria-label="Remove line item">X</button>
     `;
 
     const descInput = row.querySelector('.desc');
