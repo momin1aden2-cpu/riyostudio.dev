@@ -111,12 +111,16 @@
   }
   // ───────────────────────────────────────────────────────────────
 
-  // Console Greeting
-  console.log(
-    "%cRiyo Studio\n%c100% client-side tools — your files never leave your browser.",
-    "font-family: 'Inter', sans-serif; font-size: 26px; font-weight: 800; color: #10B981;",
-    "font-family: 'Inter', sans-serif; font-size: 13px; color: #A1A1AA;"
-  );
+  // Console greeting — once per session, so it doesn't repeat on every page.
+  let greeted = false;
+  try { greeted = sessionStorage.getItem('riyo_greeted') === '1'; sessionStorage.setItem('riyo_greeted', '1'); } catch (e) {}
+  if (!greeted) {
+    console.log(
+      "%cRiyo Studio\n%c100% client-side tools — your files never leave your browser.",
+      "font-family: 'Inter', sans-serif; font-size: 26px; font-weight: 800; color: #10B981;",
+      "font-family: 'Inter', sans-serif; font-size: 13px; color: #A1A1AA;"
+    );
+  }
 
 
 
