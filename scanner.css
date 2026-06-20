@@ -70,8 +70,10 @@
 /* Panel scrolls cleanly when the inspector is taller than the workspace */
 .properties-panel {
     overflow-y: auto;
+    scrollbar-gutter: stable;
     scrollbar-width: thin;
     scrollbar-color: rgba(16, 185, 129, 0.4) transparent;
+    flex: 0 0 320px;
 }
 .properties-panel::-webkit-scrollbar { width: 6px; }
 .properties-panel::-webkit-scrollbar-track { background: transparent; }

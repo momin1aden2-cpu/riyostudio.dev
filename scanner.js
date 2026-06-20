@@ -1035,12 +1035,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (texts.length) html += '<div class="mqe-sec-label">Text</div>';
             texts.forEach((l) => {
-                html += '<input class="mqe-text" data-id="' + l.id + '" value="' + mqeEsc(l.content) + '" placeholder="Text…">';
+                html += '<input class="mqe-text" data-id="' + l.id + '" value="' + mqeEsc(l.content) + '" placeholder="Text…" aria-label="Layer text">';
             });
 
             devices.forEach((l) => {
                 html += '<div class="mqe-sec-label">Device</div>';
-                html += '<select class="mqe-frame" data-id="' + l.id + '">' +
+                html += '<select class="mqe-frame" data-id="' + l.id + '" aria-label="Device frame">' +
                     MQE_FRAME_OPTS.map((o) => '<option value="' + o[0] + '"' + (o[0] === l.frameStyle ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select>';
                 if (COLOURABLE_FRAMES.includes(l.frameStyle)) {
                     html += '<div class="mqe-swrow">';
@@ -1053,8 +1053,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 html += '<div class="mqe-device"><span class="mqe-dlabel">📱 ' + mqeEsc(MQE_FRAME_NAMES[l.frameStyle] || 'Screenshot') + '</span>' +
                     '<button class="mqe-replace" data-id="' + l.id + '">Replace</button>' +
                     '<button class="mqe-del" data-id="' + l.id + '" aria-label="Remove">✕</button></div>';
-                html += '<div class="mqe-slider"><span>Angle</span><input type="range" class="mqe-tilt" data-id="' + l.id + '" min="-45" max="45" value="' + Math.round(l.persY || 0) + '"></div>';
-                html += '<div class="mqe-slider"><span>Size</span><input type="range" class="mqe-size" data-id="' + l.id + '" min="30" max="140" value="' + Math.round((l.scale || 1) * 100) + '"></div>';
+                html += '<div class="mqe-slider"><span>Angle</span><input type="range" class="mqe-tilt" data-id="' + l.id + '" min="-45" max="45" value="' + Math.round(l.persY || 0) + '" aria-label="Tilt angle"></div>';
+                html += '<div class="mqe-slider"><span>Size</span><input type="range" class="mqe-size" data-id="' + l.id + '" min="30" max="140" value="' + Math.round((l.scale || 1) * 100) + '" aria-label="Size"></div>';
             });
         }
         html += '<button class="mqe-download" type="button">⬇ Download mockup</button>';
